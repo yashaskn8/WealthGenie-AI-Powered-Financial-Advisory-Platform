@@ -1,0 +1,63 @@
+{
+  "policy_config_version": "1.0.0",
+  "label_source": "NAV-derived historical performance statistics & documented suitability policy configuration",
+  "market_data_path": "C:\\Users\\prana\\OneDrive\\Desktop\\deploy-wealthgenie\\ml-service\\data\\market_performance.csv",
+  "covered_categories": [
+    "Equity_MF",
+    "ELSS",
+    "ETF",
+    "Debt_MF",
+    "FD",
+    "RBI_Bond"
+  ],
+  "sample_count": 20000,
+  "class_counts": {
+    "Equity_MF": 5250,
+    "ELSS": 3843,
+    "ETF": 700,
+    "Debt_MF": 45,
+    "FD": 38,
+    "RBI_Bond": 10124
+  },
+  "class_percentages": {
+    "Equity_MF": 26.25,
+    "ELSS": 19.21,
+    "ETF": 3.5,
+    "Debt_MF": 0.22,
+    "FD": 0.19,
+    "RBI_Bond": 50.62
+  },
+  "normalized_market_metrics": {
+    "Equity_MF": {
+      "norm_return": 1.0,
+      "norm_vol": 1.0,
+      "norm_sortino": 0.4357495834345818
+    },
+    "ELSS": {
+      "norm_return": 0.5044564590683672,
+      "norm_vol": 0.9185722657185829,
+      "norm_sortino": 0.19897339371924777
+    },
+    "ETF": {
+      "norm_return": 0.32475660604264145,
+      "norm_vol": 0.9728072728781094,
+      "norm_sortino": 0.0
+    },
+    "Debt_MF": {
+      "norm_return": 0.011809331128823255,
+      "norm_vol": 0.23262782612302615,
+      "norm_sortino": 0.27659574468085113
+    },
+    "FD": {
+      "norm_return": 0.0,
+      "norm_vol": 0.021147984193002376,
+      "norm_sortino": 0.7872340425531915
+    },
+    "RBI_Bond": {
+      "norm_return": 0.044284991733087434,
+      "norm_vol": 0.0,
+      "norm_sortino": 1.0
+    }
+  },
+  "reachability_verified": true
+}

@@ -1,0 +1,72 @@
+{
+  "fairness_diagnostic_timestamp": "2026-07-23T23:36:28Z",
+  "by_age_group": {
+    "<30": {
+      "sample_count": 4484,
+      "mean_confidence": 0.9401,
+      "class_distribution": {
+        "Equity_MF": 0.6905,
+        "ETF": 0.1278,
+        "RBI_Bond": 0.1155,
+        "ELSS": 0.0662
+      }
+    },
+    "30-50": {
+      "sample_count": 7155,
+      "mean_confidence": 0.9142,
+      "class_distribution": {
+        "ELSS": 0.4284,
+        "RBI_Bond": 0.3003,
+        "Equity_MF": 0.2408,
+        "ETF": 0.0305
+      }
+    },
+    "50+": {
+      "sample_count": 8361,
+      "mean_confidence": 0.9768,
+      "class_distribution": {
+        "RBI_Bond": 0.8799,
+        "ELSS": 0.0708,
+        "Equity_MF": 0.0379,
+        "Debt_MF": 0.0054,
+        "FD": 0.0044,
+        "ETF": 0.0016
+      }
+    }
+  },
+  "by_income_group": {
+    "Low (<8L)": {
+      "sample_count": 8304,
+      "mean_confidence": 0.9583,
+      "class_distribution": {
+        "RBI_Bond": 0.557,
+        "Equity_MF": 0.3426,
+        "ETF": 0.0968,
+        "FD": 0.0031,
+        "ELSS": 0.0002,
+        "Debt_MF": 0.0002
+      }
+    },
+    "Mid (8L-20L)": {
+      "sample_count": 11225,
+      "mean_confidence": 0.9392,
+      "class_distribution": {
+        "RBI_Bond": 0.4744,
+        "ELSS": 0.3357,
+        "Equity_MF": 0.1853,
+        "Debt_MF": 0.0037,
+        "FD": 0.001
+      }
+    },
+    "High (>20L)": {
+      "sample_count": 471,
+      "mean_confidence": 0.8976,
+      "class_distribution": {
+        "Equity_MF": 0.448,
+        "ELSS": 0.3907,
+        "RBI_Bond": 0.1571,
+        "Debt_MF": 0.0042
+      }
+    }
+  }
+}

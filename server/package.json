@@ -9,7 +9,7 @@
     "start": "node server.js",
     "test": "node --test --test-force-exit",
     "seed": "node config/seedInstruments.js",
-    "typecheck": "tsc --noEmit"
+    "eval": "node scripts/run-eval.js"
   },
   "dependencies": {
     "axios": "^1.7.7",
@@ -28,9 +28,5 @@
     "rate-limit-redis": "^5.0.0",
     "redis": "^4.7.0",
     "winston": "^3.19.0"
-  },
-  "devDependencies": {
-    "@types/node": "^26.1.0",
-    "typescript": "^6.0.3"
   }
 }

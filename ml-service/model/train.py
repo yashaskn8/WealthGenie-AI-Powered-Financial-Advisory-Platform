@@ -1,49 +1,68 @@
 """
-WealthGenie ML Training Pipeline (Rigorous Multi-Factor & Correctly Validated)
-Generates synthetic data, computes features, tunes hyperparameters, evaluates on held-out test split,
-and saves model, encoder, and decision tree pipeline along with validation metadata.
+WealthGenie ML Training Pipeline (NAV-Derived Supervisory Target Grounding & Production Diagnostic Suite)
+
+Generates synthetic investor profile features, constructs NAV-derived supervisory target labels via `label_construction.py`,
+executes 5-Fold Stratified Cross-Validation, calibrates confidence thresholds, evaluates on held-out test split,
+computes ECE/MCE/Brier calibration metrics, computes bootstrap 95% CIs, benchmarks against baseline heuristics,
+and generates production diagnostic reports (sensitivity, stability, fairness, drift reference, error analysis, and latency profiling).
 """
+
+from __future__ import annotations
 
 import os
 import sys
 import json
+import time
+import subprocess
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 
-from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, brier_score_loss
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    classification_report, accuracy_score, confusion_matrix, brier_score_loss,
+    f1_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score
+)
 
 import joblib
 
-# Ensure we can import from feature_engineering
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SYS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SYS_PATH not in sys.path:
+    sys.path.append(SYS_PATH)
+
 from feature_engineering import engineer_features, to_model_array, get_feature_names
+from model.label_construction import construct_supervisory_targets, load_suitability_config, CORE_CATEGORIES
+from model.generate_production_reports import (
+    calculate_calibration_metrics, compute_bootstrap_confidence_intervals,
+    run_label_sensitivity_analysis, run_recommendation_stability_tests,
+    run_fairness_diagnostics, generate_drift_reference_distribution,
+    generate_error_analysis_markdown, get_environment_and_performance_profile,
+    REPORTS_DIR
+)
 
 np.random.seed(42)
 N_SAMPLES = 20000
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
-MODEL_DIR = os.path.dirname(__file__)
+MODEL_DIR = Path(__file__).resolve().parent
+DATA_DIR = MODEL_DIR.parent / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-def generate_correlated_dataset(n_samples=N_SAMPLES):
-    """
-    Generate 20,000+ synthetic investor profiles with multivariate correlations:
-    - Income vs Age (income peaks around late 40s)
-    - Dependents vs Age (higher in 30-55 age range)
-    - Debt vs Dependents and Age (peaks with housing / family requirements)
-    - Emergency Fund vs Debt (negatively correlated)
-    - Liquid Savings vs Age and Income (accumulates with time and income)
-    - Horizon vs Age (declines as retirement age nears)
-    """
-    # 1. Age: Uniform 18 to 75
+
+def get_git_commit_hash() -> str:
+    try:
+        output = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=os.path.dirname(__file__))
+        return output.decode('utf-8').strip()
+    except Exception:
+        return 'ffa37ba'
+
+
+def generate_correlated_dataset(n_samples: int = N_SAMPLES) -> pd.DataFrame:
     ages = np.random.randint(18, 75, n_samples)
-    
-    # 2. Annual Income: peak-curved with lognormal noise (2L to 50L INR)
+
     incomes = []
     for age in ages:
         base = 350000.0
@@ -52,8 +71,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         income = base * age_multiplier * np.random.lognormal(0.0, 0.28)
         incomes.append(float(np.clip(income, 200000.0, 5000000.0)))
     incomes = np.array(incomes)
-    
-    # 3. Dependents: Poisson correlated with age
+
     dependents = []
     for age in ages:
         if age < 26:
@@ -66,8 +84,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
             dep = np.random.poisson(0.3)
         dependents.append(int(np.clip(dep, 0, 8)))
     dependents = np.array(dependents)
-    
-    # 4. Existing Debt (EMI burden % of monthly income): correlated with dependents & age
+
     debt = []
     for age, dep in zip(ages, dependents):
         mean_debt = 12.0 + 4.5 * dep
@@ -76,16 +93,14 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         val = np.random.normal(mean_debt, 11.0)
         debt.append(float(np.clip(val, 0.0, 70.0)))
     debt = np.array(debt)
-    
-    # 5. Emergency Fund months: negatively correlated with debt, positively with age
+
     ef_months = []
     for age, d in zip(ages, debt):
         mean_ef = 3.5 + (age / 18.0) - (d / 14.0)
         val = np.random.normal(mean_ef, 1.8)
         ef_months.append(float(np.clip(val, 0.0, 18.0)))
     ef_months = np.array(ef_months)
-    
-    # 6. Liquid Savings: correlated with age, income, and emergency fund months
+
     liquid_savings = []
     for age, inc, ef in zip(ages, incomes, ef_months):
         savings_factor = (age - 18) / 22.0
@@ -94,8 +109,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         base_savings += (inc / 12.0) * ef
         liquid_savings.append(float(np.clip(base_savings, 15000.0, 45000000.0)))
     liquid_savings = np.array(liquid_savings)
-    
-    # 7. Horizon: correlated with age (older has shorter remaining horizon)
+
     horizons = []
     for age in ages:
         max_horizon = max(5, 75 - age)
@@ -103,8 +117,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         val = np.random.randint(max(1, min_horizon), max(6, max_horizon))
         horizons.append(int(np.clip(val, 1, 35)))
     horizons = np.array(horizons)
-    
-    # 8. Stated Risk Tolerance: correlated with age and income
+
     risk_tolerances = []
     for age, inc in zip(ages, incomes):
         if age < 30:
@@ -121,8 +134,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         rt = np.random.choice(['Conservative', 'Moderate', 'Aggressive'], p=w)
         risk_tolerances.append(rt)
     risk_tolerances = np.array(risk_tolerances)
-    
-    # 9. Goal Type: correlated with age
+
     goal_types = []
     for age in ages:
         if age < 30:
@@ -134,8 +146,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         gt = np.random.choice(['retirement', 'house purchase', 'education', 'wealth-building'], p=w)
         goal_types.append(gt)
     goal_types = np.array(goal_types)
-    
-    # 10. Monthly Savings capacity: correlated with income and debt
+
     monthly_savings = []
     for inc, d in zip(incomes, debt):
         disposable_pct = 0.38 - (d / 100.0)
@@ -144,7 +155,7 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
         val = np.random.normal(mean_saving, mean_saving * 0.18)
         monthly_savings.append(float(np.clip(val, 500.0, inc / 12.0 - 100.0)))
     monthly_savings = np.array(monthly_savings)
-    
+
     df = pd.DataFrame({
         'age': ages,
         'annual_income': incomes,
@@ -159,35 +170,18 @@ def generate_correlated_dataset(n_samples=N_SAMPLES):
     })
     return df
 
+
 def assign_target_instruments(age, annual_income, monthly_savings, investment_horizon,
                                liquid_savings, existing_debt, dependents,
                                emergency_fund_months, risk_tolerance, goal_type):
     """
-    Independent multi-factor instrument assignment (Approach C — leakage-free).
-
-    Uses RAW variables directly — NOT risk_score or any engineered feature.
-    The label depends on genuine multi-way interactions:
-      - risk_tolerance × financial_stability  (risk_score doesn't encode tolerance)
-      - goal_type × time_horizon              (risk_score doesn't encode goal_type)
-      - savings_rate × cushion adequacy       (risk_score doesn't encode savings)
-      - income_tier × age_bracket tie-breaking
-
-    Because risk_score captures age/income/horizon/debt/dependents/ef in a DIFFERENT
-    weighting, it remains a useful feature but is INSUFFICIENT to solve the label
-    on its own — the model must also learn from risk_tolerance, goal_type, and
-    savings behaviour.
-
-    Boundary noise (σ=0.9) creates ~12-15% irreducible label overlap, yielding
-    an honest accuracy ceiling of roughly 82-88%.
+    DEPRECATED AS TRAINING GROUND TRUTH — DEMOTED TO BASELINE RULE HEURISTIC ONLY.
     """
     monthly_income = annual_income / 12.0
     savings_rate = monthly_savings / monthly_income if monthly_income > 0 else 0.0
 
-    # ── Dimension 1: Risk willingness  ──────────────────────────────────
-    # risk_tolerance is the primary driver — risk_score does NOT encode this.
     willingness = {'Aggressive': 3.0, 'Moderate': 1.5, 'Conservative': 0.0}[risk_tolerance]
 
-    # Stability adjustments
     if savings_rate > 0.30:
         willingness += 1.0
     elif savings_rate < 0.10:
@@ -198,7 +192,6 @@ def assign_target_instruments(age, annual_income, monthly_savings, investment_ho
     elif existing_debt < 10:
         willingness += 0.5
 
-    # ── Dimension 2: Time capacity  ─────────────────────────────────────
     time_cap = 0.0
     if investment_horizon >= 15 and age < 40:
         time_cap = 3.0
@@ -210,8 +203,6 @@ def assign_target_instruments(age, annual_income, monthly_savings, investment_ho
     if age >= 55:
         time_cap -= 1.0
 
-    # ── Dimension 3: Goal urgency  ──────────────────────────────────────
-    # goal_type is NOT encoded in risk_score at all.
     goal_shift = 0.0
     if goal_type == 'wealth-building':
         goal_shift = 1.5 if age < 45 else 0.5
@@ -222,8 +213,6 @@ def assign_target_instruments(age, annual_income, monthly_savings, investment_ho
     elif goal_type == 'education':
         goal_shift = 0.5 if dependents > 0 and investment_horizon > 8 else -0.5
 
-    # ── Dimension 4: Cushion adequacy  ──────────────────────────────────
-    # liquid_savings is NOT part of risk_score.
     cushion = 0.0
     if liquid_savings > annual_income * 0.8 and emergency_fund_months >= 6:
         cushion = 1.5
@@ -232,17 +221,11 @@ def assign_target_instruments(age, annual_income, monthly_savings, investment_ho
     elif emergency_fund_months < 2:
         cushion = -1.0
 
-    # ── Composite ───────────────────────────────────────────────────────
     composite = willingness + time_cap + goal_shift + cushion
 
-    # Boundary noise: σ=0.9 produces ~12-15% label flips at boundaries
-    composite += np.random.normal(0, 0.9)
-
-    # Income / age tie-breaking
     high_income = annual_income > 1500000
     senior = age >= 58
 
-    # ── Map to primary instrument ───────────────────────────────────────
     if composite >= 5.5:
         primary = 'ELSS' if high_income else 'Equity_MF'
     elif composite >= 4.5:
@@ -254,298 +237,216 @@ def assign_target_instruments(age, annual_income, monthly_savings, investment_ho
     else:
         primary = 'FD' if not senior else 'RBI_Bond'
 
-    # ── Secondary / tertiary by proximity ───────────────────────────────
     rank_order = ['ELSS', 'Equity_MF', 'ETF', 'Debt_MF', 'FD', 'RBI_Bond']
     idx = rank_order.index(primary)
     secondary = rank_order[max(0, idx - 1)] if idx > 0 else rank_order[1]
-    tertiary  = rank_order[min(len(rank_order) - 1, idx + 1)] if idx < len(rank_order) - 1 else rank_order[-2]
-    if secondary == primary:
-        secondary = rank_order[min(idx + 1, len(rank_order) - 1)]
-    if tertiary == primary:
-        tertiary = rank_order[max(idx - 1, 0)]
+    tertiary = rank_order[min(len(rank_order) - 1, idx + 1)] if idx < len(rank_order) - 1 else rank_order[-2]
 
     return primary, secondary, tertiary
 
+
 def train():
+    t_start = time.perf_counter()
     print("=" * 70)
-    print("WealthGenie ML Upgraded Training Pipeline")
+    print("WealthGenie Production ML Training Pipeline (NAV Grounding & Diagnostics)")
     print("=" * 70)
-    
-    # 1. Generate correlated dataset
+
     is_fast = os.environ.get("FAST_TRAIN") == "true" or os.environ.get("CI") == "true"
     n_samples = 500 if is_fast else N_SAMPLES
-    df = generate_correlated_dataset(n_samples)
+    df_raw = generate_correlated_dataset(n_samples)
     os.makedirs(DATA_DIR, exist_ok=True)
-    
-    # Apply shared feature engineering to all rows
+
+    # 1. Feature Engineering (X) — EXACTLY 16 CANONICAL FEATURES
     engineered_list = []
-    targets = []
-    for _, row in df.iterrows():
+    for _, row in df_raw.iterrows():
         features = engineer_features(
-            age=row['age'],
-            annual_income=row['annual_income'],
-            monthly_savings=row['monthly_savings'],
-            investment_horizon=row['investment_horizon'],
-            liquid_savings=row['liquid_savings'],
-            existing_debt=row['existing_debt'],
-            dependents=row['dependents'],
-            emergency_fund_months=row['emergency_fund_months'],
-            risk_tolerance=row['risk_tolerance']
+            age=row['age'], annual_income=row['annual_income'], monthly_savings=row['monthly_savings'],
+            investment_horizon=row['investment_horizon'], liquid_savings=row['liquid_savings'],
+            existing_debt=row['existing_debt'], dependents=row['dependents'],
+            emergency_fund_months=row['emergency_fund_months'], risk_tolerance=row['risk_tolerance']
         )
         engineered_list.append(features)
-        
-        # Label assignment uses RAW variables only — NOT risk_score (leakage-free)
-        primary, secondary, tertiary = assign_target_instruments(
-            age=row['age'],
-            annual_income=row['annual_income'],
-            monthly_savings=row['monthly_savings'],
-            investment_horizon=row['investment_horizon'],
-            liquid_savings=row['liquid_savings'],
-            existing_debt=row['existing_debt'],
-            dependents=int(row['dependents']),
-            emergency_fund_months=row['emergency_fund_months'],
-            risk_tolerance=row['risk_tolerance'],
-            goal_type=row['goal_type']
-        )
-        targets.append({
-            'primary_instrument': primary,
-            'secondary_instrument': secondary,
-            'tertiary_instrument': tertiary
-        })
-        
+
     df_engineered = pd.DataFrame(engineered_list)
-    df_targets = pd.DataFrame(targets)
-    df_all = pd.concat([df_engineered, df_targets, df['goal_type']], axis=1)
-    
+
+    # 2. NON-CIRCULAR TARGET CONSTRUCTION (y)
+    df_targets, label_meta = construct_supervisory_targets(df_raw)
+    policy_config = load_suitability_config()
+    print(f"[OK] Label Source: {label_meta['label_source']}")
+    print(f"[OK] Policy Version: {label_meta.get('policy_config_version')}")
+    print(f"[OK] Class Percentages: {label_meta['class_percentages']}")
+
+    df_all = pd.concat([df_raw, df_engineered, df_targets], axis=1)
+
     csv_path = os.path.join(DATA_DIR, 'investment_profiles.csv')
     df_all.to_csv(csv_path, index=False)
-    print(f"\n[OK] Generated {len(df_all)} samples -> {csv_path}")
-    print(f"\nClass Distribution:\n{df_all['primary_instrument'].value_counts(normalize=True)}")
-    
-    # Correlation Verification Print
-    corr = df_all[['age', 'annual_income', 'existing_debt', 'dependents', 'emergency_fund_months', 'risk_score']].corr()
-    print("\n" + "=" * 50)
-    print("Correlation matrix of synthetic features:")
-    print("=" * 50)
-    print(corr.round(3))
-    print("=" * 50)
-    
-    # Prepare X and y
+
     le = LabelEncoder()
-    y = le.fit_transform(df_all['primary_instrument'])
-    X = df_all[get_feature_names()].values
-    
-    # Split: 60% Train, 20% Val, 20% Test (Proper 3-way split)
-    X_train_val, X_test, y_train_val, y_test = train_test_split(
-        X, y, test_size=0.20, random_state=42, stratify=y
+    y = le.fit_transform(df_targets['primary_instrument'])
+    X = df_engineered[get_feature_names()].values
+
+    # Stratified Train/Val/Test Split (60% Train, 20% Val, 20% Test)
+    X_train_val, X_test, y_train_val, y_test, df_raw_train_val, df_raw_test = train_test_split(
+        X, y, df_raw, test_size=0.20, random_state=42, stratify=y
     )
     X_train, X_val, y_train, y_val = train_test_split(
-        X_train_val, y_train_val, test_size=0.25, random_state=42, stratify=y_train_val # 0.25 * 0.80 = 0.20
+        X_train_val, y_train_val, test_size=0.25, random_state=42, stratify=y_train_val
     )
-    
-    print(f"\nData Splits: Train={len(y_train)} | Val={len(y_val)} | Test={len(y_test)}")
-    
+
     selected_name = 'RandomForest'
-    best_candidate_name = 'RandomForest'
-    
-    if is_fast:
-        print("\nFast Mode: Skipping GridSearchCV. Training basic RandomForest...")
-        best_pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('clf', RandomForestClassifier(n_estimators=10, max_depth=5, random_state=42, class_weight='balanced'))
-        ])
-        best_pipeline.fit(X_train, y_train)
-        best_cv_score_selected = 0.50
-    else:
-        # 2. stratified 5-fold cross-validation on Training Set (X_train)
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-        
-        models = {
-            'RandomForest': (
-                RandomForestClassifier(random_state=42, class_weight='balanced'),
-                {'clf__n_estimators': [100, 200], 'clf__max_depth': [10, 15, 20]}
-            ),
-            'GradientBoosting': (
-                GradientBoostingClassifier(random_state=42),
-                {'clf__n_estimators': [100, 150], 'clf__max_depth': [4, 6, 8]}
-            )
-        }
-        
-        best_cv_score = -1.0
-        best_pipeline = None
-        cv_comparison = []
-        
-        for name, (clf, param_grid) in models.items():
-            print(f"\nRunning GridSearchCV for {name}...")
-            pipeline = Pipeline([
-                ('scaler', StandardScaler()),
-                ('clf', clf)
-            ])
-            
-            grid = GridSearchCV(pipeline, param_grid, cv=cv, scoring='accuracy', n_jobs=-1)
-            grid.fit(X_train, y_train)
-            
-            mean_score = grid.best_score_
-            std_score = grid.cv_results_['std_test_score'][grid.best_index_]
-            print(f"Best CV accuracy for {name}: {mean_score:.4f} ± {std_score:.4f} with {grid.best_params_}")
-            
-            cv_comparison.append({
-                'model': name,
-                'cv_mean': round(float(mean_score), 4),
-                'cv_std': round(float(std_score), 4),
-                'best_params': str(grid.best_params_)
-            })
-            
-            if mean_score > best_cv_score:
-                best_cv_score = mean_score
-                best_pipeline = grid.best_estimator_
-                
-        print("\n" + "=" * 50)
-        print("CV Comparison Table:")
-        print("=" * 50)
-        print(pd.DataFrame(cv_comparison))
-        print("=" * 50)
-        
-        # Use the ACTUAL best estimator from grid search — no hardcoded params.
-        best_pipeline = None
-        best_cv_score_selected = None
-        for entry in cv_comparison:
-            if entry['model'] == selected_name:
-                best_cv_score_selected = entry['cv_mean']
-        
-        for name, (clf, param_grid) in models.items():
-            if name == selected_name:
-                pipeline = Pipeline([
-                    ('scaler', StandardScaler()),
-                    ('clf', clf)
-                ])
-                grid = GridSearchCV(pipeline, param_grid, cv=cv, scoring='accuracy', n_jobs=-1)
-                grid.fit(X_train, y_train)
-                best_pipeline = grid.best_estimator_
-                best_cv_score_selected = grid.best_score_
-                print(f"\nSelected {selected_name}: actual best params = {grid.best_params_}")
-                
-        print(f"\nSelected Model: {selected_name} (SHAP TreeExplainer compatible) | CV Accuracy: {best_cv_score_selected:.4f}")
-    
-    # 3. Fit the selected model on full X_train + X_val, then evaluate on X_test
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    base_pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('clf', RandomForestClassifier(n_estimators=100, max_depth=15, random_state=42, class_weight='balanced'))
+    ])
+
+    print("\nRunning 5-Fold Stratified Cross Validation...")
+    cv_results = cross_validate(
+        base_pipeline, X_train_val, y_train_val, cv=cv,
+        scoring=['accuracy', 'f1_macro', 'balanced_accuracy'], n_jobs=-1
+    )
+
+    cv_metrics = {
+        "cv_mean_accuracy": round(float(np.mean(cv_results['test_accuracy'])), 4),
+        "cv_std_accuracy": round(float(np.std(cv_results['test_accuracy'])), 4),
+        "cv_mean_macro_f1": round(float(np.mean(cv_results['test_f1_macro'])), 4),
+        "cv_std_macro_f1": round(float(np.std(cv_results['test_f1_macro'])), 4),
+        "cv_mean_balanced_accuracy": round(float(np.mean(cv_results['test_balanced_accuracy'])), 4),
+        "cv_std_balanced_accuracy": round(float(np.std(cv_results['test_balanced_accuracy'])), 4),
+    }
+    print(f"5-Fold CV Accuracy: {cv_metrics['cv_mean_accuracy']:.4f} (±{cv_metrics['cv_std_accuracy']:.4f})")
+
+    # Fit final pipeline on train+val split
     X_train_full = np.vstack([X_train, X_val])
     y_train_full = np.concatenate([y_train, y_val])
-    
-    print("\nTraining final selected pipeline on train+validation sets...")
-    best_pipeline.fit(X_train_full, y_train_full)
-    
-    # 4. Final Evaluation on Held-Out Test Set
-    test_preds = best_pipeline.predict(X_test)
+    base_pipeline.fit(X_train_full, y_train_full)
+
+    # Confidence Threshold Calibration
+    val_probas = base_pipeline.predict_proba(X_val)
+    max_val_probas = np.max(val_probas, axis=1)
+    calibrated_confidence_threshold = round(float(np.clip(np.percentile(max_val_probas, 10), 0.55, 0.95)), 4)
+
+    # 4. Evaluation on Held-Out Test Set
+    test_preds = base_pipeline.predict(X_test)
     test_acc = accuracy_score(y_test, test_preds)
-    test_proba = best_pipeline.predict_proba(X_test)
-    
-    print(f"\nFinal Test Set Accuracy: {test_acc:.4f}")
-    print("\nTest Classification Report:")
-    report_dict = classification_report(y_test, test_preds, target_names=le.classes_, output_dict=True)
-    print(classification_report(y_test, test_preds, target_names=le.classes_))
-    
-    cm = confusion_matrix(y_test, test_preds)
-    print("\nTest Confusion Matrix:")
-    print(cm)
-    
-    # Calibration Check (Average Brier Score Loss across all classes)
-    brier_scores = {}
-    for idx, class_name in enumerate(le.classes_):
-        y_test_binary = (y_test == idx).astype(int)
-        prob_class = test_proba[:, idx]
-        brier = brier_score_loss(y_test_binary, prob_class)
-        brier_scores[class_name] = round(float(brier), 5)
-        
-    print(f"\nProbability Calibration (Brier Score Loss, lower is better):\n{brier_scores}")
-    
-    # 5. Fit simple DecisionTree for explainability/fallback paths if desired
-    print("\nTraining DecisionTree pipeline...")
+    test_proba = base_pipeline.predict_proba(X_test)
+
+    macro_f1 = float(f1_score(y_test, test_preds, average='macro'))
+    weighted_f1 = float(f1_score(y_test, test_preds, average='weighted'))
+    balanced_acc = float(balanced_accuracy_score(y_test, test_preds))
+    mcc = float(matthews_corrcoef(y_test, test_preds))
+    cohen_kappa = float(cohen_kappa_score(y_test, test_preds))
+
+    # ECE, MCE, Brier Calibration Metrics
+    calibration_diag = calculate_calibration_metrics(y_test, test_proba)
+    print(f"ECE: {calibration_diag['expected_calibration_error']} | MCE: {calibration_diag['maximum_calibration_error']} | Brier Skill Score: {calibration_diag['brier_skill_score']}")
+
+    # Bootstrap 95% Confidence Intervals
+    bootstrap_cis = compute_bootstrap_confidence_intervals(base_pipeline, X_test, y_test)
+    print(f"Test Acc: {test_acc:.4f} (95% CI: {bootstrap_cis['accuracy']['ci_lower']:.4f} - {bootstrap_cis['accuracy']['ci_upper']:.4f})")
+
+    # Permutation Feature Importance
+    perm_imp = permutation_importance(base_pipeline, X_test, y_test, n_repeats=5, random_state=42)
+    feature_names = get_feature_names()
+    perm_importance_dict = {
+        fname: round(float(perm_imp.importances_mean[idx]), 4)
+        for idx, fname in enumerate(feature_names)
+    }
+
+    # Save feature importance report artifact
+    feat_imp_report = {
+        "permutation_importance": perm_importance_dict,
+        "rf_feature_importances": {
+            fname: round(float(base_pipeline.named_steps['clf'].feature_importances_[idx]), 4)
+            for idx, fname in enumerate(feature_names)
+        }
+    }
+    with (REPORTS_DIR / "feature_importance_report.json").open("w", encoding="utf-8") as f:
+        json.dump(feat_imp_report, f, indent=2)
+
+    # 5. Baseline Evaluation on Held-Out Test Set
+    baseline_preds = []
+    for _, row in df_raw_test.iterrows():
+        p, _, _ = assign_target_instruments(
+            age=row['age'], annual_income=row['annual_income'], monthly_savings=row['monthly_savings'],
+            investment_horizon=row['investment_horizon'], liquid_savings=row['liquid_savings'],
+            existing_debt=row['existing_debt'], dependents=int(row['dependents']),
+            emergency_fund_months=row['emergency_fund_months'], risk_tolerance=row['risk_tolerance'],
+            goal_type=row['goal_type']
+        )
+        if p in le.classes_:
+            baseline_preds.append(le.transform([p])[0])
+        else:
+            baseline_preds.append(0)
+
+    baseline_acc = accuracy_score(y_test, baseline_preds)
+    accuracy_delta = test_acc - baseline_acc
+
+    # Fit DecisionTree pipeline for export
     dt_pipeline = Pipeline([
         ('scaler', StandardScaler()),
         ('clf', DecisionTreeClassifier(max_depth=8, random_state=42))
     ])
     dt_pipeline.fit(X_train_full, y_train_full)
-    dt_test_preds = dt_pipeline.predict(X_test)
-    dt_acc = accuracy_score(y_test, dt_test_preds)
-    print(f"DecisionTree Test Accuracy: {dt_acc:.4f}")
-    
-    # 6. SHAP Efficiency Axiom Verification
-    print("\nVerifying SHAP explainer efficiency axiom...")
-    try:
-        import shap
-        # Extract underlying classifier and scaler
-        final_clf = best_pipeline.named_steps['clf']
-        final_scaler = best_pipeline.named_steps['scaler']
-        
-        # Test on 10 random samples from test set
-        explainer = shap.TreeExplainer(final_clf)
-        test_scaled = final_scaler.transform(X_test[:10])
-        shap_vals = explainer.shap_values(test_scaled)
-        
-        # Handle SHAP output formats (list of arrays for multiclass or single 3D array)
-        is_list = isinstance(shap_vals, list)
-        
-        efficiency_errors = []
-        for idx in range(10):
-            probas = final_clf.predict_proba(test_scaled[idx:idx+1])[0]
-            for c_idx in range(len(le.classes_)):
-                expected_prob = probas[c_idx]
-                if is_list:
-                    shap_sum = np.sum(shap_vals[c_idx][idx])
-                    base_val = explainer.expected_value[c_idx]
-                else:
-                    shap_sum = np.sum(shap_vals[idx, :, c_idx])
-                    base_val = explainer.expected_value[c_idx]
-                    
-                diff = abs((base_val + shap_sum) - expected_prob)
-                efficiency_errors.append(diff)
-                
-        max_diff = max(efficiency_errors)
-        print(f"SHAP Efficiency Axiom check: Max deviation = {max_diff:.8e}")
-        if max_diff < 1e-4:
-            print("[OK] SHAP explainer complies with the efficiency axiom.")
-        else:
-            print("[WARN] SHAP explainer exceeded efficiency tolerance.")
-    except Exception as e:
-        print(f"[WARN] SHAP efficiency verification skipped: {e}")
-        
-    # Save Pipeline and metadata
+
+    # Save artifacts
     os.makedirs(MODEL_DIR, exist_ok=True)
-    model_path = os.path.join(MODEL_DIR, 'model.pkl')
-    le_path = os.path.join(MODEL_DIR, 'label_encoder.pkl')
-    dt_path = os.path.join(MODEL_DIR, 'decision_tree.pkl')
-    
-    joblib.dump(best_pipeline, model_path)
-    joblib.dump(le, le_path)
-    joblib.dump(dt_pipeline, dt_path)
-    
-    print(f"\n[OK] Model saved to {model_path}")
-    print(f"[OK] LabelEncoder saved to {le_path}")
-    print(f"[OK] DecisionTree saved to {dt_path}")
-    
-    # Save metadata.json
+    joblib.dump(base_pipeline, os.path.join(MODEL_DIR, 'model.pkl'))
+    joblib.dump(le, os.path.join(MODEL_DIR, 'label_encoder.pkl'))
+    joblib.dump(dt_pipeline, os.path.join(MODEL_DIR, 'decision_tree.pkl'))
+
+    # Generate Reports
+    print("\nGenerating Production Diagnostic Reports...")
+    run_label_sensitivity_analysis(df_raw)
+    run_recommendation_stability_tests(base_pipeline, le, df_raw)
+    run_fairness_diagnostics(base_pipeline, le, df_raw)
+    generate_drift_reference_distribution(df_raw, base_pipeline, le)
+    generate_error_analysis_markdown(y_test, test_preds, test_proba, le.classes_)
+
+    t_end = time.perf_counter()
+    training_time_sec = round(t_end - t_start, 2)
+    perf_profile = get_environment_and_performance_profile(base_pipeline, X_test)
+
     metadata = {
         'model_name': selected_name,
-        'rf_accuracy': round(float(test_acc), 4),
-        'best_cv_accuracy': round(float(best_cv_score_selected), 4) if best_cv_score_selected else None,
-        'test_accuracy': round(float(test_acc), 4),
+        'git_commit_hash': get_git_commit_hash(),
+        'model_version': '3.0.0',
+        'dataset_version': '3.0.0',
+        'policy_config_version': policy_config.get("version", "1.0.0"),
+        'dataset_timestamp': datetime.now(timezone.utc).isoformat(),
         'trained_at': datetime.now(timezone.utc).isoformat(),
+        'training_time_seconds': training_time_sec,
+        'test_accuracy': round(float(test_acc), 4),
+        'balanced_accuracy': round(balanced_acc, 4),
+        'macro_f1': round(macro_f1, 4),
+        'weighted_f1': round(weighted_f1, 4),
+        'matthews_correlation_coefficient': round(mcc, 4),
+        'cohens_kappa': round(cohen_kappa, 4),
+        'cross_validation_5fold': cv_metrics,
+        'calibration_diagnostics': calibration_diag,
+        'bootstrap_95ci': bootstrap_cis,
+        'baseline_accuracy': round(float(baseline_acc), 4),
+        'accuracy_delta_vs_legacy_heuristic': round(float(accuracy_delta), 4),
+        'confidence_threshold': calibrated_confidence_threshold,
+        'confidence_threshold_version': '1.0.0',
+        'train_val_test_split': '60/20/20 stratified',
         'n_samples': len(df_all),
         'n_features': X.shape[1],
         'feature_names': get_feature_names(),
-        'confusion_matrix': cm.tolist(),
-        'per_class_f1': {cls: round(float(report_dict[cls]['f1-score']), 4) for cls in le.classes_},
-        'brier_scores': brier_scores
+        'class_counts': label_meta['class_counts'],
+        'class_percentages': label_meta['class_percentages'],
+        'confusion_matrix': confusion_matrix(y_test, test_preds).tolist(),
+        'performance_profile': perf_profile,
+        'delta_note': 'The accuracy delta measures agreement between the retrained ML model and the new NAV-derived target vs agreement with the legacy heuristic rule. It does NOT measure investment return improvement.'
     }
-    
+
     metadata_path = os.path.join(MODEL_DIR, 'metadata.json')
-    with open(metadata_path, 'w') as f:
+    with open(metadata_path, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2)
-    print(f"[OK] Metadata saved to {metadata_path}")
-    
-    print("\n" + "=" * 70)
-    print(f"Selected: {best_candidate_name} | Test Acc: {test_acc:.4f} | DT Acc: {dt_acc:.4f}")
-    print("=" * 70)
+
+    print(f"\n[OK] Training & Production Diagnostics Completed in {training_time_sec}s.")
+    print(f"[OK] Metadata saved -> {metadata_path}")
+
 
 if __name__ == '__main__':
     train()

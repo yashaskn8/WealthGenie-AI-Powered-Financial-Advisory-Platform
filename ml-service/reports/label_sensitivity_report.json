@@ -1,0 +1,57 @@
+{
+  "sensitivity_analysis_timestamp": "2026-07-23T23:36:26Z",
+  "base_distribution": {
+    "Equity_MF": 0.2625,
+    "ELSS": 0.1921,
+    "ETF": 0.035,
+    "Debt_MF": 0.0022,
+    "FD": 0.0019,
+    "RBI_Bond": 0.5062
+  },
+  "perturbation_impacts": {
+    "growth_weight_multiplier_up (+20%)": {
+      "label_agreement_rate": 0.9893,
+      "class_distribution_shift": {
+        "Equity_MF": 0.0098,
+        "ELSS": 0.0001,
+        "ETF": -0.006,
+        "Debt_MF": -0.0001,
+        "FD": -0.0008,
+        "RBI_Bond": -0.0031
+      }
+    },
+    "growth_weight_multiplier_down (-20%)": {
+      "label_agreement_rate": 0.9885,
+      "class_distribution_shift": {
+        "Equity_MF": -0.0108,
+        "ELSS": 0.0001,
+        "ETF": 0.0062,
+        "Debt_MF": 0.0,
+        "FD": 0.0008,
+        "RBI_Bond": 0.0038
+      }
+    },
+    "safety_volatility_multiplier_up (+20%)": {
+      "label_agreement_rate": 0.994,
+      "class_distribution_shift": {
+        "Equity_MF": -0.004,
+        "ELSS": 0.0,
+        "ETF": 0.0002,
+        "Debt_MF": 0.0,
+        "FD": -0.0019,
+        "RBI_Bond": 0.0058
+      }
+    },
+    "safety_volatility_multiplier_down (-20%)": {
+      "label_agreement_rate": 0.9591,
+      "class_distribution_shift": {
+        "Equity_MF": 0.0037,
+        "ELSS": 0.0009,
+        "ETF": -0.0003,
+        "Debt_MF": -0.0009,
+        "FD": 0.0363,
+        "RBI_Bond": -0.0397
+      }
+    }
+  }
+}

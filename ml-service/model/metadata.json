@@ -1,10 +1,55 @@
 {
   "model_name": "RandomForest",
-  "rf_accuracy": 0.56,
-  "best_cv_accuracy": 0.5,
-  "test_accuracy": 0.56,
-  "trained_at": "2026-07-18T12:44:13.517752+00:00",
-  "n_samples": 500,
+  "git_commit_hash": "ffa37ba",
+  "model_version": "3.0.0",
+  "dataset_version": "3.0.0",
+  "policy_config_version": "1.0.0",
+  "dataset_timestamp": "2026-07-23T18:06:30.668127+00:00",
+  "trained_at": "2026-07-23T18:06:30.668127+00:00",
+  "training_time_seconds": 38.22,
+  "test_accuracy": 0.9553,
+  "balanced_accuracy": 0.858,
+  "macro_f1": 0.8601,
+  "weighted_f1": 0.9558,
+  "matthews_correlation_coefficient": 0.9303,
+  "cohens_kappa": 0.9301,
+  "cross_validation_5fold": {
+    "cv_mean_accuracy": 0.953,
+    "cv_std_accuracy": 0.0023,
+    "cv_mean_macro_f1": 0.8575,
+    "cv_std_macro_f1": 0.0288,
+    "cv_mean_balanced_accuracy": 0.851,
+    "cv_std_balanced_accuracy": 0.0388
+  },
+  "calibration_diagnostics": {
+    "expected_calibration_error": 0.036,
+    "maximum_calibration_error": 0.2965,
+    "brier_score": 0.0119,
+    "brier_skill_score": 0.9857
+  },
+  "bootstrap_95ci": {
+    "accuracy": {
+      "mean": 0.9553,
+      "ci_lower": 0.9487,
+      "ci_upper": 0.961
+    },
+    "macro_f1": {
+      "mean": 0.8525,
+      "ci_lower": 0.7634,
+      "ci_upper": 0.9128
+    },
+    "balanced_accuracy": {
+      "mean": 0.858,
+      "ci_lower": 0.746,
+      "ci_upper": 0.9358
+    }
+  },
+  "baseline_accuracy": 0.2802,
+  "accuracy_delta_vs_legacy_heuristic": 0.675,
+  "confidence_threshold": 0.8362,
+  "confidence_threshold_version": "1.0.0",
+  "train_val_test_split": "60/20/20 stratified",
+  "n_samples": 20000,
   "n_features": 16,
   "feature_names": [
     "age",
@@ -24,70 +69,82 @@
     "horizon_adjusted_urgency_score",
     "dependents_adjusted_burden_score"
   ],
+  "class_counts": {
+    "Equity_MF": 5250,
+    "ELSS": 3843,
+    "ETF": 700,
+    "Debt_MF": 45,
+    "FD": 38,
+    "RBI_Bond": 10124
+  },
+  "class_percentages": {
+    "Equity_MF": 26.25,
+    "ELSS": 19.21,
+    "ETF": 3.5,
+    "Debt_MF": 0.22,
+    "FD": 0.19,
+    "RBI_Bond": 50.62
+  },
   "confusion_matrix": [
     [
-      8,
-      0,
-      8,
-      0,
-      2,
-      7
-    ],
-    [
-      0,
-      0,
-      1,
-      0,
-      0,
-      0
-    ],
-    [
-      8,
-      0,
-      17,
       6,
-      3,
-      1
+      0,
+      0,
+      0,
+      0,
+      3
     ],
     [
+      0,
+      744,
+      0,
+      11,
+      0,
+      14
+    ],
+    [
+      0,
+      0,
+      126,
+      12,
+      0,
+      2
+    ],
+    [
+      0,
+      33,
+      24,
+      976,
+      0,
+      17
+    ],
+    [
+      0,
+      0,
       0,
       0,
       5,
-      19,
-      0,
-      0
+      2
     ],
     [
-      0,
-      0,
-      0,
-      0,
-      5,
-      0
-    ],
-    [
-      3,
-      0,
-      0,
-      0,
-      0,
-      7
+      2,
+      33,
+      18,
+      7,
+      1,
+      1964
     ]
   ],
-  "per_class_f1": {
-    "Debt_MF": 0.3636,
-    "ELSS": 0.0,
-    "ETF": 0.5152,
-    "Equity_MF": 0.7755,
-    "FD": 0.6667,
-    "RBI_Bond": 0.56
+  "performance_profile": {
+    "python_version": "3.12.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "environment_hash": "2d94978357",
+    "model_size_bytes": 14209690,
+    "inference_latency_ms": {
+      "p50": 2.992,
+      "p95": 3.54,
+      "p99": 3.713
+    }
   },
-  "brier_scores": {
-    "Debt_MF": 0.1685,
-    "ELSS": 0.01039,
-    "ETF": 0.19755,
-    "Equity_MF": 0.08112,
-    "FD": 0.03519,
-    "RBI_Bond": 0.05415
-  }
+  "delta_note": "The accuracy delta measures agreement between the retrained ML model and the new NAV-derived target vs agreement with the legacy heuristic rule. It does NOT measure investment return improvement."
 }

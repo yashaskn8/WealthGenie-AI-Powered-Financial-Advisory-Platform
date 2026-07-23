@@ -10,7 +10,6 @@ class PredictRequest(BaseModel):
         ...,
         description="Risk category based on capacity"
     )
-    # New fields:
     liquid_savings: float = Field(..., ge=0, description="Existing liquid savings in INR")
     existing_debt: float = Field(..., ge=0, le=100, description="EMI burden as % of monthly income")
     dependents: int = Field(..., ge=0, le=15, description="Number of dependents")
@@ -47,13 +46,18 @@ class Explanation(BaseModel):
 
 class PredictResponse(BaseModel):
     model_config = {"protected_namespaces": ()}
-    
+
     primary: str
     secondary: str
     tertiary: str
     confidence_scores: Dict[str, float]
     decision_path: List[str]
     model_used: Optional[str] = "RandomForest"
+    low_confidence: Optional[bool] = False
+    confidence_threshold: Optional[float] = 0.55
+    model_version: Optional[str] = "3.0.0"
+    dataset_version: Optional[str] = "3.0.0"
+    git_commit_hash: Optional[str] = "ffa37ba"
     explanation: Optional[Explanation] = None
 
 

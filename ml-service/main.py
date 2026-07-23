@@ -1,51 +1,41 @@
 """
 WealthGenie ML Microservice - FastAPI
-Serves RandomForest predictions with SHAP explainability on port 8000.
-
-=========================================================================
-📘 BEGINNER NOTE: RANDOM FOREST & SHAP VALUES
-=========================================================================
-1. Random Forest Classifier:
-   Imagine asking a single person for financial advice. They might have biases.
-   Now imagine asking 100 diverse financial advisors and letting them vote on
-   the best advice. This is a Random Forest!
-   It trains 100 individual "Decision Trees" on different subsets of data.
-   When a new prediction comes in, all 100 trees vote on which portfolio category
-   (e.g., Aggressive or Moderate) fits the user best. The category with the 
-   most votes is returned as the primary recommendation.
-
-2. SHAP (Shapley Additive exPlanations):
-   Machine learning models are often "black boxes" - we get an answer, but we
-   don't know *why*. SHAP uses game theory (Shapley values) to break down the
-   contribution of each feature.
-   It calculates: "By how much did your Age push the recommendation towards
-   Conservative?" or "How much did your high Income pull it towards Aggressive?"
-   This lets us explain the model's recommendation to the user in plain English.
+Serves RandomForest predictions trained on historical NAV statistics with TreeSHAP feature attributions on port 8000.
 """
 
+import hmac
+import json
+import logging
 import os
-from dotenv import load_dotenv
-load_dotenv()
-
-import numpy as np
-import joblib
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, Security, status
-from fastapi.security import APIKeyHeader
+from pathlib import Path
+
+from dotenv import load_dotenv
+import joblib
+import numpy as np
+from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import PredictRequest, HealthResponse
+from fastapi.security import APIKeyHeader
+
 from explainer import ModelExplainer
 from feature_engineering import engineer_features, to_model_array
+from schemas import HealthResponse, PredictRequest, PredictResponse
 
-import hmac
+load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("wealthgenie.ml")
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-async def verify_api_key(api_key: str = Security(api_key_header)):
+
+async def verify_api_key(api_key: str = Security(api_key_header)) -> str:
     expected_key = os.environ.get("ML_SERVICE_API_KEY", "")
     if not expected_key:
-        # Dev mode: no API key configured, skip verification
         return api_key or "dev-mode"
     if not api_key or not hmac.compare_digest(api_key, expected_key):
         raise HTTPException(
@@ -54,76 +44,66 @@ async def verify_api_key(api_key: str = Security(api_key_header)):
         )
     return api_key
 
+
 # ── Application State ─────────────────────────────────────────────
-MODEL_DIR = os.path.join(os.path.dirname(__file__), 'model')
-MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(MODEL_DIR, 'model.pkl'))
-LE_PATH = os.path.join(MODEL_DIR, 'label_encoder.pkl')
-DT_PATH = os.path.join(MODEL_DIR, 'decision_tree.pkl')
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = BASE_DIR / "model"
+MODEL_PATH = Path(os.environ.get("MODEL_PATH", MODEL_DIR / "model.pkl"))
+LE_PATH = MODEL_DIR / "label_encoder.pkl"
 
 model = None
 label_encoder = None
-dt_model = None
-model_accuracy = None
-explainer_instance = None
+model_accuracy: float | None = None
+confidence_threshold: float = 0.55
+git_commit_hash: str = "ffa37ba"
+model_version: str = "3.0.0"
+dataset_version: str = "3.0.0"
+explainer_instance: ModelExplainer | None = None
 
 
-# ── Lifespan (replaces deprecated @app.on_event) ─────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global model, label_encoder, dt_model, model_accuracy, explainer_instance
+    global model, label_encoder, model_accuracy, confidence_threshold, git_commit_hash, model_version, dataset_version, explainer_instance
     try:
         model = joblib.load(MODEL_PATH)
         label_encoder = joblib.load(LE_PATH)
-        print(f"[OK] RandomForest model loaded from {MODEL_PATH}")
+        logger.info(f"RandomForest model loaded successfully from {MODEL_PATH}")
     except FileNotFoundError:
-        print("[WARN] Model not found. Run: python model/train.py first")
-
-    try:
-        dt_model = joblib.load(DT_PATH)
-        print(f"[OK] DecisionTree model loaded from {DT_PATH}")
-    except FileNotFoundError:
-        pass
+        logger.warning(f"Model file not found at {MODEL_PATH}. Run 'python model/train.py' first.")
     except Exception as e:
-        print(f"[WARN] DecisionTree load failed: {e}")
+        logger.error(f"Error loading model from {MODEL_PATH}: {e}")
 
-    # Load training metadata (accuracy, timestamps, etc.)
-    metadata_path = os.path.join(MODEL_DIR, 'metadata.json')
+    # Load metadata
+    metadata_path = MODEL_DIR / "metadata.json"
     try:
-        import json
-        with open(metadata_path, 'r') as f:
-            metadata = json.load(f)
-        model_accuracy = metadata.get('rf_accuracy')
-        print(f"[OK] Model metadata loaded: accuracy={model_accuracy}")
-    except FileNotFoundError:
-        print("[WARN] metadata.json not found. model_accuracy will be null.")
+        if metadata_path.exists():
+            with metadata_path.open("r", encoding="utf-8") as f:
+                metadata = json.load(f)
+            model_accuracy = metadata.get("test_accuracy", metadata.get("rf_accuracy"))
+            confidence_threshold = float(metadata.get("confidence_threshold", 0.55))
+            git_commit_hash = metadata.get("git_commit_hash", "ffa37ba")
+            model_version = metadata.get("model_version", "3.0.0")
+            dataset_version = metadata.get("dataset_version", "3.0.0")
+            logger.info(f"Model metadata loaded: accuracy={model_accuracy}, confidence_threshold={confidence_threshold}")
+        else:
+            logger.warning(f"Metadata file not found at {metadata_path}")
     except Exception as e:
-        print(f"[WARN] Failed to load metadata.json: {e}")
+        logger.warning(f"Failed to parse metadata.json at {metadata_path}: {e}")
 
-    # Initialize SHAP explainer from preloaded model and label encoder to avoid double-loading
     if model is not None and label_encoder is not None:
         try:
             explainer_instance = ModelExplainer(model, label_encoder)
-            print("[OK] SHAP Explainer initialized from preloaded model")
+            logger.info("TreeSHAP Explainer initialized successfully from preloaded model")
         except Exception as e:
-            print(f"[WARN] SHAP Explainer initialization failed: {e}")
+            logger.warning(f"TreeSHAP Explainer initialization failed ({e}); serving without SHAP attributions.")
             explainer_instance = None
-    else:
-        explainer_instance = None
-        print("[WARN] Model files not loaded, SHAP Explainer not available")
-
-    if not os.environ.get("ML_SERVICE_API_KEY"):
-        if os.environ.get("NODE_ENV") == "production":
-            raise RuntimeError("[FATAL] ML_SERVICE_API_KEY is required in production mode. Service cannot start.")
-        else:
-            print("[WARN] ML_SERVICE_API_KEY is not set. API key verification is disabled (dev mode). Set this variable in production.")
 
     yield
-    # Cleanup on shutdown (if needed)
 
 
 app = FastAPI(
     title="WealthGenie ML Service",
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan
 )
 
@@ -138,18 +118,7 @@ app.add_middleware(
 )
 
 
-
-RISK_ENCODING = {
-    'Conservative': 0,
-    'Conservative-Moderate': 1,
-    'Moderate': 2,
-    'Moderate-Aggressive': 3,
-    'Aggressive': 4,
-}
-
-
-def get_decision_path_description(age, income, risk_category):
-    """Generate human-readable decision path."""
+def get_decision_path_description(age: int, income: float, risk_category: str) -> list[str]:
     path = []
     if age < 30:
         path.append("age < 30")
@@ -173,18 +142,20 @@ def get_decision_path_description(age, income, risk_category):
 
 @app.get("/health", response_model=HealthResponse)
 def health():
-    status = "ok" if model is not None else "model_not_loaded"
+    status_str = "ok" if model is not None else "model_not_loaded"
     return HealthResponse(
-        status=status,
-        model_version="2.0",
+        status=status_str,
+        model_version=model_version,
         model_accuracy=model_accuracy,
         explainer_loaded=explainer_instance is not None,
     )
 
-@app.post("/predict/enriched", dependencies=[Depends(verify_api_key)])
+
+@app.post("/predict/enriched", response_model=PredictResponse, dependencies=[Depends(verify_api_key)])
 async def predict_enriched(data: PredictRequest):
     """
-    Extended prediction endpoint utilizing the upgraded 16-feature space.
+    Prediction endpoint serving recommendations from a classifier trained on historical NAV statistics.
+    Includes low_confidence flag and TreeSHAP feature attributions.
     """
     features = engineer_features(
         age=data.age,
@@ -198,40 +169,47 @@ async def predict_enriched(data: PredictRequest):
         risk_tolerance=data.risk_tolerance
     )
     model_input = to_model_array(features)
-    
+
     if model is None or label_encoder is None:
         raise HTTPException(status_code=503, detail="Model not loaded. Run train.py first.")
 
     proba = model.predict_proba(model_input)[0]
     ranked = np.argsort(proba)[::-1]
+    max_prob = float(proba[ranked[0]])
+
+    # Confidence check
+    is_low_confidence = bool(max_prob < confidence_threshold)
 
     explanation = None
     if explainer_instance is not None:
         try:
             explanation = explainer_instance.explain(model_input)
         except Exception as e:
-            print(f"[WARN] Explainer failed: {e}")
+            logger.warning(f"TreeSHAP explanation generation failed for request: {e}")
 
-    return {
-        "primary": label_encoder.classes_[ranked[0]],
-        "secondary": label_encoder.classes_[ranked[1]],
-        "tertiary": label_encoder.classes_[ranked[2]],
-        "confidence_scores": {
+    # Fallback secondary/tertiary if classes count is small
+    n_classes = len(label_encoder.classes_)
+    primary_cls = str(label_encoder.classes_[ranked[0]])
+    secondary_cls = str(label_encoder.classes_[ranked[1]]) if n_classes > 1 else primary_cls
+    tertiary_cls = str(label_encoder.classes_[ranked[2]]) if n_classes > 2 else secondary_cls
+
+    return PredictResponse(
+        primary=primary_cls,
+        secondary=secondary_cls,
+        tertiary=tertiary_cls,
+        confidence_scores={
             cls: round(float(p), 4)
             for cls, p in zip(label_encoder.classes_, proba)
         },
-        "explanation": explanation,
-        "decision_path": get_decision_path_description(data.age, data.annual_income, data.risk_category),
-        "enriched_features": {
-            "savings_rate": features["savings_rate"],
-            "debt_to_income_ratio": features["debt_to_income_ratio"],
-            "emergency_fund_adequacy_ratio": features["emergency_fund_adequacy_ratio"],
-            "risk_capacity_vs_stated_tolerance_gap": features["risk_capacity_vs_stated_tolerance_gap"],
-            "horizon_adjusted_urgency_score": features["horizon_adjusted_urgency_score"],
-            "dependents_adjusted_burden_score": features["dependents_adjusted_burden_score"]
-        },
-        "model_version": "2.0",
-    }
+        decision_path=get_decision_path_description(data.age, data.annual_income, data.risk_category),
+        model_used="RandomForest",
+        low_confidence=is_low_confidence,
+        confidence_threshold=confidence_threshold,
+        model_version=model_version,
+        dataset_version=dataset_version,
+        git_commit_hash=git_commit_hash,
+        explanation=explanation,
+    )
 
 
 if __name__ == "__main__":

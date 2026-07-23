@@ -51,6 +51,8 @@ AMFI_SCHEMES = (
     AmfiScheme("sbi_bluechip", 119721, "SBI LARGE & MIDCAP FUND -DIRECT PLAN -Growth"),
     AmfiScheme("hdfc_midcap", 118989, "HDFC Mid Cap Fund - Growth Option - Direct Plan"),
     AmfiScheme("mirae_elss", 135781, "Mirae Asset ELSS Tax Saver Fund - Direct Plan - Growth"),
+    AmfiScheme("index_mf", 119069, "Nippon India Index Fund - Nifty 50 Plan - Direct Plan - Growth Option"),
+    AmfiScheme("liquid_mf", 118749, "ICICI Prudential Liquid Fund - Direct Plan - Growth"),
 )
 
 

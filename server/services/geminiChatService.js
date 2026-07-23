@@ -1,6 +1,7 @@
 /**
- * Genie Chat Service — Dual-provider (Gemini + Groq fallback)
- * Rate limiting, context assembly, API calls, conversation persistence.
+ * Genie Chat Service — Dual-provider (Gemini + Groq fallback) v3 Platform Engine
+ * Rate limiting, context assembly, API calls, conversation persistence, state machine,
+ * provider abstraction, tool orchestrator, explainability, trace graph.
  */
 import axios from 'axios';
 import { getCache, setCache, redisClient, redisAvailable } from '../config/redis.js';
@@ -12,10 +13,20 @@ import Recommendation from '../models/Recommendation.js';
 import Goal from '../models/Goal.js';
 import User from '../models/User.js';
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+import { validateAndSanitizeActionCards } from './actionCardValidator.js';
+import { verifyAndCorrectArithmetic } from './arithmeticVerifier.js';
+import { inspectPromptSecurity } from './promptSecurity.js';
+import { FinancialToolRegistry } from './financialToolRegistry.js';
+import { validateAndSanitizeStructuredResponse } from './structuredResponseProtocol.js';
+import { ImmutableSecurityPipeline } from './immutableSecurityPipeline.js';
+import { PrometheusMetrics } from './metricsCollector.js';
+import { ProviderManager } from './providerAbstraction.js';
+import { AIToolOrchestrator } from './aiToolOrchestrator.js';
+import { ConversationStateMachine, CONVERSATION_STATES } from './conversationStateMachine.js';
+import { LayeredMemoryManager } from './layeredMemoryManager.js';
+import { ExplainabilityEngine } from './explainabilityEngine.js';
+import { ToolTraceGraph, promptVersion, policyVersion } from './toolTraceGraph.js';
+
 const CHAT_RATE_LIMIT = 30;
 const HISTORY_WINDOW = 20;
 const MAX_OUTPUT_TOKENS = 4096;
@@ -47,75 +58,6 @@ async function checkRateLimit(userId) {
   return { allowed: true, count: entry.count };
 }
 
-/**
- * Call Gemini API. Returns { text, tokensUsed, wasCompleted } or null on failure.
- */
-async function callGemini(payload) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-
-  try {
-    const res = await axios.post(GEMINI_API_URL, payload, {
-      timeout: 30000,
-      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-    });
-    const candidate = res.data?.candidates?.[0];
-    if (!candidate || candidate.finishReason === 'SAFETY') return null;
-
-    const text = candidate.content.parts.map(p => p.text).join('');
-    const tokensUsed = res.data?.usageMetadata?.totalTokenCount || 0;
-    const wasCompleted = candidate.finishReason === 'STOP';
-    return { text, tokensUsed, wasCompleted, provider: 'gemini' };
-  } catch (err) {
-    console.error('[Chat] Gemini API error:', err.response?.data?.error?.message || err.message);
-    return null;
-  }
-}
-
-/**
- * Call Groq API as fallback. Converts Gemini-style payload to OpenAI format.
- * Returns { text, tokensUsed, wasCompleted } or null on failure.
- */
-async function callGroq(systemPrompt, recentHistory) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return null;
-
-  try {
-    // Convert Gemini history format → OpenAI messages format
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...recentHistory.map(m => ({
-        role: m.role === 'model' ? 'assistant' : m.role,
-        content: m.parts.map(p => p.text).join(''),
-      })),
-    ];
-
-    const res = await axios.post(GROQ_API_URL, {
-      model: GROQ_MODEL,
-      messages,
-      max_tokens: MAX_OUTPUT_TOKENS,
-      temperature: 0.4,
-      top_p: 0.8,
-    }, {
-      timeout: 30000,
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const text = res.data?.choices?.[0]?.message?.content;
-    if (!text) return null;
-
-    const tokensUsed = res.data?.usage?.total_tokens || 0;
-    const wasCompleted = res.data?.choices?.[0]?.finish_reason === 'stop';
-    return { text, tokensUsed, wasCompleted, provider: 'groq' };
-  } catch (err) {
-    console.error('[Chat] Groq API error:', err.response?.data || err.message);
-    return null;
-  }
-}
-
 export async function processChat({ userId, user, message, sessionId }) {
   const rateCheck = await checkRateLimit(userId);
   if (!rateCheck.allowed) {
@@ -125,103 +67,172 @@ export async function processChat({ userId, user, message, sessionId }) {
   const profile = await FinancialProfile.findOne({ userId }).sort({ createdAt: -1 }).lean();
   if (!profile) {
     return {
+      version: '3.0',
       response: "I don't have your financial profile yet. Please complete the profile setup on the home page so I can give you personalised advice.",
       session_id: sessionId, grounded: false,
       messages_this_hour: rateCheck.count, rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
     };
   }
 
+  // Phase 5: Multi-layer Immutable Security Pipeline
+  const securityContext = ImmutableSecurityPipeline.processInput(message, profile);
+  if (securityContext.isInjection) {
+    PrometheusMetrics.inc('prompt_injection_attempts_total');
+  }
+
   const recommendation = await Recommendation.findOne({ userId, profileId: profile._id }).sort({ generatedAt: -1 }).lean();
   const goals = await Goal.find({ userId }).sort({ createdAt: -1 }).lean();
 
-  // Load full user document for name
   const fullUser = await User.findById(userId).lean() || { name: user.email, email: user.email };
-
-  const promptCacheKey = `chat:sysprompt_v3:${userId}:${profile._id}`;
-  let systemPrompt = await getCache(promptCacheKey);
-  if (!systemPrompt) {
-    let marketData = null;
-    try { const cached = await getCache('index:stats:^NSEI'); marketData = cached ? { nifty: cached } : null; } catch (err) { console.warn('[GeminiChatService] Redis cache read failed:', err.message); }
-    systemPrompt = buildSystemPrompt(fullUser, profile, recommendation, marketData, goals);
-    console.info(`[Chat] System prompt built. Length: ${systemPrompt.length} chars.`);
-    await setCache(promptCacheKey, systemPrompt, SYSTEM_PROMPT_TTL);
-  } else {
-    console.info(`[Chat] System prompt loaded from cache. Length: ${systemPrompt.length} chars.`);
-  }
 
   let conversation = await ConversationHistory.findOne({ userId, session_id: sessionId, is_active: true });
   if (!conversation) {
     conversation = new ConversationHistory({ userId, profileId: profile._id, session_id: sessionId, messages: [] });
   }
 
-  const recentHistory = conversation.messages.slice(-HISTORY_WINDOW).map(m => ({ role: m.role, parts: [{ text: m.content }] }));
-  recentHistory.push({ role: 'user', parts: [{ text: message }] });
+  // Phase 4 & Phase 5: Layered Long-Term Memory & Context Retrieval
+  const retrievedMemory = LayeredMemoryManager.buildRetrievedContext(message, profile, goals, recommendation, conversation.messages);
+  const formattedMemoryContext = LayeredMemoryManager.formatForPrompt(retrievedMemory);
 
-  const payload = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: recentHistory,
-    generationConfig: {
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      temperature: 0.4,
-      topP: 0.8,
-      topK: 40,
-    },
-    safetySettings: [
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-    ],
-  };
+  const promptCacheKey = `chat:sysprompt_v3:${userId}:${profile._id}`;
+  let baseSystemPrompt = await getCache(promptCacheKey);
+  if (!baseSystemPrompt) {
+    let marketData = null;
+    try { const cached = await getCache('index:stats:^NSEI'); marketData = cached ? { nifty: cached } : null; } catch (err) { console.warn('[GeminiChatService] Redis cache read failed:', err.message); }
+    baseSystemPrompt = buildSystemPrompt(fullUser, profile, recommendation, marketData, goals);
+    await setCache(promptCacheKey, baseSystemPrompt, SYSTEM_PROMPT_TTL);
+  }
+
+  const systemPrompt = `${baseSystemPrompt}\n\n${formattedMemoryContext}`;
+
+  const recentHistory = conversation.messages.slice(-HISTORY_WINDOW).map(m => ({ role: m.role, parts: [{ text: m.content }] }));
+  recentHistory.push({ role: 'user', parts: [{ text: securityContext.sanitizedMessage }] });
 
   const startTime = Date.now();
 
-  // ── Try Gemini first, then fall back to Groq ──
-  let result = await callGemini(payload);
+  // Phase 9: Provider Abstraction Layer & Resilient Execution
+  let result = await ProviderManager.gemini.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS });
   if (!result) {
-    console.info('[Chat] Gemini failed or quota exhausted, falling back to Groq...');
-    result = await callGroq(systemPrompt, recentHistory);
+    console.info('[Chat] Gemini adapter unavailable/failed, falling back to Groq adapter...');
+    result = await ProviderManager.groq.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS });
   }
 
   const latencyMs = Date.now() - startTime;
-  let responseText = '';
+  let rawResponseText = '';
   let tokensUsed = 0;
   let provider = '';
   let wasCompleted = true;
+  let isFallback = false;
 
   if (!result) {
-    console.info('[Chat] Both providers failed, generating profile-grounded local fallback response...');
-    responseText = generateLocalFallbackResponse(fullUser, profile, goals, message);
-    tokensUsed = 120;
-    provider = 'local_fallback';
-  } else {
-    responseText = result.text;
-    tokensUsed = result.tokensUsed;
-    provider = result.provider;
-    wasCompleted = result.wasCompleted;
-
-    // ── Response completeness check ─────────────────────────────────
-    if (!wasCompleted) {
-      console.warn(
-        `[Chat] Response truncated (${provider}). Tokens: ${tokensUsed}. UserId: ${userId}`
-      );
-      responseText = responseText.trimEnd()
-        + '\n\n*Response was truncated. Please ask me to continue '
-        + 'or rephrase for a shorter answer.*';
-    }
+    console.info('[Chat] Dual providers failed, executing local fallback adapter...');
+    isFallback = true;
+    const fallbackText = generateLocalFallbackResponse(fullUser, profile, goals, message);
+    result = await ProviderManager.local.generate({ fallbackText });
   }
 
-  console.info(`[Chat] [${provider}] Response: ${responseText.length} chars. Completed: ${wasCompleted}. "${responseText.substring(0, 50)}..."`);
+  rawResponseText = result.text;
+  tokensUsed = result.tokensUsed;
+  provider = result.provider;
+  wasCompleted = result.wasCompleted;
 
-  conversation.messages.push({ role: 'user', content: message, metadata: { grounded_on_profile: true } });
+  PrometheusMetrics.recordLatency(provider, latencyMs);
+
+  // Phase 1: Structured V2.0 Contract Protocol & Sanitization
+  const v2Protocol = validateAndSanitizeStructuredResponse(rawResponseText);
+  let responseText = v2Protocol.answer || rawResponseText;
+
+  // Phase 1 & Phase 2: AI Tool Orchestrator DAG Resolution & Execution
+  const orchestration = await AIToolOrchestrator.orchestrate(v2Protocol.tool_calls, { profile, user: fullUser });
+  const toolResults = orchestration.toolResults;
+
+  // Phase 2: Server-Side ACTION_CARD Validation
+  const { cleanedText, validCards, validationSummary } = validateAndSanitizeActionCards(responseText);
+  responseText = cleanedText;
+
+  // Phase 3: Independent Arithmetic Verification
+  const { verifiedText, verificationMetadata } = verifyAndCorrectArithmetic(responseText, profile);
+  responseText = verifiedText;
+
+  // Phase 5: Enforce Regulatory Compliance
+  responseText = ImmutableSecurityPipeline.enforceCompliance(responseText);
+
+  // Phase 3: Conversation State Machine Transition
+  const stateTransition = ConversationStateMachine.transition(CONVERSATION_STATES.IDLE, {
+    userMessage: message,
+    hasTools: v2Protocol.tool_calls?.length > 0,
+    toolResults,
+    isFallback,
+  });
+
+  // Phase 6: Explainability Engine Metadata Generation
+  const explanationMetadata = ExplainabilityEngine.generateExplanation(profile, toolResults, verificationMetadata);
+
+  // Phase 7 & Phase 16: Tool Trace Graph & Governance
+  const traceGraph = ToolTraceGraph.buildTraceGraph({
+    sessionId,
+    userId,
+    userMessage: message,
+    stateTransition,
+    provider,
+    retrievedContext: retrievedMemory,
+    executionGraph: orchestration.executionGraph,
+    verificationMetadata,
+    explanationMetadata,
+    responseText,
+  });
+
+  console.info(`[Chat] [${provider}] State: ${stateTransition.nextState}. Response: ${responseText.length} chars. Tools: ${toolResults.length}. Verif: ${verificationMetadata.verification_status}.`);
+
+  // Phase 7 & Phase 16: Complete Multi-Stage Governance Audit Persistence
+  const auditMetadata = {
+    original_llm_response: rawResponseText,
+    validated_v2_protocol: v2Protocol,
+    tool_requests: v2Protocol.tool_calls,
+    tool_outputs: toolResults,
+    execution_graph: orchestration.executionGraph,
+    corrections_applied: verificationMetadata.corrected_fields,
+    final_response: responseText,
+    provider,
+    state: stateTransition.nextState,
+    explainability: explanationMetadata,
+    governance: traceGraph.governance,
+    tokens_used: tokensUsed,
+    latency_ms: latencyMs,
+    grounded_on_profile: true,
+    disclaimer_appended: true,
+    action_cards: validCards,
+    action_cards_summary: validationSummary,
+    arithmetic_verification: verificationMetadata,
+    timestamp: new Date().toISOString(),
+  };
+
+  conversation.messages.push({ role: 'user', content: message, metadata: { grounded_on_profile: true, prompt_injection_detected: securityContext.isInjection } });
   conversation.messages.push({
-    role: 'model', content: responseText,
-    metadata: { tokens_used: tokensUsed, latency_ms: latencyMs, grounded_on_profile: true, disclaimer_appended: responseText.includes('SEBI'), provider },
+    role: 'model',
+    content: responseText,
+    metadata: auditMetadata,
   });
   await conversation.save();
 
   return {
-    response: responseText, session_id: sessionId, latency_ms: latencyMs,
-    tokens_used: tokensUsed, messages_this_hour: rateCheck.count,
-    rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count, grounded: true,
+    version: '3.0',
+    response: responseText,
+    session_id: sessionId,
+    latency_ms: latencyMs,
+    tokens_used: tokensUsed,
+    messages_this_hour: rateCheck.count,
+    rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
+    grounded: true,
+    provider,
+    state: stateTransition.nextState,
+    tool_calls: v2Protocol.tool_calls,
+    tool_results: toolResults,
+    action_cards: validCards,
+    verification: verificationMetadata,
+    explainability: explanationMetadata,
+    governance: traceGraph.governance,
+    audit: auditMetadata,
   };
 }
 

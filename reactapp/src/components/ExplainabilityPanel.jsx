@@ -67,7 +67,7 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
 
   const displaySubtitle = isConsistent
     ? explanation.top_reason
-    : `This recommendation is based on your financial profile. The model analysed your age, income, savings, and risk appetite to generate this suggestion.`;
+    : `Feature contributions below represent TreeSHAP values for a classifier trained on historical AMFI NAV performance statistics.`;
 
   const contributions = explanation.feature_contributions.map(c => {
     const featureKey = c.feature || c.display_name?.toLowerCase().replace(/ /g, '_');
@@ -83,17 +83,13 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
     };
   });
 
-  // Calculate total magnitude for weight percentages
   const totalMagnitude = contributions.reduce((sum, c) => sum + c.magnitude, 0) || 1;
-
-  // Find max absolute value to scale the bars relative to 100% of half-screen width
   const maxShap = Math.max(...contributions.map(c => c.magnitude), 0.1);
-
   const conf = getConfidenceLabel(explanation.confidence || 0);
+  const isLowConfidence = explanation.low_confidence || (explanation.confidence || 0) < 0.55;
 
   return (
     <div className="explainability-card">
-      {/* Figma-grade CSS Styles Scoped Internally */}
       <style>{`
         .explainability-card {
           margin-top: 28px;
@@ -108,18 +104,6 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
-        .explainability-card::before {
-          content: '';
-          position: absolute;
-          top: -60px;
-          left: -60px;
-          width: 150px;
-          height: 150px;
-          background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
-          filter: blur(30px);
-          pointer-events: none;
-        }
-
         .explainability-header {
           display: flex;
           align-items: center;
@@ -132,9 +116,9 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
           align-items: center;
           justify-content: center;
           padding: 4px 10px;
-          background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+          background: linear-gradient(135deg, #0284c7, #3b82f6);
           border-radius: 8px;
-          font-size: 0.72rem;
+          font-size: 0.70rem;
           font-weight: 800;
           color: #fff;
           letter-spacing: 0.5px;
@@ -150,10 +134,21 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
         }
 
         .explainability-subtitle {
-          font-size: 0.88rem;
+          font-size: 0.85rem;
           line-height: 1.65;
           color: #94a3b8;
-          margin: 0 0 24px;
+          margin: 0 0 20px;
+        }
+
+        .low-conf-banner {
+          margin-bottom: 20px;
+          padding: 12px 16px;
+          border-radius: 12px;
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.25);
+          color: #fcd34d;
+          font-size: 0.80rem;
+          line-height: 1.5;
         }
 
         .legend-container {
@@ -182,7 +177,6 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
           border-radius: 50%;
         }
 
-        /* SHAP Table Layout Styles */
         .shap-table {
           width: 100%;
           display: flex;
@@ -209,10 +203,6 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
           border-bottom: 1px solid rgba(255, 255, 255, 0.04);
           position: relative;
           transition: background-color 0.2s ease;
-        }
-
-        .shap-table-row:hover {
-          background-color: rgba(255, 255, 255, 0.015);
         }
 
         .shap-col-factor {
@@ -251,13 +241,8 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
           font-weight: 700;
         }
 
-        .weight-value--positive {
-          color: #10b981;
-        }
-
-        .weight-value--negative {
-          color: #f43f5e;
-        }
+        .weight-value--positive { color: #10b981; }
+        .weight-value--negative { color: #f43f5e; }
 
         .bar-track {
           height: 8px;
@@ -279,8 +264,7 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
 
         .active-bar {
           position: absolute;
-          top: 0;
-          bottom: 0;
+          top: 0; bottom: 0;
           border-radius: 4px;
           transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -302,7 +286,7 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
           pointer-events: none;
           position: absolute;
           background: rgba(15, 23, 42, 0.98);
-          border: 1px solid rgba(139, 92, 246, 0.3);
+          border: 1px solid rgba(56, 189, 248, 0.3);
           box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
           border-radius: 12px;
           padding: 10px 14px;
@@ -352,28 +336,34 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
       `}</style>
 
       <div className="explainability-header">
-        <span className="ai-badge">AI</span>
-        <h3 className="explainability-title">Why this was picked for you</h3>
+        <span className="ai-badge">NAV MODEL</span>
+        <h3 className="explainability-title">NAV Performance Model Factor Attribution</h3>
       </div>
       <p className="explainability-subtitle">{displaySubtitle}</p>
 
-      {/* Sleek Legend Section */}
+      {isLowConfidence && (
+        <div className="low-conf-banner">
+          <strong>Exploratory / Low-Confidence Recommendation:</strong> Prediction confidence is below serving threshold. The system has automatically falling back to rule-based evaluation.
+        </div>
+      )}
+
+      {/* Legend Section */}
       <div className="legend-container">
         <div className="legend-item">
           <span className="legend-dot" style={{ backgroundColor: FEATURE_COLORS.positive }} />
-          Makes this a good fit for you
+          Pulls model toward this asset class
         </div>
         <div className="legend-item">
           <span className="legend-dot" style={{ backgroundColor: FEATURE_COLORS.negative }} />
-          Makes this less ideal for you
+          Pulls model away from this asset class
         </div>
       </div>
 
-      {/* Premium SHAP Table Grid */}
+      {/* TreeSHAP Table Grid */}
       <div className="shap-table">
         <div className="shap-table-header">
           <div className="shap-col-factor">Factor / What You Entered</div>
-          <div className="shap-col-chart" style={{ textAlign: 'center' }}>Impact on Decision</div>
+          <div className="shap-col-chart" style={{ textAlign: 'center' }}>Impact on Model Prediction</div>
           <div className="shap-col-weight">Weight</div>
         </div>
 
@@ -383,17 +373,15 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
 
           return (
             <div key={idx} className="shap-table-row">
-              {/* Dynamic Explanatory Tooltip on Hover */}
               <div className="row-tooltip">
                 <strong style={{ color: item.value >= 0 ? '#34d399' : '#fb7185', fontSize: '0.8rem' }}>
-                  {item.value >= 0 ? '✓ Positive Driver' : '⚠ Risk Offset'}
+                  {item.value >= 0 ? '✓ Positive Feature Weight' : '⚠ Negative Feature Weight'}
                 </strong>
                 <div style={{ marginTop: 6 }}>
-                  Contributed <strong>{influencePercent}%</strong> of the model's decision. This is based on your input value of <strong>{formatRawValue(item.feature, item.raw_value)}</strong>.
+                  TreeSHAP feature contribution: <strong>{influencePercent}%</strong> of model output probability based on input <strong>{formatRawValue(item.feature, item.raw_value)}</strong>.
                 </div>
               </div>
 
-              {/* Column 1: Factor details */}
               <div className="shap-col-factor">
                 <span className="factor-name">
                   <JargonTooltip term={item.name}>{item.name}</JargonTooltip>
@@ -403,7 +391,6 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
                 </span>
               </div>
 
-              {/* Column 2: Bilateral horizontal chart */}
               <div className="shap-col-chart">
                 <div className="bar-track">
                   <div className="center-line" />
@@ -421,7 +408,6 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
                 </div>
               </div>
 
-              {/* Column 3: Impact Weight Percentage */}
               <div className="shap-col-weight">
                 <span className={`weight-value ${item.value >= 0 ? 'weight-value--positive' : 'weight-value--negative'}`}>
                   {item.value >= 0 ? '+' : '-'}{influencePercent}%
@@ -432,7 +418,7 @@ const ExplainabilityPanel = ({ explanation, instrumentName }) => {
         })}
       </div>
 
-      {/* Confidence Score Footer */}
+      {/* Confidence Footer */}
       <div className="confidence-footer">
         <span 
           className="confidence-badge" 

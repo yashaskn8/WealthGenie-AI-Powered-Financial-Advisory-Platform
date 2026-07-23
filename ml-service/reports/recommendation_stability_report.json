@@ -1,0 +1,26 @@
+{
+  "evaluated_sample_count": 500,
+  "overall_stability_pass": true,
+  "scenario_diagnostics": {
+    "age_plus_1": {
+      "prediction_consistency": 0.984,
+      "mean_probability_change": 0.0088
+    },
+    "age_minus_1": {
+      "prediction_consistency": 0.992,
+      "mean_probability_change": 0.0071
+    },
+    "income_plus_5pct": {
+      "prediction_consistency": 0.988,
+      "mean_probability_change": 0.0076
+    },
+    "income_minus_5pct": {
+      "prediction_consistency": 0.984,
+      "mean_probability_change": 0.0088
+    },
+    "horizon_plus_1": {
+      "prediction_consistency": 0.988,
+      "mean_probability_change": 0.0065
+    }
+  }
+}

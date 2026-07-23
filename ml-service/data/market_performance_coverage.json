@@ -1,0 +1,441 @@
+{
+  "source": "AMFI public NAV history via TigZig open data API",
+  "metric": "Annualised trailing Sortino ratio from daily NAV returns, minimum three years",
+  "requested_since": "2022-07-24",
+  "catalogue_instrument_count": 109,
+  "covered_instrument_count": 4,
+  "excluded_instrument_count": 105,
+  "covered_instrument_ids": [
+    "parag_parikh_flexi",
+    "sbi_bluechip",
+    "hdfc_midcap",
+    "mirae_elss"
+  ],
+  "excluded_instruments": [
+    {
+      "instrument_id": "ppf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "scss",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "sukanya",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "rbi_bonds",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "sgb",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nsc",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "kvp",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "pomis",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "mssc",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "apy",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "sbi_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "hdfc_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "icici_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "axis_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "kotak_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "indusind_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "idfc_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "au_sfb_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "ujjivan_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "equitas_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "canara_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "pnb_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "bob_fd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "po_rd",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "liquid_mf",
+      "reason": "AMFI scheme-name mismatch for liquid_mf: expected 'ICICI Prudential Liquid Fund - Direct Plan - Growth', received 'NIPPON INDIA DYNAMIC BOND FUND - Direct Plan - QUARTERLY IDCW Option'"
+    },
+    {
+      "instrument_id": "overnight_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "ultra_short_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "low_duration_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "money_market_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "debt_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "short_duration_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "medium_duration_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "corporate_bond_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "banking_psu_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "dynamic_bond_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "gilt_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "floater_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "credit_risk_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "index_mf",
+      "reason": "AMFI scheme-name mismatch for index_mf: expected 'Nippon India Index Fund - Nifty 50 Plan - Direct Plan - Growth Option', received 'HDFC Income Fund - Growth Option - Direct Plan'"
+    },
+    {
+      "instrument_id": "elss",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "midcap_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "smallcap_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "hybrid_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "large_cap_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "large_mid_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "flexi_cap_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "multi_cap_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "focused_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "value_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "contra_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "dividend_yield_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "agg_hybrid_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "equity_savings_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "mfg_sector_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "infra_sector_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "pharma_sector_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "banking_sector_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "it_sector_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "consumption_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "esg_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "us_equity_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "global_equity_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nifty_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "sensex_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nifty_next_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "midcap_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "bank_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "it_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "cpse_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "bharat_bond_2030",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "silver_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "liquid_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nasdaq_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "sp500_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "gold_etf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "gold_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "sgb_secondary",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "embassy_reit",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "mindspace_reit",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "brookfield_reit",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nexus_reit",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "indigrid_invit",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "powergrid_invit",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "aaa_corporate_bond",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "aa_corporate_bond",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "tax_free_bonds",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "bharat_bond_direct",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "g_sec",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "municipal_bonds",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "bonds_54ec",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nps",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "nps_tier_2",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "epf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "vpf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "ulip",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "endowment_plan",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "term_mf_combo",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "bluechip_stocks",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "large_cap_stocks",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "mid_cap_stocks",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "small_cap_stocks",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "direct_equity",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "arbitrage_mf",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    },
+    {
+      "instrument_id": "po_td_1yr",
+      "reason": "No exact, auditable daily NAV or price-series identifier is configured for this catalogue entry"
+    }
+  ],
+  "retrieval_failures": {
+    "index_mf": "AMFI scheme-name mismatch for index_mf: expected 'Nippon India Index Fund - Nifty 50 Plan - Direct Plan - Growth Option', received 'HDFC Income Fund - Growth Option - Direct Plan'",
+    "liquid_mf": "AMFI scheme-name mismatch for liquid_mf: expected 'ICICI Prudential Liquid Fund - Direct Plan - Growth', received 'NIPPON INDIA DYNAMIC BOND FUND - Direct Plan - QUARTERLY IDCW Option'"
+  },
+  "important_limitation": "These are real instrument-performance outcomes, not observed investor-to-instrument recommendation outcomes. They must not be used as labels for the investor-profile classifier."
+}
