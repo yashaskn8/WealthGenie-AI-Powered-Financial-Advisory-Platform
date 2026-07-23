@@ -73,9 +73,6 @@ app.use(enforceJsonContentType);
 app.use(express.json({ limit: '100kb' }));
 
 // ── NoSQL Injection Prevention ───────────────────────────────────
-// BEGINNER NOTE: NoSQL injection happens when attackers send malicious query operators 
-// (like { "$gt": "" }) in request parameters to bypass database checks.
-// This middleware sanitizes the user input by stripping out any keys starting with "$" or ".".
 app.use(mongoSanitize());
 
 // ── Request Logging ──────────────────────────────────────────────

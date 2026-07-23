@@ -43,7 +43,7 @@ We adopted **TreeSHAP** (`shap.TreeExplainer`) as the core explainability engine
 - Requires computing matrix SHAP values during `/predict/enriched` microservice calls.
 
 ## References
-- [ExplainabilityPanel.jsx](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/reactapp/src/components/ExplainabilityPanel.jsx)
-- [main.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/main.py)
-- [feature_importance_report.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/reports/feature_importance_report.json)
-- [model_card.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/model_card.md)
+- [ExplainabilityPanel.jsx](../../reactapp/src/components/ExplainabilityPanel.jsx)
+- [main.py](../../ml-service/main.py)
+- [feature_importance_report.json](../../ml-service/reports/feature_importance_report.json)
+- [model_card.md](../../ml-service/model/model_card.md)

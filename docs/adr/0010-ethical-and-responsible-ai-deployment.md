@@ -39,7 +39,7 @@ We established strict ethical guidelines, financial disclaimers, and human overs
 - Requires user confirmation steps before any portfolio rebalancing or allocation execution.
 
 ## References
-- [fairness_diagnostics_report.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/reports/fairness_diagnostics_report.json)
-- [model_card.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/model_card.md)
-- [ExplainabilityPanel.jsx](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/reactapp/src/components/ExplainabilityPanel.jsx)
-- [ADR-004: Confidence Calibration and Fallback Serving](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0004-confidence-calibration-and-fallback-serving.md)
+- [fairness_diagnostics_report.json](../../ml-service/reports/fairness_diagnostics_report.json)
+- [model_card.md](../../ml-service/model/model_card.md)
+- [ExplainabilityPanel.jsx](../../reactapp/src/components/ExplainabilityPanel.jsx)
+- [ADR-004: Confidence Calibration and Fallback Serving](0004-confidence-calibration-and-fallback-serving.md)

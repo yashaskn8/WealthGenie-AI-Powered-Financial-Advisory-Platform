@@ -39,7 +39,7 @@ We established a drift detection reference infrastructure:
 - Requires persisting reference distribution artifacts alongside model binaries.
 
 ## References
-- [reference_distribution.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/reports/reference_distribution.json)
-- [generate_production_reports.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/generate_production_reports.py)
-- [model_card.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/model_card.md)
-- [ADR-008: Synthetic Data Limitations and Real-World Gap](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0008-synthetic-data-limitations-and-real-world-gap.md)
+- [reference_distribution.json](../../ml-service/reports/reference_distribution.json)
+- [generate_production_reports.py](../../ml-service/model/generate_production_reports.py)
+- [model_card.md](../../ml-service/model/model_card.md)
+- [ADR-008: Synthetic Data Limitations and Real-World Gap](0008-synthetic-data-limitations-and-real-world-gap.md)

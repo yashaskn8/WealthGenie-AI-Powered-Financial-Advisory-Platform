@@ -39,7 +39,7 @@ We implemented a strict, end-to-end reproducibility and provenance tracking arch
 - Requires subprocess git queries during pipeline execution.
 
 ## References
-- [train.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/train.py)
-- [metadata.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/metadata.json)
-- [suitability_config.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/config/suitability_config.json)
-- [test_label_construction.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/tests/test_label_construction.py)
+- [train.py](../../ml-service/model/train.py)
+- [metadata.json](../../ml-service/model/metadata.json)
+- [suitability_config.json](../../ml-service/config/suitability_config.json)
+- [test_label_construction.py](../../ml-service/tests/test_label_construction.py)

@@ -7,42 +7,32 @@ Accepted
 2026-07-23
 
 ## Context
-When refactoring the recommendation engine away from circular self-labeling, a key design decision arose regarding label generation: should target labels constructed from investor profiles and historical NAV statistics include stochastic (random) label noise or remain purely deterministic?
-
-In some machine learning literature, adding Gaussian or uniform label noise is suggested to simulate real-world human preference variance and prevent decision tree classifiers from over-fitting to exact mathematical boundaries. However, in automated financial systems, introducing artificial randomness into supervisory training targets has significant architectural consequences.
+When training recommendation models, target label generation must be deterministic, auditable, and isolated from stochastic noise. If label generation incorporates random perturbations or unseeded noise, model training becomes non-reproducible, complicating performance debugging and model compliance audits.
 
 ## Decision
-We decided that supervisory target generation in `ml-service/model/label_construction.py` must remain **100% deterministic**.
-
-We explicitly rejected adding artificial random noise to training labels for the following reasons:
-1. **Auditability & Provenance:** Grounding supervisory targets in empirical NAV performance and documented suitability equations requires an unbroken, verifiable audit trail. Random label corruption breaks mathematical auditability.
-2. **Reproducibility:** Deterministic target construction ensures that given identical profile data and suitability policy configurations (`suitability_config.json`), model retraining yields byte-for-byte reproducible dataset artifacts (`investment_profiles.csv`).
-3. **Uncertainty Separation:** True prediction uncertainty belongs in probability calibration (ECE/MCE), model confidence thresholding, and ensemble variance estimation—not in artificial label corruption.
+We implemented a strictly deterministic target label construction architecture in `label_construction.py`:
+1. **Deterministic Target Mapping:** Given an investor feature vector $x$ and historical AMFI NAV performance statistics, the target mapping algorithm produces a deterministic asset allocation label $y \in \{\text{Equity\_MF}, \text{Debt\_MF}, \text{Hybrid\_MF}, \text{ELSS}, \text{Gold\_ETF}, \text{FD\_Bond}\}$.
+2. **Fixed Random Seeds:** Synthetic profile feature generation pins random seeds (`np.random.seed(42)`), guaranteeing byte-for-byte identical dataset generation across test runs.
+3. **Audit Logging:** Every dataset generation run outputs `market_performance_coverage.json` verifying that 100% of target asset classes map to historical AMFI NAV statistics.
 
 ## Alternatives Considered
 
-### 1. Stochastic Label Noise Perturbation ($\sigma > 0$)
-- **Pros:** Smoothes hard decision boundaries; lowers raw tree training accuracy.
-- **Cons:** Destroys exact reproducibility; corrupts supervisory provenance; makes experiment comparison non-deterministic.
-- **Reason for Rejection:** Fails reproducible engineering standards and compromises data provenance.
-
-### 2. Human Preference Stochastic Simulation
-- **Pros:** Models random human behavioral quirks.
-- **Cons:** Arbitrary noise distribution choice; unsupported by empirical transaction evidence.
-- **Reason for Rejection:** Replaces deterministic policy with ungrounded random heuristics.
+### 1. Stochastic Noise Injection During Target Labeling
+- **Pros:** Simulates human advisor disagreement variance.
+- **Cons:** Destroys training reproducibility; makes model metrics non-deterministic.
+- **Reason for Rejection:** Fails reproducibility and audit requirements.
 
 ## Consequences
 
 ### Positive
-- 100% reproducible training dataset generation across independent pipeline runs.
-- Verifiable mathematical audit trail connecting profile inputs, policy configuration parameters, and target class assignments.
-- Enables precise sensitivity analysis (`label_sensitivity_report.json`) by isolating policy parameter shifts from random variance.
+- 100% reproducible training datasets across environments.
+- Enforced via unit tests in `test_label_construction.py`.
 
 ### Negative / Trade-Offs
-- The machine learning classifier learns smooth, continuous approximations of deterministic utility boundaries, resulting in high CV accuracies ($95.30\%$) on synthetic datasets.
+- Does not model random human advisor decision noise.
 
 ## References
-- [label_construction.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/label_construction.py)
-- [suitability_config.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/config/suitability_config.json)
-- [ADR-001: Elimination of Circular Labeling](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0001-elimination-of-circular-labeling.md)
-- [ADR-007: Reproducibility & Provenance Tracking](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0007-reproducibility-and-provenance-tracking.md)
+- [label_construction.py](../../ml-service/model/label_construction.py)
+- [suitability_config.json](../../ml-service/config/suitability_config.json)
+- [ADR-001: Elimination of Circular Labeling](0001-elimination-of-circular-labeling.md)
+- [ADR-007: Reproducibility & Provenance Tracking](0007-reproducibility-and-provenance-tracking.md)

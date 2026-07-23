@@ -41,7 +41,7 @@ We explicitly document the synthetic data limitations in `model_card.md` and est
 - Reported model accuracy ($95.53\%$) reflects performance on synthetic profile distributions and cannot guarantee identical real-world generalization.
 
 ## References
-- [model_card.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/model_card.md)
-- [train.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/train.py)
-- [ADR-001: Elimination of Circular Labeling](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0001-elimination-of-circular-labeling.md)
-- [ADR-009: Production Monitoring and Drift Readiness](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0009-production-monitoring-and-drift-readiness.md)
+- [model_card.md](../../ml-service/model/model_card.md)
+- [train.py](../../ml-service/model/train.py)
+- [ADR-001: Elimination of Circular Labeling](0001-elimination-of-circular-labeling.md)
+- [ADR-009: Production Monitoring and Drift Readiness](0009-production-monitoring-and-drift-readiness.md)

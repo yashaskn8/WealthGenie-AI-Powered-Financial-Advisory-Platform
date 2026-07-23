@@ -44,7 +44,7 @@ We adopted a multi-dimensional evaluation philosophy reported in `metadata.json`
 - Increases training pipeline runtime by ~15 seconds to execute cross-validation and 200 bootstrap iterations.
 
 ## References
-- [train.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/train.py)
-- [metadata.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/metadata.json)
-- [generate_production_reports.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/generate_production_reports.py)
-- [model_card.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/model_card.md)
+- [train.py](../../ml-service/model/train.py)
+- [metadata.json](../../ml-service/model/metadata.json)
+- [generate_production_reports.py](../../ml-service/model/generate_production_reports.py)
+- [model_card.md](../../ml-service/model/model_card.md)

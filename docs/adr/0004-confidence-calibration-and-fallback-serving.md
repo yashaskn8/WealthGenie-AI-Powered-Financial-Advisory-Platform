@@ -38,8 +38,8 @@ We implemented a two-part confidence calibration and fallback serving architectu
 - Approximately 10% of validation edge profiles trigger `low_confidence: true` fallback UI banners.
 
 ## References
-- [schemas.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/schemas.py)
-- [main.py](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/main.py)
-- [metadata.json](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/ml-service/model/metadata.json)
-- [ExplainabilityPanel.jsx](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/reactapp/src/components/ExplainabilityPanel.jsx)
-- [ADR-003: Rule-Based Baseline Isolation](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0003-rule-based-baseline-isolation.md)
+- [schemas.py](../../ml-service/schemas.py)
+- [main.py](../../ml-service/main.py)
+- [metadata.json](../../ml-service/model/metadata.json)
+- [ExplainabilityPanel.jsx](../../reactapp/src/components/ExplainabilityPanel.jsx)
+- [ADR-003: Rule-Based Baseline Isolation](0003-rule-based-baseline-isolation.md)

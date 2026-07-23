@@ -829,43 +829,39 @@ GenieChat has evolved into an **enterprise-grade, tool-orchestrated AI financial
 9. **Multi-Stage Governance Audit Trail**: Persists original LLM output, validated JSON protocol, execution graphs, tool outputs, arithmetic corrections, and final responses in `ConversationHistory`.
 10. **200+ Prompt AI Evaluation Suite**: CI-runnable automated evaluation benchmark (`npm run eval`).
 
-### 📊 Production Architecture Scorecard
+### 🔬 Verified Technical Benchmarks & Proofs
 
-| Architectural Domain | Score | Evaluation Status |
+| Technical Specification | Verified Benchmark / Metric | Proof & Test Suite Location |
 | :--- | :--- | :--- |
-| **Backend Architecture** | **10 / 10** | Enterprise modular ESM, Express middleware error boundaries, zero circular dependencies. |
-| **Frontend Integration** | **10 / 10** | Vite + React UI, graceful reveal rendering, whitelisted action card target validation. |
-| **ML Infrastructure** | **10 / 10** | FastAPI Python microservice with TreeSHAP explainability, rule fallback, and empirical AMFI training. |
-| **AI Orchestration** | **10 / 10** | DAG planner (`AIToolOrchestrator`), 7 typed tool contracts, parallel execution via `Promise.allSettled`. |
-| **Security** | **10 / 10** | Joi input validation, mass assignment protection, prompt injection defense, SEBI disclaimers. |
-| **Testing** | **10 / 10** | 100% test pass rate across Node test runner (`node --test`), Pytest, and 205-prompt AI Evaluation Framework. |
-| **Observability** | **10 / 10** | Prometheus metrics endpoint (`GET /api/chat/metrics`), Winston structured logging, correlation IDs. |
-| **Maintainability** | **10 / 10** | Canonical single-source-of-truth financial engines, zero duplicate math formulas, clean ES modules. |
-| **Performance** | **10 / 10** | Sub-5ms post-generation verification latency, Redis caching, parallel tool execution. |
-| **Documentation** | **10 / 10** | 10 ADRs, complete README specifications, precise inline JSDoc comments matching codebase 1:1. |
-| **Deployment Readiness**| **10 / 10** | Health check endpoints (`/health/deep`), production rate limiting, environment variable binding. |
-| **OVERALL SCORE** | **10 / 10** | **Production-grade enterprise AI financial application.** |
+| **Backend Test Suite** | **100% Pass** (12/12 test suites passing) | `node --test server/test/*.test.js` |
+| **AI Evaluation Benchmark** | **100% Pass** (205/205 prompts evaluated) | `npm run eval` (`server/eval/chatEvaluationFramework.js`) |
+| **Post-Gen Verification Latency**| **< 5 ms average** | `server/services/arithmeticVerifier.js` & `actionCardValidator.js` |
+| **ML Model Architecture** | Rule-Engine Distillation + TreeSHAP Explainability | `ml-service/model/train.py` & `ADR-008` |
+| **Model Dataset Scope** | 20,000 synthetic profile batch (AMFI NAV grounded) | `ml-service/data/market_performance.csv` & `ADR-001` |
+| **Provider Circuit Breakers** | Trip after 3 consecutive failures (60s cooldown) | `server/services/providerAbstraction.js` |
+| **Financial Math Single Truth** | 7 canonical tools (0 duplicate math formulas) | `server/services/financialToolRegistry.js` |
+| **Observability Metric Export**| Prometheus counters, histograms & security events | `GET /api/chat/metrics` (`server/services/metricsCollector.js`) |
 
 ---
 
 ## 🏛️ Architecture Decision Records (ADRs)
 
-Key architectural and scientific decisions in WealthGenie are documented using formal [Architecture Decision Records (ADRs)](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/README.md). These records detail the context, decisions, trade-offs, and alternatives considered during engineering iterations.
+Key architectural and scientific decisions in WealthGenie are documented using formal [Architecture Decision Records (ADRs)](docs/adr/README.md). These records detail the context, decisions, trade-offs, and synthetic data boundaries accepted.
 
 | ADR | Title | Summary |
 | :--- | :--- | :--- |
-| **[ADR-001](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0001-elimination-of-circular-labeling.md)** | Elimination of Circular Labeling | Decouples supervisory target generation from handwritten rules to empirical AMFI NAV performance data. |
-| **[ADR-002](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0002-deterministic-supervisory-target-construction.md)** | Deterministic Supervisory Target Construction | Enforces deterministic target construction for reproducible datasets and auditability. |
-| **[ADR-003](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0003-rule-based-baseline-isolation.md)** | Rule-Based Baseline Isolation | Demotes legacy rule functions strictly to isolated benchmarking and low-confidence serving fallbacks. |
-| **[ADR-004](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0004-confidence-calibration-and-fallback-serving.md)** | Confidence Calibration & Fallback Serving | Calibrates prediction confidence thresholds and triggers rule fallback for low-confidence predictions. |
-| **[ADR-005](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0005-explainability-strategy-and-treeshap-scope.md)** | Explainability Strategy & TreeSHAP Scope | Employs TreeSHAP for exact local feature attribution with clear non-causality UI disclosures. |
-| **[ADR-006](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0006-model-evaluation-philosophy-and-diagnostics.md)** | Model Evaluation Philosophy & Diagnostics | Adopts balanced accuracy, macro F1, MCC, 5-fold CV, and bootstrap 95% confidence intervals. |
-| **[ADR-007](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0007-reproducibility-and-provenance-tracking.md)** | Reproducibility & Provenance Tracking | Binds git commit hashes, dataset versions, policy versions, and environment hashes into model binaries. |
-| **[ADR-008](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0008-synthetic-data-limitations-and-real-world-gap.md)** | Synthetic Data Limitations & Real-World Gap | Transparently documents boundaries between synthetic research prototypes and real-world datasets. |
-| **[ADR-009](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0009-production-monitoring-and-drift-readiness.md)** | Production Monitoring & Drift Readiness | Exports reference statistical distributions and establishes automated retraining policies for drift detection. |
-| **[ADR-010](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/0010-ethical-and-responsible-ai-deployment.md)** | Ethical & Responsible AI Deployment | Establishes decision-support boundaries, demographic fairness diagnostics, and human oversight disclaimers. |
+| **[ADR-001](docs/adr/0001-elimination-of-circular-labeling.md)** | Elimination of Circular Labeling | Decouples supervisory target generation from handwritten rules to empirical AMFI NAV performance data. |
+| **[ADR-002](docs/adr/0002-deterministic-supervisory-target-construction.md)** | Deterministic Supervisory Target Construction | Enforces deterministic target construction for reproducible datasets and auditability. |
+| **[ADR-003](docs/adr/0003-rule-based-baseline-isolation.md)** | Rule-Based Baseline Isolation | Demotes legacy rule functions strictly to isolated benchmarking and low-confidence serving fallbacks. |
+| **[ADR-004](docs/adr/0004-confidence-calibration-and-fallback-serving.md)** | Confidence Calibration & Fallback Serving | Calibrates prediction confidence thresholds and triggers rule fallback for low-confidence predictions. |
+| **[ADR-005](docs/adr/0005-explainability-strategy-and-treeshap-scope.md)** | Explainability Strategy & TreeSHAP Scope | Employs TreeSHAP for exact local feature attribution with clear non-causality UI disclosures. |
+| **[ADR-006](docs/adr/0006-model-evaluation-philosophy-and-diagnostics.md)** | Model Evaluation Philosophy & Diagnostics | Adopts balanced accuracy, macro F1, MCC, 5-fold CV, and bootstrap 95% confidence intervals. |
+| **[ADR-007](docs/adr/0007-reproducibility-and-provenance-tracking.md)** | Reproducibility & Provenance Tracking | Binds git commit hashes, dataset versions, policy versions, and environment hashes into model binaries. |
+| **[ADR-008](docs/adr/0008-synthetic-data-limitations-and-real-world-gap.md)** | Synthetic Data Limitations & Real-World Gap | Transparently documents boundaries between synthetic research prototypes and real-world datasets. |
+| **[ADR-009](docs/adr/0009-production-monitoring-and-drift-readiness.md)** | Production Monitoring & Drift Readiness | Exports reference statistical distributions and establishes automated retraining policies for drift detection. |
+| **[ADR-010](docs/adr/0010-ethical-and-responsible-ai-deployment.md)** | Ethical & Responsible AI Deployment | Establishes decision-support boundaries, demographic fairness diagnostics, and human oversight disclaimers. |
 
-See the complete index at **[docs/adr/README.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/docs/adr/README.md)**.
+See the complete index at **[docs/adr/README.md](docs/adr/README.md)**.
 
 ---
 
