@@ -94,7 +94,7 @@ export async function processChat({ userId, user, message, sessionId }) {
   const retrievedMemory = LayeredMemoryManager.buildRetrievedContext(message, profile, goals, recommendation, conversation.messages);
   const formattedMemoryContext = LayeredMemoryManager.formatForPrompt(retrievedMemory);
 
-  const promptCacheKey = `chat:sysprompt_v3:${userId}:${profile._id}`;
+  const promptCacheKey = `chat:sysprompt_v3:${userId}:${profile._id}:${goals.length}:${recommendation?.generatedAt || 'none'}`;
   let baseSystemPrompt = await getCache(promptCacheKey);
   if (!baseSystemPrompt) {
     let marketData = null;

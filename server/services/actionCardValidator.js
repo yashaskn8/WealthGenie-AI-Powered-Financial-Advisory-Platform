@@ -54,6 +54,14 @@ const actionCardSchema = Joi.object({
 }).unknown(false);
 
 /**
+ * Checks for prototype pollution attack keys in JSON objects.
+ */
+function containsPrototypePollution(jsonStr) {
+  if (!jsonStr) return false;
+  return /"__proto__"|"constructor"|"prototype"/i.test(jsonStr);
+}
+
+/**
  * Parses and validates ACTION_CARD JSON blocks embedded in chat response text.
  * Strips invalid card blocks without throwing errors or breaking text responses.
  *
@@ -77,6 +85,13 @@ export function validateAndSanitizeActionCards(responseText) {
     totalFound++;
     const rawJsonStr = match[1];
     const fullMatchBlock = match[0];
+
+    if (containsPrototypePollution(rawJsonStr)) {
+      console.warn('[ActionCardValidator] Prototype pollution attempt detected in card block, stripping.');
+      cleanedText = cleanedText.replace(fullMatchBlock, '');
+      strippedCount++;
+      continue;
+    }
 
     try {
       const parsedJson = JSON.parse(rawJsonStr);
