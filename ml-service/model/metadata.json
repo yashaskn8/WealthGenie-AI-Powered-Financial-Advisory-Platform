@@ -1,12 +1,12 @@
 {
   "model_name": "RandomForest",
-  "git_commit_hash": "ffa37ba",
+  "git_commit_hash": "e5c286d",
   "model_version": "3.0.0",
   "dataset_version": "3.0.0",
   "policy_config_version": "1.0.0",
-  "dataset_timestamp": "2026-07-23T18:06:30.668127+00:00",
-  "trained_at": "2026-07-23T18:06:30.668127+00:00",
-  "training_time_seconds": 38.22,
+  "dataset_timestamp": "2026-07-23T19:28:42.559121+00:00",
+  "trained_at": "2026-07-23T19:28:42.559121+00:00",
+  "training_time_seconds": 38.21,
   "test_accuracy": 0.9553,
   "balanced_accuracy": 0.858,
   "macro_f1": 0.8601,
@@ -141,9 +141,9 @@
     "environment_hash": "2d94978357",
     "model_size_bytes": 14209690,
     "inference_latency_ms": {
-      "p50": 2.992,
-      "p95": 3.54,
-      "p99": 3.713
+      "p50": 3.606,
+      "p95": 6.078,
+      "p99": 6.682
     }
   },
   "delta_note": "The accuracy delta measures agreement between the retrained ML model and the new NAV-derived target vs agreement with the legacy heuristic rule. It does NOT measure investment return improvement."
