@@ -8,8 +8,18 @@ import { localToBackendInstrument } from '../utils/instrumentTypeMap';
 import './RebalancerScreen.css';
 
 const RISK_COLORS = {
+  1: '#10b981', 2: '#34d399', 3: '#f59e0b', 4: '#ef4444', 5: '#dc2626',
   'Very Low': '#10b981', 'Low': '#34d399', 'Low-Medium': '#a3e635', 'Medium-Low': '#fbbf24',
   'Medium': '#f59e0b', 'High': '#ef4444', 'Very High': '#dc2626'
+};
+
+const getRiskLabelString = (inv) => {
+  if (!inv) return 'Medium';
+  if (inv.riskLabel) return inv.riskLabel;
+  if (inv.risk_level) return inv.risk_level;
+  if (typeof inv.risk === 'string') return inv.risk;
+  const numToLabel = { 1: 'Very Low', 2: 'Low', 3: 'Medium', 4: 'High', 5: 'Very High' };
+  return numToLabel[inv.risk] || 'Medium';
 };
 
 const AnimatedNumber = ({ value, duration = 800 }) => {
@@ -846,8 +856,8 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
             {recs.map(inv => {
               const origPct = originalAllocations[inv.id] || 0;
               if (origPct <= 0) return null;
-              const riskLabel = inv.risk_level || inv.riskLabel || 'Medium';
-              const color = RISK_COLORS[riskLabel] || '#818cf8';
+              const riskLabel = getRiskLabelString(inv);
+              const color = RISK_COLORS[riskLabel] || RISK_COLORS[inv.risk] || '#818cf8';
               return (
                 <div key={inv.id} className="ai-rec-item">
                   <div className="ai-rec-item-info">
@@ -877,10 +887,11 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
             <button
               type="button"
               onClick={() => {
-                setAllocations(originalAllocations);
-                setPreset(detectPreset(originalAllocations, recs));
-                fetchProjections(originalAllocations);
-                fetchMonteCarlo(originalAllocations);
+                const targetAllocs = buildAllocations(recs, totalSavings);
+                setAllocations(targetAllocs);
+                setPreset(detectPreset(targetAllocs, recs));
+                fetchProjections(targetAllocs);
+                fetchMonteCarlo(targetAllocs);
               }}
               className="btn-ai-recommendation-premium"
             >

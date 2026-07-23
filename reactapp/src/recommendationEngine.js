@@ -179,9 +179,12 @@ export function getEligibleInvestments(profile) {
     }
 
     // ── RISK-APPETITE GATING ──
-    if (risk === "low" && inv.risk >= 4) return false;
-    if (risk === "low" && inv.risk >= 3 && horizon <= 5) return false;
-    if (risk === "high" && inv.risk === 1 && horizon <= 3) return false;
+    const numericRisk = typeof inv.risk === 'number' ? inv.risk : (inv.risk_level === 'Very High' ? 5 : inv.risk_level === 'High' ? 4 : inv.risk_level === 'Medium' ? 3 : 2);
+    if (risk === "low" && numericRisk >= 4) return false;
+    if (risk === "low" && numericRisk >= 3 && horizon <= 5) return false;
+    if (risk === "medium" && numericRisk >= 5) return false;
+    if (risk === "medium" && numericRisk >= 4 && horizon < 5) return false;
+    if (risk === "high" && numericRisk === 1 && horizon <= 3) return false;
 
     // ── TAX-AWARE EXCLUSIONS ──
     if (inv.id === "elss" && mr === 0) return false;
