@@ -23,11 +23,12 @@ from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import (
     classification_report, accuracy_score, confusion_matrix, brier_score_loss,
     f1_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score
 )
-
+from sklearn.inspection import permutation_importance
 import joblib
 
 SYS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
