@@ -5,12 +5,12 @@
 The `main` branch is protected with strict status checks and code review requirements.
 
 ### Enforced Status Checks (Must Pass Before Merge)
-1. `secret-scan-gate`
-2. `docs-sync-gate`
-3. `backend-quality-matrix (ubuntu-latest, 20.x, 7.0)`
-4. `backend-quality-matrix (windows-latest, 22.x, 7.0)`
-5. `frontend-quality-matrix (ubuntu-latest, 20.x)`
-6. `ml-microservice-quality (ubuntu-latest, 3.12)`
+1. `Secret Scanning Gate`
+2. `Documentation Sync Gate`
+3. `Backend Linux (Node 20.x, Mongo 7.0)`
+4. `Backend Windows (Node 20.x)`
+5. `Frontend (Node 20.x, ubuntu-latest)`
+6. `ML Service (Python 3.12, ubuntu-latest)`
 
 ### Protection Settings Configuration
 
@@ -21,7 +21,8 @@ The `main` branch is protected with strict status checks and code review require
     "contexts": [
       "Secret Scanning Gate",
       "Documentation Sync Gate",
-      "Backend (Node 20.x, MongoDB 7.0, ubuntu-latest)",
+      "Backend Linux (Node 20.x, Mongo 7.0)",
+      "Backend Windows (Node 20.x)",
       "Frontend (Node 20.x, ubuntu-latest)",
       "ML Service (Python 3.12, ubuntu-latest)"
     ]
