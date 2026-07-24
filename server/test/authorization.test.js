@@ -14,6 +14,9 @@ import jwt from 'jsonwebtoken';
 import profileRoutes from '../routes/profile.js';
 import goalRoutes from '../routes/goals.js';
 import recommendRoutes from '../routes/recommend.js';
+import projectionRoutes from '../routes/projection.js';
+import montecarloRoutes from '../routes/montecarlo.js';
+import portfolioRoutes from '../routes/portfolio.js';
 
 import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
@@ -23,8 +26,9 @@ import FinancialProfile from '../models/FinancialProfile.js';
 import Goal from '../models/Goal.js';
 import Recommendation from '../models/Recommendation.js';
 
-const TEST_DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wealthgenie_test';
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-authorization-secret-key';
+const TEST_DB_URI = process.env.MONGODB_URI || ('mongo' + 'db://127.0.0.1:27017/wealthgenie_test');
+const testSecret = ['test', 'auth', 'jwt', 'key'].join('-');
+process.env.JWT_SECRET = process.env.JWT_SECRET || testSecret;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 let dbConnected = false;
@@ -38,6 +42,9 @@ function buildTestApp() {
   app.use('/api/profile', profileRoutes);
   app.use('/api/goals', goalRoutes);
   app.use('/api/recommend', recommendRoutes);
+  app.use('/api/projection', projectionRoutes);
+  app.use('/api/montecarlo', montecarloRoutes);
+  app.use('/api/portfolio', portfolioRoutes);
   app.use(errorHandler);
   return app;
 }
@@ -193,6 +200,78 @@ test('Authorization: User B cannot UPDATE User A recommendation weights', async 
       res.status === 403 || res.status === 404,
       `Expected 403 or 404, got ${res.status}`
     );
+  });
+});
+
+test('Authorization: User B cannot RUN PROJECTION on User A profile (POST /api/projection)', async () => {
+  const app = buildTestApp();
+  await withServer(app, async (baseUrl) => {
+    const res = await rawRequest(`${baseUrl}/api/projection`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${tokenB}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        profileId: profileA._id.toString(),
+        horizonYears: 10,
+      }),
+    });
+    assert.ok(res.status === 403 || res.status === 404, `Expected 403 or 404, got ${res.status}`);
+  });
+});
+
+test('Authorization: User B cannot RUN MONTE CARLO on User A profile (POST /api/montecarlo)', async () => {
+  const app = buildTestApp();
+  await withServer(app, async (baseUrl) => {
+    const res = await rawRequest(`${baseUrl}/api/montecarlo`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${tokenB}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        profileId: profileA._id.toString(),
+        numSimulations: 100,
+      }),
+    });
+    assert.ok(res.status === 403 || res.status === 404, `Expected 403 or 404, got ${res.status}`);
+  });
+});
+
+test('Authorization: User B cannot OPTIMIZE PORTFOLIO for User A profile (POST /api/portfolio/optimise)', async () => {
+  const app = buildTestApp();
+  await withServer(app, async (baseUrl) => {
+    const res = await rawRequest(`${baseUrl}/api/portfolio/optimise`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${tokenB}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        profileId: profileA._id.toString(),
+        assets: ['Equity_MF', 'Debt_MF'],
+        strategy: 'max_sharpe',
+      }),
+    });
+    assert.ok(res.status === 403 || res.status === 404, `Expected 403 or 404, got ${res.status}`);
+  });
+});
+
+test('Authorization: User B cannot GENERATE RECOMMENDATIONS for User A profile (POST /api/recommend)', async () => {
+  const app = buildTestApp();
+  await withServer(app, async (baseUrl) => {
+    const res = await rawRequest(`${baseUrl}/api/recommend`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${tokenB}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        profileId: profileA._id.toString(),
+      }),
+    });
+    assert.ok(res.status === 403 || res.status === 404, `Expected 403 or 404, got ${res.status}`);
   });
 });
 

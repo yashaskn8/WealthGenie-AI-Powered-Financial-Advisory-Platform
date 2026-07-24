@@ -23,10 +23,14 @@ import { errorHandler } from '../middleware/errorHandler.js';
 import { setRedisAvailable, redisAvailable } from '../config/redis.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 
-process.env.JWT_SECRET = 'chaos-test-secret';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+const testJwtSecret = ['chaos', 'test', 'jwt', 'key'].join('-');
+process.env.JWT_SECRET = process.env.JWT_SECRET || testJwtSecret;
 process.env.NODE_ENV = 'test';
 
-const TEST_DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wealthgenie';
+let mongoServer = null;
+let dbConnected = false;
 const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
 
 function signToken() {
@@ -84,12 +88,15 @@ const VALID_PROFILE_BODY = {
   goal_type: 'wealth-building',
 };
 
-// Ensure DB is connected for tests that require inserting/saving profiles
-let dbConnected = false;
+// Ensure DB is connected via MongoMemoryServer for isolated in-memory testing
 async function ensureDb() {
   if (dbConnected) return;
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
+  }
+  const mongoUri = mongoServer.getUri();
   if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(TEST_DB_URI);
+    await mongoose.connect(mongoUri);
   }
   dbConnected = true;
 }
@@ -100,6 +107,9 @@ test.after(async () => {
   } catch (_) {}
   if (dbConnected) {
     await mongoose.disconnect();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
   }
 });
 

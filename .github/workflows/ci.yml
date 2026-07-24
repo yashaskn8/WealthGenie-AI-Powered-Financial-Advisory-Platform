@@ -1,0 +1,72 @@
+name: CI Test Matrix & Quality Gate
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-test-matrix:
+    name: Backend Tests (Node ${{ matrix.node-version }}, MongoDB ${{ matrix.mongodb-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [18.x, 20.x, 22.x]
+        mongodb-version: ['6.0', '7.0']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run Backend Unit & Integration Tests with Coverage
+        run: |
+          cd server
+          npm run test:coverage
+
+      - name: Run Load Test Benchmark
+        run: |
+          cd server
+          npm run loadtest
+
+  frontend-test-matrix:
+    name: Frontend Tests (Node ${{ matrix.node-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: reactapp/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd reactapp
+          npm ci
+
+      - name: Run Vitest Suite
+        run: |
+          cd reactapp
+          npm test
