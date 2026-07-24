@@ -55,6 +55,8 @@ function percentile(arr, p) {
 }
 
 async function ensureServerRunning() {
+  process.env.DISABLE_HTTP_LOGGING = 'true';
+  process.env.DISABLE_RATE_LIMIT = 'true';
   try {
     const res = await fetch(`${BASE_URL}${ENDPOINT}`);
     if (res.ok) return null; // Server already running
@@ -67,6 +69,8 @@ async function ensureServerRunning() {
 }
 
 async function main() {
+  process.env.DISABLE_HTTP_LOGGING = 'true';
+  process.env.DISABLE_RATE_LIMIT = 'true';
   mkdirSync(REPORTS_DIR, { recursive: true });
   const spawnedServer = await ensureServerRunning();
 
@@ -84,6 +88,7 @@ async function main() {
   while ((Date.now() - startTime) < DURATION_SECONDS * 1000) {
     const batch = await runBatch(CONCURRENT_USERS);
     allResults.push(...batch);
+    await new Promise(r => setTimeout(r, 10));
   }
 
   const totalRequests = allResults.length;

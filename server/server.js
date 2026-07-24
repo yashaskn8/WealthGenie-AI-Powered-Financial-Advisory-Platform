@@ -77,7 +77,7 @@ app.use(mongoSanitize());
 
 // ── Request Logging ──────────────────────────────────────────────
 // Morgan pipes HTTP request logs through Winston for structured output.
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && process.env.DISABLE_HTTP_LOGGING !== 'true' && process.env.DISABLE_RATE_LIMIT !== 'true') {
   app.use(morgan('short', { stream: morganStream }));
 }
 
