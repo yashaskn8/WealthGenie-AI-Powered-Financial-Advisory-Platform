@@ -92,6 +92,11 @@ async function main() {
   }
 
   const totalRequests = allResults.length;
+  const statusCounts = {};
+  for (const r of allResults) {
+    statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
+  }
+
   const errors = allResults.filter(r => r.error).length;
   const errorRate = errors / totalRequests;
   const latencies = allResults.map(r => r.latency);
@@ -120,6 +125,7 @@ async function main() {
     },
     results: {
       totalRequests,
+      statusCounts,
       errors,
       errorRate: parseFloat((errorRate * 100).toFixed(2)),
       throughput: parseFloat(throughput.toFixed(2)),
@@ -212,6 +218,7 @@ async function main() {
   console.log(`P50 Latency:    ${p50.toFixed(2)}ms`);
   console.log(`P95 Latency:    ${p95.toFixed(2)}ms`);
   console.log(`P99 Latency:    ${p99.toFixed(2)}ms`);
+  console.log(`Status Breakdown:`, JSON.stringify(statusCounts));
   console.log(`\nVerdict: ${report.verdict}`);
 
   if (spawnedServer) {
