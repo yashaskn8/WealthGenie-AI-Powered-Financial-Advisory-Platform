@@ -1,0 +1,370 @@
+{
+  "timestamp": "2026-07-24T16:49:34.561Z",
+  "totalMutants": 60,
+  "killed": 60,
+  "survived": 0,
+  "timedOut": 0,
+  "score": 100,
+  "details": [
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 5,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 13,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 18,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 26,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 26,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 52,
+      "mutation": "< → <=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 52,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 61,
+      "mutation": "< → <=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 69,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 69,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 71,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 71,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 74,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 74,
+      "mutation": ">= → >",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 93,
+      "mutation": "< → <=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 93,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 108,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 112,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 181,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 182,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 197,
+      "mutation": "< → <=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 203,
+      "mutation": "< → <=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 203,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 211,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 223,
+      "mutation": "< → <=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 230,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 234,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 237,
+      "mutation": ">= → >",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 237,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/xirrCalculator.js",
+      "line": 238,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 50,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 59,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 62,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 67,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 70,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 75,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 78,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 82,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 84,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 91,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 93,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 95,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 100,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 106,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 108,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 114,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 122,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 125,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 128,
+      "mutation": "=== → !==",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 131,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 131,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 133,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 137,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 138,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 142,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 199,
+      "mutation": "* → /",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 216,
+      "mutation": "<= → <",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 223,
+      "mutation": "> → >=",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 231,
+      "mutation": "+ → -",
+      "status": "Killed"
+    },
+    {
+      "file": "services/taxEngine.js",
+      "line": 233,
+      "mutation": "* → /",
+      "status": "Killed"
+    }
+  ]
+}

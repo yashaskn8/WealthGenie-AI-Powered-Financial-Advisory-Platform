@@ -1,0 +1,776 @@
+[
+  {
+    "endpoint": "/api/goals",
+    "method": "GET",
+    "concurrency": 10,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 71.1,
+        "throughputMbSec": 0.05,
+        "avgLatency": 140.39,
+        "p50": 137,
+        "p95": 0,
+        "p99": 299,
+        "maxLatency": 407,
+        "minLatency": 72,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 7.71,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 14.93
+      },
+      {
+        "run": 2,
+        "rps": 70.74,
+        "throughputMbSec": 0.05,
+        "avgLatency": 141.12,
+        "p50": 140,
+        "p95": 0,
+        "p99": 180,
+        "maxLatency": 196,
+        "minLatency": 97,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 6.25,
+        "memoryMb": 0.36,
+        "eventLoopDelayMs": 15.21
+      },
+      {
+        "run": 3,
+        "rps": 65.54,
+        "throughputMbSec": 0.05,
+        "avgLatency": 152.25,
+        "p50": 152,
+        "p95": 0,
+        "p99": 200,
+        "maxLatency": 246,
+        "minLatency": 98,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 4.84,
+        "memoryMb": 0.15,
+        "eventLoopDelayMs": 15.36
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 69.13,
+        "stdDev": 2.54,
+        "min": 65.54,
+        "max": 71.1
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 226.33,
+        "stdDev": 52.03,
+        "min": 180,
+        "max": 299
+      },
+      "avgThroughputMbSec": 0.05,
+      "avgErrorPct": 0,
+      "avgTimeoutPct": 0,
+      "avgCpuPercent": 6.27,
+      "avgEventLoopDelayMs": 15.17
+    }
+  },
+  {
+    "endpoint": "/api/portfolio",
+    "method": "GET",
+    "concurrency": 10,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 59.37,
+        "throughputMbSec": 0.04,
+        "avgLatency": 168.62,
+        "p50": 155,
+        "p95": 0,
+        "p99": 404,
+        "maxLatency": 592,
+        "minLatency": 87,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 5.42,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 15.42
+      },
+      {
+        "run": 2,
+        "rps": 65,
+        "throughputMbSec": 0.05,
+        "avgLatency": 154.14,
+        "p50": 154,
+        "p95": 0,
+        "p99": 226,
+        "maxLatency": 262,
+        "minLatency": 94,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 5.31,
+        "memoryMb": 0.66,
+        "eventLoopDelayMs": 15.46
+      },
+      {
+        "run": 3,
+        "rps": 62.34,
+        "throughputMbSec": 0.05,
+        "avgLatency": 160.28,
+        "p50": 157,
+        "p95": 0,
+        "p99": 242,
+        "maxLatency": 306,
+        "minLatency": 105,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 4.06,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 15.44
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 62.24,
+        "stdDev": 2.3,
+        "min": 59.37,
+        "max": 65
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 290.67,
+        "stdDev": 80.4,
+        "min": 226,
+        "max": 404
+      },
+      "avgThroughputMbSec": 0.05,
+      "avgErrorPct": 0,
+      "avgTimeoutPct": 0,
+      "avgCpuPercent": 4.93,
+      "avgEventLoopDelayMs": 15.44
+    }
+  },
+  {
+    "endpoint": "/api/recommend",
+    "method": "POST",
+    "concurrency": 10,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 57.47,
+        "throughputMbSec": 0.04,
+        "avgLatency": 174.13,
+        "p50": 170,
+        "p95": 0,
+        "p99": 269,
+        "maxLatency": 357,
+        "minLatency": 116,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 3.8,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 15.39
+      },
+      {
+        "run": 2,
+        "rps": 55.67,
+        "throughputMbSec": 0.04,
+        "avgLatency": 179.51,
+        "p50": 177,
+        "p95": 0,
+        "p99": 270,
+        "maxLatency": 299,
+        "minLatency": 132,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 3.44,
+        "memoryMb": 0.31,
+        "eventLoopDelayMs": 15.43
+      },
+      {
+        "run": 3,
+        "rps": 54.67,
+        "throughputMbSec": 0.04,
+        "avgLatency": 183.14,
+        "p50": 178,
+        "p95": 0,
+        "p99": 262,
+        "maxLatency": 320,
+        "minLatency": 139,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 4.01,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 15.49
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 55.94,
+        "stdDev": 1.16,
+        "min": 54.67,
+        "max": 57.47
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 267,
+        "stdDev": 3.56,
+        "min": 262,
+        "max": 270
+      },
+      "avgThroughputMbSec": 0.04,
+      "avgErrorPct": 0,
+      "avgTimeoutPct": 0,
+      "avgCpuPercent": 3.75,
+      "avgEventLoopDelayMs": 15.44
+    }
+  },
+  {
+    "endpoint": "/api/goals",
+    "method": "GET",
+    "concurrency": 100,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 41.94,
+        "throughputMbSec": 0.03,
+        "avgLatency": 2305.36,
+        "p50": 2327,
+        "p95": 0,
+        "p99": 3323,
+        "maxLatency": 3403,
+        "minLatency": 254,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 5.31,
+        "memoryMb": 1.89,
+        "eventLoopDelayMs": 15.43
+      },
+      {
+        "run": 2,
+        "rps": 42.24,
+        "throughputMbSec": 0.03,
+        "avgLatency": 2296.69,
+        "p50": 2219,
+        "p95": 0,
+        "p99": 3892,
+        "maxLatency": 4104,
+        "minLatency": 2002,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 4.27,
+        "memoryMb": 2.93,
+        "eventLoopDelayMs": 15.53
+      },
+      {
+        "run": 3,
+        "rps": 39.21,
+        "throughputMbSec": 0.03,
+        "avgLatency": 2480.43,
+        "p50": 2288,
+        "p95": 0,
+        "p99": 4609,
+        "maxLatency": 4919,
+        "minLatency": 2093,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 4.38,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 15.54
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 41.13,
+        "stdDev": 1.36,
+        "min": 39.21,
+        "max": 42.24
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 3941.33,
+        "stdDev": 526.16,
+        "min": 3323,
+        "max": 4609
+      },
+      "avgThroughputMbSec": 0.03,
+      "avgErrorPct": 0,
+      "avgTimeoutPct": 0,
+      "avgCpuPercent": 4.65,
+      "avgEventLoopDelayMs": 15.5
+    }
+  },
+  {
+    "endpoint": "/api/portfolio",
+    "method": "GET",
+    "concurrency": 100,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 40.57,
+        "throughputMbSec": 0.03,
+        "avgLatency": 2379.45,
+        "p50": 2435,
+        "p95": 0,
+        "p99": 2737,
+        "maxLatency": 2806,
+        "minLatency": 390,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 3.65,
+        "memoryMb": 2.25,
+        "eventLoopDelayMs": 15.54
+      },
+      {
+        "run": 2,
+        "rps": 34.94,
+        "throughputMbSec": 0.03,
+        "avgLatency": 2763.33,
+        "p50": 2654,
+        "p95": 0,
+        "p99": 4852,
+        "maxLatency": 5100,
+        "minLatency": 2182,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 2.92,
+        "memoryMb": 2.54,
+        "eventLoopDelayMs": 15.57
+      },
+      {
+        "run": 3,
+        "rps": 33.5,
+        "throughputMbSec": 0.02,
+        "avgLatency": 2860.32,
+        "p50": 2723,
+        "p95": 0,
+        "p99": 4942,
+        "maxLatency": 5240,
+        "minLatency": 2458,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 3.49,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 15.57
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 36.34,
+        "stdDev": 3.05,
+        "min": 33.5,
+        "max": 40.57
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 4177,
+        "stdDev": 1018.9,
+        "min": 2737,
+        "max": 4942
+      },
+      "avgThroughputMbSec": 0.03,
+      "avgErrorPct": 0,
+      "avgTimeoutPct": 0,
+      "avgCpuPercent": 3.35,
+      "avgEventLoopDelayMs": 15.56
+    }
+  },
+  {
+    "endpoint": "/api/recommend",
+    "method": "POST",
+    "concurrency": 100,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 29.3,
+        "throughputMbSec": 0.02,
+        "avgLatency": 3199.59,
+        "p50": 3289,
+        "p95": 0,
+        "p99": 4277,
+        "maxLatency": 4411,
+        "minLatency": 421,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 3.49,
+        "memoryMb": 1.33,
+        "eventLoopDelayMs": 15.46
+      },
+      {
+        "run": 2,
+        "rps": 24.1,
+        "throughputMbSec": 0.02,
+        "avgLatency": 3946.07,
+        "p50": 3669,
+        "p95": 0,
+        "p99": 7234,
+        "maxLatency": 7355,
+        "minLatency": 3344,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 3.54,
+        "memoryMb": 2.12,
+        "eventLoopDelayMs": 15.58
+      },
+      {
+        "run": 3,
+        "rps": 25.4,
+        "throughputMbSec": 0.02,
+        "avgLatency": 3751.13,
+        "p50": 3615,
+        "p95": 0,
+        "p99": 6517,
+        "maxLatency": 6783,
+        "minLatency": 3103,
+        "errors": 0,
+        "timeouts": 0,
+        "errorPct": 0,
+        "timeoutPct": 0,
+        "cpuPercent": 2.71,
+        "memoryMb": 1.83,
+        "eventLoopDelayMs": 15.53
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 26.27,
+        "stdDev": 2.21,
+        "min": 24.1,
+        "max": 29.3
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 6009.33,
+        "stdDev": 1259.43,
+        "min": 4277,
+        "max": 7234
+      },
+      "avgThroughputMbSec": 0.02,
+      "avgErrorPct": 0,
+      "avgTimeoutPct": 0,
+      "avgCpuPercent": 3.25,
+      "avgEventLoopDelayMs": 15.52
+    }
+  },
+  {
+    "endpoint": "/api/goals",
+    "method": "GET",
+    "concurrency": 500,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 9.66,
+        "throughputMbSec": 0.01,
+        "avgLatency": 5167.37,
+        "p50": 5047,
+        "p95": 0,
+        "p99": 9838,
+        "maxLatency": 9840,
+        "minLatency": 772,
+        "errors": 22225,
+        "timeouts": 777,
+        "errorPct": 7937.5,
+        "timeoutPct": 277.5,
+        "cpuPercent": 72.5,
+        "memoryMb": 12.5,
+        "eventLoopDelayMs": 33.41
+      },
+      {
+        "run": 2,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 34163,
+        "timeouts": 736,
+        "errorPct": 3416300,
+        "timeoutPct": 73600,
+        "cpuPercent": 101.82,
+        "memoryMb": 27.65,
+        "eventLoopDelayMs": 102.52
+      },
+      {
+        "run": 3,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 36191,
+        "timeouts": 608,
+        "errorPct": 3619100,
+        "timeoutPct": 60800,
+        "cpuPercent": 101.82,
+        "memoryMb": 10.53,
+        "eventLoopDelayMs": 103.79
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 3.22,
+        "stdDev": 4.55,
+        "min": 0,
+        "max": 9.66
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 3279.33,
+        "stdDev": 4637.68,
+        "min": 0,
+        "max": 9838
+      },
+      "avgThroughputMbSec": 0,
+      "avgErrorPct": 2347779.17,
+      "avgTimeoutPct": 44892.5,
+      "avgCpuPercent": 92.05,
+      "avgEventLoopDelayMs": 79.91
+    }
+  },
+  {
+    "endpoint": "/api/portfolio",
+    "method": "GET",
+    "concurrency": 500,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 36365,
+        "timeouts": 694,
+        "errorPct": 3636500,
+        "timeoutPct": 69400,
+        "cpuPercent": 100.47,
+        "memoryMb": 23.56,
+        "eventLoopDelayMs": 98.81
+      },
+      {
+        "run": 2,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 34447,
+        "timeouts": 448,
+        "errorPct": 3444700,
+        "timeoutPct": 44800,
+        "cpuPercent": 101.09,
+        "memoryMb": 10.22,
+        "eventLoopDelayMs": 109.07
+      },
+      {
+        "run": 3,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 34350,
+        "timeouts": 448,
+        "errorPct": 3435000,
+        "timeoutPct": 44800,
+        "cpuPercent": 104.22,
+        "memoryMb": 0,
+        "eventLoopDelayMs": 109.99
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgThroughputMbSec": 0,
+      "avgErrorPct": 3505400,
+      "avgTimeoutPct": 53000,
+      "avgCpuPercent": 101.93,
+      "avgEventLoopDelayMs": 105.96
+    }
+  },
+  {
+    "endpoint": "/api/recommend",
+    "method": "POST",
+    "concurrency": 500,
+    "runs": [
+      {
+        "run": 1,
+        "rps": 0.14,
+        "throughputMbSec": 0,
+        "avgLatency": 9990.25,
+        "p50": 9990,
+        "p95": 0,
+        "p99": 9992,
+        "maxLatency": 9992,
+        "minLatency": 9989,
+        "errors": 34787,
+        "timeouts": 638,
+        "errorPct": 869675,
+        "timeoutPct": 15950,
+        "cpuPercent": 101.72,
+        "memoryMb": 18.46,
+        "eventLoopDelayMs": 75.67
+      },
+      {
+        "run": 2,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 34362,
+        "timeouts": 512,
+        "errorPct": 3436200,
+        "timeoutPct": 51200,
+        "cpuPercent": 101.35,
+        "memoryMb": 27.94,
+        "eventLoopDelayMs": 109.43
+      },
+      {
+        "run": 3,
+        "rps": 0,
+        "throughputMbSec": 0,
+        "avgLatency": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "maxLatency": 0,
+        "minLatency": 0,
+        "errors": 36300,
+        "timeouts": 512,
+        "errorPct": 3630000,
+        "timeoutPct": 51200,
+        "cpuPercent": 101.87,
+        "memoryMb": 19.1,
+        "eventLoopDelayMs": 104.25
+      }
+    ],
+    "aggregate": {
+      "rps": {
+        "avg": 0.05,
+        "stdDev": 0.07,
+        "min": 0,
+        "max": 0.14
+      },
+      "p95Latency": {
+        "avg": 0,
+        "stdDev": 0,
+        "min": 0,
+        "max": 0
+      },
+      "p99Latency": {
+        "avg": 3330.67,
+        "stdDev": 4710.27,
+        "min": 0,
+        "max": 9992
+      },
+      "avgThroughputMbSec": 0,
+      "avgErrorPct": 2645291.67,
+      "avgTimeoutPct": 39450,
+      "avgCpuPercent": 101.65,
+      "avgEventLoopDelayMs": 96.45
+    }
+  }
+]

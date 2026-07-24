@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-07-24T17:22:22.180Z",
+  "subsystems": {
+    "mongodb": {
+      "status": "disconnected",
+      "readyState": 0
+    },
+    "redis": {
+      "healthEndpointMs": 224.25,
+      "status": "unknown"
+    },
+    "httpHandlers": {
+      "/api/health": {
+        "avgMs": 62.92,
+        "p50Ms": 62.62,
+        "p95Ms": 80.3,
+        "p99Ms": 80.3,
+        "minMs": 49.93,
+        "maxMs": 80.3
+      },
+      "/api/goals": {
+        "avgMs": 55.88,
+        "p50Ms": 58.79,
+        "p95Ms": 71.63,
+        "p99Ms": 71.63,
+        "minMs": 40.46,
+        "maxMs": 71.63
+      },
+      "/api/portfolio": {
+        "avgMs": 58.34,
+        "p50Ms": 59.58,
+        "p95Ms": 91.74,
+        "p99Ms": 91.74,
+        "minMs": 42.02,
+        "maxMs": 91.74
+      },
+      "/api/recommend": {
+        "avgMs": 71.84,
+        "p50Ms": 61.52,
+        "p95Ms": 130.98,
+        "p99Ms": 130.98,
+        "minMs": 49.51,
+        "maxMs": 130.98
+      }
+    },
+    "eventLoop": {
+      "meanMs": 15.52,
+      "p50Ms": 15.55,
+      "p95Ms": 18.86,
+      "p99Ms": 21.4,
+      "maxMs": 25.51,
+      "minMs": 9.15
+    },
+    "cpu": {
+      "userMicros": 172000,
+      "systemMicros": 266000,
+      "totalPercent": 4.38
+    },
+    "memory": {
+      "heapUsedMb": 23.93,
+      "heapTotalMb": 25.21,
+      "rssMb": 87.04,
+      "externalMb": 27.08
+    }
+  },
+  "bottleneck": {
+    "subsystem": "HTTP Handler",
+    "explanation": "Slowest handler: /api/recommend at 71.84ms avg"
+  }
+}
