@@ -7,7 +7,7 @@ const RULES = [
   {
     id: 'mongodb-connection-string',
     description: 'MongoDB Connection String',
-    regex: /mongodb\+srv:\/\/[^\s"']+/gi
+    regex: /mongodb(?:\+srv)?:\/\/[^\s"']+/gi
   },
   {
     id: 'redis-connection-string',
@@ -23,6 +23,36 @@ const RULES = [
     id: 'jwt-secret',
     description: 'JWT Secret in Code',
     regex: /jwt[_-]?secret\s*[=:]\s*['"][^'"]{16,}['"]/gi
+  },
+  {
+    id: 'aws-access-key-id',
+    description: 'AWS Access Key ID',
+    regex: /(?:AKIA|ASIA)[0-9A-Z]{16}/g
+  },
+  {
+    id: 'openai-api-key',
+    description: 'OpenAI API Key',
+    regex: /sk-[A-Za-z0-9_-]{32,}/g
+  },
+  {
+    id: 'google-api-key',
+    description: 'Google AI / Cloud API Key',
+    regex: /AIzaSy[A-Za-z0-9_-]{33}/g
+  },
+  {
+    id: 'github-pat',
+    description: 'GitHub Personal Access Token',
+    regex: /(?:ghp|gho_|[a-zA-Z0-9]{4}_)[A-Za-z0-9_]{36}/g
+  },
+  {
+    id: 'private-key',
+    description: 'RSA / EC / Private Key Header',
+    regex: /-----BEGIN\s+(?:RSA|EC|OPENSSH|PRIVATE)\s+KEY-----/gi
+  },
+  {
+    id: 'bearer-token',
+    description: 'Hardcoded Bearer Token',
+    regex: /Bearer\s+[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_=]*/gi
   }
 ];
 

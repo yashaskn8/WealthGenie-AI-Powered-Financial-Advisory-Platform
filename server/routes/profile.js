@@ -140,13 +140,9 @@ router.put('/:profileId', verifyJWT, validate(profileSchema), asyncHandler(async
   const { profileId } = req.params;
   const expectedVersion = req.body.version;
 
-  const profile = await FinancialProfile.findById(profileId);
+  const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId });
   if (!profile) {
-    throw createError(404, 'Profile not found', 'Profile not found.');
-  }
-
-  if (profile.userId.toString() !== req.user.userId) {
-    throw createError(403, 'Access denied', 'Access denied.');
+    throw createError(404, 'Profile not found or access denied', 'Profile not found.');
   }
 
   // 1. Fail-fast version check

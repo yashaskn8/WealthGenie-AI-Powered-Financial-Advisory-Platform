@@ -23,7 +23,7 @@ router.post('/', verifyJWT, validate(projectionSchema), asyncHandler(async (req,
     throw createError(400, 'Invalid profileId', 'Invalid profile ID.');
   }
 
-  const profile = await FinancialProfile.findById(profileId).lean();
+  const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId }).lean();
   if (!profile) {
     throw createError(404, `Profile not found: ${profileId}`, 'Profile not found.');
   }

@@ -88,7 +88,7 @@ router.post(
     }
 
     /* ── Fetch profile ──────────────────────────────────────────────── */
-    const profile = await FinancialProfile.findById(profileId).lean();
+    const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId }).lean();
     if (!profile) {
       throw createError(404, `Profile not found: ${profileId}`, 'Financial profile not found.');
     }

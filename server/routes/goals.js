@@ -354,7 +354,7 @@ router.get('/', verifyJWT, asyncHandler(async (req, res) => {
         const newAdvice = await generateGoalAdvice(g, profile, userMonthlySavings);
 
         if (!isStaleAdvice(newAdvice)) {
-          await Goal.findByIdAndUpdate(g._id, { gemini_advice: newAdvice });
+          await Goal.findOneAndUpdate({ _id: g._id, userId: req.user.userId }, { gemini_advice: newAdvice });
         }
       } catch (e) {
         console.warn('[Goals] Advice regeneration failed for', g.goal_name, ':', e.message);
@@ -441,7 +441,7 @@ router.get('/', verifyJWT, asyncHandler(async (req, res) => {
       }));
 
       // Cache it back to database asynchronously (don't block the request)
-      Goal.findByIdAndUpdate(g._id, {
+      Goal.findOneAndUpdate({ _id: g._id, userId: req.user.userId }, {
         chart_data: chartData,
         mc_computed_at: new Date(),
         years_remaining: yearsRemaining,

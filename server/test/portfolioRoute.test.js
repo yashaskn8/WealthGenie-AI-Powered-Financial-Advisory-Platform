@@ -12,8 +12,9 @@ test('portfolio optimise route responds for all frontend-exposed strategies', as
   const userId = '64b000000000000000000001';
   const profileId = '65b000000000000000000001';
   const originalFindById = FinancialProfile.findById;
+  const originalFindOne = FinancialProfile.findOne;
 
-  FinancialProfile.findById = () => ({
+  const mockProfileObj = {
     lean: async () => ({
       _id: profileId,
       userId,
@@ -21,8 +22,14 @@ test('portfolio optimise route responds for all frontend-exposed strategies', as
       investmentHorizon: 15,
       taxRegime: 'new',
     }),
+  };
+
+  FinancialProfile.findById = () => mockProfileObj;
+  FinancialProfile.findOne = () => mockProfileObj;
+  t.after(() => {
+    FinancialProfile.findById = originalFindById;
+    FinancialProfile.findOne = originalFindOne;
   });
-  t.after(() => { FinancialProfile.findById = originalFindById; });
 
   const app = express();
   app.use(express.json());

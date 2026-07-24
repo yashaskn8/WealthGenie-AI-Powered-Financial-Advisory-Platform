@@ -37,7 +37,7 @@ router.post('/montecarlo', verifyJWT, validate(monteCarloSchema), asyncHandler(a
       throw createError(400, 'Invalid profileId in montecarlo', 'Invalid profile ID.');
     }
 
-    const profile = await FinancialProfile.findById(profileId).lean();
+    const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId }).lean();
     if (!profile) {
       throw createError(404, `Profile not found for Monte Carlo: ${profileId}`, 'Profile not found.');
     }

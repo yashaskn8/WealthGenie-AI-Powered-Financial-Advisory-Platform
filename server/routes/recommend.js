@@ -42,7 +42,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     throw createError(400, 'Invalid profileId format', 'Invalid profile ID.');
   }
 
-  const profile = await FinancialProfile.findById(profileId).lean();
+  const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId }).lean();
   if (!profile) {
     throw createError(404, `Profile not found: ${profileId}`, 'Profile not found.');
   }
@@ -141,7 +141,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
 router.post('/weights', verifyJWT, validate(updateWeightsSchema), asyncHandler(async (req, res) => {
   const { profileId, weights } = req.body;
 
-  const profile = await FinancialProfile.findById(profileId).lean();
+  const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId }).lean();
   if (!profile) {
     throw createError(404, `Profile not found: ${profileId}`, 'Profile not found.');
   }
@@ -150,8 +150,8 @@ router.post('/weights', verifyJWT, validate(updateWeightsSchema), asyncHandler(a
     throw createError(403, `Access denied`, 'Access denied.');
   }
 
-  // Find the latest recommendation for this profile
-  const recommendation = await Recommendation.findOne({ profileId }).sort({ generatedAt: -1 });
+  // Find the latest recommendation for this profile & user
+  const recommendation = await Recommendation.findOne({ profileId, userId: req.user.userId }).sort({ generatedAt: -1 });
   if (!recommendation) {
     throw createError(404, 'No recommendation found to update', 'No recommendation found.');
   }

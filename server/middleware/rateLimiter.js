@@ -6,6 +6,7 @@ class HybridStore {
   constructor(options = {}) {
     this.options = options;
     this.redisStore = null;
+    this.hits = new Map();
   }
 
   getStore() {
@@ -24,17 +25,33 @@ class HybridStore {
   async increment(key) {
     const store = this.getStore();
     if (store) return store.increment(key);
-    return { totalHits: 1, resetTime: new Date(Date.now() + 60000) };
+
+    const now = Date.now();
+    const windowMs = this.options.windowMs || 60000;
+    const entry = this.hits.get(key) || { count: 0, resetTime: new Date(now + windowMs) };
+
+    if (now > entry.resetTime.getTime()) {
+      entry.count = 1;
+      entry.resetTime = new Date(now + windowMs);
+    } else {
+      entry.count += 1;
+    }
+
+    this.hits.set(key, entry);
+    return { totalHits: entry.count, resetTime: entry.resetTime };
   }
 
   async decrement(key) {
     const store = this.getStore();
     if (store) return store.decrement(key);
+    const entry = this.hits.get(key);
+    if (entry && entry.count > 0) entry.count -= 1;
   }
 
   async resetKey(key) {
     const store = this.getStore();
     if (store) return store.resetKey(key);
+    this.hits.delete(key);
   }
 
   async resetAll() {
@@ -42,6 +59,7 @@ class HybridStore {
     if (store && store.resetAll) {
       await store.resetAll();
     }
+    this.hits.clear();
   }
 }
 
@@ -66,4 +84,19 @@ export const apiLimiter = rateLimit({
   passOnStoreError: true,
   skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
 });
+
+// Factory function for dedicated endpoint rate limiters (Chat, Monte Carlo, Portfolio Optimisation)
+export function createEndpointRateLimiter(options = {}) {
+  const { windowMs = 60 * 1000, max = 10, message = 'Endpoint rate limit exceeded.' } = options;
+  return rateLimit({
+    windowMs,
+    max,
+    message: { error: 'Rate Limit Exceeded', message },
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: new HybridStore({ prefix: 'rl:ep:' }),
+    passOnStoreError: true,
+    skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
+  });
+}
 

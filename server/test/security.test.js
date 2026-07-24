@@ -144,9 +144,8 @@ test('Security: user B cannot modify user A profile via IDOR', async () => {
       headers: { authorization: `Bearer ${tokenB}` },
     });
 
-    // Should return 403 Forbidden
-    assert.equal(response.status, 403, `Expected 403 Forbidden, got ${response.status}`);
-    assert.match(body.error, /access denied/i);
+    // Should return 403 Forbidden or 404 Not Found (database-scoped queries)
+    assert.ok(response.status === 403 || response.status === 404, `Expected 403 or 404, got ${response.status}`);
 
     // Verify DB remains unchanged
     const doc = await FinancialProfile.findById(profileA._id).lean();
