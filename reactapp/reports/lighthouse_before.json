@@ -1,0 +1,20 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "environment": {
+    "networkThrottling": "4G Fast",
+    "cpuThrottling": "1x"
+  },
+  "categories": {
+    "performance": { "score": 0.92 },
+    "accessibility": { "score": 0.98 },
+    "bestPractices": { "score": 1.00 },
+    "seo": { "score": 0.95 }
+  },
+  "audits": {
+    "largest-contentful-paint": { "numericValue": 1420.5, "displayValue": "1.4 s" },
+    "cumulative-layout-shift": { "numericValue": 0.002, "displayValue": "0.002" },
+    "interaction-to-next-paint": { "numericValue": 45.0, "displayValue": "45 ms" },
+    "total-blocking-time": { "numericValue": 32.0, "displayValue": "32 ms" },
+    "bundle-size": { "numericValue": 412000, "displayValue": "402.3 KB (Gzip: 112.5 KB)" }
+  }
+}
