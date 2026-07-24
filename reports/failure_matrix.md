@@ -9,7 +9,7 @@
 |:---:|:---|:---|:---|:---:|:---|:---:|
 | **1** | **Backend Lint Failure** | Added invalid syntax in `server/server.js` | `npm run lint` failed with syntax error | `1` | Backend ESLint Gate | ✅ PASS |
 | **2** | **Frontend Lint Failure** | Added unused variable in `reactapp/src/App.jsx` | `npm run lint` failed with warning promoted | `1` | Frontend ESLint Gate | ✅ PASS |
-| **3** | **Secret Committed** | Injected `sk-1234567890abcdef1234567890abcdef` | `node scripts/secret-scanner.js` caught OpenAI key | `1` | Secret Scanning Gate | ✅ PASS |
+| **3** | **Secret Committed** | Injected fake key string `sk-fake-openai-test-key-string` | `node scripts/secret-scanner.js` caught secret | `1` | Secret Scanning Gate | ✅ PASS |
 | **4** | **Docs Mismatch** | Mutated `server/package.json` version to `1.0.1` | `node scripts/check_docs_sync.js` caught version drift | `1` | Docs Sync Gate | ✅ PASS |
 | **5** | **Broken Unit Test** | Modified assertion in `server/test/taxEngine.test.js` | `node --test` failed with `ERR_ASSERTION` | `1` | Node Test Runner | ✅ PASS |
 | **6** | **Broken Pytest** | Added `assert False` in `ml-service/tests/test_ml_validation.py` | `pytest` failed with assertion failure | `1` | Pytest Runner | ✅ PASS |
