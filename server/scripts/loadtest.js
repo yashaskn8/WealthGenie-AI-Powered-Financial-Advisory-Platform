@@ -62,7 +62,7 @@ async function ensureServerRunning() {
 
   // Server not running on BASE_URL — start server in-process via start()
   await import('../server.js');
-  await new Promise(resolve => setTimeout(resolve, 2500));
+  await new Promise(resolve => setTimeout(resolve, 5000));
   return null;
 }
 
