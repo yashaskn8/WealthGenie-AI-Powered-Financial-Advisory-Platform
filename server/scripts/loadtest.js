@@ -54,6 +54,22 @@ function percentile(arr, p) {
   return sorted[Math.max(0, idx)];
 }
 
+async function waitForHealthy(url, maxTimeoutMs = 15000) {
+  const start = Date.now();
+  console.log(`[LoadTest] Polling server readiness at ${url}...`);
+  while (Date.now() - start < maxTimeoutMs) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        console.log(`[LoadTest] Server is healthy and ready at ${url} (${Date.now() - start}ms).`);
+        return true;
+      }
+    } catch (_) {}
+    await new Promise(r => setTimeout(r, 250));
+  }
+  throw new Error(`[LoadTest] Server readiness timeout at ${url} after ${maxTimeoutMs}ms`);
+}
+
 async function ensureServerRunning() {
   process.env.DISABLE_HTTP_LOGGING = 'true';
   process.env.DISABLE_RATE_LIMIT = 'true';
@@ -64,7 +80,7 @@ async function ensureServerRunning() {
 
   // Server not running on BASE_URL — start server in-process via start()
   await import('../server.js');
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  await waitForHealthy(`${BASE_URL}${ENDPOINT}`, 15000);
   return null;
 }
 
