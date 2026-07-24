@@ -1,108 +1,29 @@
 {
-  "timestamp": "2026-07-24T17:32:04.944Z",
   "single": {
-    "label": "Single Instance",
-    "runs": [
-      {
-        "run": 1,
-        "rps": 18.61,
-        "throughputMbSec": 0.01,
-        "avgLatency": 2524.26,
-        "p50": 2634,
-        "p95": 0,
-        "p99": 3409,
-        "maxLatency": 3410,
-        "errors": 0,
-        "cpuPercent": 5.72,
-        "memoryMb": 19.93
-      },
-      {
-        "run": 2,
-        "rps": 18.8,
-        "throughputMbSec": 0.01,
-        "avgLatency": 2459.88,
-        "p50": 2176,
-        "p95": 0,
-        "p99": 4543,
-        "maxLatency": 4545,
-        "errors": 0,
-        "cpuPercent": 3.55,
-        "memoryMb": 21.2
-      },
-      {
-        "run": 3,
-        "rps": 19,
-        "throughputMbSec": 0.01,
-        "avgLatency": 2410.08,
-        "p50": 2189,
-        "p95": 0,
-        "p99": 4577,
-        "maxLatency": 4580,
-        "errors": 0,
-        "cpuPercent": 2.19,
-        "memoryMb": 22.02
-      }
-    ],
-    "aggregate": {
-      "avgRps": 18.8,
-      "avgP95": 0,
-      "avgP99": 4176.33,
-      "avgThroughput": 0.01
-    }
+    "rps": {
+      "avg": 191.43,
+      "stdDev": 21.51,
+      "min": 162.2,
+      "max": 213.34,
+      "variancePct": 11.24
+    },
+    "p95": 0,
+    "p99": 618
   },
   "dual": {
-    "label": "Dual Instance (LB)",
-    "runs": [
-      {
-        "run": 1,
-        "rps": 773.54,
-        "throughputMbSec": 0.57,
-        "avgLatency": 64.07,
-        "p50": 62,
-        "p95": 0,
-        "p99": 106,
-        "maxLatency": 209,
-        "errors": 0,
-        "cpuPercent": 46.67,
-        "memoryMb": 25.31
-      },
-      {
-        "run": 2,
-        "rps": 763.34,
-        "throughputMbSec": 0.56,
-        "avgLatency": 64.95,
-        "p50": 65,
-        "p95": 0,
-        "p99": 117,
-        "maxLatency": 179,
-        "errors": 0,
-        "cpuPercent": 39.37,
-        "memoryMb": 26.23
-      },
-      {
-        "run": 3,
-        "rps": 825.34,
-        "throughputMbSec": 0.61,
-        "avgLatency": 60.04,
-        "p50": 59,
-        "p95": 0,
-        "p99": 110,
-        "maxLatency": 191,
-        "errors": 0,
-        "cpuPercent": 42.71,
-        "memoryMb": 26.15
-      }
-    ],
-    "aggregate": {
-      "avgRps": 787.41,
-      "avgP95": 0,
-      "avgP99": 111,
-      "avgThroughput": 0.58
-    }
+    "rps": {
+      "avg": 291.78,
+      "stdDev": 15.49,
+      "min": 272.61,
+      "max": 310.54,
+      "variancePct": 5.31
+    },
+    "p95": 0,
+    "p99": 317
   },
   "scalingEfficiency": {
     "idealSpeedup": 2,
-    "measuredSpeedup": 41.88,
-    "efficiencyPercent": 2094.18
+    "measuredSpeedup": 1.52,
+    "efficiencyPercent": 76.21
   }
 }

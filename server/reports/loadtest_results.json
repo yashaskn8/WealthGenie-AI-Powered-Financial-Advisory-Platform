@@ -6,83 +6,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 71.1,
-        "throughputMbSec": 0.05,
-        "avgLatency": 140.39,
-        "p50": 137,
+        "rps": 178.7,
+        "p50": 51,
         "p95": 0,
-        "p99": 299,
-        "maxLatency": 407,
-        "minLatency": 72,
-        "errors": 0,
-        "timeouts": 0,
-        "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 7.71,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 14.93
-      },
-      {
-        "run": 2,
-        "rps": 70.74,
-        "throughputMbSec": 0.05,
-        "avgLatency": 141.12,
-        "p50": 140,
-        "p95": 0,
-        "p99": 180,
+        "p99": 104,
         "maxLatency": 196,
-        "minLatency": 97,
+        "avgLatency": 55.59,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 6.25,
-        "memoryMb": 0.36,
-        "eventLoopDelayMs": 15.21
+        "throughputMbSec": 0.18
+      },
+      {
+        "run": 2,
+        "rps": 214.1,
+        "p50": 45,
+        "p95": 0,
+        "p99": 67,
+        "maxLatency": 74,
+        "avgLatency": 46.37,
+        "errors": 0,
+        "errorPct": 0,
+        "throughputMbSec": 0.22
       },
       {
         "run": 3,
-        "rps": 65.54,
-        "throughputMbSec": 0.05,
-        "avgLatency": 152.25,
-        "p50": 152,
+        "rps": 229.9,
+        "p50": 42,
         "p95": 0,
-        "p99": 200,
-        "maxLatency": 246,
-        "minLatency": 98,
+        "p99": 61,
+        "maxLatency": 66,
+        "avgLatency": 43.14,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 4.84,
-        "memoryMb": 0.15,
-        "eventLoopDelayMs": 15.36
+        "throughputMbSec": 0.24
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 69.13,
-        "stdDev": 2.54,
-        "min": 65.54,
-        "max": 71.1
+        "avg": 207.57,
+        "stdDev": 21.41,
+        "min": 178.7,
+        "max": 229.9,
+        "variancePct": 10.31
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 226.33,
-        "stdDev": 52.03,
-        "min": 180,
-        "max": 299
+      "p99": {
+        "avg": 77.33,
+        "stdDev": 19.01,
+        "min": 61,
+        "max": 104,
+        "variancePct": 24.59
       },
-      "avgThroughputMbSec": 0.05,
-      "avgErrorPct": 0,
-      "avgTimeoutPct": 0,
-      "avgCpuPercent": 6.27,
-      "avgEventLoopDelayMs": 15.17
+      "avgErrorPct": 0
     }
   },
   {
@@ -92,83 +73,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 59.37,
-        "throughputMbSec": 0.04,
-        "avgLatency": 168.62,
-        "p50": 155,
+        "rps": 1078.41,
+        "p50": 8,
         "p95": 0,
-        "p99": 404,
-        "maxLatency": 592,
-        "minLatency": 87,
+        "p99": 19,
+        "maxLatency": 42,
+        "avgLatency": 8.76,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 5.42,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 15.42
+        "throughputMbSec": 1.15
       },
       {
         "run": 2,
-        "rps": 65,
-        "throughputMbSec": 0.05,
-        "avgLatency": 154.14,
-        "p50": 154,
+        "rps": 1119.1,
+        "p50": 8,
         "p95": 0,
-        "p99": 226,
-        "maxLatency": 262,
-        "minLatency": 94,
+        "p99": 17,
+        "maxLatency": 31,
+        "avgLatency": 8.41,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 5.31,
-        "memoryMb": 0.66,
-        "eventLoopDelayMs": 15.46
+        "throughputMbSec": 1.19
       },
       {
         "run": 3,
-        "rps": 62.34,
-        "throughputMbSec": 0.05,
-        "avgLatency": 160.28,
-        "p50": 157,
+        "rps": 1154.91,
+        "p50": 8,
         "p95": 0,
-        "p99": 242,
-        "maxLatency": 306,
-        "minLatency": 105,
+        "p99": 15,
+        "maxLatency": 28,
+        "avgLatency": 8.14,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 4.06,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 15.44
+        "throughputMbSec": 1.23
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 62.24,
-        "stdDev": 2.3,
-        "min": 59.37,
-        "max": 65
+        "avg": 1117.47,
+        "stdDev": 31.25,
+        "min": 1078.41,
+        "max": 1154.91,
+        "variancePct": 2.8
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 290.67,
-        "stdDev": 80.4,
-        "min": 226,
-        "max": 404
+      "p99": {
+        "avg": 17,
+        "stdDev": 1.63,
+        "min": 15,
+        "max": 19,
+        "variancePct": 9.61
       },
-      "avgThroughputMbSec": 0.05,
-      "avgErrorPct": 0,
-      "avgTimeoutPct": 0,
-      "avgCpuPercent": 4.93,
-      "avgEventLoopDelayMs": 15.44
+      "avgErrorPct": 0
     }
   },
   {
@@ -178,83 +140,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 57.47,
-        "throughputMbSec": 0.04,
-        "avgLatency": 174.13,
-        "p50": 170,
+        "rps": 513.9,
+        "p50": 18,
         "p95": 0,
-        "p99": 269,
-        "maxLatency": 357,
-        "minLatency": 116,
+        "p99": 36,
+        "maxLatency": 67,
+        "avgLatency": 18.93,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 3.8,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 15.39
+        "throughputMbSec": 0.56
       },
       {
         "run": 2,
-        "rps": 55.67,
-        "throughputMbSec": 0.04,
-        "avgLatency": 179.51,
-        "p50": 177,
+        "rps": 509.4,
+        "p50": 19,
         "p95": 0,
-        "p99": 270,
-        "maxLatency": 299,
-        "minLatency": 132,
+        "p99": 37,
+        "maxLatency": 54,
+        "avgLatency": 19.11,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 3.44,
-        "memoryMb": 0.31,
-        "eventLoopDelayMs": 15.43
+        "throughputMbSec": 0.55
       },
       {
         "run": 3,
-        "rps": 54.67,
-        "throughputMbSec": 0.04,
-        "avgLatency": 183.14,
-        "p50": 178,
+        "rps": 559.3,
+        "p50": 17,
         "p95": 0,
-        "p99": 262,
-        "maxLatency": 320,
-        "minLatency": 139,
+        "p99": 28,
+        "maxLatency": 35,
+        "avgLatency": 17.34,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 4.01,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 15.49
+        "throughputMbSec": 0.61
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 55.94,
-        "stdDev": 1.16,
-        "min": 54.67,
-        "max": 57.47
+        "avg": 527.53,
+        "stdDev": 22.54,
+        "min": 509.4,
+        "max": 559.3,
+        "variancePct": 4.27
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 267,
-        "stdDev": 3.56,
-        "min": 262,
-        "max": 270
+      "p99": {
+        "avg": 33.67,
+        "stdDev": 4.03,
+        "min": 28,
+        "max": 37,
+        "variancePct": 11.96
       },
-      "avgThroughputMbSec": 0.04,
-      "avgErrorPct": 0,
-      "avgTimeoutPct": 0,
-      "avgCpuPercent": 3.75,
-      "avgEventLoopDelayMs": 15.44
+      "avgErrorPct": 0
     }
   },
   {
@@ -264,83 +207,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 41.94,
-        "throughputMbSec": 0.03,
-        "avgLatency": 2305.36,
-        "p50": 2327,
+        "rps": 210,
+        "p50": 451,
         "p95": 0,
-        "p99": 3323,
-        "maxLatency": 3403,
-        "minLatency": 254,
+        "p99": 710,
+        "maxLatency": 953,
+        "avgLatency": 467.34,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 5.31,
-        "memoryMb": 1.89,
-        "eventLoopDelayMs": 15.43
+        "throughputMbSec": 0.21
       },
       {
         "run": 2,
-        "rps": 42.24,
-        "throughputMbSec": 0.03,
-        "avgLatency": 2296.69,
-        "p50": 2219,
+        "rps": 215.2,
+        "p50": 441,
         "p95": 0,
-        "p99": 3892,
-        "maxLatency": 4104,
-        "minLatency": 2002,
+        "p99": 863,
+        "maxLatency": 892,
+        "avgLatency": 456.35,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 4.27,
-        "memoryMb": 2.93,
-        "eventLoopDelayMs": 15.53
+        "throughputMbSec": 0.22
       },
       {
         "run": 3,
-        "rps": 39.21,
-        "throughputMbSec": 0.03,
-        "avgLatency": 2480.43,
-        "p50": 2288,
+        "rps": 223.5,
+        "p50": 425,
         "p95": 0,
-        "p99": 4609,
-        "maxLatency": 4919,
-        "minLatency": 2093,
+        "p99": 830,
+        "maxLatency": 844,
+        "avgLatency": 440.85,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 4.38,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 15.54
+        "throughputMbSec": 0.23
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 41.13,
-        "stdDev": 1.36,
-        "min": 39.21,
-        "max": 42.24
+        "avg": 216.23,
+        "stdDev": 5.56,
+        "min": 210,
+        "max": 223.5,
+        "variancePct": 2.57
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 3941.33,
-        "stdDev": 526.16,
-        "min": 3323,
-        "max": 4609
+      "p99": {
+        "avg": 801,
+        "stdDev": 65.74,
+        "min": 710,
+        "max": 863,
+        "variancePct": 8.21
       },
-      "avgThroughputMbSec": 0.03,
-      "avgErrorPct": 0,
-      "avgTimeoutPct": 0,
-      "avgCpuPercent": 4.65,
-      "avgEventLoopDelayMs": 15.5
+      "avgErrorPct": 0
     }
   },
   {
@@ -350,83 +274,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 40.57,
-        "throughputMbSec": 0.03,
-        "avgLatency": 2379.45,
-        "p50": 2435,
+        "rps": 907.9,
+        "p50": 109,
         "p95": 0,
-        "p99": 2737,
-        "maxLatency": 2806,
-        "minLatency": 390,
+        "p99": 204,
+        "maxLatency": 226,
+        "avgLatency": 108.94,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 3.65,
-        "memoryMb": 2.25,
-        "eventLoopDelayMs": 15.54
+        "throughputMbSec": 0.97
       },
       {
         "run": 2,
-        "rps": 34.94,
-        "throughputMbSec": 0.03,
-        "avgLatency": 2763.33,
-        "p50": 2654,
+        "rps": 996.19,
+        "p50": 102,
         "p95": 0,
-        "p99": 4852,
-        "maxLatency": 5100,
-        "minLatency": 2182,
+        "p99": 174,
+        "maxLatency": 228,
+        "avgLatency": 99.48,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 2.92,
-        "memoryMb": 2.54,
-        "eventLoopDelayMs": 15.57
+        "throughputMbSec": 1.06
       },
       {
         "run": 3,
-        "rps": 33.5,
-        "throughputMbSec": 0.02,
-        "avgLatency": 2860.32,
-        "p50": 2723,
+        "rps": 1118.1,
+        "p50": 90,
         "p95": 0,
-        "p99": 4942,
-        "maxLatency": 5240,
-        "minLatency": 2458,
+        "p99": 145,
+        "maxLatency": 206,
+        "avgLatency": 88.78,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 3.49,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 15.57
+        "throughputMbSec": 1.19
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 36.34,
-        "stdDev": 3.05,
-        "min": 33.5,
-        "max": 40.57
+        "avg": 1007.4,
+        "stdDev": 86.18,
+        "min": 907.9,
+        "max": 1118.1,
+        "variancePct": 8.55
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 4177,
-        "stdDev": 1018.9,
-        "min": 2737,
-        "max": 4942
+      "p99": {
+        "avg": 174.33,
+        "stdDev": 24.09,
+        "min": 145,
+        "max": 204,
+        "variancePct": 13.82
       },
-      "avgThroughputMbSec": 0.03,
-      "avgErrorPct": 0,
-      "avgTimeoutPct": 0,
-      "avgCpuPercent": 3.35,
-      "avgEventLoopDelayMs": 15.56
+      "avgErrorPct": 0
     }
   },
   {
@@ -436,83 +341,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 29.3,
-        "throughputMbSec": 0.02,
-        "avgLatency": 3199.59,
-        "p50": 3289,
+        "rps": 487.3,
+        "p50": 207,
         "p95": 0,
-        "p99": 4277,
-        "maxLatency": 4411,
-        "minLatency": 421,
+        "p99": 339,
+        "maxLatency": 410,
+        "avgLatency": 203.25,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 3.49,
-        "memoryMb": 1.33,
-        "eventLoopDelayMs": 15.46
+        "throughputMbSec": 0.53
       },
       {
         "run": 2,
-        "rps": 24.1,
-        "throughputMbSec": 0.02,
-        "avgLatency": 3946.07,
-        "p50": 3669,
+        "rps": 510.4,
+        "p50": 197,
         "p95": 0,
-        "p99": 7234,
-        "maxLatency": 7355,
-        "minLatency": 3344,
+        "p99": 337,
+        "maxLatency": 716,
+        "avgLatency": 193.99,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 3.54,
-        "memoryMb": 2.12,
-        "eventLoopDelayMs": 15.58
+        "throughputMbSec": 0.55
       },
       {
         "run": 3,
-        "rps": 25.4,
-        "throughputMbSec": 0.02,
-        "avgLatency": 3751.13,
-        "p50": 3615,
+        "rps": 528.71,
+        "p50": 191,
         "p95": 0,
-        "p99": 6517,
-        "maxLatency": 6783,
-        "minLatency": 3103,
+        "p99": 331,
+        "maxLatency": 732,
+        "avgLatency": 187.32,
         "errors": 0,
-        "timeouts": 0,
         "errorPct": 0,
-        "timeoutPct": 0,
-        "cpuPercent": 2.71,
-        "memoryMb": 1.83,
-        "eventLoopDelayMs": 15.53
+        "throughputMbSec": 0.57
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 26.27,
-        "stdDev": 2.21,
-        "min": 24.1,
-        "max": 29.3
+        "avg": 508.8,
+        "stdDev": 16.94,
+        "min": 487.3,
+        "max": 528.71,
+        "variancePct": 3.33
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 6009.33,
-        "stdDev": 1259.43,
-        "min": 4277,
-        "max": 7234
+      "p99": {
+        "avg": 335.67,
+        "stdDev": 3.4,
+        "min": 331,
+        "max": 339,
+        "variancePct": 1.01
       },
-      "avgThroughputMbSec": 0.02,
-      "avgErrorPct": 0,
-      "avgTimeoutPct": 0,
-      "avgCpuPercent": 3.25,
-      "avgEventLoopDelayMs": 15.52
+      "avgErrorPct": 0
     }
   },
   {
@@ -522,83 +408,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 9.66,
-        "throughputMbSec": 0.01,
-        "avgLatency": 5167.37,
-        "p50": 5047,
+        "rps": 192.4,
+        "p50": 2316,
         "p95": 0,
-        "p99": 9838,
-        "maxLatency": 9840,
-        "minLatency": 772,
-        "errors": 22225,
-        "timeouts": 777,
-        "errorPct": 7937.5,
-        "timeoutPct": 277.5,
-        "cpuPercent": 72.5,
-        "memoryMb": 12.5,
-        "eventLoopDelayMs": 33.41
+        "p99": 3450,
+        "maxLatency": 3563,
+        "avgLatency": 2382.28,
+        "errors": 0,
+        "errorPct": 0,
+        "throughputMbSec": 0.2
       },
       {
         "run": 2,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 187.2,
+        "p50": 2748,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 34163,
-        "timeouts": 736,
-        "errorPct": 3416300,
-        "timeoutPct": 73600,
-        "cpuPercent": 101.82,
-        "memoryMb": 27.65,
-        "eventLoopDelayMs": 102.52
+        "p99": 9025,
+        "maxLatency": 9075,
+        "avgLatency": 3860.74,
+        "errors": 1403,
+        "errorPct": 74.95,
+        "throughputMbSec": 0.19
       },
       {
         "run": 3,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 169.9,
+        "p50": 2519,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 36191,
-        "timeouts": 608,
-        "errorPct": 3619100,
-        "timeoutPct": 60800,
-        "cpuPercent": 101.82,
-        "memoryMb": 10.53,
-        "eventLoopDelayMs": 103.79
+        "p99": 9205,
+        "maxLatency": 9314,
+        "avgLatency": 3934.84,
+        "errors": 1500,
+        "errorPct": 88.29,
+        "throughputMbSec": 0.17
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 3.22,
-        "stdDev": 4.55,
-        "min": 0,
-        "max": 9.66
+        "avg": 183.17,
+        "stdDev": 9.62,
+        "min": 169.9,
+        "max": 192.4,
+        "variancePct": 5.25
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 3279.33,
-        "stdDev": 4637.68,
-        "min": 0,
-        "max": 9838
+      "p99": {
+        "avg": 7226.67,
+        "stdDev": 2671.52,
+        "min": 3450,
+        "max": 9205,
+        "variancePct": 36.97
       },
-      "avgThroughputMbSec": 0,
-      "avgErrorPct": 2347779.17,
-      "avgTimeoutPct": 44892.5,
-      "avgCpuPercent": 92.05,
-      "avgEventLoopDelayMs": 79.91
+      "avgErrorPct": 54.41
     }
   },
   {
@@ -608,83 +475,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 940.7,
+        "p50": 571,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 36365,
-        "timeouts": 694,
-        "errorPct": 3636500,
-        "timeoutPct": 69400,
-        "cpuPercent": 100.47,
-        "memoryMb": 23.56,
-        "eventLoopDelayMs": 98.81
+        "p99": 1032,
+        "maxLatency": 1149,
+        "avgLatency": 517.33,
+        "errors": 0,
+        "errorPct": 0,
+        "throughputMbSec": 1
       },
       {
         "run": 2,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 943.3,
+        "p50": 674,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 34447,
-        "timeouts": 448,
-        "errorPct": 3444700,
-        "timeoutPct": 44800,
-        "cpuPercent": 101.09,
-        "memoryMb": 10.22,
-        "eventLoopDelayMs": 109.07
+        "p99": 1877,
+        "maxLatency": 2083,
+        "avgLatency": 794.02,
+        "errors": 304,
+        "errorPct": 3.22,
+        "throughputMbSec": 1
       },
       {
         "run": 3,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 960.9,
+        "p50": 641,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 34350,
-        "timeouts": 448,
-        "errorPct": 3435000,
-        "timeoutPct": 44800,
-        "cpuPercent": 104.22,
-        "memoryMb": 0,
-        "eventLoopDelayMs": 109.99
+        "p99": 1794,
+        "maxLatency": 1925,
+        "avgLatency": 773.89,
+        "errors": 293,
+        "errorPct": 3.05,
+        "throughputMbSec": 1.02
       }
     ],
     "aggregate": {
       "rps": {
+        "avg": 948.3,
+        "stdDev": 8.97,
+        "min": 940.7,
+        "max": 960.9,
+        "variancePct": 0.95
+      },
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p95Latency": {
-        "avg": 0,
-        "stdDev": 0,
-        "min": 0,
-        "max": 0
+      "p99": {
+        "avg": 1567.67,
+        "stdDev": 380.29,
+        "min": 1032,
+        "max": 1877,
+        "variancePct": 24.26
       },
-      "p99Latency": {
-        "avg": 0,
-        "stdDev": 0,
-        "min": 0,
-        "max": 0
-      },
-      "avgThroughputMbSec": 0,
-      "avgErrorPct": 3505400,
-      "avgTimeoutPct": 53000,
-      "avgCpuPercent": 101.93,
-      "avgEventLoopDelayMs": 105.96
+      "avgErrorPct": 2.09
     }
   },
   {
@@ -694,83 +542,64 @@
     "runs": [
       {
         "run": 1,
-        "rps": 0.14,
-        "throughputMbSec": 0,
-        "avgLatency": 9990.25,
-        "p50": 9990,
+        "rps": 431.9,
+        "p50": 1223,
         "p95": 0,
-        "p99": 9992,
-        "maxLatency": 9992,
-        "minLatency": 9989,
-        "errors": 34787,
-        "timeouts": 638,
-        "errorPct": 869675,
-        "timeoutPct": 15950,
-        "cpuPercent": 101.72,
-        "memoryMb": 18.46,
-        "eventLoopDelayMs": 75.67
+        "p99": 1749,
+        "maxLatency": 1865,
+        "avgLatency": 1106.86,
+        "errors": 0,
+        "errorPct": 0,
+        "throughputMbSec": 0.47
       },
       {
         "run": 2,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 450.4,
+        "p50": 1137,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 34362,
-        "timeouts": 512,
-        "errorPct": 3436200,
-        "timeoutPct": 51200,
-        "cpuPercent": 101.35,
-        "memoryMb": 27.94,
-        "eventLoopDelayMs": 109.43
+        "p99": 8224,
+        "maxLatency": 8809,
+        "avgLatency": 2267.33,
+        "errors": 1134,
+        "errorPct": 25.18,
+        "throughputMbSec": 0.49
       },
       {
         "run": 3,
-        "rps": 0,
-        "throughputMbSec": 0,
-        "avgLatency": 0,
-        "p50": 0,
+        "rps": 474.7,
+        "p50": 1140,
         "p95": 0,
-        "p99": 0,
-        "maxLatency": 0,
-        "minLatency": 0,
-        "errors": 36300,
-        "timeouts": 512,
-        "errorPct": 3630000,
-        "timeoutPct": 51200,
-        "cpuPercent": 101.87,
-        "memoryMb": 19.1,
-        "eventLoopDelayMs": 104.25
+        "p99": 8421,
+        "maxLatency": 9227,
+        "avgLatency": 2176.65,
+        "errors": 1350,
+        "errorPct": 28.44,
+        "throughputMbSec": 0.52
       }
     ],
     "aggregate": {
       "rps": {
-        "avg": 0.05,
-        "stdDev": 0.07,
-        "min": 0,
-        "max": 0.14
+        "avg": 452.33,
+        "stdDev": 17.53,
+        "min": 431.9,
+        "max": 474.7,
+        "variancePct": 3.87
       },
-      "p95Latency": {
+      "p95": {
         "avg": 0,
         "stdDev": 0,
         "min": 0,
-        "max": 0
+        "max": 0,
+        "variancePct": 0
       },
-      "p99Latency": {
-        "avg": 3330.67,
-        "stdDev": 4710.27,
-        "min": 0,
-        "max": 9992
+      "p99": {
+        "avg": 6131.33,
+        "stdDev": 3099.82,
+        "min": 1749,
+        "max": 8421,
+        "variancePct": 50.56
       },
-      "avgThroughputMbSec": 0,
-      "avgErrorPct": 2645291.67,
-      "avgTimeoutPct": 39450,
-      "avgCpuPercent": 101.65,
-      "avgEventLoopDelayMs": 96.45
+      "avgErrorPct": 17.87
     }
   }
 ]
