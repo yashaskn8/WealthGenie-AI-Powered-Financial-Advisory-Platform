@@ -80,17 +80,12 @@ router.get('/', (req, res) => {
  * Readiness probe — returns 200 only when the database is connected and responsive.
  * Container orchestrators use this to decide when to route traffic.
  */
-router.get('/ready', asyncHandler(async (req, res) => {
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ status: 'NOT_READY', reason: 'Database not connected' });
-    }
-    await mongoose.connection.db.admin().ping();
-    res.status(200).json({ status: 'READY', timestamp: new Date().toISOString() });
-  } catch (err) {
-    res.status(503).json({ status: 'NOT_READY', reason: err.message });
+router.get('/ready', (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ status: 'NOT_READY', reason: 'Database not connected' });
   }
-}));
+  res.status(200).json({ status: 'READY', timestamp: new Date().toISOString() });
+});
 
 /**
  * GET /health/live
