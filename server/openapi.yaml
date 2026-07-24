@@ -1,0 +1,509 @@
+openapi: 3.1.0
+info:
+  title: WealthGenie API
+  version: 1.0.0
+  description: >
+    Production-grade financial planning and investment advice engine API.
+    Provides automated portfolio recommendation, Monte Carlo wealth projection,
+    Indian tax optimization (FY2025-26), and XIRR goal calculations.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Local Development Server
+  - url: https://api.wealthgenie.io
+    description: Production Cluster Gateway
+
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Deep Health Check
+      description: Returns health status of API, MongoDB connection state, and Redis availability.
+      tags:
+        - Observability
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              example:
+                status: UP
+                timestamp: '2026-07-25T00:00:00.000Z'
+                services:
+                  database: UP
+                  redis: UP
+                  version: 1.0.0
+        '503':
+          $ref: '#/components/responses/ServerError'
+
+  /api/auth/register:
+    post:
+      operationId: registerUser
+      summary: Register User
+      description: Registers a new user account with bcrypt password hashing.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: Password123!
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/login:
+    post:
+      operationId: loginUser
+      summary: User Login
+      description: Authenticates user credentials and issues a signed JWT token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                user:
+                  id: 60d5ecb8b3b3a214c8d5ecb8
+                  email: user@example.com
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout:
+    post:
+      operationId: logoutUser
+      summary: User Logout
+      description: Revokes current JWT token by adding jti to Redis blacklist.
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Token revoked successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/profile:
+    get:
+      operationId: getProfile
+      summary: Get Financial Profile
+      description: Retrieves the financial profile for the authenticated user.
+      tags:
+        - User Profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/profile/build:
+    post:
+      operationId: createProfile
+      summary: Create / Build Profile
+      description: Creates or updates the user's financial profile.
+      tags:
+        - User Profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileRequest'
+      responses:
+        '200':
+          description: Profile saved successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/profile/{id}:
+    put:
+      operationId: updateProfile
+      summary: Update Profile by ID
+      description: Updates an existing profile by document ID with ownership check.
+      tags:
+        - User Profile
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/recommend:
+    post:
+      operationId: generateRecommendations
+      summary: Generate Recommendations
+      description: Generates automated 5-instrument asset allocation picks using Rule/ML pipeline.
+      tags:
+        - Recommendation Engine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileRequest'
+      responses:
+        '200':
+          description: Recommendations generated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/goals:
+    get:
+      operationId: listGoals
+      summary: List User Goals
+      description: Returns all financial goals for the authenticated user.
+      tags:
+        - Goals
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Goals list retrieved
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createGoal
+      summary: Create Financial Goal
+      description: Creates a new financial goal with reverse SIP calculation.
+      tags:
+        - Goals
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+      responses:
+        '201':
+          description: Goal created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/goals/{id}:
+    put:
+      operationId: updateGoal
+      summary: Update Goal
+      tags:
+        - Goals
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Goal updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteGoal
+      summary: Delete Goal
+      tags:
+        - Goals
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Goal deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/portfolio:
+    get:
+      operationId: getPortfolio
+      summary: Get User Portfolio
+      tags:
+        - Portfolio
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Portfolio retrieved
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/portfolio/optimise:
+    post:
+      operationId: optimizePortfolio
+      summary: Optimize Portfolio Weights
+      description: Computes Markowitz minimum-variance asset weights.
+      tags:
+        - Portfolio
+      responses:
+        '200':
+          description: Optimal weights calculated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/portfolio/rebalance:
+    post:
+      operationId: rebalancePortfolio
+      summary: Calculate Rebalance Drift
+      description: Computes portfolio drift index and rebalancing trade directives.
+      tags:
+        - Portfolio
+      responses:
+        '200':
+          description: Rebalancing analysis complete
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/tax/calculate:
+    post:
+      operationId: calculateTax
+      summary: Compute Tax Liabilities
+      description: Calculates FY2025-26 tax liability for Old/New regime.
+      tags:
+        - Tax Engine
+      responses:
+        '200':
+          description: Tax calculated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/tax/compare:
+    post:
+      operationId: compareTaxRegimes
+      summary: Compare Tax Regimes
+      description: Compares Old vs New tax regime and recommends optimal regime.
+      tags:
+        - Tax Engine
+      responses:
+        '200':
+          description: Tax regime comparison complete
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/instruments:
+    get:
+      operationId: listInstruments
+      summary: List Supported Instruments
+      tags:
+        - Market Instruments
+      responses:
+        '200':
+          description: Instruments list retrieved
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/instruments/{id}:
+    get:
+      operationId: getInstrumentById
+      summary: Get Instrument Details
+      tags:
+        - Market Instruments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Instrument details retrieved
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/market/freshness:
+    get:
+      operationId: getMarketFreshness
+      summary: Market Data Freshness Bar
+      tags:
+        - Market Instruments
+      responses:
+        '200':
+          description: Freshness status retrieved
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/montecarlo/simulate:
+    post:
+      operationId: runMonteCarloSimulation
+      summary: Run Monte Carlo Simulation
+      tags:
+        - Projections
+      responses:
+        '200':
+          description: Simulation complete
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/projection/simulate:
+    post:
+      operationId: runWealthProjection
+      summary: Generate Wealth Projection
+      tags:
+        - Projections
+      responses:
+        '200':
+          description: Projection generated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/chat:
+    post:
+      operationId: sendChatMessage
+      summary: AI Assistant Chat
+      tags:
+        - AI Assistant
+      responses:
+        '200':
+          description: AI response generated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request / validation error
+      content:
+        application/json:
+          example:
+            error: Invalid request parameters
+    Unauthorized:
+      description: Authentication required or token expired
+      content:
+        application/json:
+          example:
+            error: Access denied. No token provided.
+    Forbidden:
+      description: Access forbidden / ownership check failed
+      content:
+        application/json:
+          example:
+            error: Access denied. Resource ownership mismatch.
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          example:
+            error: Requested resource not found
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          example:
+            error: Internal server error
+
+  schemas:
+    ProfileRequest:
+      type: object
+      required: [age, monthly_income, monthly_savings, risk_tolerance]
+      properties:
+        age:
+          type: integer
+          minimum: 18
+          maximum: 80
+          example: 30
+        monthly_income:
+          type: number
+          minimum: 10000
+          maximum: 100000000
+          example: 150000
+        monthly_savings:
+          type: number
+          minimum: 0
+          example: 50000
+        risk_tolerance:
+          type: string
+          enum: [Conservative, Moderate, Aggressive]
+          example: Moderate
+
+    GoalRequest:
+      type: object
+      required: [goal_name, target_amount, horizon_years]
+      properties:
+        goal_name:
+          type: string
+          example: Retirement Fund
+        target_amount:
+          type: number
+          minimum: 1000
+          example: 10000000
+        horizon_years:
+          type: integer
+          minimum: 1
+          maximum: 40
+          example: 15
