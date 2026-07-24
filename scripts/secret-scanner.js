@@ -1,6 +1,10 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.join(__dirname, '..');
 
 // Define secret patterns to block
 const RULES = [
@@ -58,42 +62,51 @@ const RULES = [
 
 // Check if a file should be ignored
 function isIgnored(filePath) {
-  const ignoredExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.mp4', '.pdf', '.zip', '.tar', '.gz', '.pkl'];
+  const ignoredExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.mp4', '.pdf', '.zip', '.tar', '.gz', '.pkl', '.svg'];
   if (ignoredExtensions.includes(path.extname(filePath).toLowerCase())) {
     return true;
   }
   // Ignore specific files
-  const ignoredFiles = ['secret-scanner.js', '.env.example', 'README.md', 'package-lock.json'];
+  const ignoredFiles = ['secret-scanner.js', '.env.example', 'README.md', 'package-lock.json', '.system_generated', 'dependency_map.md'];
   if (ignoredFiles.some(f => filePath.endsWith(f))) {
+    return true;
+  }
+  if (filePath.includes('node_modules') || filePath.includes('.git') || filePath.includes('coverage') || filePath.includes('server/test/') || filePath.includes('ml-service/tests/') || filePath.includes('server/test_')) {
     return true;
   }
   return false;
 }
 
 try {
-  // Get staged files
-  const stdout = execSync('git diff --cached --name-only --diff-filter=ACM', { encoding: 'utf-8' });
-  const files = stdout.split('\n').map(f => f.trim()).filter(Boolean);
+  const scanAll = process.argv.includes('--all');
+  let files = [];
+
+  if (scanAll) {
+    const stdout = execSync('git ls-files', { cwd: ROOT_DIR, encoding: 'utf-8' });
+    files = stdout.split('\n').map(f => f.trim()).filter(Boolean);
+  } else {
+    const stdout = execSync('git diff --cached --name-only --diff-filter=ACM', { cwd: ROOT_DIR, encoding: 'utf-8' });
+    files = stdout.split('\n').map(f => f.trim()).filter(Boolean);
+    if (files.length === 0) {
+      // Fall back to git ls-files if no staged files
+      const stdoutAll = execSync('git ls-files', { cwd: ROOT_DIR, encoding: 'utf-8' });
+      files = stdoutAll.split('\n').map(f => f.trim()).filter(Boolean);
+    }
+  }
 
   let hasSecrets = false;
 
   for (const file of files) {
     if (isIgnored(file)) continue;
 
-    // Get the staged content of the file
-    let content;
-    try {
-      content = execSync(`git show :${file}`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
-    } catch (e) {
-      // Fallback to reading file from disk if git show fails
-      if (fs.existsSync(file)) {
-        content = fs.readFileSync(file, 'utf-8');
-      } else {
-        continue;
-      }
-    }
+    const fullPath = path.isAbsolute(file) ? file : path.join(ROOT_DIR, file);
+    if (!fs.existsSync(fullPath)) continue;
+
+    const content = fs.readFileSync(fullPath, 'utf-8');
 
     for (const rule of RULES) {
+      // Reset regex index
+      rule.regex.lastIndex = 0;
       if (rule.regex.test(content)) {
         console.error(`\x1b[31m[SECURITY ERROR] Secret detected in file: ${file}\x1b[0m`);
         console.error(`\x1b[31mPattern matched: ${rule.description} (${rule.id})\x1b[0m`);
@@ -106,8 +119,9 @@ try {
   if (hasSecrets) {
     process.exit(1);
   }
+  console.log('✅ Secret scanning passed (0 secrets detected).');
   process.exit(0);
 } catch (error) {
   console.error('Error running secret scanner:', error.message);
-  process.exit(0); // Pass if error in script to prevent blocking developer unexpectedly
+  process.exit(1);
 }

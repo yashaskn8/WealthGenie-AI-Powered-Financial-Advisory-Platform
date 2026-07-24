@@ -1,2 +1,3 @@
 #!/bin/sh
 node scripts/secret-scanner.js
+node scripts/check_docs_sync.js

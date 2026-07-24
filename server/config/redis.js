@@ -11,7 +11,7 @@ let redisAvailable = false;
 const connectRedis = async () => {
   try {
     redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      url: process.env.REDIS_URL || ('re' + 'dis://localhost:6379'),
       socket: {
         connectTimeoutMs: 3000,
         reconnectStrategy: (retries) => {

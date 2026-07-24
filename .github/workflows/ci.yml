@@ -1,4 +1,4 @@
-name: CI Test Matrix & Quality Gate
+name: CI Test Matrix & Production Quality Gate
 
 on:
   push:
@@ -6,15 +6,49 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  backend-test-matrix:
-    name: Backend Tests (Node ${{ matrix.node-version }}, MongoDB ${{ matrix.mongodb-version }}, ${{ matrix.os }})
+  secret-scan-gate:
+    name: Secret Scanning Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+      - name: Run Secret Scanner
+        run: node scripts/secret-scanner.js --all
+
+  docs-sync-gate:
+    name: Documentation Sync Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+      - name: Run Docs Sync Checker
+        run: node scripts/check_docs_sync.js
+
+  backend-quality-matrix:
+    name: Backend (Node ${{ matrix.node-version }}, MongoDB ${{ matrix.mongodb-version }}, ${{ matrix.os }})
+    needs: [secret-scan-gate, docs-sync-gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
         mongodb-version: ['6.0', '7.0']
 
     steps:
@@ -27,12 +61,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
 
-      - name: Install Backend Dependencies
+      - name: Install Backend Dependencies (npm ci)
         run: |
           cd server
           npm ci
 
-      - name: Run Backend Unit & Integration Tests with Coverage
+      - name: Run Backend Tests & Coverage
         run: |
           cd server
           npm run test:coverage
@@ -42,14 +76,21 @@ jobs:
           cd server
           npm run loadtest
 
-  frontend-test-matrix:
-    name: Frontend Tests (Node ${{ matrix.node-version }}, ${{ matrix.os }})
+      - name: Upload Backend Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ matrix.os }}-node${{ matrix.node-version }}-mongo${{ matrix.mongodb-version }}
+          path: server/reports/
+
+  frontend-quality-matrix:
+    name: Frontend (Node ${{ matrix.node-version }}, ${{ matrix.os }})
+    needs: [secret-scan-gate, docs-sync-gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +102,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: reactapp/package-lock.json
 
-      - name: Install Frontend Dependencies
+      - name: Install Frontend Dependencies (npm ci)
         run: |
           cd reactapp
           npm ci
@@ -70,3 +111,33 @@ jobs:
         run: |
           cd reactapp
           npm test
+
+  ml-microservice-quality:
+    name: ML Service (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    needs: [secret-scan-gate, docs-sync-gate]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: ml-service/requirements.txt
+
+      - name: Install Requirements
+        run: |
+          cd ml-service
+          pip install -r requirements.txt
+
+      - name: Run Pytest Suite
+        run: |
+          cd ml-service
+          pytest
