@@ -19,7 +19,7 @@ class MetricsCollector {
       prompt_injection_attempts_total: 0,
     };
 
-    this.toolUsage = new Map(); // tool_name -> count
+    this.toolUsage = {}; // tool_name -> count
     this.latencies = []; // rolling window of latency entries
     this.maxLatencyWindow = 500;
   }
@@ -37,8 +37,8 @@ class MetricsCollector {
     } else {
       this.inc('tool_execution_failure_total');
     }
-    const current = this.toolUsage.get(toolName) || 0;
-    this.toolUsage.set(toolName, current + 1);
+    const current = this.toolUsage[toolName] || 0;
+    this.toolUsage[toolName] = current + 1;
   }
 
   recordLatency(provider, latencyMs) {
@@ -64,7 +64,7 @@ class MetricsCollector {
     lines.push(`wealthgenie_tool_executions_total{status="success"} ${this.counters.tool_execution_success_total}`);
     lines.push(`wealthgenie_tool_executions_total{status="failure"} ${this.counters.tool_execution_failure_total}`);
 
-    for (const [tool, count] of this.toolUsage.entries()) {
+    for (const [tool, count] of Object.entries(this.toolUsage)) {
       lines.push(`wealthgenie_tool_usage_total{tool="${tool}"} ${count}`);
     }
 
@@ -91,7 +91,7 @@ class MetricsCollector {
 
     return {
       counters: { ...this.counters },
-      tool_usage: Object.fromEntries(this.toolUsage),
+      tool_usage: { ...this.toolUsage },
       average_latency_ms: parseFloat(avgLatency),
       recorded_requests_window: this.latencies.length,
       timestamp: new Date().toISOString(),

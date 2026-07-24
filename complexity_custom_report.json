@@ -1,0 +1,742 @@
+[
+  {
+    "filePath": "reactapp\\src\\recommendationEngine.js",
+    "loc": 505,
+    "complexity": 144
+  },
+  {
+    "filePath": "reactapp\\src\\components\\RebalancerScreen.jsx",
+    "loc": 1473,
+    "complexity": 128
+  },
+  {
+    "filePath": "reactapp\\src\\engine\\scoringEngine.js",
+    "loc": 542,
+    "complexity": 126
+  },
+  {
+    "filePath": "reactapp\\src\\RecommendationDashboard.jsx",
+    "loc": 1931,
+    "complexity": 121
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\wtiGenerator.js",
+    "loc": 461,
+    "complexity": 105
+  },
+  {
+    "filePath": "server\\services\\portfolioEngine.js",
+    "loc": 627,
+    "complexity": 97
+  },
+  {
+    "filePath": "server\\services\\RecommendationPipeline.js",
+    "loc": 549,
+    "complexity": 95
+  },
+  {
+    "filePath": "server\\routes\\goals.js",
+    "loc": 618,
+    "complexity": 86
+  },
+  {
+    "filePath": "reactapp\\src\\whereToInvest.js",
+    "loc": 252,
+    "complexity": 76
+  },
+  {
+    "filePath": "server\\services\\monteCarloEngine.js",
+    "loc": 411,
+    "complexity": 66
+  },
+  {
+    "filePath": "reactapp\\src\\components\\TaxScreen.jsx",
+    "loc": 1082,
+    "complexity": 62
+  },
+  {
+    "filePath": "server\\services\\postTaxCalculator.js",
+    "loc": 462,
+    "complexity": 60
+  },
+  {
+    "filePath": "reactapp\\src\\ComparisonTableModal.jsx",
+    "loc": 776,
+    "complexity": 57
+  },
+  {
+    "filePath": "server\\services\\xirrCalculator.js",
+    "loc": 311,
+    "complexity": 55
+  },
+  {
+    "filePath": "reactapp\\src\\components\\DeepDiveModal.jsx",
+    "loc": 347,
+    "complexity": 52
+  },
+  {
+    "filePath": "reactapp\\src\\components\\GoalTracker.jsx",
+    "loc": 762,
+    "complexity": 49
+  },
+  {
+    "filePath": "server\\services\\projectionEngine.js",
+    "loc": 312,
+    "complexity": 46
+  },
+  {
+    "filePath": "reactapp\\src\\components\\GenieChat.jsx",
+    "loc": 499,
+    "complexity": 42
+  },
+  {
+    "filePath": "reactapp\\src\\HealthScoreScreen.jsx",
+    "loc": 822,
+    "complexity": 42
+  },
+  {
+    "filePath": "reactapp\\src\\components\\GenieChatSubcomponents.jsx",
+    "loc": 248,
+    "complexity": 39
+  },
+  {
+    "filePath": "reactapp\\src\\PostTaxAnalysis.jsx",
+    "loc": 559,
+    "complexity": 39
+  },
+  {
+    "filePath": "reactapp\\src\\ProfileEditor.jsx",
+    "loc": 563,
+    "complexity": 39
+  },
+  {
+    "filePath": "reactapp\\src\\components\\JargonTooltip.jsx",
+    "loc": 341,
+    "complexity": 37
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\CalculatorTab.jsx",
+    "loc": 483,
+    "complexity": 36
+  },
+  {
+    "filePath": "server\\services\\taxEngine.js",
+    "loc": 313,
+    "complexity": 35
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\TaxTab.jsx",
+    "loc": 205,
+    "complexity": 35
+  },
+  {
+    "filePath": "server\\services\\marketDataService.js",
+    "loc": 266,
+    "complexity": 33
+  },
+  {
+    "filePath": "reactapp\\src\\engine\\taxComputation.js",
+    "loc": 207,
+    "complexity": 33
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\genieChatHelpers.js",
+    "loc": 163,
+    "complexity": 33
+  },
+  {
+    "filePath": "server\\middleware\\errorHandler.js",
+    "loc": 199,
+    "complexity": 32
+  },
+  {
+    "filePath": "server\\services\\instrumentConstants.js",
+    "loc": 191,
+    "complexity": 32
+  },
+  {
+    "filePath": "reactapp\\src\\App.jsx",
+    "loc": 425,
+    "complexity": 32
+  },
+  {
+    "filePath": "server\\services\\arithmeticVerifier.js",
+    "loc": 146,
+    "complexity": 31
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\instrumentExplainers.js",
+    "loc": 184,
+    "complexity": 30
+  },
+  {
+    "filePath": "reactapp\\src\\components\\ProfilePage.jsx",
+    "loc": 315,
+    "complexity": 28
+  },
+  {
+    "filePath": "server\\services\\geminiService.js",
+    "loc": 186,
+    "complexity": 27
+  },
+  {
+    "filePath": "reactapp\\src\\services\\api.js",
+    "loc": 244,
+    "complexity": 27
+  },
+  {
+    "filePath": "reactapp\\src\\components\\AuthPage.jsx",
+    "loc": 364,
+    "complexity": 26
+  },
+  {
+    "filePath": "reactapp\\src\\components\\Sidebar.jsx",
+    "loc": 205,
+    "complexity": 26
+  },
+  {
+    "filePath": "server\\services\\mlClient.js",
+    "loc": 174,
+    "complexity": 25
+  },
+  {
+    "filePath": "server\\config\\redis.js",
+    "loc": 141,
+    "complexity": 24
+  },
+  {
+    "filePath": "server\\middleware\\idempotency.js",
+    "loc": 148,
+    "complexity": 24
+  },
+  {
+    "filePath": "server\\services\\geminiChatService.js",
+    "loc": 343,
+    "complexity": 24
+  },
+  {
+    "filePath": "reactapp\\src\\components\\GoalPlanner.jsx",
+    "loc": 333,
+    "complexity": 24
+  },
+  {
+    "filePath": "server\\routes\\projection.js",
+    "loc": 143,
+    "complexity": 23
+  },
+  {
+    "filePath": "reactapp\\src\\components\\ExplainabilityPanel.jsx",
+    "loc": 443,
+    "complexity": 23
+  },
+  {
+    "filePath": "reactapp\\src\\HelpTourScreen.jsx",
+    "loc": 452,
+    "complexity": 22
+  },
+  {
+    "filePath": "server\\routes\\recommend.js",
+    "loc": 206,
+    "complexity": 19
+  },
+  {
+    "filePath": "server\\services\\riskProfiler.js",
+    "loc": 202,
+    "complexity": 18
+  },
+  {
+    "filePath": "server\\routes\\portfolio.js",
+    "loc": 159,
+    "complexity": 17
+  },
+  {
+    "filePath": "server\\routes\\profile.js",
+    "loc": 212,
+    "complexity": 17
+  },
+  {
+    "filePath": "server\\routes\\health.js",
+    "loc": 109,
+    "complexity": 16
+  },
+  {
+    "filePath": "server\\server.js",
+    "loc": 228,
+    "complexity": 16
+  },
+  {
+    "filePath": "server\\eval\\chatEvaluationFramework.js",
+    "loc": 126,
+    "complexity": 15
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\OverviewTab.jsx",
+    "loc": 279,
+    "complexity": 15
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\StressTestTab.jsx",
+    "loc": 528,
+    "complexity": 15
+  },
+  {
+    "filePath": "reactapp\\src\\engine\\goalFiltering.js",
+    "loc": 171,
+    "complexity": 15
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\indianNumberFormat.js",
+    "loc": 56,
+    "complexity": 15
+  },
+  {
+    "filePath": "server\\test\\concurrency.test.js",
+    "loc": 329,
+    "complexity": 14
+  },
+  {
+    "filePath": "server\\routes\\montecarlo.js",
+    "loc": 167,
+    "complexity": 13
+  },
+  {
+    "filePath": "server\\middleware\\rateLimiter.js",
+    "loc": 70,
+    "complexity": 12
+  },
+  {
+    "filePath": "server\\routes\\auth.js",
+    "loc": 123,
+    "complexity": 12
+  },
+  {
+    "filePath": "server\\services\\financialToolRegistry.js",
+    "loc": 247,
+    "complexity": 12
+  },
+  {
+    "filePath": "reactapp\\src\\components\\AllocationPlanner.jsx",
+    "loc": 278,
+    "complexity": 12
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\WhereToInvestTab.jsx",
+    "loc": 216,
+    "complexity": 12
+  },
+  {
+    "filePath": "server\\services\\actionCardValidator.js",
+    "loc": 133,
+    "complexity": 11
+  },
+  {
+    "filePath": "server\\services\\aiToolOrchestrator.js",
+    "loc": 134,
+    "complexity": 11
+  },
+  {
+    "filePath": "server\\services\\providerAbstraction.js",
+    "loc": 175,
+    "complexity": 11
+  },
+  {
+    "filePath": "server\\services\\structuredResponseProtocol.js",
+    "loc": 93,
+    "complexity": 11
+  },
+  {
+    "filePath": "reactapp\\src\\InvestmentCard.jsx",
+    "loc": 125,
+    "complexity": 11
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\taxCalculator.js",
+    "loc": 99,
+    "complexity": 11
+  },
+  {
+    "filePath": "server\\middleware\\authMiddleware.js",
+    "loc": 64,
+    "complexity": 10
+  },
+  {
+    "filePath": "server\\test\\chaos.test.js",
+    "loc": 246,
+    "complexity": 10
+  },
+  {
+    "filePath": "server\\validation\\schemas.js",
+    "loc": 243,
+    "complexity": 10
+  },
+  {
+    "filePath": "reactapp\\src\\components\\GoalForm.jsx",
+    "loc": 284,
+    "complexity": 10
+  },
+  {
+    "filePath": "reactapp\\src\\PortfolioChart.jsx",
+    "loc": 92,
+    "complexity": 10
+  },
+  {
+    "filePath": "server\\jobs\\marketDataRefresh.js",
+    "loc": 113,
+    "complexity": 9
+  },
+  {
+    "filePath": "server\\routes\\tax.js",
+    "loc": 111,
+    "complexity": 9
+  },
+  {
+    "filePath": "server\\services\\genieChatSystemPrompt.js",
+    "loc": 196,
+    "complexity": 9
+  },
+  {
+    "filePath": "reactapp\\src\\components\\ProjectionBand.jsx",
+    "loc": 137,
+    "complexity": 9
+  },
+  {
+    "filePath": "reactapp\\src\\components\\StepUpPlanner.jsx",
+    "loc": 497,
+    "complexity": 9
+  },
+  {
+    "filePath": "server\\routes\\chatRoutes.js",
+    "loc": 93,
+    "complexity": 8
+  },
+  {
+    "filePath": "server\\services\\explainabilityEngine.js",
+    "loc": 51,
+    "complexity": 8
+  },
+  {
+    "filePath": "server\\services\\promptSecurity.js",
+    "loc": 74,
+    "complexity": 8
+  },
+  {
+    "filePath": "server\\test\\observability.test.js",
+    "loc": 136,
+    "complexity": 8
+  },
+  {
+    "filePath": "server\\test\\property.test.js",
+    "loc": 176,
+    "complexity": 8
+  },
+  {
+    "filePath": "reactapp\\src\\components\\DataFreshnessBar.jsx",
+    "loc": 127,
+    "complexity": 8
+  },
+  {
+    "filePath": "reactapp\\src\\components\\GoalDetailPane.jsx",
+    "loc": 309,
+    "complexity": 8
+  },
+  {
+    "filePath": "server\\scripts\\cluster-test.js",
+    "loc": 87,
+    "complexity": 7
+  },
+  {
+    "filePath": "server\\services\\conversationStateMachine.js",
+    "loc": 47,
+    "complexity": 7
+  },
+  {
+    "filePath": "server\\data\\investmentDatabase.js",
+    "loc": 144,
+    "complexity": 6
+  },
+  {
+    "filePath": "server\\routes\\instruments.js",
+    "loc": 64,
+    "complexity": 6
+  },
+  {
+    "filePath": "server\\routes\\market.js",
+    "loc": 77,
+    "complexity": 6
+  },
+  {
+    "filePath": "server\\test\\validation.test.js",
+    "loc": 185,
+    "complexity": 6
+  },
+  {
+    "filePath": "server\\test-utils\\httpTestUtils.js",
+    "loc": 95,
+    "complexity": 6
+  },
+  {
+    "filePath": "reactapp\\src\\investmentDatabase.js",
+    "loc": 137,
+    "complexity": 6
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\instrumentTypeMap.js",
+    "loc": 77,
+    "complexity": 6
+  },
+  {
+    "filePath": "server\\config\\seedInstruments.js",
+    "loc": 136,
+    "complexity": 5
+  },
+  {
+    "filePath": "server\\services\\metricsCollector.js",
+    "loc": 103,
+    "complexity": 5
+  },
+  {
+    "filePath": "server\\middleware\\contentType.js",
+    "loc": 20,
+    "complexity": 4
+  },
+  {
+    "filePath": "server\\models\\ConversationHistory.js",
+    "loc": 69,
+    "complexity": 4
+  },
+  {
+    "filePath": "server\\services\\immutableSecurityPipeline.js",
+    "loc": 58,
+    "complexity": 4
+  },
+  {
+    "filePath": "server\\test\\security.test.js",
+    "loc": 197,
+    "complexity": 4
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\WhyInvestTab.jsx",
+    "loc": 176,
+    "complexity": 4
+  },
+  {
+    "filePath": "server\\config\\db.js",
+    "loc": 36,
+    "complexity": 3
+  },
+  {
+    "filePath": "server\\scripts\\lb-proxy.js",
+    "loc": 69,
+    "complexity": 3
+  },
+  {
+    "filePath": "server\\test\\monteCarloEngine.test.js",
+    "loc": 33,
+    "complexity": 3
+  },
+  {
+    "filePath": "server\\test\\serviceCoverage.test.js",
+    "loc": 242,
+    "complexity": 3
+  },
+  {
+    "filePath": "server\\test\\xirrCalculator.test.js",
+    "loc": 36,
+    "complexity": 3
+  },
+  {
+    "filePath": "reactapp\\src\\InsightsScreen.jsx",
+    "loc": 191,
+    "complexity": 3
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\confidenceLabels.js",
+    "loc": 28,
+    "complexity": 3
+  },
+  {
+    "filePath": "server\\scripts\\run-eval.js",
+    "loc": 23,
+    "complexity": 2
+  },
+  {
+    "filePath": "server\\test\\portfolioEngine.test.js",
+    "loc": 40,
+    "complexity": 2
+  },
+  {
+    "filePath": "server\\test\\portfolioRoute.test.js",
+    "loc": 62,
+    "complexity": 2
+  },
+  {
+    "filePath": "server\\utils\\logger.js",
+    "loc": 62,
+    "complexity": 2
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\HistoryTab.jsx",
+    "loc": 91,
+    "complexity": 2
+  },
+  {
+    "filePath": "reactapp\\src\\context\\UserContext.jsx",
+    "loc": 87,
+    "complexity": 2
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\portfolioValidation.test.js",
+    "loc": 35,
+    "complexity": 2
+  },
+  {
+    "filePath": "server\\middleware\\correlation.js",
+    "loc": 18,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\models\\IdempotencyKey.js",
+    "loc": 18,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\models\\Instrument.js",
+    "loc": 96,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\services\\layeredMemoryManager.js",
+    "loc": 85,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\services\\toolTraceGraph.js",
+    "loc": 67,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\test\\chatRoutes.test.js",
+    "loc": 166,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\test\\geminiChatService.test.js",
+    "loc": 219,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\test\\routeCoverage.test.js",
+    "loc": 94,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\test_seed_loadtest.js",
+    "loc": 42,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\test_tx.js",
+    "loc": 13,
+    "complexity": 1
+  },
+  {
+    "filePath": "reactapp\\src\\components\\ErrorBoundary.jsx",
+    "loc": 52,
+    "complexity": 1
+  },
+  {
+    "filePath": "reactapp\\src\\LandingPage.jsx",
+    "loc": 182,
+    "complexity": 1
+  },
+  {
+    "filePath": "reactapp\\src\\recommendationEngine.test.js",
+    "loc": 40,
+    "complexity": 1
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\sipCalculator.test.js",
+    "loc": 27,
+    "complexity": 1
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\taxCalculator.test.js",
+    "loc": 35,
+    "complexity": 1
+  },
+  {
+    "filePath": "server\\models\\FinancialProfile.js",
+    "loc": 37,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\models\\Goal.js",
+    "loc": 50,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\models\\Recommendation.js",
+    "loc": 33,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\models\\User.js",
+    "loc": 23,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\test\\authLogout.test.js",
+    "loc": 67,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\test\\authMiddleware.test.js",
+    "loc": 46,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\test\\rateLimitMiddleware.test.js",
+    "loc": 23,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\test\\recommendationPipeline.test.js",
+    "loc": 93,
+    "complexity": 0
+  },
+  {
+    "filePath": "server\\test\\taxEngine.test.js",
+    "loc": 41,
+    "complexity": 0
+  },
+  {
+    "filePath": "reactapp\\src\\components\\deepdive\\index.js",
+    "loc": 11,
+    "complexity": 0
+  },
+  {
+    "filePath": "reactapp\\src\\components\\SebiDisclaimer.jsx",
+    "loc": 33,
+    "complexity": 0
+  },
+  {
+    "filePath": "reactapp\\src\\GoalCoverage.jsx",
+    "loc": 32,
+    "complexity": 0
+  },
+  {
+    "filePath": "reactapp\\src\\main.jsx",
+    "loc": 11,
+    "complexity": 0
+  },
+  {
+    "filePath": "reactapp\\src\\RecommendationDashboard.test.jsx",
+    "loc": 27,
+    "complexity": 0
+  },
+  {
+    "filePath": "reactapp\\src\\utils\\postTaxEngine.test.js",
+    "loc": 19,
+    "complexity": 0
+  }
+]

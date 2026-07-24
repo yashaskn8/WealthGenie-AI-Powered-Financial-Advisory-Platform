@@ -32,8 +32,7 @@ const HISTORY_WINDOW = 20;
 const MAX_OUTPUT_TOKENS = 4096;
 const SYSTEM_PROMPT_TTL = 1800;
 
-const rateLimitCounters = new Map();
-
+// STATELESS: Rate limits are stored strictly in Redis. No in-memory Map fallback.
 async function checkRateLimit(userId) {
   const key = `chat:ratelimit:${userId}`;
   if (redisClient && redisAvailable) {
@@ -47,15 +46,8 @@ async function checkRateLimit(userId) {
       return { allowed: true, count };
     } catch (_) { /* fallthrough */ }
   }
-  const now = Date.now();
-  let entry = rateLimitCounters.get(userId);
-  if (!entry || now - entry.start > 3600000) entry = { count: 0, start: now };
-  entry.count++;
-  rateLimitCounters.set(userId, entry);
-  if (entry.count > CHAT_RATE_LIMIT) {
-    return { allowed: false, count: entry.count, ttl: Math.ceil((entry.start + 3600000 - now) / 1000) };
-  }
-  return { allowed: true, count: entry.count };
+  // Without Redis, allow request to avoid in-memory state divergence across instances
+  return { allowed: true, count: 1 };
 }
 
 export async function processChat({ userId, user, message, sessionId }) {

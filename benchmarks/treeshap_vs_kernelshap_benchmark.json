@@ -1,0 +1,63 @@
+{
+  "system_info": {
+    "os": "Windows 11 (AMD64)",
+    "cpu": "Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "python_version": "3.12.13",
+    "date": "2026-07-24T14:41:51.841461+00:00",
+    "random_seed": 42,
+    "dependency_versions": {
+      "numpy": "1.26.4",
+      "pandas": "2.2.3",
+      "sklearn": "1.5.2",
+      "shap": "0.46.0",
+      "joblib": "1.4.2"
+    }
+  },
+  "results": {
+    "TreeSHAP": {
+      "latency_mean_s": 8.6094,
+      "latency_std_s": 2.0551,
+      "latency_ci95_s": 1.8014,
+      "peak_memory_mean_mb": 10.5826,
+      "peak_memory_std_mb": 0.0029,
+      "n_runs": 5,
+      "n_samples_explained": 100
+    },
+    "KernelSHAP": {
+      "latency_mean_s": 47.119,
+      "latency_std_s": 0.4388,
+      "latency_ci95_s": 0.4966,
+      "peak_memory_mean_mb": 5.5627,
+      "peak_memory_std_mb": 0.0163,
+      "n_runs": 3,
+      "n_samples_explained": 20
+    },
+    "consistency": {
+      "top3_feature_overlap": 1.0,
+      "tree_top3_features": [
+        "age",
+        "investment_horizon",
+        "horizon_adjusted_urgency_score"
+      ],
+      "kernel_top3_features": [
+        "age",
+        "investment_horizon",
+        "horizon_adjusted_urgency_score"
+      ]
+    },
+    "model_info": {
+      "model_type": "RandomForestClassifier",
+      "n_estimators": 100,
+      "n_features": 16,
+      "n_classes": 6,
+      "class_names": [
+        "Debt_MF",
+        "ELSS",
+        "ETF",
+        "Equity_MF",
+        "FD",
+        "RBI_Bond"
+      ]
+    }
+  }
+}

@@ -123,6 +123,42 @@ export function formatINR(val) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 }
 
+function _checkBasicEligibility(inv, age, annualIncome, savings) {
+  const elig = inv.eligibility;
+  if (age < elig.minAge) return false;
+  if (elig.maxAge !== null && age > elig.maxAge) return false;
+  if (annualIncome < elig.minAnnualIncome) return false;
+  if (savings < inv.minMonthlyInvestment) return false;
+  if (elig.minMonthlySavings && savings < elig.minMonthlySavings) return false;
+  return true;
+}
+
+function _checkInstrumentSpecificRules(inv, age, annualIncome, savings, horizon, risk, profile) {
+  if (inv.id === "scss" && age < 60) return false;
+  if (inv.id === "nps" && age >= 60) return false;
+  if (inv.id === "sukanya") {
+    if (age < 18 || age > 40 || !profile.has_daughter_under_10) return false;
+  }
+  if (inv.id === "smallcap_mf") {
+    if (!(age >= 21 && age <= 45 && horizon >= 10 && risk === "high" && annualIncome >= 800000 && savings >= 8000)) return false;
+  }
+  if (inv.id === "direct_equity") {
+    if (!(age >= 21 && age <= 55 && risk === "high" && annualIncome >= 600000 && savings >= 10000 && horizon >= 5)) return false;
+  }
+  if (inv.id === "midcap_mf") {
+    if (age > 50 || horizon < 7 || savings < 5000 || annualIncome < 600000) return false;
+  }
+  return true;
+}
+
+function _checkRiskAppetiteRules(inv, risk, horizon) {
+  const numericRisk = typeof inv.risk === 'number' ? inv.risk : (inv.risk_level === 'Very High' ? 5 : inv.risk_level === 'High' ? 4 : inv.risk_level === 'Medium' ? 3 : 2);
+  if (risk === "low" && (numericRisk >= 4 || (numericRisk >= 3 && horizon <= 5))) return false;
+  if (risk === "medium" && (numericRisk >= 5 || (numericRisk >= 4 && horizon < 5))) return false;
+  if (risk === "high" && numericRisk === 1 && horizon <= 3) return false;
+  return true;
+}
+
 // ─── STEP 3: SMART ELIGIBILITY FILTER (comprehensive rules) ──────
 export function getEligibleInvestments(profile) {
   const age = Number(profile.age) || 25;
@@ -134,31 +170,8 @@ export function getEligibleInvestments(profile) {
   const mr = getMarginalRate(annualIncome, profile.taxRegime || profile.regime || 'new');
 
   let result = investmentDatabase.filter(inv => {
-    const elig = inv.eligibility;
-
-    // ── BASIC ELIGIBILITY ──
-    if (age < elig.minAge) return false;
-    if (elig.maxAge !== null && age > elig.maxAge) return false;
-    if (annualIncome < elig.minAnnualIncome) return false;
-    if (savings < inv.minMonthlyInvestment) return false;
-    if (elig.minMonthlySavings && savings < elig.minMonthlySavings) return false;
-
-    // ── INSTRUMENT-SPECIFIC RULES ──
-    if (inv.id === "scss" && age < 60) return false;
-    if (inv.id === "nps" && age >= 60) return false;
-    if (inv.id === "sukanya") {
-      if (age < 18 || age > 40) return false;
-      if (!profile.has_daughter_under_10) return false;
-    }
-    if (inv.id === "smallcap_mf") {
-      if (!(age >= 21 && age <= 45 && horizon >= 10 && risk === "high" && annualIncome >= 800000 && savings >= 8000)) return false;
-    }
-    if (inv.id === "direct_equity") {
-      if (!(age >= 21 && age <= 55 && risk === "high" && annualIncome >= 600000 && savings >= 10000 && horizon >= 5)) return false;
-    }
-    if (inv.id === "midcap_mf") {
-      if (age > 50 || horizon < 7 || savings < 5000 || annualIncome < 600000) return false;
-    }
+    if (!_checkBasicEligibility(inv, age, annualIncome, savings)) return false;
+    if (!_checkInstrumentSpecificRules(inv, age, annualIncome, savings, horizon, risk, profile)) return false;
 
     // ── HORIZON-AWARE LOCK-IN FILTER ──
     const effectiveLockIn = (inv.maturity_type === 'age_based' && inv.maturity_age)
@@ -167,10 +180,10 @@ export function getEligibleInvestments(profile) {
     if (effectiveLockIn > 0 && effectiveLockIn > horizon) return false;
 
     // ── HORIZON VS idealHorizon range ──
-    if (inv.idealHorizon && inv.idealHorizon.min !== undefined && horizon < inv.idealHorizon.min) return false;
+    if (inv.idealHorizon?.min !== undefined && horizon < inv.idealHorizon.min) return false;
 
     // ── DEMAT ACCOUNT REQUIREMENT ──
-    if (elig.requiresDemat && profile.has_demat === false) return false;
+    if (inv.eligibility.requiresDemat && profile.has_demat === false) return false;
 
     // ── EMERGENCY FUND CHECK FOR LIQUIDITY ──
     const isEmergency = profile.investment_goals?.includes('Emergency Fund') || profile.goals?.includes('Emergency Fund');
@@ -178,13 +191,7 @@ export function getEligibleInvestments(profile) {
       return false;
     }
 
-    // ── RISK-APPETITE GATING ──
-    const numericRisk = typeof inv.risk === 'number' ? inv.risk : (inv.risk_level === 'Very High' ? 5 : inv.risk_level === 'High' ? 4 : inv.risk_level === 'Medium' ? 3 : 2);
-    if (risk === "low" && numericRisk >= 4) return false;
-    if (risk === "low" && numericRisk >= 3 && horizon <= 5) return false;
-    if (risk === "medium" && numericRisk >= 5) return false;
-    if (risk === "medium" && numericRisk >= 4 && horizon < 5) return false;
-    if (risk === "high" && numericRisk === 1 && horizon <= 3) return false;
+    if (!_checkRiskAppetiteRules(inv, risk, horizon)) return false;
 
     // ── TAX-AWARE EXCLUSIONS ──
     if (inv.id === "elss" && mr === 0) return false;

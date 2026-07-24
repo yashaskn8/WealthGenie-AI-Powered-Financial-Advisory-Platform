@@ -14,43 +14,33 @@ export function getCurrentFiscalYear() {
 }
 export const CURRENT_FY = getCurrentFiscalYear();
 const defineSlabs = (slabs) => Object.freeze(slabs.map(slab => Object.freeze({ ...slab })));
+const STANDARD_NEW_SLABS = defineSlabs([
+    { min: 0, max: 400000, rate: 0 },
+    { min: 400000, max: 800000, rate: 0.05 },
+    { min: 800000, max: 1200000, rate: 0.10 },
+    { min: 1200000, max: 1600000, rate: 0.15 },
+    { min: 1600000, max: 2000000, rate: 0.20 },
+    { min: 2000000, max: 2400000, rate: 0.25 },
+    { min: 2400000, max: Infinity, rate: 0.30 },
+]);
+const STANDARD_OLD_SLABS = defineSlabs([
+    { min: 0, max: 250000, rate: 0 },
+    { min: 250000, max: 500000, rate: 0.05 },
+    { min: 500000, max: 1000000, rate: 0.20 },
+    { min: 1000000, max: Infinity, rate: 0.30 },
+]);
+
 export const TAX_SLABS_BY_FY = Object.freeze({
     'FY2025-26': Object.freeze({
         verified: true, // Confirmed against Finance Act 2023 / Union Budget 2024.
-        new: defineSlabs([
-            { min: 0, max: 400000, rate: 0 },
-            { min: 400000, max: 800000, rate: 0.05 },
-            { min: 800000, max: 1200000, rate: 0.10 },
-            { min: 1200000, max: 1600000, rate: 0.15 },
-            { min: 1600000, max: 2000000, rate: 0.20 },
-            { min: 2000000, max: 2400000, rate: 0.25 },
-            { min: 2400000, max: Infinity, rate: 0.30 },
-        ]),
-        old: defineSlabs([
-            { min: 0, max: 250000, rate: 0 },
-            { min: 250000, max: 500000, rate: 0.05 },
-            { min: 500000, max: 1000000, rate: 0.20 },
-            { min: 1000000, max: Infinity, rate: 0.30 },
-        ]),
+        new: STANDARD_NEW_SLABS,
+        old: STANDARD_OLD_SLABS,
     }),
     'FY2026-27': Object.freeze({
         // FY2026-27: Union Budget 2025 confirmed same slab rates as FY2025-26. verified=true.
         verified: true,
-        new: defineSlabs([
-            { min: 0, max: 400000, rate: 0 },
-            { min: 400000, max: 800000, rate: 0.05 },
-            { min: 800000, max: 1200000, rate: 0.10 },
-            { min: 1200000, max: 1600000, rate: 0.15 },
-            { min: 1600000, max: 2000000, rate: 0.20 },
-            { min: 2000000, max: 2400000, rate: 0.25 },
-            { min: 2400000, max: Infinity, rate: 0.30 },
-        ]),
-        old: defineSlabs([
-            { min: 0, max: 250000, rate: 0 },
-            { min: 250000, max: 500000, rate: 0.05 },
-            { min: 500000, max: 1000000, rate: 0.20 },
-            { min: 1000000, max: Infinity, rate: 0.30 },
-        ]),
+        new: STANDARD_NEW_SLABS,
+        old: STANDARD_OLD_SLABS,
     }),
 });
 export function getTaxSlabsForFY(fiscalYear = CURRENT_FY) {

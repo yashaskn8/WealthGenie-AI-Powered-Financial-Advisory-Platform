@@ -12,6 +12,17 @@ import { idempotency } from '../middleware/idempotency.js';
 
 const router = Router();
 
+function _determineGoalStatus(prob, gap, userMonthlySavings) {
+  if (prob !== null && prob !== undefined) {
+    if (prob >= 0.65) return 'on_track';
+    if (prob >= 0.35) return 'at_risk';
+    return 'off_track';
+  }
+  if (gap <= 0) return 'on_track';
+  if (gap <= userMonthlySavings * 0.25) return 'at_risk';
+  return 'off_track';
+}
+
 /**
  * Detect stale/error advice that should be regenerated.
  */
@@ -192,18 +203,7 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
   // Determine status using PROBABILITY-BASED classification
   const userMonthlySavings = profile?.savings || 10000;
   const gap = requiredSIP - userMonthlySavings;
-
-  let status;
-  const prob = mcResult.goal_probability;
-  if (prob !== null && prob !== undefined) {
-    if (prob >= 0.65) status = 'on_track';
-    else if (prob >= 0.35) status = 'at_risk';
-    else status = 'off_track';
-  } else {
-    if (gap <= 0) status = 'on_track';
-    else if (gap <= userMonthlySavings * 0.25) status = 'at_risk';
-    else status = 'off_track';
-  }
+  const status = _determineGoalStatus(mcResult.goal_probability, gap, userMonthlySavings);
 
   // Generate Gemini advice for this goal
   const goalForAdvice = {

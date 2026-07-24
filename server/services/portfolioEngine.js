@@ -159,7 +159,7 @@ export function buildCovarianceMatrix(assetKeys) {
     }
     return { matrix: cov, assetKeys: [...assetKeys] };
 }
-export function solveMinVariance(assetKeys, postTaxReturns) {
+function _prepareCovarianceMatrixAndValidate(assetKeys, postTaxReturns) {
     const n = assetKeys.length;
     if (n === 0)
         throw new Error('assetKeys must be non-empty');
@@ -175,6 +175,11 @@ export function solveMinVariance(assetKeys, postTaxReturns) {
     for (let i = 0; i < n; i++) {
         cov[i][i] += regularization;
     }
+    return { n, cov };
+}
+
+export function solveMinVariance(assetKeys, postTaxReturns) {
+    const { n, cov } = _prepareCovarianceMatrixAndValidate(assetKeys, postTaxReturns);
     // Initialise with equal weights
     let w = new Float64Array(n).fill(1 / n);
     const maxIter = 5000;
@@ -240,21 +245,7 @@ function _runMaxSharpePGD(cov, mu, rf, wInit, maxIter = 8000, tol = 1e-10) {
     return { w, sharpe, vol, ret };
 }
 export function solveMaxSharpe(assetKeys, postTaxReturns) {
-    const n = assetKeys.length;
-    if (n === 0)
-        throw new Error('assetKeys must be non-empty');
-    if (postTaxReturns.length !== n) {
-        throw new Error(`postTaxReturns length (${postTaxReturns.length}) must match assetKeys length (${n})`);
-    }
-    const { matrix: cov } = buildCovarianceMatrix(assetKeys);
-    let maxDiag = 0;
-    for (let i = 0; i < n; i++) {
-        maxDiag = Math.max(maxDiag, cov[i][i]);
-    }
-    const regularization = 1e-6 * (maxDiag > 0 ? maxDiag : 1.0);
-    for (let i = 0; i < n; i++) {
-        cov[i][i] += regularization;
-    }
+    const { n, cov } = _prepareCovarianceMatrixAndValidate(assetKeys, postTaxReturns);
     const mu = Float64Array.from(postTaxReturns);
     const rf = RISK_FREE_RATE;
     const excessMu = new Float64Array(n);

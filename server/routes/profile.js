@@ -5,33 +5,30 @@ import { validate, profileSchema } from '../validation/schemas.js';
 import { computeTax, getTaxSlab, compareTaxRegimes } from '../services/taxEngine.js';
 import { getRiskProfile } from '../services/riskProfiler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
-import { delCache } from '../config/redis.js';
+import { delCache, redisClient, redisAvailable } from '../config/redis.js';
 import { idempotency } from '../middleware/idempotency.js';
 
 const router = Router();
 
 // Profile creation throttle — max profiles per user per hour
+// STATELESS: Uses shared Redis counter. No per-process in-memory state.
 const PROFILE_RATE_LIMIT = 10;
-const profileCreateCounts = new Map();
 
-function checkProfileRateLimit(userId) {
-  const now = Date.now();
-  let entry = profileCreateCounts.get(userId);
-  if (!entry || now - entry.start > 3600000) {
-    entry = { count: 0, start: now };
+async function checkProfileRateLimit(userId) {
+  if (!redisAvailable || !redisClient) {
+    // Without Redis, skip throttle rather than diverging per-process state.
+    return true;
   }
-  entry.count++;
-  profileCreateCounts.set(userId, entry);
-  return entry.count <= PROFILE_RATE_LIMIT;
+  try {
+    const key = `profile:ratelimit:${userId}`;
+    const count = await redisClient.incr(key);
+    if (count === 1) await redisClient.expire(key, 3600);
+    return count <= PROFILE_RATE_LIMIT;
+  } catch {
+    // Redis failure — allow request through to avoid blocking users.
+    return true;
+  }
 }
-
-// Clean up stale entries every 30 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of profileCreateCounts.entries()) {
-    if (now - entry.start > 3600000) profileCreateCounts.delete(key);
-  }
-}, 30 * 60 * 1000).unref();
 
 /**
  * POST /api/profile/build [Protected]

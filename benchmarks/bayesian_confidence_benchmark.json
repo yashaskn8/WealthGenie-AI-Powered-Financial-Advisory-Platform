@@ -1,0 +1,253 @@
+{
+  "system_info": {
+    "os": "Windows 11 (AMD64)",
+    "cpu": "Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "python_version": "3.12.13",
+    "date": "2026-07-24T14:45:45.281717+00:00",
+    "random_seed": 42,
+    "dependency_versions": {
+      "numpy": "1.26.4",
+      "pandas": "2.2.3",
+      "sklearn": "1.5.2",
+      "shap": "0.46.0",
+      "joblib": "1.4.2"
+    }
+  },
+  "results": {
+    "technique": "Bayesian Confidence Intervals via Random Forest Posterior",
+    "rationale": "Each tree in the Random Forest ensemble constitutes an independent sample from the posterior distribution over classification functions. By collecting per-tree class probability predictions, we construct a non-parametric posterior distribution and derive credible intervals without requiring explicit Bayesian priors or MCMC sampling.",
+    "aggregate_metrics": {
+      "n_examples": 50,
+      "n_trees": 100,
+      "n_classes": 6,
+      "posterior_computation_time_s": 0.0437,
+      "prediction_accuracy": 0.92,
+      "mean_ci_width": 0.521,
+      "std_ci_width": 0.4986,
+      "mean_posterior_std": 0.256,
+      "median_posterior_std": 0.2375
+    },
+    "example_predictions": [
+      {
+        "sample_idx": 0,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 1.0,
+        "posterior_std": 0.0,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 1,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.99,
+        "posterior_std": 0.0995,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 2,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 1.0,
+        "posterior_std": 0.0,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 3,
+        "predicted_class": "RBI_Bond",
+        "true_class": "Equity_MF",
+        "posterior_mean": 0.42,
+        "posterior_std": 0.4936,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": false
+      },
+      {
+        "sample_idx": 4,
+        "predicted_class": "ETF",
+        "true_class": "ETF",
+        "posterior_mean": 0.67,
+        "posterior_std": 0.4702,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 5,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.92,
+        "posterior_std": 0.2713,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 6,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 1.0,
+        "posterior_std": 0.0,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 7,
+        "predicted_class": "Equity_MF",
+        "true_class": "Equity_MF",
+        "posterior_mean": 0.73,
+        "posterior_std": 0.444,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 8,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.96,
+        "posterior_std": 0.196,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 9,
+        "predicted_class": "Debt_MF",
+        "true_class": "Debt_MF",
+        "posterior_mean": 0.91,
+        "posterior_std": 0.2862,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 10,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.97,
+        "posterior_std": 0.1706,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 11,
+        "predicted_class": "FD",
+        "true_class": "FD",
+        "posterior_mean": 0.97,
+        "posterior_std": 0.1706,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 12,
+        "predicted_class": "Equity_MF",
+        "true_class": "ETF",
+        "posterior_mean": 0.55,
+        "posterior_std": 0.4975,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": false
+      },
+      {
+        "sample_idx": 13,
+        "predicted_class": "Equity_MF",
+        "true_class": "Equity_MF",
+        "posterior_mean": 1.0,
+        "posterior_std": 0.0,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 14,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.88,
+        "posterior_std": 0.325,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 15,
+        "predicted_class": "Equity_MF",
+        "true_class": "Equity_MF",
+        "posterior_mean": 0.98,
+        "posterior_std": 0.14,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 16,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.99,
+        "posterior_std": 0.0995,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 17,
+        "predicted_class": "RBI_Bond",
+        "true_class": "Equity_MF",
+        "posterior_mean": 0.63,
+        "posterior_std": 0.4828,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": false
+      },
+      {
+        "sample_idx": 18,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.96,
+        "posterior_std": 0.196,
+        "ci_90_lower": 1.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 0.0,
+        "correct": true
+      },
+      {
+        "sample_idx": 19,
+        "predicted_class": "RBI_Bond",
+        "true_class": "RBI_Bond",
+        "posterior_mean": 0.8,
+        "posterior_std": 0.4,
+        "ci_90_lower": 0.0,
+        "ci_90_upper": 1.0,
+        "ci_width": 1.0,
+        "correct": true
+      }
+    ]
+  }
+}

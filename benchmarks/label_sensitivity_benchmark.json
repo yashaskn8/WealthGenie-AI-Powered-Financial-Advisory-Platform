@@ -1,0 +1,138 @@
+{
+  "system_info": {
+    "os": "Windows 11 (AMD64)",
+    "cpu": "Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "python_version": "3.12.13",
+    "date": "2026-07-24T14:45:45.281717+00:00",
+    "random_seed": 42,
+    "dependency_versions": {
+      "numpy": "1.26.4",
+      "pandas": "2.2.3",
+      "sklearn": "1.5.2",
+      "shap": "0.46.0",
+      "joblib": "1.4.2"
+    }
+  },
+  "results": {
+    "baseline": {
+      "metrics": {
+        "accuracy": 0.922,
+        "precision_macro": 0.9083,
+        "recall_macro": 0.9002,
+        "f1_macro": 0.9039,
+        "balanced_accuracy": 0.9002,
+        "roc_auc_ovr": 0.9943
+      },
+      "class_distribution": {
+        "Debt_MF": 85,
+        "ELSS": 92,
+        "ETF": 85,
+        "Equity_MF": 202,
+        "FD": 104,
+        "RBI_Bond": 432
+      }
+    },
+    "perturbations": {
+      "growth_weight_-10%": {
+        "metrics": {
+          "accuracy": 0.941,
+          "precision_macro": 0.9296,
+          "recall_macro": 0.924,
+          "f1_macro": 0.9266,
+          "balanced_accuracy": 0.924,
+          "roc_auc_ovr": 0.9961
+        },
+        "deltas_vs_baseline": {
+          "accuracy": 0.019,
+          "precision_macro": 0.0213,
+          "recall_macro": 0.0238,
+          "f1_macro": 0.0227,
+          "balanced_accuracy": 0.0238
+        },
+        "class_distribution": {
+          "Debt_MF": 86,
+          "ELSS": 91,
+          "ETF": 109,
+          "Equity_MF": 166,
+          "FD": 104,
+          "RBI_Bond": 444
+        }
+      },
+      "growth_weight_+10%": {
+        "metrics": {
+          "accuracy": 0.923,
+          "precision_macro": 0.9089,
+          "recall_macro": 0.8675,
+          "f1_macro": 0.8825,
+          "balanced_accuracy": 0.8675,
+          "roc_auc_ovr": 0.9942
+        },
+        "deltas_vs_baseline": {
+          "accuracy": 0.001,
+          "precision_macro": 0.0006,
+          "recall_macro": -0.0327,
+          "f1_macro": -0.0214,
+          "balanced_accuracy": -0.0327
+        },
+        "class_distribution": {
+          "Debt_MF": 85,
+          "ELSS": 92,
+          "ETF": 66,
+          "Equity_MF": 223,
+          "FD": 104,
+          "RBI_Bond": 430
+        }
+      },
+      "safety_vol_-10%": {
+        "metrics": {
+          "accuracy": 0.92,
+          "precision_macro": 0.9001,
+          "recall_macro": 0.896,
+          "f1_macro": 0.8974,
+          "balanced_accuracy": 0.896,
+          "roc_auc_ovr": 0.9943
+        },
+        "deltas_vs_baseline": {
+          "accuracy": -0.002,
+          "precision_macro": -0.0082,
+          "recall_macro": -0.0042,
+          "f1_macro": -0.0065,
+          "balanced_accuracy": -0.0042
+        },
+        "class_distribution": {
+          "Debt_MF": 82,
+          "ELSS": 95,
+          "ETF": 85,
+          "Equity_MF": 204,
+          "FD": 106,
+          "RBI_Bond": 428
+        }
+      },
+      "safety_vol_+10%": {
+        "metrics": {
+          "accuracy": 0.932,
+          "precision_macro": 0.9129,
+          "recall_macro": 0.9119,
+          "f1_macro": 0.912,
+          "balanced_accuracy": 0.9119,
+          "roc_auc_ovr": 0.9951
+        },
+        "deltas_vs_baseline": {
+          "accuracy": 0.01,
+          "precision_macro": 0.0046,
+          "recall_macro": 0.0117,
+          "f1_macro": 0.0081,
+          "balanced_accuracy": 0.0117
+        },
+        "class_distribution": {
+          "Debt_MF": 86,
+          "ELSS": 91,
+          "ETF": 86,
+          "Equity_MF": 188,
+          "FD": 104,
+          "RBI_Bond": 445
+        }
+      }
+    }
+  }
+}

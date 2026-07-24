@@ -25,19 +25,60 @@
 
 export const CESS_RATE = 0.04; // 4% Health & Education Cess — FY2025-26
 
-const liveOverrides = {};
+import { getCache, setCache, redisAvailable } from '../config/redis.js';
+
+// ARCHITECTURE: Write-through cache pattern.
+// Source of truth: Redis key 'mc:instrument:params:live'
+// Local _liveCache: synchronous read-through cache, populated by:
+//   1. updateLiveParam() — writes locally AND to Redis
+//   2. refreshLiveParams() — periodic sync from Redis for cross-instance consistency
+// On restart, cache starts empty → reads from Redis on first refresh.
+// This is a CACHE, not authoritative state. Redis is the single source of truth.
+const _liveCache = {};
+
+const REDIS_LIVE_KEY = 'mc:instrument:params:live';
 
 /**
  * Update live parameters dynamically (used by marketDataService).
+ * Synchronously updates local cache, then async-writes to Redis.
  *
  * @param {string} key - Instrument key (e.g. 'FD', 'Equity_MF')
  * @param {number} [nominalRate] - Live nominal return rate (percentage, e.g. 6.5)
  * @param {number} [volatility] - Live annualised volatility (decimal, e.g. 0.18)
  */
 export function updateLiveParam(key, nominalRate, volatility) {
-  if (!liveOverrides[key]) liveOverrides[key] = {};
-  if (nominalRate !== undefined) liveOverrides[key].nominalRate = nominalRate;
-  if (volatility !== undefined) liveOverrides[key].volatility = volatility;
+  // Synchronous local cache update (enables immediate reads via Proxy)
+  if (!_liveCache[key]) _liveCache[key] = {};
+  if (nominalRate !== undefined) _liveCache[key].nominalRate = nominalRate;
+  if (volatility !== undefined) _liveCache[key].volatility = volatility;
+
+  // Async write-through to Redis (fire-and-forget for callers that don't await)
+  _persistToRedis().catch(err => {
+    console.warn('[InstrumentConstants] Failed to persist live params to Redis:', err.message);
+  });
+}
+
+async function _persistToRedis() {
+  if (!redisAvailable) return;
+  await setCache(REDIS_LIVE_KEY, { ..._liveCache }, 86400);
+}
+
+/**
+ * Refresh local cache from Redis. Call periodically for cross-instance consistency.
+ * Safe to call at startup — if Redis is empty, local cache stays as-is.
+ */
+export async function refreshLiveParams() {
+  if (!redisAvailable) return;
+  try {
+    const remote = await getCache(REDIS_LIVE_KEY);
+    if (remote && typeof remote === 'object') {
+      for (const [k, v] of Object.entries(remote)) {
+        _liveCache[k] = { ...(_liveCache[k] || {}), ...v };
+      }
+    }
+  } catch (err) {
+    console.warn('[InstrumentConstants] Failed to refresh live params from Redis:', err.message);
+  }
 }
 
 // ACCURACY NOTE: nominalRate for Mutual Funds/ETFs is already net of Total Expense Ratio (TER).
@@ -67,24 +108,15 @@ const staticParams = {
   SSY:          { nominalRate: 8.2,   volatility: 0.002,  expenseRatio: 0.0,    riskLevel: 'Very Low',   lockIn: 21, name: 'Sukanya Samriddhi',        tags: ['EEE', 'Girl Child'] },
 };
 
-// BEGINNER NOTE: JavaScript Proxy Pattern
-// We wrap staticParams in a Proxy to make the object read-only (immutable).
-// If developer code tries to modify properties directly (e.g. INSTRUMENT_PARAMS.FD = ...),
-// the proxy's `set` handler will catch it and throw an error.
-// To dynamically update rates from live APIs, developers must explicitly call `updateLiveParam()`,
-// which registers overrides in a separate `liveOverrides` dictionary.
 export const INSTRUMENT_PARAMS = new Proxy(staticParams, {
   get(target, prop) {
     if (prop === '__isProxy') return true;
     if (prop in target) {
       const base = target[prop];
-      const override = liveOverrides[prop];
-      if (override) {
-        return Object.freeze({
-          ...base,
-          nominalRate: override.nominalRate !== undefined ? override.nominalRate : base.nominalRate,
-          volatility: override.volatility !== undefined ? override.volatility : base.volatility,
-        });
+      // Merge live cache on top of static defaults (write-through cache pattern)
+      const live = _liveCache[prop];
+      if (live) {
+        return Object.freeze({ ...base, ...live });
       }
       return Object.freeze(base);
     }

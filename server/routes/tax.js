@@ -6,6 +6,25 @@ import { CESS_RATE } from '../services/instrumentConstants.js';
 
 const router = Router();
 
+function _parseTaxDeductionsFromQuery(query) {
+  return {
+    section80C: Number(query.section80C) || 0,
+    nps80CCD1B: Number(query.nps80CCD1B) || 0,
+    nps80CCD2: Number(query.nps80CCD2) || 0,
+    basicSalary: query.basicSalary !== undefined ? Number(query.basicSalary) : undefined,
+    isGovtEmployee: query.isGovtEmployee === 'true' || query.isGovtEmployee === true,
+    section80D: Number(query.section80D) || 0,
+    section80D_self: query.section80D_self !== undefined ? Number(query.section80D_self) : undefined,
+    section80D_parents: query.section80D_parents !== undefined ? Number(query.section80D_parents) : undefined,
+    parents_senior: query.parents_senior === 'true' || query.parents_senior === true,
+    self_senior: query.self_senior === 'true' || query.self_senior === true,
+    hra: Number(query.hra) || 0,
+    homeLoanInterest: Number(query.homeLoanInterest) || 0,
+    other: Number(query.other) || 0,
+    age: query.age !== undefined ? Number(query.age) : undefined,
+  };
+}
+
 /**
  * GET /api/tax/compute?income=1200000&regime=new
  * Compute tax for a specific income and regime.
@@ -19,23 +38,7 @@ router.get('/compute', validateQuery(taxComputeSchema), asyncHandler(async (req,
     return res.status(400).json({ error: 'Income must be a valid positive number.' });
   }
 
-  const deductions = {
-    section80C: Number(req.query.section80C) || 0,
-    nps80CCD1B: Number(req.query.nps80CCD1B) || 0,
-    nps80CCD2: Number(req.query.nps80CCD2) || 0,
-    basicSalary: req.query.basicSalary !== undefined ? Number(req.query.basicSalary) : undefined,
-    isGovtEmployee: req.query.isGovtEmployee === 'true' || req.query.isGovtEmployee === true,
-    section80D: Number(req.query.section80D) || 0,
-    section80D_self: req.query.section80D_self !== undefined ? Number(req.query.section80D_self) : undefined,
-    section80D_parents: req.query.section80D_parents !== undefined ? Number(req.query.section80D_parents) : undefined,
-    parents_senior: req.query.parents_senior === 'true' || req.query.parents_senior === true,
-    self_senior: req.query.self_senior === 'true' || req.query.self_senior === true,
-    hra: Number(req.query.hra) || 0,
-    homeLoanInterest: Number(req.query.homeLoanInterest) || 0,
-    other: Number(req.query.other) || 0,
-    age: req.query.age !== undefined ? Number(req.query.age) : undefined,
-  };
-
+  const deductions = _parseTaxDeductionsFromQuery(req.query);
   const result = computeTax(income, regime, deductions, req.query.incomeSource, req.query.fiscalYear);
 
   const fiscalYear = result.fiscalYear || req.query.fiscalYear || CURRENT_FY;
@@ -58,23 +61,7 @@ router.get('/compare', validateQuery(taxCompareSchema), asyncHandler(async (req,
     return res.status(400).json({ error: 'Income must be a valid positive number.' });
   }
 
-  const deductions = {
-    section80C: Number(req.query.section80C) || 0,
-    nps80CCD1B: Number(req.query.nps80CCD1B) || 0,
-    nps80CCD2: Number(req.query.nps80CCD2) || 0,
-    basicSalary: req.query.basicSalary !== undefined ? Number(req.query.basicSalary) : undefined,
-    isGovtEmployee: req.query.isGovtEmployee === 'true' || req.query.isGovtEmployee === true,
-    section80D: Number(req.query.section80D) || 0,
-    section80D_self: req.query.section80D_self !== undefined ? Number(req.query.section80D_self) : undefined,
-    section80D_parents: req.query.section80D_parents !== undefined ? Number(req.query.section80D_parents) : undefined,
-    parents_senior: req.query.parents_senior === 'true' || req.query.parents_senior === true,
-    self_senior: req.query.self_senior === 'true' || req.query.self_senior === true,
-    hra: Number(req.query.hra) || 0,
-    homeLoanInterest: Number(req.query.homeLoanInterest) || 0,
-    other: Number(req.query.other) || 0,
-    age: req.query.age !== undefined ? Number(req.query.age) : undefined,
-  };
-
+  const deductions = _parseTaxDeductionsFromQuery(req.query);
   const { newRegime, oldRegime, recommended } = compareTaxRegimes(income, deductions, req.query.incomeSource, req.query.fiscalYear);
   const saving = Math.abs(newRegime.taxAmount - oldRegime.taxAmount);
 

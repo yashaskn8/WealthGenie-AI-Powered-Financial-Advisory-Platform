@@ -44,6 +44,21 @@ import { toMonthlyRate, CESS_RATE } from './instrumentConstants.js';
 
 function round4(n) { return parseFloat(n.toFixed(4)); }
 
+function _buildEquityLTCGPostTaxResult(nominalRate, monthlySIP, holdingYears, instrumentType, isTestMode, notePrefix = '') {
+  const effectiveTaxRate = isTestMode ? 0.125 : estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears);
+  const postTax = nominalRate * (1 - effectiveTaxRate);
+
+  return validatePostTaxResult({
+    postTaxReturn: round4(postTax),
+    effectiveYield: round4(postTax * 100),
+    taxType: isTestMode ? 'LTCG 12.5% (Flat Statutory Rate)' : `Equity LTCG with Exemption (effective ${(effectiveTaxRate*100).toFixed(2)}%)`,
+    taxRate: isTestMode ? 0.125 : effectiveTaxRate,
+    notes: isTestMode
+      ? `${notePrefix}LTCG at 12.5% statutory rate.`
+      : `${notePrefix}${notePrefix ? 'Factored in ₹1.25L LTCG exemption and 4% cess.' : 'LTCG with ₹1.25L exemption and 4% cess.'}`,
+  }, nominalRate, instrumentType);
+}
+
 const isTestMode = typeof global !== 'undefined' && (global.jest !== undefined || process.env.NODE_ENV === 'test');
 
 /**
@@ -185,6 +200,156 @@ export function estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears)
  * @returns {object}               - { postTaxReturn, effectiveYield,
  *                                     taxType, taxRate, notes }
  */
+function _calculateFDPostTax(nominalRate, marginalRate, monthlySIP, userAge, instrumentType) {
+  const annualInterest = (monthlySIP * 12) * nominalRate;
+  const TDS_THRESHOLD = userAge >= 60 ? 50000 : 40000;
+  const tdsApplies = annualInterest > TDS_THRESHOLD;
+
+  const postTax = nominalRate * (1 - marginalRate);
+  const effectiveTDSRate = tdsApplies ? 0.10 : 0;
+
+  return validatePostTaxResult({
+    postTaxReturn: round4(postTax),
+    effectiveYield: round4(postTax * 100),
+    taxType: `Slab Rate (${(marginalRate*100).toFixed(0)}%)`,
+    taxRate: marginalRate,
+    tdsApplicable: tdsApplies,
+    tdsRate: effectiveTDSRate,
+    notes: tdsApplies
+      ? `TDS at 10% deducted at source. Net slab rate: ${(marginalRate*100).toFixed(0)}%.`
+      : `Annual interest ₹${Math.round(annualInterest).toLocaleString('en-IN')} below TDS threshold.`,
+  }, nominalRate, instrumentType === 'SCSS' ? 'SCSS' : 'FD');
+}
+
+function _calculateEquityMFPostTax(nominalRate, holdingYears, monthlySIP, instrumentType) {
+  const holdingMonths = holdingYears * 12;
+  if (holdingMonths < 12) {
+    const stcgRate = isTestMode ? 0.20 : 0.20 * 1.04;
+    const postTax = nominalRate * (1 - stcgRate);
+    return validatePostTaxResult({
+      postTaxReturn: round4(postTax),
+      effectiveYield: round4(postTax * 100),
+      taxType: isTestMode ? 'STCG 20% (held < 12 months)' : 'STCG 20.8% (with Cess)',
+      taxRate: isTestMode ? 0.20 : stcgRate,
+    }, nominalRate, instrumentType);
+  }
+
+  return _buildEquityLTCGPostTaxResult(nominalRate, monthlySIP, holdingYears, instrumentType, isTestMode, '');
+}
+
+function _calculateSGBPostTax(nominalRate, marginalRate, holdingYears, isSgbRedeemedWithRBI) {
+  const couponRate = 0.025;
+  const interestTaxDrag = couponRate * marginalRate;
+
+  const capitalAppreciationRate = Math.max(0, nominalRate - couponRate);
+  let capitalGainsTaxDrag = 0;
+  let taxNotes = '';
+
+  const isRedeemedWithRBI = holdingYears >= 8 || (holdingYears >= 5 && isSgbRedeemedWithRBI !== false);
+
+  if (isRedeemedWithRBI) {
+    capitalGainsTaxDrag = 0;
+    taxNotes = holdingYears >= 8
+      ? 'Matured at 8 years: Capital gains fully exempt under Section 47(viic). 2.5% coupon interest taxed at slab.'
+      : 'Held for 5-7 years and redeemed via RBI window: Capital gains fully exempt under Section 47(viic). 2.5% coupon interest taxed at slab.';
+  } else {
+    const holdingMonths = holdingYears * 12;
+    if (holdingMonths > 12) {
+      capitalGainsTaxDrag = capitalAppreciationRate * 0.125;
+      taxNotes = `Held for ${holdingYears} years: Sold in secondary market (not redeemed via RBI). Capital gains taxed as LTCG at 12.5%. 2.5% coupon interest taxed at slab.`;
+    } else {
+      capitalGainsTaxDrag = capitalAppreciationRate * marginalRate;
+      taxNotes = 'Held for < 1 year: Sold in secondary market. Capital gains taxed as STCG at slab rate. 2.5% coupon interest taxed at slab.';
+    }
+  }
+
+  const totalTaxDrag = interestTaxDrag + capitalGainsTaxDrag;
+  const postTax = Math.max(0, nominalRate - totalTaxDrag);
+
+  return validatePostTaxResult({
+    postTaxReturn: round4(postTax),
+    effectiveYield: round4(postTax * 100),
+    taxType: isRedeemedWithRBI ? 'Coupon taxable at slab; maturity gains exempt' : 'Secondary market sale (taxable)',
+    taxRate: nominalRate > 0 ? round4(totalTaxDrag / nominalRate) : 0,
+    notes: taxNotes,
+  }, nominalRate, 'SGB');
+}
+
+function _calculateGoldPostTax(nominalRate, marginalRate, holdingYears, instrumentType) {
+  const holdingMonths = holdingYears * 12;
+  const isETF = instrumentType === 'Gold_ETF' || instrumentType === 'Gold';
+  const thresholdMonths = isETF ? 12 : 24;
+
+  if (holdingMonths < thresholdMonths) {
+    const postTax = nominalRate * (1 - marginalRate);
+    return validatePostTaxResult({
+      postTaxReturn: round4(postTax),
+      effectiveYield: round4(postTax * 100),
+      taxType: `STCG at Slab Rate (${(marginalRate*100).toFixed(0)}%)`,
+      taxRate: marginalRate,
+    }, nominalRate, instrumentType);
+  }
+  const ltcgRate = 0.125;
+  const effectiveRate = isTestMode ? 0.125 : 0.125 * 1.04;
+  const postTax = nominalRate * (1 - effectiveRate);
+  return validatePostTaxResult({
+    postTaxReturn: round4(postTax),
+    effectiveYield: round4(postTax * 100),
+    taxType: isTestMode ? 'LTCG 12.5% (equity ETF, ≥12 months)' : `LTCG 12.5% + Cess (${isETF ? 'ETF' : 'Physical'}, ≥${isETF ? '12' : '24'} months)`,
+    taxRate: ltcgRate,
+  }, nominalRate, instrumentType);
+}
+
+function _calculateHybridPostTax(nominalRate, marginalRate, holdingYears, monthlySIP, instrumentType) {
+  const isEquityClassified = instrumentType === 'Balanced_Advantage';
+  const holdingMonths = holdingYears * 12;
+  if (isEquityClassified) {
+    const ltcgRate = holdingMonths >= 12
+      ? (isTestMode ? 0.125 : estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears))
+      : (isTestMode ? 0.20 : 0.20 * 1.04);
+    const postTax = nominalRate * (1 - ltcgRate);
+    return validatePostTaxResult({
+      postTaxReturn: round4(postTax),
+      effectiveYield: round4(postTax * 100),
+      taxType: holdingMonths >= 12
+        ? (isTestMode ? 'LTCG 12.5% (equity-classified hybrid)' : `LTCG with Exemption (effective ${(ltcgRate*100).toFixed(2)}%)`)
+        : (isTestMode ? 'STCG 20% (equity-classified hybrid)' : 'STCG 20.8% (equity-classified hybrid)'),
+      taxRate: isTestMode ? (holdingMonths >= 12 ? 0.125 : 0.20) : ltcgRate,
+    }, nominalRate, instrumentType);
+  } else {
+    const isLTCG = holdingMonths > 24;
+    const effectiveTaxRate = isLTCG
+      ? (isTestMode ? 0.125 : 0.125 * 1.04)
+      : marginalRate;
+    const postTax = nominalRate * (1 - effectiveTaxRate);
+
+    return validatePostTaxResult({
+      postTaxReturn: round4(postTax),
+      effectiveYield: round4(postTax * 100),
+      taxType: isLTCG
+        ? (isTestMode ? 'LTCG 12.5% (hybrid 35%-65% equity, >24 months)' : 'LTCG 13% (hybrid 35%-65% equity, >24 months)')
+        : `STCG Slab Rate (${(marginalRate*100).toFixed(0)}%, <=24 months)`,
+      taxRate: isTestMode ? (isLTCG ? 0.125 : marginalRate) : effectiveTaxRate,
+      notes: isLTCG
+        ? (isTestMode ? 'Long-term hybrid taxation post Budget 2024: 12.5% flat (no indexation).' : 'Long-term hybrid taxation post Budget 2024: 12.5% flat + 4% cess (no indexation).')
+        : 'Short-term hybrid gains taxed at marginal slab rate.',
+    }, nominalRate, instrumentType);
+  }
+}
+
+/**
+ * Computes the effective post-tax annual return for a given instrument.
+ *
+ * @param {string} instrumentType  - 'FD','ELSS','Equity_MF','ETF','Debt_MF',
+ *                                   'RBI_Bond','G-Sec','PPF','NPS','Gold','SGB',
+ *                                   'Liquid_MF','Arbitrage_MF'
+ * @param {number} nominalRate     - Annual nominal return as decimal (e.g., 0.072)
+ * @param {number} annualIncome    - User's gross annual income (for slab)
+ * @param {number} holdingYears    - Intended holding period in years
+ * @param {string} regime          - 'new' | 'old'
+ * @returns {object}               - { postTaxReturn, effectiveYield,
+ *                                     taxType, taxRate, notes }
+ */
 export function calculatePostTaxReturn(
   instrumentType, nominalRate, annualIncome, holdingYears = 3, regime = 'new', monthlySIP = 10000, userAge = 30, isSgbRedeemedWithRBI = true
 ) {
@@ -200,79 +365,23 @@ export function calculatePostTaxReturn(
     : getEffectiveMarginalRate(annualIncome, regime, {}, 'salary');
 
   switch (instrumentType) {
-
     case 'SCSS':
-    case 'FD': {
-      // FD interest is added to income and taxed at marginal slab rate
-      const annualInterest = (monthlySIP * 12) * nominalRate;
-      const TDS_THRESHOLD = userAge >= 60 ? 50000 : 40000;
-      const tdsApplies = annualInterest > TDS_THRESHOLD;
+    case 'FD':
+      return _calculateFDPostTax(nominalRate, marginalRate, monthlySIP, userAge, instrumentType);
 
-      // Net tax rate = marginal slab rate
-      const postTax = nominalRate * (1 - marginalRate);
-      const effectiveTDSRate = tdsApplies ? 0.10 : 0;
-
-      return validatePostTaxResult({
-        postTaxReturn: round4(postTax),
-        effectiveYield: round4(postTax * 100),
-        taxType: `Slab Rate (${(marginalRate*100).toFixed(0)}%)`,
-        taxRate: marginalRate,
-        tdsApplicable: tdsApplies,
-        tdsRate: effectiveTDSRate,
-        notes: tdsApplies
-          ? `TDS at 10% deducted at source. Net slab rate: ${(marginalRate*100).toFixed(0)}%.`
-          : `Annual interest ₹${Math.round(annualInterest).toLocaleString('en-IN')} below TDS threshold.`,
-      }, nominalRate, instrumentType === 'SCSS' ? 'SCSS' : 'FD');
-    }
-
-    case 'ELSS': {
-      // ELSS gains taxed as LTCG at statutory 12.5% with ₹1.25L exemption.
-      const effectiveTaxRate = isTestMode ? 0.125 : estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears);
-      const postTax = nominalRate * (1 - effectiveTaxRate);
-
-      return validatePostTaxResult({
-        postTaxReturn: round4(postTax),
-        effectiveYield: round4(postTax * 100),
-        taxType: isTestMode ? 'LTCG 12.5% (Flat Statutory Rate)' : `Equity LTCG with Exemption (effective ${(effectiveTaxRate*100).toFixed(2)}%)`,
-        taxRate: isTestMode ? 0.125 : effectiveTaxRate,
-        notes: isTestMode ? `Lock-in 3 years. LTCG at 12.5% statutory rate.` : `Lock-in 3 years. Factored in ₹1.25L LTCG exemption and 4% cess.`,
-      }, nominalRate, 'ELSS');
-    }
+    case 'ELSS':
+      return _buildEquityLTCGPostTaxResult(nominalRate, monthlySIP, holdingYears, 'ELSS', isTestMode, 'Lock-in 3 years. ');
 
     case 'Equity_MF':
     case 'ETF':
     case 'Arbitrage_MF':
     case 'Index_MF':
     case 'Midcap_MF':
-    case 'Smallcap_MF': {
-      const holdingMonths = holdingYears * 12;
-      if (holdingMonths < 12) {
-        // STCG: 20% flat (Finance Act 2024 amendment) + 4% Cess
-        const stcgRate = isTestMode ? 0.20 : 0.20 * 1.04;
-        const postTax = nominalRate * (1 - stcgRate);
-        return validatePostTaxResult({
-          postTaxReturn: round4(postTax),
-          effectiveYield: round4(postTax * 100),
-          taxType: isTestMode ? 'STCG 20% (held < 12 months)' : 'STCG 20.8% (with Cess)',
-          taxRate: isTestMode ? 0.20 : stcgRate,
-        }, nominalRate, instrumentType);
-      }
-
-      const effectiveTaxRate = isTestMode ? 0.125 : estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears);
-      const postTax = nominalRate * (1 - effectiveTaxRate);
-
-      return validatePostTaxResult({
-        postTaxReturn: round4(postTax),
-        effectiveYield: round4(postTax * 100),
-        taxType: isTestMode ? 'LTCG 12.5% (Flat Statutory Rate)' : `Equity LTCG with Exemption (effective ${(effectiveTaxRate*100).toFixed(2)}%)`,
-        taxRate: isTestMode ? 0.125 : effectiveTaxRate,
-        notes: isTestMode ? `LTCG at 12.5% statutory rate.` : `LTCG with ₹1.25L exemption and 4% cess.`,
-      }, nominalRate, instrumentType);
-    }
+    case 'Smallcap_MF':
+      return _calculateEquityMFPostTax(nominalRate, holdingYears, monthlySIP, instrumentType);
 
     case 'Debt_MF':
     case 'Liquid_MF': {
-      // Post Finance Act 2023: all gains taxed at investor's marginal slab rate
       const postTax = nominalRate * (1 - marginalRate);
       return validatePostTaxResult({
         postTaxReturn: round4(postTax),
@@ -284,10 +393,8 @@ export function calculatePostTaxReturn(
     }
 
     case 'NPS': {
-      // NPS accumulation phase: 60% lump sum tax-free, 40% annuity taxed at slab rate
       const annuityFraction = 0.40;
       const blendedDrag = annuityFraction * marginalRate;
-
       const postTax = nominalRate * (1 - blendedDrag);
       return validatePostTaxResult({
         postTaxReturn: round4(postTax),
@@ -299,8 +406,7 @@ export function calculatePostTaxReturn(
     }
 
     case 'PPF':
-    case 'SSY': {
-      // EEE instrument: post-tax equals nominal return exactly
+    case 'SSY':
       return validatePostTaxResult({
         postTaxReturn: nominalRate,
         effectiveYield: round4(nominalRate * 100),
@@ -308,131 +414,11 @@ export function calculatePostTaxReturn(
         taxRate: 0,
         notes: 'Contribution (80C), interest (10(11)), maturity: all exempt.',
       }, nominalRate, instrumentType);
-    }
 
-    case 'SGB': {
-      // 2.5% statutory coupon is always taxable at slab
-      const couponRate = 0.025;
-      const interestTaxDrag = couponRate * marginalRate;
+    case 'SGB':
+      return _calculateSGBPostTax(nominalRate, marginalRate, holdingYears, isSgbRedeemedWithRBI);
 
-      const capitalAppreciationRate = Math.max(0, nominalRate - couponRate);
-      let capitalGainsTaxDrag = 0;
-      let taxNotes = '';
-
-      const isRedeemedWithRBI = holdingYears >= 8 || (holdingYears >= 5 && isSgbRedeemedWithRBI !== false);
-
-      if (isRedeemedWithRBI) {
-        // Exempt under Section 47(viic) (early redemption with RBI starts at 5 years)
-        capitalGainsTaxDrag = 0;
-        taxNotes = holdingYears >= 8
-          ? 'Matured at 8 years: Capital gains fully exempt under Section 47(viic). 2.5% coupon interest taxed at slab.'
-          : 'Held for 5-7 years and redeemed via RBI window: Capital gains fully exempt under Section 47(viic). 2.5% coupon interest taxed at slab.';
-      } else {
-        // Sold in secondary market, capital gains are taxable
-        const holdingMonths = holdingYears * 12;
-        if (holdingMonths > 12) {
-          // LTCG at 12.5% (listed security)
-          capitalGainsTaxDrag = capitalAppreciationRate * 0.125;
-          taxNotes = `Held for ${holdingYears} years: Sold in secondary market (not redeemed via RBI). Capital gains taxed as LTCG at 12.5%. 2.5% coupon interest taxed at slab.`;
-        } else {
-          // STCG at slab rate
-          capitalGainsTaxDrag = capitalAppreciationRate * marginalRate;
-          taxNotes = 'Held for < 1 year: Sold in secondary market. Capital gains taxed as STCG at slab rate. 2.5% coupon interest taxed at slab.';
-        }
-      }
-
-      const totalTaxDrag = interestTaxDrag + capitalGainsTaxDrag;
-      const postTax = Math.max(0, nominalRate - totalTaxDrag);
-
-      return validatePostTaxResult({
-        postTaxReturn: round4(postTax),
-        effectiveYield: round4(postTax * 100),
-        taxType: isRedeemedWithRBI ? 'Coupon taxable at slab; maturity gains exempt' : 'Secondary market sale (taxable)',
-        taxRate: nominalRate > 0 ? round4(totalTaxDrag / nominalRate) : 0,
-        notes: taxNotes,
-      }, nominalRate, 'SGB');
-    }
-
-    case 'RBI_Bond': {
-      const postTax = nominalRate * (1 - marginalRate);
-      return validatePostTaxResult({
-        postTaxReturn: round4(postTax),
-        effectiveYield: round4(postTax * 100),
-        taxType: `Slab Rate (${(marginalRate*100).toFixed(0)}%), no TDS`,
-        taxRate: marginalRate,
-        notes: 'No TDS. Declare interest in ITR. Non-tradeable.',
-      }, nominalRate, 'RBI_Bond');
-    }
-
-    case 'Gold':
-    case 'Gold_Physical':
-    case 'Gold_ETF': {
-      const holdingMonths = holdingYears * 12;
-      const isETF = instrumentType === 'Gold_ETF' || instrumentType === 'Gold';
-      const thresholdMonths = isETF ? 12 : 24;
-
-      if (holdingMonths < thresholdMonths) {
-        const postTax = nominalRate * (1 - marginalRate);
-        return validatePostTaxResult({
-          postTaxReturn: round4(postTax),
-          effectiveYield: round4(postTax * 100),
-          taxType: `STCG at Slab Rate (${(marginalRate*100).toFixed(0)}%)`,
-          taxRate: marginalRate,
-        }, nominalRate, instrumentType);
-      }
-      const ltcgRate = 0.125;
-      const effectiveRate = isTestMode ? 0.125 : 0.125 * 1.04; // 12.5% statutory + 4% cess
-      const postTax = nominalRate * (1 - effectiveRate);
-      return validatePostTaxResult({
-        postTaxReturn: round4(postTax),
-        effectiveYield: round4(postTax * 100),
-        taxType: isTestMode ? 'LTCG 12.5% (equity ETF, ≥12 months)' : `LTCG 12.5% + Cess (${isETF ? 'ETF' : 'Physical'}, ≥${isETF ? '12' : '24'} months)`,
-        taxRate: ltcgRate,
-      }, nominalRate, instrumentType);
-    }
-
-    case 'Balanced_Advantage':
-    case 'Hybrid_MF': {
-      const isEquityClassified = instrumentType === 'Balanced_Advantage';
-      const holdingMonths = holdingYears * 12;
-      if (isEquityClassified) {
-        // Equity-classified hybrid funds
-        const ltcgRate = holdingMonths >= 12
-          ? (isTestMode ? 0.125 : estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears))
-          : (isTestMode ? 0.20 : 0.20 * 1.04);
-        const postTax = nominalRate * (1 - ltcgRate);
-        return validatePostTaxResult({
-          postTaxReturn: round4(postTax),
-          effectiveYield: round4(postTax * 100),
-          taxType: holdingMonths >= 12
-            ? (isTestMode ? 'LTCG 12.5% (equity-classified hybrid)' : `LTCG with Exemption (effective ${(ltcgRate*100).toFixed(2)}%)`)
-            : (isTestMode ? 'STCG 20% (equity-classified hybrid)' : 'STCG 20.8% (equity-classified hybrid)'),
-          taxRate: isTestMode ? (holdingMonths >= 12 ? 0.125 : 0.20) : ltcgRate,
-        }, nominalRate, instrumentType);
-      } else {
-        // Non equity-classified hybrid funds (35% to 65% equity exposure)
-        // STCG (held <= 24 months): Slab rate
-        // LTCG (held > 24 months): 12.5% flat + 4% Cess
-        const isLTCG = holdingMonths > 24;
-        const effectiveTaxRate = isLTCG
-          ? (isTestMode ? 0.125 : 0.125 * 1.04)
-          : marginalRate;
-        const postTax = nominalRate * (1 - effectiveTaxRate);
-
-        return validatePostTaxResult({
-          postTaxReturn: round4(postTax),
-          effectiveYield: round4(postTax * 100),
-          taxType: isLTCG
-            ? (isTestMode ? 'LTCG 12.5% (hybrid 35%-65% equity, >24 months)' : 'LTCG 13% (hybrid 35%-65% equity, >24 months)')
-            : `STCG Slab Rate (${(marginalRate*100).toFixed(0)}%, <=24 months)`,
-          taxRate: isTestMode ? (isLTCG ? 0.125 : marginalRate) : effectiveTaxRate,
-          notes: isLTCG
-            ? (isTestMode ? 'Long-term hybrid taxation post Budget 2024: 12.5% flat (no indexation).' : 'Long-term hybrid taxation post Budget 2024: 12.5% flat + 4% cess (no indexation).')
-            : 'Short-term hybrid gains taxed at marginal slab rate.',
-        }, nominalRate, instrumentType);
-      }
-    }
-
+    case 'RBI_Bond':
     case 'G-Sec': {
       const postTax = nominalRate * (1 - marginalRate);
       return validatePostTaxResult({
@@ -440,12 +426,20 @@ export function calculatePostTaxReturn(
         effectiveYield: round4(postTax * 100),
         taxType: `Slab Rate (${(marginalRate*100).toFixed(0)}%)`,
         taxRate: marginalRate,
-        notes: 'Taxed at marginal slab rate.',
-      }, nominalRate, 'G-Sec');
+        notes: instrumentType === 'RBI_Bond' ? 'No TDS. Declare interest in ITR. Non-tradeable.' : 'Taxed at marginal slab rate.',
+      }, nominalRate, instrumentType);
     }
 
+    case 'Gold':
+    case 'Gold_Physical':
+    case 'Gold_ETF':
+      return _calculateGoldPostTax(nominalRate, marginalRate, holdingYears, instrumentType);
+
+    case 'Balanced_Advantage':
+    case 'Hybrid_MF':
+      return _calculateHybridPostTax(nominalRate, marginalRate, holdingYears, monthlySIP, instrumentType);
+
     default:
-      // Unknown instrument: apply slab rate as conservative default
       console.warn(`[PostTax] Unknown instrument type: ${instrumentType}. Applying slab rate.`);
       const postTax = nominalRate * (1 - marginalRate);
       return validatePostTaxResult({

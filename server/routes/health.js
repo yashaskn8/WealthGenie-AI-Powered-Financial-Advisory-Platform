@@ -2,6 +2,7 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import { redisClient, redisAvailable } from '../config/redis.js';
 import { checkMLHealth } from '../services/mlClient.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
  * Performs a deep health check of Database, Redis, and ML microservice.
  * Returns 200 OK if all UP, or 503 Service Unavailable if any dependency is DOWN.
  */
-router.get('/deep', async (req, res) => {
+router.get('/deep', asyncHandler(async (req, res) => {
   const health = {
     status: 'UP',
     timestamp: new Date().toISOString(),
@@ -64,7 +65,7 @@ router.get('/deep', async (req, res) => {
     health.status = 'DOWN';
     res.status(503).json(health);
   }
-});
+}));
 
 /**
  * GET /health
@@ -79,7 +80,7 @@ router.get('/', (req, res) => {
  * Readiness probe — returns 200 only when the database is connected and responsive.
  * Container orchestrators use this to decide when to route traffic.
  */
-router.get('/ready', async (req, res) => {
+router.get('/ready', asyncHandler(async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ status: 'NOT_READY', reason: 'Database not connected' });
@@ -89,7 +90,7 @@ router.get('/ready', async (req, res) => {
   } catch (err) {
     res.status(503).json({ status: 'NOT_READY', reason: err.message });
   }
-});
+}));
 
 /**
  * GET /health/live

@@ -156,28 +156,6 @@ export const goalUpdateSchema = Joi.object({
   priority: Joi.string().valid('Critical', 'High', 'Medium', 'Low').optional(),
 });
 
-export const taxComputeSchema = Joi.object({
-  income: Joi.number().min(0).max(1000000000).required()
-    .messages({ 'number.min': 'Income must be a positive number' }),
-  regime: Joi.string().valid('new', 'old').default('new'),
-  incomeSource: Joi.string().valid('salary', 'pension', 'family_pension', 'business', 'other').default('salary'),
-  section80C: Joi.number().min(0).max(150000).optional(),
-  nps80CCD1B: Joi.number().min(0).max(50000).optional(),
-  nps80CCD2: Joi.number().min(0).max(100000000).optional(),
-  basicSalary: Joi.number().min(0).max(1000000000).optional(),
-  isGovtEmployee: Joi.boolean().default(false).optional(),
-  section80D: Joi.number().min(0).max(100000).optional(),
-  section80D_self: Joi.number().min(0).max(50000).optional(),
-  section80D_parents: Joi.number().min(0).max(50000).optional(),
-  parents_senior: Joi.boolean().default(false).optional(),
-  self_senior: Joi.boolean().default(false).optional(),
-  hra: Joi.number().min(0).max(100000000).optional(),
-  homeLoanInterest: Joi.number().min(0).max(200000).optional(),
-  other: Joi.number().min(0).max(100000000).optional(),
-  age: Joi.number().integer().min(18).max(120).optional(),
-  fiscalYear: Joi.string().pattern(/^FY\d{4}-\d{2}$/).optional(),
-});
-
 export const taxCompareSchema = Joi.object({
   income: Joi.number().min(0).max(1000000000).required()
     .messages({ 'number.min': 'Income must be a positive number' }),
@@ -197,6 +175,10 @@ export const taxCompareSchema = Joi.object({
   other: Joi.number().min(0).max(100000000).optional(),
   age: Joi.number().integer().min(18).max(120).optional(),
   fiscalYear: Joi.string().pattern(/^FY\d{4}-\d{2}$/).optional(),
+});
+
+export const taxComputeSchema = taxCompareSchema.keys({
+  regime: Joi.string().valid('new', 'old').default('new'),
 });
 
 // ── Rebalance Schema ───────────────────────────────────────────────
@@ -228,13 +210,9 @@ export const chatMessageSchema = Joi.object({
   session_id: Joi.string().max(100).optional(),
 });
 
-/**
- * Express middleware factory for Joi body validation.
- * Returns 400 with structured error details on failure.
- */
-export function validate(schema) {
+function _createValidator(schema, property) {
   return (req, res, next) => {
-    const { error, value } = schema.validate(req.body, {
+    const { error, value } = schema.validate(req[property], {
       abortEarly: false,
       stripUnknown: true,
     });
@@ -244,28 +222,21 @@ export function validate(schema) {
         details: error.details.map(d => d.message),
       });
     }
-    req.body = value; // Replace with sanitized/coerced values
+    req[property] = value;
     next();
   };
 }
 
 /**
+ * Express middleware factory for Joi body validation.
+ */
+export function validate(schema) {
+  return _createValidator(schema, 'body');
+}
+
+/**
  * Express middleware factory for Joi query validation.
- * Returns 400 with structured error details on failure.
  */
 export function validateQuery(schema) {
-  return (req, res, next) => {
-    const { error, value } = schema.validate(req.query, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
-    if (error) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: error.details.map(d => d.message),
-      });
-    }
-    req.query = value;
-    next();
-  };
+  return _createValidator(schema, 'query');
 }

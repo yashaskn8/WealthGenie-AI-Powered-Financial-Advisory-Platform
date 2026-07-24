@@ -179,10 +179,14 @@ export function computeXIRR(cashflows, guess = 0.1, tolerance = 1e-10, maxIterat
         prevV = v;
     }
     const cashflowScale = normalized.reduce((sum, cf) => sum + Math.abs(cf.amount), 0);
-    const npvTolerance = Math.max(cashflowScale * 1e-9, 1e-6);
+    const npvTolerance = Math.max(cashflowScale * 1e-9, 1e-12);
     let rate = safeGuess;
     let iterations = 0;
     let converged = false;
+    let methodUsed = 'Bisection';
+    let newtonIterations = 0;
+    let brentIterations = 0;
+
     // PHASE 1: If we have a bracket, use bisection to narrow it to a tight interval first
     if (foundBracket) {
         let lo = lowRate, hi = highRate;
@@ -193,6 +197,7 @@ export function computeXIRR(cashflows, guess = 0.1, tolerance = 1e-10, maxIterat
             if (Math.abs(valMid) < npvTolerance || (hi - lo) < tolerance) {
                 rate = mid;
                 converged = true;
+                methodUsed = 'Bisection';
                 break;
             }
             if (npv(lo, normalized) * valMid < 0) {
@@ -208,13 +213,16 @@ export function computeXIRR(cashflows, guess = 0.1, tolerance = 1e-10, maxIterat
             highRate = hi;
         }
     }
+
     // PHASE 2: Polish with Newton-Raphson (if not already converged)
     if (!converged) {
         for (let i = 0; i < maxIterations; i++) {
             iterations++;
+            newtonIterations++;
             const val = npv(rate, normalized);
             if (Math.abs(val) < npvTolerance) {
                 converged = true;
+                methodUsed = 'Newton';
                 break;
             }
             const deriv = npvDerivative(rate, normalized);
@@ -242,37 +250,51 @@ export function computeXIRR(cashflows, guess = 0.1, tolerance = 1e-10, maxIterat
             if (Math.abs(nextRate - rate) < tolerance && Math.abs(npv(nextRate, normalized)) < npvTolerance) {
                 rate = nextRate;
                 converged = true;
+                methodUsed = 'Newton';
                 break;
             }
             rate = nextRate;
         }
     }
+
     // PHASE 3: Brent's Method fallback
     if (!converged && foundBracket) {
         const brentResult = brentSolve(lowRate, highRate, normalized, tolerance, maxIterations);
         if (brentResult) {
             rate = brentResult.rate;
+            brentIterations = brentResult.iterations;
             iterations += brentResult.iterations;
             converged = brentResult.converged;
+            if (converged) {
+                methodUsed = 'Brent';
+            }
         }
     }
+
     const finalNpv = npv(rate, normalized);
     if (converged) {
         return {
             rate: parseFloat(rate.toFixed(8)),
             converged: true,
             iterations,
+            newtonIterations,
+            brentIterations,
+            methodUsed,
             npvResidual: parseFloat(finalNpv.toFixed(6)),
             annualizedReturn: `${(rate * 100).toFixed(2)}%`,
         };
     }
+
     return {
         rate: parseFloat(rate.toFixed(8)),
         converged: false,
         iterations,
+        newtonIterations,
+        brentIterations,
+        methodUsed: 'Failed',
         npvResidual: parseFloat(finalNpv.toFixed(6)),
         annualizedReturn: `${(rate * 100).toFixed(2)}%`,
-        warning: 'Newton-Raphson did not converge within max iterations',
+        warning: 'Newton-Raphson and Brent solvers did not converge within max iterations',
     };
 }
 function addMonthsClamp(date, months) {
