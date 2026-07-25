@@ -67,7 +67,7 @@ function isIgnored(filePath) {
     return true;
   }
   // Ignore specific files
-  const ignoredFiles = ['secret-scanner.js', '.env.example', 'README.md', 'package-lock.json', '.system_generated', 'dependency_map.md', 'docker-compose.yml'];
+  const ignoredFiles = ['secret-scanner.js', '.env.example', 'README.md', 'package-lock.json', '.system_generated', 'dependency_map.md', 'docker-compose.yml', 'full_test_run.log'];
   if (ignoredFiles.some(f => filePath.endsWith(f))) {
     return true;
   }

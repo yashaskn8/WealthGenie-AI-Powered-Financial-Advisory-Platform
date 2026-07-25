@@ -834,7 +834,7 @@ GenieChat has evolved into an **enterprise-grade, tool-orchestrated AI financial
 
 | Technical Specification | Verified Benchmark / Metric | Proof & Test Suite Location |
 | :--- | :--- | :--- |
-| **Backend Test Suite** | **100% Pass** (23/23 test suites passing) | `node --test server/test/*.test.js` |
+| **Backend Test Suite** | **100% Pass** (23/23 test suites, 114/114 tests passing) | `node --test server/test/*.test.js` ([CI Run 30176687445 Log](server/reports/full_test_run.log)) |
 | **AI Evaluation Benchmark** | **100% Pass** (205/205 prompts evaluated) | `npm run eval` (`server/eval/chatEvaluationFramework.js`) |
 | **Post-Gen Verification Latency**| **< 5 ms average** | `server/services/arithmeticVerifier.js` & `actionCardValidator.js` |
 | **ML Model Architecture** | Rule-Engine Distillation + TreeSHAP Explainability | `ml-service/model/train.py` & `ADR-008` |
