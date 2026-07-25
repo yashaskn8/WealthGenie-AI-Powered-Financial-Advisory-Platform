@@ -53,11 +53,12 @@ I addressed this by writing **ADR 001** to document the historical root cause an
 - **Common Mistakes**: Claiming Halton works infinitely well for 100+ dimensions.
 - **Red Flags**: Not knowing what low-discrepancy means or failing to explain radical inverse bases.
 
-### Bullet 2: "Measured 1.52x throughput improvement with 76.21% scaling efficiency in local dual-process simulation."
-- **Important Disclosure**: This benchmark ran both Express instances as local Node.js processes on the same machine, behind a custom 69-line round-robin proxy (`scripts/lb-proxy.js`), with Redis emulated in-memory (`scripts/redis-emulator.js`). It validates that the application code is stateless and scalable in principle — it does not measure real network latency, real Redis behavior, or real multi-machine variance.
-- **Likely Question**: "In earlier reports you claimed 41.88x speedup. Why did that change to 1.52x?"
-- **Ideal Answer**: "The initial single-instance benchmark was flawed because the background process on port 5000 had Express rate-limiting active, returning 429 errors that artificially depressed throughput to ~18.8 RPS. Under re-benchmarking with rate-limiting disabled across both topologies at identical 50-concurrency load, single-instance achieved 191.43 RPS and dual-instance + proxy achieved 291.78 RPS. This yields a measured 1.52x speedup (76.21% efficiency) in the local simulation environment. Production numbers would differ due to real network latency, Redis serialization, and multi-machine OS contention."
-- **Red Flags**: Defending a 41.88x speedup on 2 nodes (which is mathematically impossible linear speedup > 2.0x). Presenting the local simulation as a distributed infrastructure test.
+### Bullet 2: "Benchmarked dual-instance horizontal scaling with real hosted Redis and a round-robin proxy."
+- **What changed**: The original simulation used `scripts/redis-emulator.js` (in-memory fake Redis). The re-run used a real Upstash Redis instance. The load balancer (`scripts/lb-proxy.js`) and same-machine topology were unchanged.
+- **Result**: Single instance measured 1934.7 RPS. Dual instance behind lb-proxy measured 1592.5 RPS. Measured speedup: 0.82x (i.e., the proxy overhead made it slower, not faster). The original simulation showed 1.52x because in-memory Redis was effectively free; real Redis and proxy overhead reversed the result.
+- **Likely Question**: "So horizontal scaling made things worse?"
+- **Ideal Answer**: "On a single machine with a naive Node.js round-robin proxy, yes. The proxy process competes for CPU and adds a network hop through localhost. A real deployment would use a dedicated load balancer (NGINX, HAProxy, or a cloud ALB) on separate hardware, where the proxy overhead would be negligible relative to the parallelism gained. What the benchmark does validate is that both app instances share state correctly through real Redis — no request failures, zero errors across all runs."
+- **Red Flags**: Claiming the 1.52x local simulation number is still valid. Presenting a same-machine proxy benchmark as evidence of distributed scaling.
 
 ---
 

@@ -1,19 +1,32 @@
 # Horizontal Scaling Benchmark
 
-## Containerized Benchmark
+## Real Redis benchmark (no Docker)
 
-> **Status**: Pending — run `docker compose up --build -d` then `node server/scripts/benchmark-containerized.js` to populate this section with real numbers.
+**Date**: 2026-07-25T21:43:02.630Z
+**Methodology**:
+- Both app instances connected to a real hosted Redis (Upstash) specified by REDIS_URL in .env.
+- The load balancer is `scripts/lb-proxy.js`, a simple round-robin HTTP proxy script — not NGINX, HAProxy, or any production load balancer.
+- Both app instances ran as local Node.js processes on the same physical machine, not separate hosts.
+- The only change from the original simulation is that Redis is now real. The load balancer and execution topology are unchanged.
 
-**Environment**: Docker Compose (real MongoDB 7.0, real Redis 7 Alpine, NGINX round-robin LB)
-**Parameters**: concurrency 50, duration 15s, rate-limiting disabled
+**Parameters**: concurrency 50, duration 15s × 3 runs averaged, rate-limiting disabled, endpoint `/health/ready`
 
-Results will be written to `server/reports/horizontal_scaling_containerized.md` and should be pasted here after execution.
+| Configuration | Avg RPS ± StdDev | P95 Latency | P99 Latency | Variance % |
+|:---|:---:|:---:|:---:|:---:|
+| Single Instance (port 5100) | 1934.7 ± 186.84 | 5.06 ms | 13.16 ms | 9.66% |
+| Dual Instance + LB (port 5103) | 1592.5 ± 2.58 | 10.19 ms | 16.36 ms | 0.16% |
+
+| Metric | Value |
+|:---|:---:|
+| Ideal Speedup | 2x |
+| **Measured Speedup** | **0.82x** |
+| **Scaling Efficiency** | **41%** |
 
 ---
 
-## Local Proof-of-Concept (Superseded)
+## Local simulation (original, superseded)
 
-> **Disclosure**: This earlier benchmark ran both Express instances as local Node.js processes on the same machine (ports 5101 and 5102). The "load balancer" was a custom 69-line round-robin HTTP proxy (`scripts/lb-proxy.js`), not a production load balancer. Redis was emulated in-memory (`scripts/redis-emulator.js`), not a real Redis instance. This validates that the application code is stateless and scalable in principle — it does not measure real network latency, real Redis behavior, or real multi-machine variance.
+> This earlier benchmark used `scripts/redis-emulator.js` (an in-memory fake Redis) instead of a real Redis instance. It validated that the application code is stateless, but the Redis behavior was not representative. The numbers below are retained for comparison.
 
 **Date**: 2026-07-24T18:06:46.336Z
 **Parameters**: concurrency 50, duration 15s, rate-limiting disabled on both topologies
@@ -28,5 +41,3 @@ Results will be written to `server/reports/horizontal_scaling_containerized.md` 
 | Ideal Speedup | 2x |
 | Measured Speedup | 1.52x |
 | Scaling Efficiency | 76.21% |
-
-> **Correction Note**: Previous report contained asymmetric rate-limiting on port 5000 which artificially dampened single-instance baseline. Re-benchmarking under identical conditions confirmed a measured speedup of 1.52x (76.21% scaling efficiency) in the local simulation environment described above.

@@ -1,29 +1,88 @@
 {
+  "timestamp": "2026-07-25T21:43:02.630Z",
+  "redis": "rediss:****@enjoyed-minnow-83716.upstash.io:6379",
+  "loadBalancer": "scripts/lb-proxy.js (round-robin)",
+  "sameHost": true,
+  "parameters": {
+    "concurrency": 50,
+    "durationSeconds": 15,
+    "runs": 3,
+    "rateLimiting": "disabled",
+    "endpoint": "/health/ready"
+  },
   "single": {
-    "rps": {
-      "avg": 191.43,
-      "stdDev": 21.51,
-      "min": 162.2,
-      "max": 213.34,
-      "variancePct": 11.24
+    "label": "Single Instance (port 5100)",
+    "rpsStats": {
+      "avg": 1934.7,
+      "stdDev": 186.84,
+      "variancePct": 9.66
     },
-    "p95": 0,
-    "p99": 618
+    "avgP95": 5.06,
+    "avgP99": 13.16,
+    "totalErrors": 0,
+    "totalReqs": 87100,
+    "runs": [
+      {
+        "rps": 1708.5192832878172,
+        "p95": 6.207399999999325,
+        "p99": 14.98830000000089,
+        "errors": 0,
+        "totalRequests": 25650
+      },
+      {
+        "rps": 1929.485470541189,
+        "p95": 4.599000000001979,
+        "p99": 12.421900000001187,
+        "errors": 0,
+        "totalRequests": 28950
+      },
+      {
+        "rps": 2166.0890429218875,
+        "p95": 4.384400000002643,
+        "p99": 12.064599999997881,
+        "errors": 0,
+        "totalRequests": 32500
+      }
+    ]
   },
   "dual": {
-    "rps": {
-      "avg": 291.78,
-      "stdDev": 15.49,
-      "min": 272.61,
-      "max": 310.54,
-      "variancePct": 5.31
+    "label": "Dual Instance + LB (port 5103)",
+    "rpsStats": {
+      "avg": 1592.5,
+      "stdDev": 2.58,
+      "variancePct": 0.16
     },
-    "p95": 0,
-    "p99": 317
+    "avgP95": 10.19,
+    "avgP99": 16.36,
+    "totalErrors": 0,
+    "totalReqs": 71750,
+    "runs": [
+      {
+        "rps": 1588.9407061958696,
+        "p95": 10.868099999999686,
+        "p99": 17.3695000000007,
+        "errors": 0,
+        "totalRequests": 23850
+      },
+      {
+        "rps": 1593.5857342471222,
+        "p95": 10.46239999998943,
+        "p99": 16.120300000009593,
+        "errors": 0,
+        "totalRequests": 23950
+      },
+      {
+        "rps": 1594.96537027171,
+        "p95": 9.244900000005146,
+        "p99": 15.596100000009756,
+        "errors": 0,
+        "totalRequests": 23950
+      }
+    ]
   },
-  "scalingEfficiency": {
+  "scaling": {
     "idealSpeedup": 2,
-    "measuredSpeedup": 1.52,
-    "efficiencyPercent": 76.21
+    "measuredSpeedup": 0.82,
+    "efficiencyPercent": 41
   }
 }

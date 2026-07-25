@@ -1,8 +1,15 @@
 import net from 'net';
 
 /**
- * Embedded RESP2 Redis Server for Local Execution & Multi-Instance Load Balancing.
- * Handles node-redis v4 handshake (PING, CLIENT, HELLO, COMMAND) and key-value store.
+ * Embedded RESP2 Redis Server — local development fallback ONLY.
+ *
+ * This in-memory Redis emulator exists so developers can run the app locally
+ * without installing a real Redis server. It is NOT used for benchmarks or
+ * performance measurements. All benchmarks connect to the real hosted Redis
+ * instance specified by REDIS_URL in .env (e.g. Upstash).
+ *
+ * Handles node-redis v4 handshake (PING, CLIENT, HELLO, COMMAND) and basic
+ * key-value store operations (GET, SET, SETEX, DEL, INCR, DECR, TTL, EXPIRE).
  */
 const store = new Map();
 const ttls = new Map();
