@@ -1,18 +1,18 @@
 /**
- * Horizontal Scaling Benchmark — Real Redis
+ * Horizontal Scaling Benchmark — Real Redis, /api/goals endpoint
  *
- * Spawns server instances that connect to the real hosted Redis specified
- * by REDIS_URL in .env. The load balancer is scripts/lb-proxy.js (a simple
- * round-robin script). Both app instances run on this same machine.
+ * Tests the same endpoint as verify-scalability-zero-trust.js (/api/goals)
+ * so results are directly comparable to the original 1.52x number.
  *
- * Parameters (matching the original local simulation for comparison):
- *   Concurrency: 50, Duration: 15s per run, 3 runs averaged
- *   Rate-limiting: disabled (DISABLE_RATE_LIMIT=true)
- *   HTTP logging: disabled (DISABLE_HTTP_LOGGING=true)
- *   Endpoint: /health/ready
+ * Three configurations tested:
+ *   1. Single instance, no proxy (direct baseline)
+ *   2. Single instance, through lb-proxy.js (isolates proxy overhead)
+ *   3. Dual instance, through lb-proxy.js (measures parallelism benefit)
  *
- * Usage:
- *   cd server && node scripts/run-horizontal-scaling-real-redis.js
+ * All instances connect to real hosted Redis via REDIS_URL from .env.
+ * lb-proxy.js now uses HTTP keep-alive (maxSockets=256).
+ *
+ * Parameters: concurrency 50, duration 15s, 3 runs averaged, rate-limiting disabled.
  */
 
 import 'dotenv/config';
@@ -20,6 +20,8 @@ import { spawn } from 'child_process';
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = join(__dirname, '..');
@@ -28,22 +30,25 @@ const REPORTS_DIR = join(SERVER_DIR, 'reports');
 const CONCURRENCY = 50;
 const DURATION_SECONDS = 15;
 const NUM_RUNS = 3;
-const ENDPOINT = '/health/ready';
+const ENDPOINT = '/api/goals';
+
+// JWT for authenticated endpoint
+const JWT_SECRET = process.env.JWT_SECRET || 'bench-jwt-secret-key-12345';
+const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
+const TEST_TOKEN = jwt.sign(
+  { userId: TEST_USER_ID, email: 'bench@wealthgenie.test', role: 'user' },
+  JWT_SECRET,
+  { expiresIn: '24h' }
+);
 
 // Verify Redis configuration
 const redisUrl = process.env.REDIS_URL;
 if (!redisUrl || redisUrl.includes('localhost') || redisUrl.includes('127.0.0.1')) {
-  console.error('[Bench] ERROR: REDIS_URL must point to a real hosted Redis instance.');
+  console.error('[Bench] REDIS_URL must point to a real hosted Redis instance.');
   console.error('[Bench] Current REDIS_URL:', redisUrl || '(not set)');
-  console.error('[Bench] Set REDIS_URL in server/.env to a hosted Redis (e.g. Upstash).');
   process.exit(1);
 }
-
-// Mask password for logging
 const maskedUrl = redisUrl.replace(/:([^@]+)@/, ':****@');
-console.log(`[Bench] Redis: ${maskedUrl}`);
-console.log(`[Bench] Concurrency: ${CONCURRENCY}, Duration: ${DURATION_SECONDS}s × ${NUM_RUNS} runs`);
-console.log(`[Bench] Rate-limiting: disabled, HTTP logging: disabled`);
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -53,17 +58,16 @@ function spawnServer(port) {
     PORT: String(port),
     DISABLE_RATE_LIMIT: 'true',
     DISABLE_HTTP_LOGGING: 'true',
+    JWT_SECRET,
     NODE_ENV: 'production',
   };
   const child = spawn('node', ['server.js'], {
-    cwd: SERVER_DIR,
-    env,
+    cwd: SERVER_DIR, env,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   child.stderr.on('data', d => {
     const msg = d.toString().trim();
-    // Only log actual errors, not warnings
-    if (msg.includes('Error') || msg.includes('error')) {
+    if (msg.includes('Error') || msg.includes('EADDRINUSE')) {
       console.error(`[Server:${port}] ${msg}`);
     }
   });
@@ -73,8 +77,7 @@ function spawnServer(port) {
 
 function spawnProxy(port1, port2, proxyPort) {
   const child = spawn('node', ['scripts/lb-proxy.js', String(port1), String(port2), String(proxyPort)], {
-    cwd: SERVER_DIR,
-    env: { ...process.env },
+    cwd: SERVER_DIR, env: { ...process.env },
     stdio: 'pipe',
   });
   child.stderr.on('data', () => {});
@@ -86,7 +89,7 @@ async function waitForServer(port, maxWait = 30000) {
   const start = Date.now();
   while (Date.now() - start < maxWait) {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}${ENDPOINT}`, { signal: AbortSignal.timeout(2000) });
+      const res = await fetch(`http://127.0.0.1:${port}/health/ready`, { signal: AbortSignal.timeout(2000) });
       if (res.ok) return true;
     } catch {}
     await sleep(1000);
@@ -97,7 +100,9 @@ async function waitForServer(port, maxWait = 30000) {
 async function singleRequest(baseUrl) {
   const start = performance.now();
   try {
-    const res = await fetch(`${baseUrl}${ENDPOINT}`);
+    const res = await fetch(`${baseUrl}${ENDPOINT}`, {
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+    });
     const latency = performance.now() - start;
     return { status: res.status, latency, error: res.status >= 400 };
   } catch {
@@ -125,7 +130,8 @@ function calcStats(numbers) {
 }
 
 async function runBenchmark(label, baseUrl) {
-  console.log(`\n  ${label}: ${baseUrl}${ENDPOINT}`);
+  console.log(`\n  ${label}`);
+  console.log(`  Target: ${baseUrl}${ENDPOINT}`);
   const runResults = [];
 
   for (let run = 1; run <= NUM_RUNS; run++) {
@@ -167,114 +173,149 @@ async function main() {
   mkdirSync(REPORTS_DIR, { recursive: true });
 
   console.log('\n══════════════════════════════════════════════════════════');
-  console.log('  HORIZONTAL SCALING BENCHMARK — REAL REDIS');
+  console.log('  HORIZONTAL SCALING BENCHMARK — REAL REDIS, /api/goals');
   console.log('══════════════════════════════════════════════════════════');
+  console.log(`  Redis:       ${maskedUrl}`);
+  console.log(`  Endpoint:    ${ENDPOINT} (JWT-authenticated)`);
+  console.log(`  Concurrency: ${CONCURRENCY}, Duration: ${DURATION_SECONDS}s × ${NUM_RUNS} runs`);
+  console.log(`  Rate-limit:  disabled, HTTP logging: disabled`);
+  console.log(`  lb-proxy.js: keep-alive enabled (maxSockets=256)`);
 
-  // Spawn single instance on port 5100
+  // --- Configuration 1: Single instance, no proxy (port 5100) ---
   console.log('\n[Bench] Starting single instance on port 5100...');
   const sSingle = spawnServer(5100);
   await waitForServer(5100);
-  console.log('[Bench] Single instance ready.');
 
-  // Spawn dual instances on 5101 + 5102, proxy on 5103
-  console.log('[Bench] Starting dual instances on 5101, 5102 + lb-proxy on 5103...');
-  const s1 = spawnServer(5101);
-  const s2 = spawnServer(5102);
-  await waitForServer(5101);
-  await waitForServer(5102);
-  const proxy = spawnProxy(5101, 5102, 5103);
+  const resultDirect = await runBenchmark(
+    'Config 1: Single instance, no proxy (port 5100)',
+    'http://127.0.0.1:5100'
+  );
+
+  // --- Configuration 2: Single instance, through proxy ---
+  // Proxy on 5103 pointing to 5100 + 5100 (same backend twice = round-robin to self)
+  console.log('\n[Bench] Starting lb-proxy on 5103 → single backend 5100...');
+  const proxySingle = spawnProxy(5100, 5100, 5103);
   await sleep(1500);
   await waitForServer(5103);
-  console.log('[Bench] Dual instances + proxy ready.');
 
-  // Run benchmarks
-  const singleResult = await runBenchmark('Single Instance (port 5100)', 'http://127.0.0.1:5100');
-  const dualResult = await runBenchmark('Dual Instance + LB (port 5103)', 'http://127.0.0.1:5103');
+  const resultProxySingle = await runBenchmark(
+    'Config 2: Single instance, through lb-proxy (port 5103 → 5100)',
+    'http://127.0.0.1:5103'
+  );
+
+  proxySingle.kill();
+  await sleep(500);
+
+  // --- Configuration 3: Dual instance, through proxy ---
+  console.log('\n[Bench] Starting second instance on port 5101...');
+  const s2 = spawnServer(5101);
+  await waitForServer(5101);
+
+  console.log('[Bench] Starting lb-proxy on 5103 → 5100 + 5101...');
+  const proxyDual = spawnProxy(5100, 5101, 5103);
+  await sleep(1500);
+  await waitForServer(5103);
+
+  const resultProxyDual = await runBenchmark(
+    'Config 3: Dual instance, through lb-proxy (port 5103 → 5100+5101)',
+    'http://127.0.0.1:5103'
+  );
 
   // Cleanup
-  for (const p of [sSingle, s1, s2, proxy]) {
+  for (const p of [sSingle, s2, proxyDual]) {
     try { p.kill(); } catch {}
   }
 
-  // Calculate scaling
-  const speedup = singleResult.rpsStats.avg > 0
-    ? parseFloat((dualResult.rpsStats.avg / singleResult.rpsStats.avg).toFixed(2))
+  // Calculate scaling metrics
+  const proxyOverhead = resultDirect.rpsStats.avg > 0
+    ? parseFloat((resultProxySingle.rpsStats.avg / resultDirect.rpsStats.avg).toFixed(2))
     : 1.0;
-  const efficiency = parseFloat(((speedup / 2) * 100).toFixed(2));
+  const dualVsDirect = resultDirect.rpsStats.avg > 0
+    ? parseFloat((resultProxyDual.rpsStats.avg / resultDirect.rpsStats.avg).toFixed(2))
+    : 1.0;
+  const dualVsProxySingle = resultProxySingle.rpsStats.avg > 0
+    ? parseFloat((resultProxyDual.rpsStats.avg / resultProxySingle.rpsStats.avg).toFixed(2))
+    : 1.0;
+  const efficiency = parseFloat(((dualVsProxySingle / 2) * 100).toFixed(2));
 
   console.log('\n══════════════════════════════════════════════════════════');
   console.log('  RESULTS');
   console.log('══════════════════════════════════════════════════════════');
-  console.log(`  Single: ${singleResult.rpsStats.avg} ± ${singleResult.rpsStats.stdDev} RPS, P95=${singleResult.avgP95}ms, P99=${singleResult.avgP99}ms`);
-  console.log(`  Dual:   ${dualResult.rpsStats.avg} ± ${dualResult.rpsStats.stdDev} RPS, P95=${dualResult.avgP95}ms, P99=${dualResult.avgP99}ms`);
-  console.log(`  Speedup: ${speedup}x, Efficiency: ${efficiency}%`);
+  console.log(`  Direct:        ${resultDirect.rpsStats.avg} ± ${resultDirect.rpsStats.stdDev} RPS`);
+  console.log(`  Via proxy (1): ${resultProxySingle.rpsStats.avg} ± ${resultProxySingle.rpsStats.stdDev} RPS  (${proxyOverhead}x of direct)`);
+  console.log(`  Via proxy (2): ${resultProxyDual.rpsStats.avg} ± ${resultProxyDual.rpsStats.stdDev} RPS  (${dualVsDirect}x of direct, ${dualVsProxySingle}x of proxied-single)`);
+  console.log(`  Proxy overhead:       ${proxyOverhead}x (ratio of proxied-single to direct)`);
+  console.log(`  Scaling efficiency:   ${efficiency}% (dual-proxied / single-proxied, ideal=2x → 100%)`);
   console.log('══════════════════════════════════════════════════════════\n');
 
   // Write JSON
   const jsonReport = {
     timestamp: new Date().toISOString(),
     redis: maskedUrl,
-    loadBalancer: 'scripts/lb-proxy.js (round-robin)',
+    loadBalancer: 'scripts/lb-proxy.js (round-robin, keep-alive enabled)',
     sameHost: true,
-    parameters: { concurrency: CONCURRENCY, durationSeconds: DURATION_SECONDS, runs: NUM_RUNS, rateLimiting: 'disabled', endpoint: ENDPOINT },
-    single: singleResult,
-    dual: dualResult,
-    scaling: { idealSpeedup: 2.0, measuredSpeedup: speedup, efficiencyPercent: efficiency },
+    endpoint: ENDPOINT,
+    parameters: { concurrency: CONCURRENCY, durationSeconds: DURATION_SECONDS, runs: NUM_RUNS, rateLimiting: 'disabled' },
+    configs: {
+      directSingle: resultDirect,
+      proxiedSingle: resultProxySingle,
+      proxiedDual: resultProxyDual,
+    },
+    scaling: {
+      proxyOverhead,
+      dualVsDirect,
+      dualVsProxySingle,
+      efficiencyPercent: efficiency,
+    },
   };
   writeFileSync(join(REPORTS_DIR, 'horizontal_scaling.json'), JSON.stringify(jsonReport, null, 2));
 
-  // Write Markdown report — preserve old numbers, add new
-  const md = `# Horizontal Scaling Benchmark
+  // Read existing report to preserve previous sections
+  const existingReport = existsSync(join(REPORTS_DIR, 'horizontal_scaling.md'))
+    ? readFileSync(join(REPORTS_DIR, 'horizontal_scaling.md'), 'utf-8')
+    : '';
 
-## Real Redis benchmark (no Docker)
+  const newSection = `## Real Redis benchmark — /api/goals, keep-alive proxy (current)
 
 **Date**: ${jsonReport.timestamp}
+
+**What changed from previous run**:
+- **Endpoint**: now \`/api/goals\` (JWT-authenticated, hits MongoDB) instead of \`/health/ready\`. This matches the endpoint used in the original \`verify-scalability-zero-trust.js\` benchmark, making the comparison fair.
+- **lb-proxy.js fix**: added HTTP keep-alive agent (maxSockets=256). Previously every proxied request opened a new TCP connection.
+- **Third configuration added**: single instance through proxy, to isolate proxy overhead from scaling benefit.
+
 **Methodology**:
-- Both app instances connected to a real hosted Redis (Upstash) specified by REDIS_URL in .env.
-- The load balancer is \`scripts/lb-proxy.js\`, a simple round-robin HTTP proxy script — not NGINX, HAProxy, or any production load balancer.
-- Both app instances ran as local Node.js processes on the same physical machine, not separate hosts.
-- The only change from the original simulation is that Redis is now real. The load balancer and execution topology are unchanged.
+- All instances connected to real hosted Redis (Upstash) via REDIS_URL.
+- Load balancer: \`scripts/lb-proxy.js\` (round-robin, now with keep-alive).
+- All processes ran on the same physical machine (not separate hosts).
+- Rate-limiting disabled, HTTP logging disabled.
 
-**Parameters**: concurrency ${CONCURRENCY}, duration ${DURATION_SECONDS}s × ${NUM_RUNS} runs averaged, rate-limiting disabled, endpoint \`${ENDPOINT}\`
-
-| Configuration | Avg RPS ± StdDev | P95 Latency | P99 Latency | Variance % |
-|:---|:---:|:---:|:---:|:---:|
-| Single Instance (port 5100) | ${singleResult.rpsStats.avg} ± ${singleResult.rpsStats.stdDev} | ${singleResult.avgP95} ms | ${singleResult.avgP99} ms | ${singleResult.rpsStats.variancePct}% |
-| Dual Instance + LB (port 5103) | ${dualResult.rpsStats.avg} ± ${dualResult.rpsStats.stdDev} | ${dualResult.avgP95} ms | ${dualResult.avgP99} ms | ${dualResult.rpsStats.variancePct}% |
-
-| Metric | Value |
-|:---|:---:|
-| Ideal Speedup | 2x |
-| **Measured Speedup** | **${speedup}x** |
-| **Scaling Efficiency** | **${efficiency}%** |
-
----
-
-## Local simulation (original, superseded)
-
-> This earlier benchmark used \`scripts/redis-emulator.js\` (an in-memory fake Redis) instead of a real Redis instance. It validated that the application code is stateless, but the Redis behavior was not representative. The numbers below are retained for comparison.
-
-**Date**: 2026-07-24T18:06:46.336Z
-**Parameters**: concurrency 50, duration 15s, rate-limiting disabled on both topologies
+**Parameters**: concurrency ${CONCURRENCY}, duration ${DURATION_SECONDS}s × ${NUM_RUNS} runs averaged
 
 | Configuration | Avg RPS ± StdDev | P95 Latency | P99 Latency | Variance % |
 |:---|:---:|:---:|:---:|:---:|
-| Single Instance (port 5100) | 191.43 ± 21.51 | 0.00 ms | 618.00 ms | 11.24% |
-| Dual Instance + LB (port 5103) | 291.78 ± 15.49 | 0.00 ms | 317.00 ms | 5.31% |
+| Single instance, no proxy (port 5100) | ${resultDirect.rpsStats.avg} ± ${resultDirect.rpsStats.stdDev} | ${resultDirect.avgP95} ms | ${resultDirect.avgP99} ms | ${resultDirect.rpsStats.variancePct}% |
+| Single instance, through proxy (port 5103 → 5100) | ${resultProxySingle.rpsStats.avg} ± ${resultProxySingle.rpsStats.stdDev} | ${resultProxySingle.avgP95} ms | ${resultProxySingle.avgP99} ms | ${resultProxySingle.rpsStats.variancePct}% |
+| Dual instance, through proxy (port 5103 → 5100+5101) | ${resultProxyDual.rpsStats.avg} ± ${resultProxyDual.rpsStats.stdDev} | ${resultProxyDual.avgP95} ms | ${resultProxyDual.avgP99} ms | ${resultProxyDual.rpsStats.variancePct}% |
 
 | Metric | Value |
 |:---|:---:|
-| Ideal Speedup | 2x |
-| Measured Speedup | 1.52x |
-| Scaling Efficiency | 76.21% |
+| Proxy overhead (proxied-single / direct) | ${proxyOverhead}x |
+| Dual-proxied / direct | ${dualVsDirect}x |
+| **Dual-proxied / proxied-single** | **${dualVsProxySingle}x** |
+| **Scaling efficiency** | **${efficiency}%** |
 `;
 
-  writeFileSync(join(REPORTS_DIR, 'horizontal_scaling.md'), md);
+  const fullReport = `# Horizontal Scaling Benchmark
 
-  console.log('[Bench] Reports written:');
-  console.log(`  ${join(REPORTS_DIR, 'horizontal_scaling.json')}`);
-  console.log(`  ${join(REPORTS_DIR, 'horizontal_scaling.md')}`);
+${newSection}
+---
 
+${existingReport.replace(/^# Horizontal Scaling Benchmark\n*/, '')}`;
+
+  writeFileSync(join(REPORTS_DIR, 'horizontal_scaling.md'), fullReport);
+
+  console.log('[Bench] Reports written to server/reports/');
   process.exit(0);
 }
 

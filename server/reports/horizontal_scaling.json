@@ -1,88 +1,126 @@
 {
-  "timestamp": "2026-07-25T21:43:02.630Z",
+  "timestamp": "2026-07-25T21:57:00.509Z",
   "redis": "rediss:****@enjoyed-minnow-83716.upstash.io:6379",
-  "loadBalancer": "scripts/lb-proxy.js (round-robin)",
+  "loadBalancer": "scripts/lb-proxy.js (round-robin, keep-alive enabled)",
   "sameHost": true,
+  "endpoint": "/api/goals",
   "parameters": {
     "concurrency": 50,
     "durationSeconds": 15,
     "runs": 3,
-    "rateLimiting": "disabled",
-    "endpoint": "/health/ready"
+    "rateLimiting": "disabled"
   },
-  "single": {
-    "label": "Single Instance (port 5100)",
-    "rpsStats": {
-      "avg": 1934.7,
-      "stdDev": 186.84,
-      "variancePct": 9.66
+  "configs": {
+    "directSingle": {
+      "label": "Config 1: Single instance, no proxy (port 5100)",
+      "rpsStats": {
+        "avg": 856.9,
+        "stdDev": 110.09,
+        "variancePct": 12.85
+      },
+      "avgP95": 53.48,
+      "avgP99": 64.17,
+      "totalErrors": 0,
+      "totalReqs": 38650,
+      "runs": [
+        {
+          "rps": 705.0216162287994,
+          "p95": 72.77679999999964,
+          "p99": 88.95850000000064,
+          "errors": 0,
+          "totalRequests": 10600
+        },
+        {
+          "rps": 903.1743923495816,
+          "p95": 42.074500000002445,
+          "p99": 52.76199999999881,
+          "errors": 0,
+          "totalRequests": 13600
+        },
+        {
+          "rps": 962.4991673882635,
+          "p95": 45.573800000005576,
+          "p99": 50.80129999999917,
+          "errors": 0,
+          "totalRequests": 14450
+        }
+      ]
     },
-    "avgP95": 5.06,
-    "avgP99": 13.16,
-    "totalErrors": 0,
-    "totalReqs": 87100,
-    "runs": [
-      {
-        "rps": 1708.5192832878172,
-        "p95": 6.207399999999325,
-        "p99": 14.98830000000089,
-        "errors": 0,
-        "totalRequests": 25650
+    "proxiedSingle": {
+      "label": "Config 2: Single instance, through lb-proxy (port 5103 → 5100)",
+      "rpsStats": {
+        "avg": 895.31,
+        "stdDev": 84.9,
+        "variancePct": 9.48
       },
-      {
-        "rps": 1929.485470541189,
-        "p95": 4.599000000001979,
-        "p99": 12.421900000001187,
-        "errors": 0,
-        "totalRequests": 28950
-      },
-      {
-        "rps": 2166.0890429218875,
-        "p95": 4.384400000002643,
-        "p99": 12.064599999997881,
-        "errors": 0,
-        "totalRequests": 32500
-      }
-    ]
-  },
-  "dual": {
-    "label": "Dual Instance + LB (port 5103)",
-    "rpsStats": {
-      "avg": 1592.5,
-      "stdDev": 2.58,
-      "variancePct": 0.16
+      "avgP95": 47.08,
+      "avgP99": 56.3,
+      "totalErrors": 0,
+      "totalReqs": 40350,
+      "runs": [
+        {
+          "rps": 835.6638700226395,
+          "p95": 55.073199999998906,
+          "p99": 73.07840000000579,
+          "errors": 0,
+          "totalRequests": 12550
+        },
+        {
+          "rps": 834.8855774348058,
+          "p95": 50.888300000005984,
+          "p99": 54.48390000000654,
+          "errors": 0,
+          "totalRequests": 12550
+        },
+        {
+          "rps": 1015.38051801052,
+          "p95": 35.268599999995786,
+          "p99": 41.3408000000054,
+          "errors": 0,
+          "totalRequests": 15250
+        }
+      ]
     },
-    "avgP95": 10.19,
-    "avgP99": 16.36,
-    "totalErrors": 0,
-    "totalReqs": 71750,
-    "runs": [
-      {
-        "rps": 1588.9407061958696,
-        "p95": 10.868099999999686,
-        "p99": 17.3695000000007,
-        "errors": 0,
-        "totalRequests": 23850
+    "proxiedDual": {
+      "label": "Config 3: Dual instance, through lb-proxy (port 5103 → 5100+5101)",
+      "rpsStats": {
+        "avg": 1211.19,
+        "stdDev": 77.97,
+        "variancePct": 6.44
       },
-      {
-        "rps": 1593.5857342471222,
-        "p95": 10.46239999998943,
-        "p99": 16.120300000009593,
-        "errors": 0,
-        "totalRequests": 23950
-      },
-      {
-        "rps": 1594.96537027171,
-        "p95": 9.244900000005146,
-        "p99": 15.596100000009756,
-        "errors": 0,
-        "totalRequests": 23950
-      }
-    ]
+      "avgP95": 24.49,
+      "avgP99": 31.02,
+      "totalErrors": 0,
+      "totalReqs": 54600,
+      "runs": [
+        {
+          "rps": 1102.231102231102,
+          "p95": 27.897600000011153,
+          "p99": 36.63220000000729,
+          "errors": 0,
+          "totalRequests": 16550
+        },
+        {
+          "rps": 1250.9981368112856,
+          "p95": 23.19670000000042,
+          "p99": 27.426699999996345,
+          "errors": 0,
+          "totalRequests": 18800
+        },
+        {
+          "rps": 1280.3458596607916,
+          "p95": 22.365200000000186,
+          "p99": 29.010000000009313,
+          "errors": 0,
+          "totalRequests": 19250
+        }
+      ]
+    }
   },
   "scaling": {
-    "idealSpeedup": 2,
-    "measuredSpeedup": 0.82,
-    "efficiencyPercent": 41
+    "proxyOverhead": 1.04,
+    "dualVsDirect": 1.41,
+    "dualVsProxySingle": 1.35,
+    "efficiencyPercent": 67.5
   }
 }

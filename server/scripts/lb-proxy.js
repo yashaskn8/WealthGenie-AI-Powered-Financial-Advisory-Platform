@@ -24,6 +24,12 @@ const backends = [
 let index = 0;
 const routingLog = { [port1]: 0, [port2]: 0 };
 
+const keepAliveAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 256,
+  keepAliveMsecs: 1000,
+});
+
 const server = http.createServer((clientReq, clientRes) => {
   const backend = backends[index % backends.length];
   index++;
@@ -35,6 +41,7 @@ const server = http.createServer((clientReq, clientRes) => {
     path: clientReq.url,
     method: clientReq.method,
     headers: { ...clientReq.headers, 'x-lb-backend': `${backend.port}` },
+    agent: keepAliveAgent,
   };
 
   const proxyReq = http.request(options, (proxyRes) => {

@@ -1,5 +1,37 @@
 # Horizontal Scaling Benchmark
 
+## Real Redis benchmark — /api/goals, keep-alive proxy (current)
+
+**Date**: 2026-07-25T21:57:00.509Z
+
+**What changed from previous run**:
+- **Endpoint**: now `/api/goals` (JWT-authenticated, hits MongoDB) instead of `/health/ready`. This matches the endpoint used in the original `verify-scalability-zero-trust.js` benchmark, making the comparison fair.
+- **lb-proxy.js fix**: added HTTP keep-alive agent (maxSockets=256). Previously every proxied request opened a new TCP connection.
+- **Third configuration added**: single instance through proxy, to isolate proxy overhead from scaling benefit.
+
+**Methodology**:
+- All instances connected to real hosted Redis (Upstash) via REDIS_URL.
+- Load balancer: `scripts/lb-proxy.js` (round-robin, now with keep-alive).
+- All processes ran on the same physical machine (not separate hosts).
+- Rate-limiting disabled, HTTP logging disabled.
+
+**Parameters**: concurrency 50, duration 15s × 3 runs averaged
+
+| Configuration | Avg RPS ± StdDev | P95 Latency | P99 Latency | Variance % |
+|:---|:---:|:---:|:---:|:---:|
+| Single instance, no proxy (port 5100) | 856.9 ± 110.09 | 53.48 ms | 64.17 ms | 12.85% |
+| Single instance, through proxy (port 5103 → 5100) | 895.31 ± 84.9 | 47.08 ms | 56.3 ms | 9.48% |
+| Dual instance, through proxy (port 5103 → 5100+5101) | 1211.19 ± 77.97 | 24.49 ms | 31.02 ms | 6.44% |
+
+| Metric | Value |
+|:---|:---:|
+| Proxy overhead (proxied-single / direct) | 1.04x |
+| Dual-proxied / direct | 1.41x |
+| **Dual-proxied / proxied-single** | **1.35x** |
+| **Scaling efficiency** | **67.5%** |
+
+---
+
 ## Real Redis benchmark (no Docker)
 
 **Date**: 2026-07-25T21:43:02.630Z
