@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-24T19:45:54.032Z",
+  "timestamp": "2026-07-25T13:28:34.395Z",
   "config": {
     "baseUrl": "http://127.0.0.1:5000",
     "endpoint": "/health/ready",
@@ -7,26 +7,26 @@
     "durationSeconds": 10
   },
   "results": {
-    "totalRequests": 4100,
+    "totalRequests": 22800,
     "statusCounts": {
-      "200": 4100
+      "200": 22800
     },
     "errors": 0,
     "errorRate": 0,
-    "throughput": 407.11,
+    "throughput": 2269.33,
     "latency": {
-      "min": 28.6,
-      "avg": 141.86,
-      "p50": 143.71,
-      "p95": 223.55,
-      "p99": 371.94,
-      "max": 378.58
+      "min": 14.14,
+      "avg": 18.7,
+      "p50": 17.26,
+      "p95": 25.85,
+      "p99": 37.32,
+      "max": 91.33
     }
   },
   "thresholds": {
     "p95": {
       "threshold": 500,
-      "actual": 223.55,
+      "actual": 25.85,
       "pass": true
     },
     "errorRate": {
