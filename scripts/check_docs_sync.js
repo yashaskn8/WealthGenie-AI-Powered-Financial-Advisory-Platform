@@ -5,7 +5,7 @@
  * with package versions, test targets, and configuration schemas.
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -41,6 +41,20 @@ function checkDocsSync() {
     const docPath = join(ROOT_DIR, doc);
     if (!existsSync(docPath)) {
       errors.push(`Missing mandatory documentation file: ${doc}`);
+    }
+  }
+
+  // 4. Backend test suite count drift check
+  const testDir = join(ROOT_DIR, 'server', 'test');
+  if (existsSync(testDir)) {
+    const testFiles = readdirSync(testDir).filter(f => f.endsWith('.test.js'));
+    const actualCount = testFiles.length;
+    const testCountMatch = readme.match(/(\d+)\/\1 test suites passing/);
+    if (testCountMatch) {
+      const readmeCount = parseInt(testCountMatch[1], 10);
+      if (readmeCount !== actualCount) {
+        errors.push(`README claims ${readmeCount}/${readmeCount} test suites but server/test/ contains ${actualCount} .test.js files`);
+      }
     }
   }
 

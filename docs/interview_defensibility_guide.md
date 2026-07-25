@@ -53,10 +53,11 @@ I addressed this by writing **ADR 001** to document the historical root cause an
 - **Common Mistakes**: Claiming Halton works infinitely well for 100+ dimensions.
 - **Red Flags**: Not knowing what low-discrepancy means or failing to explain radical inverse bases.
 
-### Bullet 2: "Delivered 1.52x horizontal scaling speedup with 76.21% scaling efficiency across dual Express instances."
+### Bullet 2: "Measured 1.52x throughput improvement with 76.21% scaling efficiency in local dual-process simulation."
+- **Important Disclosure**: This benchmark ran both Express instances as local Node.js processes on the same machine, behind a custom 69-line round-robin proxy (`scripts/lb-proxy.js`), with Redis emulated in-memory (`scripts/redis-emulator.js`). It validates that the application code is stateless and scalable in principle — it does not measure real network latency, real Redis behavior, or real multi-machine variance.
 - **Likely Question**: "In earlier reports you claimed 41.88x speedup. Why did that change to 1.52x?"
-- **Ideal Answer**: "The initial single-instance benchmark was flawed because the background process on port 5000 had Express rate-limiting active, returning 429 errors that artificially depressed throughput to ~18.8 RPS. Under zero-trust re-benchmarking with rate-limiting disabled across both topologies at identical 50-concurrency load, single-instance achieved 191.43 RPS and dual-instance + proxy achieved 291.78 RPS. This yields a true 1.52x speedup (76.21% efficiency), accurately accounting for Node HTTP reverse-proxy overhead and MongoDB connection pool contention."
-- **Red Flags**: Defending a 41.88x speedup on 2 nodes (which is mathematically impossible linear speedup $> 2.0x$).
+- **Ideal Answer**: "The initial single-instance benchmark was flawed because the background process on port 5000 had Express rate-limiting active, returning 429 errors that artificially depressed throughput to ~18.8 RPS. Under re-benchmarking with rate-limiting disabled across both topologies at identical 50-concurrency load, single-instance achieved 191.43 RPS and dual-instance + proxy achieved 291.78 RPS. This yields a measured 1.52x speedup (76.21% efficiency) in the local simulation environment. Production numbers would differ due to real network latency, Redis serialization, and multi-machine OS contention."
+- **Red Flags**: Defending a 41.88x speedup on 2 nodes (which is mathematically impossible linear speedup > 2.0x). Presenting the local simulation as a distributed infrastructure test.
 
 ---
 

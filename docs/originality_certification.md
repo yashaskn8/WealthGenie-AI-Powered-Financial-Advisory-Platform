@@ -21,7 +21,7 @@ This document provides explicit distinction between **Novel Engineering Decision
 
 1. **Halton QMC vs PRNG**: Empirical benchmark ([server/reports/qmc_benchmark.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/server/reports/qmc_benchmark.md)) demonstrates 70.65% error reduction at $N = 100$ and 63.76% error reduction at $N = 1,000$.
 2. **XIRR Solver Robustness**: Tested against flat derivative cash flows ([server/reports/assumption_attacks.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/server/reports/assumption_attacks.md)); automatically fell back to Bisection solver in 32 iterations.
-3. **Horizontal Scaling**: Benchmark ([server/reports/horizontal_scaling.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/server/reports/horizontal_scaling.md)) verified **1.52x throughput speedup (76.21% efficiency)** under 100% identical zero-trust conditions.
+3. **Horizontal Scaling (Local Simulation)**: Benchmark ([server/reports/horizontal_scaling.md](file:///c:/Users/prana/OneDrive/Desktop/deploy-wealthgenie/server/reports/horizontal_scaling.md)) measured **1.52x throughput speedup (76.21% efficiency)** using two local Node.js processes behind a custom round-robin proxy (`scripts/lb-proxy.js`) with in-memory Redis emulation. This validates stateless application architecture, not distributed infrastructure performance.
 
 ---
 

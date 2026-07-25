@@ -834,7 +834,7 @@ GenieChat has evolved into an **enterprise-grade, tool-orchestrated AI financial
 
 | Technical Specification | Verified Benchmark / Metric | Proof & Test Suite Location |
 | :--- | :--- | :--- |
-| **Backend Test Suite** | **100% Pass** (12/12 test suites passing) | `node --test server/test/*.test.js` |
+| **Backend Test Suite** | **100% Pass** (23/23 test suites passing) | `node --test server/test/*.test.js` |
 | **AI Evaluation Benchmark** | **100% Pass** (205/205 prompts evaluated) | `npm run eval` (`server/eval/chatEvaluationFramework.js`) |
 | **Post-Gen Verification Latency**| **< 5 ms average** | `server/services/arithmeticVerifier.js` & `actionCardValidator.js` |
 | **ML Model Architecture** | Rule-Engine Distillation + TreeSHAP Explainability | `ml-service/model/train.py` & `ADR-008` |
@@ -863,6 +863,12 @@ Key architectural and scientific decisions in WealthGenie are documented using f
 | **[ADR-010](docs/adr/0010-ethical-and-responsible-ai-deployment.md)** | Ethical & Responsible AI Deployment | Establishes decision-support boundaries, demographic fairness diagnostics, and human oversight disclaimers. |
 
 See the complete index at **[docs/adr/README.md](docs/adr/README.md)**.
+
+---
+
+## 📝 Development History
+
+Early development iterations included self-assessed scoring language in commit messages and documentation (e.g., "achieved 10.0/10"). This was removed in favor of verified, reproducible benchmarks — see commit [`e5c286d`](https://github.com/yashaskn8/deploy-wealthgenie/commit/e5c286d) and subsequent cleanups. The git history preserves this iteration transparently.
 
 ---
 
