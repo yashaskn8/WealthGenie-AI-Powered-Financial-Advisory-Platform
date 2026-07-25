@@ -241,9 +241,7 @@ async function main() {
     await new Promise(resolve => spawnedServer.close(resolve));
   }
 
-  if (!overallPass) {
-    process.exit(1);
-  }
+  process.exit(overallPass ? 0 : 1);
 }
 
 main().catch(err => {
