@@ -1,6 +1,0 @@
-# WealthGenie Codeowners File
-* @yashaskn8
-/server/ @yashaskn8
-/ml-service/ @yashaskn8
-/reactapp/ @yashaskn8
-/.github/ @yashaskn8
