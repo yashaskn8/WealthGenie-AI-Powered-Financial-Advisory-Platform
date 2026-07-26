@@ -196,3 +196,197 @@ test('getEffectiveMarginalRate computes exact marginal tax impact of additional 
   const rateZero = getEffectiveMarginalRate(0, 'new');
   assert.equal(rateZero, 0);
 });
+
+test('computeTax exact tax amounts at new regime slab boundaries', () => {
+  // ₹4L: entirely in 0% slab -> tax = 0 (below rebate too)
+  const res4L = computeTax(400_000, 'new', {}, 'business');
+  assert.equal(res4L.taxAmount, 0);
+
+  // ₹8L: 0-4L @ 0% + 4L-8L @ 5% = 20,000; below 12L rebate threshold -> 0
+  const res8L = computeTax(800_000, 'new', {}, 'business');
+  assert.equal(res8L.taxAmount, 0);
+
+  // ₹12L: 0-4L@0 + 4-8L@5%(20k) + 8-12L@10%(40k) = 60,000; rebate limit 12L -> 0
+  const res12L = computeTax(1_200_000, 'new', {}, 'business');
+  assert.equal(res12L.taxAmount, 0);
+
+  // ₹12,75,000 salary: taxable = 12,75,000 - 75,000(SD) = 12,00,000 -> rebate applies -> 0
+  const res1275K = computeTax(1_275_000, 'new');
+  assert.equal(res1275K.taxAmount, 0);
+  assert.equal(res1275K.rebateApplied, true);
+
+  // ₹16L: 0-4L@0 + 4-8L@5%(20k) + 8-12L@10%(40k) + 12-16L@15%(60k) = 120,000
+  // No rebate (> 12L). Tax + 4% cess = 120,000 * 1.04 = 124,800
+  const res16L = computeTax(1_600_000, 'new', {}, 'business');
+  assert.equal(res16L.taxBeforeCess, 120_000);
+  assert.equal(res16L.taxAmount, 124_800);
+
+  // ₹24L: base tax = 20k + 40k + 60k + 80k + 100k + 0 = 300,000
+  // Wait: 0-4L@0 + 4-8L@5%(20k) + 8-12L@10%(40k) + 12-16L@15%(60k) + 16-20L@20%(80k) + 20-24L@25%(100k) = 300,000
+  const res24L = computeTax(2_400_000, 'new', {}, 'business');
+  assert.equal(res24L.taxBeforeCess, 300_000);
+
+  // ₹30L: above ₹24L at 30%: 300k + (30L-24L)@30% = 300k + 180k = 480k
+  const res30L = computeTax(3_000_000, 'new', {}, 'business');
+  assert.equal(res30L.taxBeforeCess, 480_000);
+});
+
+test('computeTax exact tax amounts at old regime slab boundaries', () => {
+  // ₹2.5L: 0% slab -> 0
+  const res25L = computeTax(250_000, 'old', {}, 'business');
+  assert.equal(res25L.taxAmount, 0);
+
+  // ₹5L: 0-2.5L@0 + 2.5-5L@5%(12,500) = 12,500; rebate applies under old regime (≤5L) -> 0
+  const res5L = computeTax(500_000, 'old', {}, 'business');
+  assert.equal(res5L.taxAmount, 0);
+  assert.equal(res5L.rebateApplied, true);
+
+  // ₹10L: 0-2.5L@0 + 2.5-5L@5%(12.5k) + 5-10L@20%(100k) = 112,500
+  const res10L = computeTax(1_000_000, 'old', {}, 'business');
+  assert.equal(res10L.taxBeforeCess, 112_500);
+
+  // ₹15L: 112.5k + 5L@30%(150k) = 262,500
+  const res15L = computeTax(1_500_000, 'old', {}, 'business');
+  assert.equal(res15L.taxBeforeCess, 262_500);
+});
+
+test('getTaxSlab returns exact marginal rate at each new regime slab transition', () => {
+  // Below ₹4L -> 0
+  assert.equal(getTaxSlab(300_000, 'new', {}, 'business'), 0);
+
+  // At ₹4L boundary -> 0% (since income exactly at 4L, taxable in 0% slab)
+  assert.equal(getTaxSlab(400_000, 'new', {}, 'business'), 0);
+
+  // ₹6L -> 5% slab
+  assert.equal(getTaxSlab(600_000, 'new', {}, 'business'), 0.05);
+
+  // ₹8L -> 5% (at boundary)
+  assert.equal(getTaxSlab(800_000, 'new', {}, 'business'), 0.05);
+
+  // ₹10L -> 10% slab
+  assert.equal(getTaxSlab(1_000_000, 'new', {}, 'business'), 0.10);
+
+  // ₹14L -> 15% slab
+  assert.equal(getTaxSlab(1_400_000, 'new', {}, 'business'), 0.15);
+
+  // ₹18L -> 20% slab
+  assert.equal(getTaxSlab(1_800_000, 'new', {}, 'business'), 0.20);
+
+  // ₹22L -> 25% slab
+  assert.equal(getTaxSlab(2_200_000, 'new', {}, 'business'), 0.25);
+
+  // ₹30L -> 30% slab
+  assert.equal(getTaxSlab(3_000_000, 'new', {}, 'business'), 0.30);
+});
+
+test('getTaxSlab returns exact marginal rate for old regime slabs', () => {
+  assert.equal(getTaxSlab(200_000, 'old', {}, 'business'), 0);
+  assert.equal(getTaxSlab(400_000, 'old', {}, 'business'), 0.05);
+  assert.equal(getTaxSlab(700_000, 'old', {}, 'business'), 0.20);
+  assert.equal(getTaxSlab(1_500_000, 'old', {}, 'business'), 0.30);
+});
+
+test('computeTax surcharge rates at exact thresholds for both regimes', () => {
+  // New regime surcharge tiers
+  // ₹50L + 1: 10% surcharge
+  const n50L = computeTax(5_000_001, 'new', {}, 'business');
+  assert.equal(n50L.surchargeApplied, true);
+
+  // ₹1Cr + 1: 15% surcharge
+  const n1Cr = computeTax(10_000_001, 'new', {}, 'business');
+  assert.equal(n1Cr.surchargeApplied, true);
+
+  // ₹2Cr + 1: 25% surcharge (capped at 25% for new regime)
+  const n2Cr = computeTax(20_000_001, 'new', {}, 'business');
+  assert.equal(n2Cr.surchargeApplied, true);
+
+  // Old regime surcharge tiers
+  // ₹50L + 1: 10%
+  const o50L = computeTax(5_000_001, 'old', {}, 'business');
+  assert.equal(o50L.surchargeApplied, true);
+
+  // ₹2Cr + 1: 25%
+  const o2Cr = computeTax(20_000_001, 'old', {}, 'business');
+  assert.equal(o2Cr.surchargeApplied, true);
+
+  // ₹5Cr + 1: 37% (old regime only)
+  const o5Cr = computeTax(50_000_001, 'old', {}, 'business');
+  assert.equal(o5Cr.surchargeApplied, true);
+
+  // Below ₹50L: no surcharge
+  const below50L = computeTax(4_999_999, 'new', {}, 'business');
+  assert.equal(below50L.surchargeApplied, false);
+});
+
+test('compareTaxRegimes returns exact savings between regimes', () => {
+  // No deductions: new regime always better
+  const noDeduct = compareTaxRegimes(1_000_000, {});
+  assert.equal(noDeduct.recommended, 'new');
+  assert.ok(typeof noDeduct.newRegime.taxAmount === 'number');
+  assert.ok(typeof noDeduct.oldRegime.taxAmount === 'number');
+  // New should have lower or equal tax
+  assert.ok(noDeduct.newRegime.taxAmount <= noDeduct.oldRegime.taxAmount);
+
+  // Heavy deductions: old regime better
+  const heavyDeduct = compareTaxRegimes(2_000_000, {
+    section80C: 150_000,
+    hra: 300_000,
+    homeLoanInterest: 200_000,
+    section80D_self: 25_000,
+    nps80CCD1B: 50_000,
+  });
+  assert.equal(heavyDeduct.recommended, 'old');
+  assert.ok(heavyDeduct.oldRegime.taxAmount < heavyDeduct.newRegime.taxAmount);
+});
+
+test('calculateTaxableIncome Section 80D self senior vs non-senior caps', () => {
+  // Non-senior self: capped at 25,000
+  const nonSenior = calculateTaxableIncome(1_000_000, 'old', {
+    section80D_self: 50_000,
+    age: 35,
+  });
+  assert.equal(nonSenior.allowed80D, 25_000);
+
+  // Senior self (age >= 60): capped at 50,000
+  const senior = calculateTaxableIncome(1_000_000, 'old', {
+    section80D_self: 60_000,
+    age: 65,
+  });
+  assert.equal(senior.allowed80D, 50_000);
+
+  // Non-senior self + senior parents: 25k + 50k = 75k
+  const mixed = calculateTaxableIncome(1_000_000, 'old', {
+    section80D_self: 30_000,
+    section80D_parents: 60_000,
+    parents_senior: true,
+    age: 35,
+  });
+  assert.equal(mixed.allowed80D, 75_000);
+
+  // Non-senior self + non-senior parents: 25k + 25k = 50k max
+  const bothYoung = calculateTaxableIncome(1_000_000, 'old', {
+    section80D_self: 30_000,
+    section80D_parents: 30_000,
+    parents_senior: false,
+    age: 35,
+  });
+  assert.equal(bothYoung.allowed80D, 50_000);
+});
+
+test('calculateTaxableIncome new regime only allows 80CCD(2) deduction', () => {
+  // New regime: section80C, HRA, etc. should NOT apply
+  const newRegime = calculateTaxableIncome(1_000_000, 'new', {
+    section80C: 150_000,
+    hra: 120_000,
+    homeLoanInterest: 200_000,
+    nps80CCD2: 50_000,
+  });
+  assert.equal(newRegime.oldRegimeDeductions, 0);
+  assert.equal(newRegime.nps80CCD2, 50_000);
+  assert.equal(newRegime.taxableIncome, 1_000_000 - 75_000 - 50_000);
+});
+
+test('getCurrentFiscalYear returns correct format', () => {
+  // Just verify format: FY<4digits>-<2digits>
+  assert.ok(/^FY\d{4}-\d{2}$/.test(CURRENT_FY));
+});

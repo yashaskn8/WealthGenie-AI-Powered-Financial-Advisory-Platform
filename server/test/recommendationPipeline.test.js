@@ -190,3 +190,214 @@ test('RecommendationPipeline dynamic age overrides (senior vs young)', () => {
   assert.ok(topPicks.includes('SCSS') || topPicks.includes('FD') || topPicks.includes('PPF') || topPicks.includes('RBI_Bond'));
 });
 
+test('deriveWeights exact alpha values for horizon and risk combinations', () => {
+  // Base case: moderate risk, 10 year horizon
+  const base = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(base.alpha, 1.0); // no horizon or risk bonuses
+
+  // horizon >= 15: +0.5
+  const h15 = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 15, goals: [], mr: 0 });
+  assert.equal(h15.alpha, 1.5);
+
+  // horizon >= 20: +0.5 + 0.3 = 1.8
+  const h20 = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 20, goals: [], mr: 0 });
+  assert.equal(h20.alpha, 1.8);
+
+  // aggressive + horizon >= 20: 1.0 + 0.5 + 0.3 + 0.5 = 2.3
+  const aggH20 = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'aggressive', horizon: 20, goals: [], mr: 0 });
+  assert.equal(aggH20.alpha, 2.3);
+
+  // moderate-aggressive + short horizon: 1.0 + 0.5 = 1.5
+  const modAgg = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate-aggressive', horizon: 5, goals: [], mr: 0 });
+  assert.equal(modAgg.alpha, 1.5);
+
+  // conservative + short horizon: 1.0 - 0.3 = 0.7 (clamped to WEIGHT_FLOOR if < 0.5)
+  const cons = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'conservative', horizon: 5, goals: [], mr: 0 });
+  assert.equal(cons.alpha, Math.max(PIPELINE_CONFIG.WEIGHT_FLOOR, 0.7));
+});
+
+test('deriveWeights exact beta values for age and risk combinations', () => {
+  // Age < 40, moderate: beta = 1.0
+  const young = deriveWeights({ age: 25, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(young.beta, 1.0);
+
+  // Age >= 40 but < 50: +0.4
+  const mid40 = deriveWeights({ age: 45, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(mid40.beta, 1.4);
+
+  // Age >= 50: +0.8
+  const senior = deriveWeights({ age: 55, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(senior.beta, 1.8);
+
+  // Age >= 50 + conservative: +0.8 + 0.8 = 2.6
+  const seniorCons = deriveWeights({ age: 55, annualIncome: 1000000, savings: 50000, risk: 'conservative', horizon: 10, goals: [], mr: 0 });
+  assert.equal(seniorCons.beta, 2.6);
+
+  // Age >= 50 + aggressive: +0.8 - 0.4 = 1.4
+  const seniorAgg = deriveWeights({ age: 55, annualIncome: 1000000, savings: 50000, risk: 'aggressive', horizon: 10, goals: [], mr: 0 });
+  assert.equal(seniorAgg.beta, 1.4);
+});
+
+test('deriveWeights exact gamma, delta, epsilon, zeta, eta values', () => {
+  // gamma: mr > 0 => (mr / 0.312) * 1.5; mr = 0 => 0 clamped to WEIGHT_FLOOR
+  const noTax = deriveWeights({ age: 30, annualIncome: 300000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(noTax.gamma, PIPELINE_CONFIG.WEIGHT_FLOOR);
+
+  const highTax = deriveWeights({ age: 30, annualIncome: 3000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0.30 });
+  const expectedGamma = Math.min(PIPELINE_CONFIG.WEIGHT_CEIL, Math.max(PIPELINE_CONFIG.WEIGHT_FLOOR, (0.30 / 0.312) * 1.5));
+  assert.equal(highTax.gamma, expectedGamma);
+
+  // delta: base 0.8, emergency cover < 0.2 => +0.6
+  const lowEmergency = deriveWeights({ age: 30, annualIncome: 1000000, savings: 1000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(lowEmergency.delta, Math.max(PIPELINE_CONFIG.WEIGHT_FLOOR, Math.min(PIPELINE_CONFIG.WEIGHT_CEIL, 1.4))); // 0.8 + 0.6
+
+  const highEmergency = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(highEmergency.delta, Math.max(PIPELINE_CONFIG.WEIGHT_FLOOR, Math.min(PIPELINE_CONFIG.WEIGHT_CEIL, 0.8)));
+
+  // epsilon: goals.length > 0 => 1.2, else 0.5
+  const withGoals = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: ['Retirement'], mr: 0 });
+  assert.equal(withGoals.epsilon, 1.2);
+
+  const noGoals = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(noGoals.epsilon, PIPELINE_CONFIG.WEIGHT_FLOOR);
+
+  // zeta: base 1.0; horizon <= 3 => +0.5; horizon >= 20 => +0.3
+  const shortHz = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 3, goals: [], mr: 0 });
+  assert.equal(shortHz.zeta, 1.5);
+
+  const longHz = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 20, goals: [], mr: 0 });
+  assert.equal(longHz.zeta, 1.3);
+
+  const midHz = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(midHz.zeta, 1.0);
+
+  // eta: base 0.5; horizon >= 10 => +0.3; horizon >= 20 => +0.3 + 0.4
+  const etaShort = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 5, goals: [], mr: 0 });
+  assert.equal(etaShort.eta, PIPELINE_CONFIG.WEIGHT_FLOOR);
+
+  const etaMid = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
+  assert.equal(etaMid.eta, 0.8);
+
+  const etaLong = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 20, goals: [], mr: 0 });
+  assert.ok(Math.abs(etaLong.eta - 1.2) < 1e-10, `eta should be ~1.2, got ${etaLong.eta}`);
+});
+
+test('parseProfile parses numeric fields and applies defaults', () => {
+  // All defaults
+  const def = parseProfile({});
+  assert.equal(def.age, 30);
+  assert.equal(def.annualIncome, 600000);
+  assert.equal(def.savings, 10000);
+  assert.equal(def.risk, 'moderate');
+  assert.equal(def.horizon, 10);
+  assert.deepEqual(def.goals, []);
+  assert.equal(def.taxRegime, 'new');
+  assert.ok(typeof def.mr === 'number');
+
+  // String numeric values should be parsed
+  const strProfile = parseProfile({ age: '45', annualIncome: '2000000', savings: '50000', investmentHorizon: '15' });
+  assert.equal(strProfile.age, 45);
+  assert.equal(strProfile.annualIncome, 2000000);
+  assert.equal(strProfile.savings, 50000);
+  assert.equal(strProfile.horizon, 15);
+
+  // Goal type extraction
+  const goalProfile = parseProfile({ goal_type: 'Wealth Growth' });
+  assert.deepEqual(goalProfile.goals, ['Wealth Growth']);
+
+  // Risk category normalization
+  const riskProfile = parseProfile({ riskCategory: 'Aggressive' });
+  assert.equal(riskProfile.risk, 'aggressive');
+
+  // Tax regime fallback
+  const noRegime = parseProfile({ taxRegime: undefined });
+  assert.equal(noRegime.taxRegime, 'new');
+
+  const oldRegime = parseProfile({ taxRegime: 'old' });
+  assert.equal(oldRegime.taxRegime, 'old');
+});
+
+test('runPipeline handles empty or missing ML confidence scores', () => {
+  const profile = {
+    age: 32,
+    annualIncome: 1200000,
+    savings: 30000,
+    riskCategory: 'Moderate',
+    investmentHorizon: 12,
+    taxRegime: 'new',
+  };
+
+  // No ML result at all -> pass empty object
+  const noML = runPipeline(profile, {});
+  assert.ok(noML.instruments.length > 0);
+  const totalWeight = noML.instruments.reduce((s, i) => s + i.allocationWeight, 0);
+  assert.equal(parseFloat(totalWeight.toFixed(4)), 1.0);
+
+  // Empty confidence scores
+  const emptyML = runPipeline(profile, { confidence_scores: {} });
+  assert.ok(emptyML.instruments.length > 0);
+
+  // All zero confidence scores
+  const zeroML = runPipeline(profile, { confidence_scores: { PPF: 0, FD: 0 } });
+  assert.ok(zeroML.instruments.length > 0);
+});
+
+test('runPipeline respects topN and minAssetClasses options', () => {
+  const profile = {
+    age: 32,
+    annualIncome: 1200000,
+    savings: 30000,
+    riskCategory: 'Moderate',
+    investmentHorizon: 12,
+    taxRegime: 'new',
+  };
+  const mlResult = { confidence_scores: {} };
+
+  // topN = 3
+  const top3 = runPipeline(profile, mlResult, { topN: 3 });
+  assert.equal(top3.instruments.length, 3);
+
+  // topN = 10
+  const top10 = runPipeline(profile, mlResult, { topN: 10 });
+  assert.equal(top10.instruments.length, 10);
+
+  // Weights always sum to 1
+  for (const res of [top3, top10]) {
+    const sum = res.instruments.reduce((s, i) => s + i.allocationWeight, 0);
+    assert.equal(parseFloat(sum.toFixed(4)), 1.0);
+  }
+});
+
+test('runPipeline instruments have correct structure and score ordering', () => {
+  const profile = {
+    age: 35,
+    annualIncome: 1500000,
+    savings: 40000,
+    riskCategory: 'Moderate',
+    investmentHorizon: 10,
+    goal_type: 'Wealth Growth',
+    taxRegime: 'new',
+  };
+
+  const result = runPipeline(profile, { confidence_scores: { 'Public_Provident_Fund': 0.9 } }, { topN: 5 });
+
+  // All instruments have required properties
+  result.instruments.forEach(inst => {
+    assert.ok(typeof inst.name === 'string');
+    assert.ok(typeof inst.type === 'string');
+    assert.ok(typeof inst.nominalReturn === 'number');
+    assert.ok(typeof inst.postTaxReturn === 'number');
+    assert.ok(typeof inst.sharpeRatio === 'number');
+    assert.ok(typeof inst.allocationWeight === 'number');
+    assert.ok(typeof inst.score === 'number');
+    assert.ok(inst.allocationWeight > 0);
+    assert.ok(inst.allocationWeight <= 1);
+  });
+
+  // Instruments are sorted by score descending
+  for (let i = 1; i < result.instruments.length; i++) {
+    assert.ok(result.instruments[i - 1].score >= result.instruments[i].score,
+      `Instrument ${i-1} score should be >= instrument ${i} score`);
+  }
+});
+
