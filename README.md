@@ -1,148 +1,212 @@
 # WealthGenie
 
-> **Tax-Optimized Personal Financial Advisory & Portfolio Allocation System**
+[![React 19](https://img.shields.io/badge/Frontend-React_19_|_Vite-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![Express.js](https://img.shields.io/badge/Backend-Express.js_|_Node.js-000000?style=flat-square&logo=express)](https://expressjs.com/)
+[![FastAPI](https://img.shields.io/badge/ML_Service-FastAPI_|_Python_3.12-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn_|_SHAP-F7931E?style=flat-square&logo=scikitlearn)](https://scikit-learn.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-WealthGenie is a decoupled three-tier financial advisory application designed for Indian retail investors. It combines multi-factor instrument scoring, stochastic Quasi-Monte Carlo wealth projection, tax optimization under FY 2025-26 rules, Markowitz-style portfolio optimization, and an ML-powered recommendation engine with explainability.
+A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** integrates multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and explainable ML recommendation pipelines.
 
 ---
 
-## 🏛 Architecture Overview
+## 📐 System Architecture
 
-The system is structured into three decoupled services:
+WealthGenie uses a decoupled three-tier microservice architecture to separate user interaction, core financial computation, and machine learning inference.
 
 ```
-                  ┌──────────────────────────────┐
-                  │    React 19 SPA (Vite)       │
-                  │         (Frontend)           │
-                  └──────────────┬───────────────┘
-                                 │ REST API
-                                 ▼
-                  ┌──────────────────────────────┐
-                  │   Express.js API Gateway     │
-                  │          (Backend)           │
-                  └──────────────┬───────────────┘
-                                 │
-           ┌─────────────────────┼─────────────────────┐
-           ▼                     ▼                     ▼
-┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐
-│   MongoDB Store    │ │  FastAPI ML Engine │ │   Google Gemini    │
-│  (Profiles/Users)  │ │  (Scoring & SHAP)  │ │  (AI Advice Chat)  │
-└────────────────────┘ └────────────────────┘ └────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       React 19 Frontend (Vite)                          │
+│          • Interactive Rebalancing UI     • Tax Comparison Dashboard    │
+│          • Goal Progress & Scenario Simulator • Conversational AI Chat  │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ REST / JSON
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       Express.js API Gateway                            │
+│  ┌──────────────────────┬──────────────────────┬──────────────────────┐ │
+│  │     Tax Engine       │ Quasi-Monte Carlo    │   Portfolio Engine   │ │
+│  │ (Old vs. New Regime) │  (Halton Sequences)  │(MinVar/Sharpe/Parity)│ │
+│  └──────────────────────┴──────────────────────┴──────────────────────┘ │
+│  ┌─────────────────────────────────────────────┬──────────────────────┐ │
+│  │       Multi-Factor Scoring Pipeline        │ MongoDB Data Store   │ │
+│  └─────────────────────────────────────────────┴──────────────────────┘ │
+└──────────────────────┬──────────────────────────────────────────────────┘
+                       │ HTTP / REST
+                       ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     FastAPI ML Microservice                             │
+│   • Decision Tree & Random Forest Ensembles  • SHAP Value Explainer     │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Frontend (`reactapp/`)**: React 19 single-page application built with Vite and Vanilla CSS, offering interactive goal tracking, rebalancing visualizers, post-tax analysis, and AI chat.
-2. **Backend (`server/`)**: Express.js REST API providing core computational engines:
-   - **Tax Engine**: Computes taxes under Old vs. New FY 2025-26 regimes (Section 87A rebate cliff, surcharge tiers, marginal relief).
-   - **Quasi-Monte Carlo Engine**: Simulates wealth growth bands (P₁₀, P₅₀, P₉₀) over projection horizons using low-discrepancy Halton sequences.
-   - **Portfolio Engine**: Performs Minimum Variance, Maximum Sharpe, and Risk Parity optimizations.
-   - **Recommendation Pipeline**: Multi-factor scoring engine filtering and ranking financial instruments across asset classes.
-3. **ML Microservice (`ml-service/`)**: FastAPI service running a Scikit-Learn suitability model with SHAP feature attributions.
+---
+
+## ⚡ Core Computational Engines
+
+### 1. Progressive Tax Engine (Indian FY 2025-26)
+Calculates exact tax liabilities under both the **Old Tax Regime** and **New Tax Regime** to identify the optimal filing path.
+- **New Regime Slab Modeling**: 0% up to ₹4L, 5% (₹4L-8L), 10% (₹8L-12L), 15% (₹12L-15L), 20% (₹15L-20L), 25% (₹20L-24L), 30% (>₹24L).
+- **Section 87A Rebate Cliffs**: Computes full tax relief up to ₹7L (Old) and ₹12L (New) with exact marginal relief formulas to eliminate tax cliff artifacts.
+- **Granular Surcharge Tiers & Deductions**: Implements multi-bracket surcharges (10%, 15%, 25%, 37%) with marginal relief caps, standard deductions, Section 80C, 80D (self/senior breakdown), and Section 80CCD(2) employer NPS rules.
+
+### 2. Quasi-Monte Carlo Stochastic Engine
+Evaluates sequence-of-returns risk over multi-year investment horizons using low-discrepancy **Halton sequence generators**.
+- **Geometric Brownian Motion (GBM)**: Simulates asset trajectories incorporating log-normal monthly drift ($\mu$) and volatility ($\sigma$).
+- **Wealth Distribution Bands**: Outputs 10th percentile ($P_{10}$ conservative), 50th percentile ($P_{50}$ median), and 90th percentile ($P_{90}$ optimistic) growth trajectories alongside goal probability bounds.
+
+### 3. Portfolio Optimization Engine
+Provides three distinct asset allocation strategies derived from Modern Portfolio Theory (MPT):
+- **Minimum Variance**: Solves quadratic optimization to minimize portfolio variance ($\mathbf{w}^T \mathbf{\Sigma} \mathbf{w}$).
+- **Maximum Sharpe Ratio**: Maximizes excess return per unit of risk ($\frac{\mathbf{w}^T \mathbf{\mu} - R_f}{\sqrt{\mathbf{w}^T \mathbf{\Sigma} \mathbf{w}}}$).
+- **Risk Parity**: Equalizes risk contributions across asset classes using iterative risk budget optimization.
+
+### 4. Metadata-Driven Recommendation Pipeline
+Calculates allocation scores across equities, fixed income, gold, and liquid funds using a multi-objective utility function:
+$$\text{Score} = f(\text{Return}) + f(\text{Risk Alignment}) + f(\text{Tax Efficiency}) + f(\text{Liquidity}) + f(\text{Cost}) + f(\text{Horizon})$$
+- Enforces asset class diversity thresholds and eligibility constraints (age limits, lock-in requirements, minimum savings).
+
+### 5. Explainable ML Engine (FastAPI)
+- Uses trained tree ensemble models to evaluate investor risk profiles and output asset suitability confidence scores.
+- Computes **SHAP (SHapley Additive exPlanations)** feature attributions for every prediction, rendering transparent explanations for recommended allocations.
 
 ---
 
-## 🚀 Key Features
+## 🛠 Technology Stack
 
-- **Tax Optimization (FY 2025-26)**: Compares Old and New regimes, considering standard deductions, 80C/80D caps, 87A rebates, and surcharge thresholds.
-- **Quasi-Monte Carlo Simulation**: Models market return distribution using Geometric Brownian Motion (GBM) to evaluate sequence-of-returns risk.
-- **Portfolio Optimization**: Calculates optimal asset weights using covariance matrices across equities, debt, gold, and fixed deposits.
-- **Explainable ML Recommendations**: Evaluates investor profiles and outputs instrument scores accompanied by SHAP explainability metrics.
-- **Interactive Advisory Assistant**: Integrates Google Gemini API for context-aware Q&A on tax strategies and investment recommendations.
+| Tier | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 19, Vite, Vanilla CSS | Responsive UI, interactive charts, and real-time calculation dashboards |
+| **Backend API** | Node.js, Express.js, Mongoose | API Routing, financial math engines, session management |
+| **Database** | MongoDB | Document store for user profiles, portfolio snapshots, and investment catalogs |
+| **ML Service** | Python 3.12, FastAPI, Scikit-Learn, SHAP | Machine learning inference, suitability scoring, model explainability |
+| **Testing** | Node.js Test Runner, Vitest, Pytest | Multi-tier test suites across unit, integration, and ML components |
 
 ---
 
-## 📂 Project Structure
+## 📁 Repository Organization
 
 ```
 deploy-wealthgenie/
-├── reactapp/             # React 19 Frontend (Vite)
+├── reactapp/                 # Frontend React Single Page Application
 │   ├── src/
-│   │   ├── components/   # UI Screens & Modals
-│   │   ├── engine/       # Frontend Tax & Goal Calculators
-│   │   └── services/     # API Service Integration
+│   │   ├── components/       # Dashboard screens, modals, and input controls
+│   │   ├── engine/           # Client-side tax and SIP calculation helpers
+│   │   └── services/         # Axios API client modules
+│   ├── package.json
+│   └── vite.config.js
+│
+├── server/                   # Backend Express.js REST API
+│   ├── services/             # Core analytical engines (Tax, Monte Carlo, Portfolio, Recommendation)
+│   ├── routes/               # API route handlers (/api/tax, /api/portfolio, /api/recommend, /api/montecarlo)
+│   ├── models/               # Mongoose schema definitions (User, Profile, Instrument)
+│   ├── test/                 # Node.js native unit & integration test suite
 │   └── package.json
-├── server/               # Express.js Backend Service
-│   ├── services/         # Core Math & Analytical Engines
-│   ├── routes/           # REST API Endpoints
-│   ├── models/           # Mongoose Data Schemas
-│   ├── test/             # Backend Test Suite
-│   └── package.json
-├── ml-service/           # FastAPI ML Microservice
-│   ├── model/            # Model Training & Inference Logic
-│   ├── tests/            # Pytest Suite
-│   └── main.py           # FastAPI Application Entry
-├── .github/              # GitHub Actions CI Workflow
+│
+├── ml-service/               # FastAPI Machine Learning Microservice
+│   ├── model/                # Training pipelines, dataset builders, model persistence
+│   ├── tests/                # Pytest suit for ML validation
+│   ├── main.py               # FastAPI service initialization and endpoint handlers
+│   └── requirements.txt
+│
 └── README.md
 ```
 
 ---
 
-## 🛠 Quick Start & Local Setup
+## 🏁 Getting Started
 
 ### Prerequisites
 - **Node.js**: `v20.x` or `v22.x`
 - **Python**: `v3.12+`
-- **MongoDB**: Local or MongoDB Atlas URI (optional for offline testing)
+- **MongoDB**: Local MongoDB instance or Atlas connection URI
 
 ---
 
-### 1. Backend Service (`server/`)
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/yashaskn8/deploy-wealthgenie.git
+cd deploy-wealthgenie
+```
 
+### Step 2: Set Up Backend (`server/`)
 ```bash
 cd server
 npm install
-npm test            # Run unit test suite
-npm run dev         # Start server in watch mode (default: http://localhost:5000)
+
+# Create environment configuration
+cp .env.example .env
 ```
 
-**Environment Variables (`server/.env`):**
+*Sample `server/.env`:*
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/wealthgenie
-JWT_SECRET=your_jwt_secret_here
-GEMINI_API_KEY=your_gemini_api_key
+JWT_SECRET=your_jwt_secret_key
+GEMINI_API_KEY=your_google_gemini_key
 ML_SERVICE_URL=http://localhost:8000
 ```
 
----
-
-### 2. Frontend Application (`reactapp/`)
-
+Start the backend server:
 ```bash
-cd reactapp
-npm install
-npm test            # Run frontend component & utility tests
-npm run dev         # Start Vite dev server (default: http://localhost:5173)
+npm run dev
 ```
 
----
-
-### 3. ML Microservice (`ml-service/`)
-
+### Step 3: Set Up Frontend (`reactapp/`)
 ```bash
-cd ml-service
+cd ../reactapp
+npm install
+npm run dev
+```
+Access the application at `http://localhost:5173`.
+
+### Step 4: Set Up ML Microservice (`ml-service/`)
+```bash
+cd ../ml-service
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
-source .venv/bin/activate
+
+# Activate Virtual Environment:
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
 
 pip install -r requirements.txt
-pytest              # Run ML unit tests
 uvicorn main:app --reload --port 8000
 ```
 
 ---
 
-## 🧪 Testing
+## 📡 API Endpoint Summary
 
-The repository maintains test coverage across all three services:
-
-- **Backend Tests**: Run `npm test` inside `server/` (Node.js test runner covering tax, Monte Carlo, portfolio optimization, and recommendation pipeline engines).
-- **Frontend Tests**: Run `npm test` inside `reactapp/` (Vitest suite for components and utility functions).
-- **ML Tests**: Run `pytest` inside `ml-service/` (Pytest suite for dataset construction and inference schemas).
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/tax/compare` | Evaluates Old vs. New tax regime liabilities for a given income/deduction profile |
+| `POST` | `/api/portfolio/optimize` | Solves Min Variance, Max Sharpe, or Risk Parity allocations for selected assets |
+| `POST` | `/api/montecarlo/simulate` | Runs Quasi-Monte Carlo simulation and returns $P_{10}, P_{50}, P_{90}$ wealth bands |
+| `POST` | `/api/recommend` | Runs multi-factor scoring pipeline and returns ranked investment suggestions |
+| `POST` | `/api/chat` | Context-aware AI advisory assistance grounded in user financial profile |
 
 ---
 
-## 📄 License
+## 🧪 Testing Suite Execution
 
-This project is open-source and licensed under the [MIT License](LICENSE).
+Run unit and integration test suites across all three microservices:
+
+```bash
+# 1. Backend Service Unit Tests
+cd server
+npm test
+
+# 2. Frontend Vitest Suite
+cd ../reactapp
+npm test
+
+# 3. ML Microservice Pytest Suite
+cd ../ml-service
+pytest
+```
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for details.
