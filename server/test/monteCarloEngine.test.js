@@ -10,6 +10,12 @@ import {
   computeGoalProbability,
   computeWilsonCI,
   getInstrumentVolatility,
+  halton,
+  boxMuller,
+  percentile,
+  buildProjectionHorizon,
+  annuityDueFV,
+  emptyResult,
 } from '../services/monteCarloEngine.js';
 
 test('Monte Carlo output has ordered percentiles and bounded goal probability', () => {
@@ -264,5 +270,121 @@ test('reverseSIP exact formula verification', () => {
   const n = 120;
   const fv = sip * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
   assert.ok(Math.abs(fv - 1_000_000) < 1, `Forward-computed FV should be ~1M, got ${fv}`);
-
 });
+
+test('halton low-discrepancy generator exact values and edge cases', () => {
+  // Index 0 -> 0
+  assert.equal(halton(0, 2), 0);
+  assert.equal(halton(-1, 2), 0);
+
+  // Base 2 sequence: index 1 -> 0.5, index 2 -> 0.25, index 3 -> 0.75, index 4 -> 0.125
+  assert.equal(halton(1, 2), 0.5);
+  assert.equal(halton(2, 2), 0.25);
+  assert.equal(halton(3, 2), 0.75);
+  assert.equal(halton(4, 2), 0.125);
+
+  // Base 3 sequence: index 1 -> 1/3, index 2 -> 2/3, index 3 -> 1/9
+  assert.equal(halton(1, 3), 1 / 3);
+  assert.equal(halton(2, 3), 2 / 3);
+  assert.equal(halton(3, 3), 1 / 9);
+
+  // Base 5 sequence
+  assert.equal(halton(1, 5), 0.2);
+  assert.equal(halton(5, 5), 1 / 25);
+});
+
+test('boxMuller transform boundaries, defaults, and formula precision', () => {
+  // Undefined or <= 0 or >= 1 u1/u2 fallbacks to Math.random() / 0.5
+  const bmDefault1 = boxMuller(undefined, undefined);
+  assert.ok(typeof bmDefault1 === 'number' && !isNaN(bmDefault1));
+
+  const bmDefault2 = boxMuller(0, 1);
+  assert.ok(typeof bmDefault2 === 'number' && !isNaN(bmDefault2));
+
+  const bmDefault3 = boxMuller(-0.5, 1.5);
+  assert.ok(typeof bmDefault3 === 'number' && !isNaN(bmDefault3));
+
+  // Exact Box-Muller value for known u1, u2
+  // u1=0.5, u2=0.5 -> cos(2*pi*0.5) = cos(pi) = -1
+  // sqrt(-2*ln(0.5)) * -1 = -sqrt(2*ln(2)) = -1.177410022515475
+  const u1 = 0.5;
+  const u2 = 0.5;
+  const expectedBM = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  const actualBM = boxMuller(u1, u2);
+  assert.equal(actualBM, expectedBM);
+
+  // u2=0.25 -> cos(2*pi*0.25) = cos(pi/2) = 0
+  const bmZeroCos = boxMuller(0.5, 0.25);
+  assert.ok(Math.abs(bmZeroCos) < 1e-12);
+});
+
+test('percentile linear interpolation exact values', () => {
+  // Empty array
+  assert.equal(percentile([], 50), 0);
+
+  // Single element
+  assert.equal(percentile([42], 50), 42);
+
+  // Two elements: [10, 20]
+  // 0th percentile -> 10, 100th percentile -> 20, 50th percentile -> 15
+  assert.equal(percentile([10, 20], 0), 10);
+  assert.equal(percentile([10, 20], 100), 20);
+  assert.equal(percentile([10, 20], 50), 15);
+
+  // 11 elements: 0, 10, 20, ..., 100
+  const arr = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  assert.equal(percentile(arr, 10), 10);
+  assert.equal(percentile(arr, 25), 25);
+  assert.equal(percentile(arr, 50), 50);
+  assert.equal(percentile(arr, 75), 75);
+  assert.equal(percentile(arr, 90), 90);
+});
+
+test('buildProjectionHorizon parameters and checkpoints', () => {
+  // Standard 5 years
+  const h5 = buildProjectionHorizon(5);
+  assert.equal(h5.years, 5);
+  assert.equal(h5.totalMonths, 60);
+  assert.deepEqual(h5.checkpointMonths, [12, 24, 36, 48, 60]);
+  assert.deepEqual(h5.yearsArray, [1, 2, 3, 4, 5]);
+
+  // Fractional years: 2.5 years -> 30 months
+  const h25 = buildProjectionHorizon(2.5);
+  assert.equal(h25.years, 2.5);
+  assert.equal(h25.totalMonths, 30);
+  assert.deepEqual(h25.checkpointMonths, [12, 24, 30]);
+
+  // Invalid / negative / non-numeric -> defaults to 1 year
+  const hInvalid = buildProjectionHorizon(-5);
+  assert.equal(hInvalid.years, 1);
+  assert.equal(hInvalid.totalMonths, 12);
+  assert.deepEqual(hInvalid.checkpointMonths, [12]);
+});
+
+test('annuityDueFV exact calculation and edge cases', () => {
+  // Zero investment or months or negative -> 0
+  assert.equal(annuityDueFV(0, 0.01, 12), 0);
+  assert.equal(annuityDueFV(-100, 0.01, 12), 0);
+  assert.equal(annuityDueFV(1000, 0.01, 0), 0);
+  assert.equal(annuityDueFV(1000, 0.01, -5), 0);
+
+  // Zero rate -> linear multiplication
+  assert.equal(annuityDueFV(10000, 0, 12), 120000);
+
+  // Exact formula verification: P=1000, r=0.01, n=12
+  // FV = P * (( (1+r)^n - 1 ) / r) * (1+r)
+  const P = 1000, r = 0.01, n = 12;
+  const expected = P * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
+  assert.equal(annuityDueFV(P, r, n), expected);
+});
+
+test('emptyResult structure verification', () => {
+  const empty = emptyResult(3, 500);
+  assert.equal(empty.simulations_run, 500);
+  assert.equal(empty.years_array.length, 3);
+  assert.equal(empty.p10.length, 3);
+  assert.deepEqual(empty.p10, [0, 0, 0]);
+  assert.deepEqual(empty.finalValues, []);
+});
+
+

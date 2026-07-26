@@ -8,6 +8,16 @@ import {
   solveRiskParity,
   buildCovarianceMatrix,
   resolveAssetKey,
+  projectSimplex,
+  matvec,
+  dot,
+  portfolioVariance,
+  portfolioVol,
+  portfolioReturn,
+  checkCholeskyPSD,
+  ASSET_KEYS,
+  CORR_LOWER,
+  buildFullCorrelation,
 } from '../services/portfolioEngine.js';
 
 const ASSETS = ['Equity_MF', 'Debt_MF', 'Gold'];
@@ -411,4 +421,91 @@ test('solveRiskParity risk contributions are approximately equal', () => {
   // Risk contributions should be reasonably balanced (within 10x)
   assert.ok(maxRC / Math.max(minRC, 1e-10) < 10);
 });
+
+test('projectSimplex Euclidean projection onto probability simplex', () => {
+  // Vector already on simplex: [0.5, 0.3, 0.2] -> unchanged
+  const s1 = projectSimplex(new Float64Array([0.5, 0.3, 0.2]));
+  assert.ok(Math.abs(s1[0] - 0.5) < 1e-6);
+  assert.ok(Math.abs(s1[1] - 0.3) < 1e-6);
+  assert.ok(Math.abs(s1[2] - 0.2) < 1e-6);
+
+  // Vector with negative values and unnormalized sum: [-1, 2, 0] -> projected onto simplex (sum=1, non-negative)
+  const s2 = projectSimplex(new Float64Array([-1, 2, 0]));
+  const sum2 = s2.reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(sum2 - 1.0) < 1e-6, `Simplex sum should be 1.0, got ${sum2}`);
+  assert.ok(s2.every(v => v >= 0), 'All projected components must be non-negative');
+  assert.equal(s2[0], 0); // Negative component projected to 0
+
+  // Uniform unnormalized vector: [1, 1, 1] -> [1/3, 1/3, 1/3]
+  const s3 = projectSimplex(new Float64Array([1, 1, 1]));
+  assert.ok(Math.abs(s3[0] - 1 / 3) < 1e-6);
+  assert.ok(Math.abs(s3[1] - 1 / 3) < 1e-6);
+  assert.ok(Math.abs(s3[2] - 1 / 3) < 1e-6);
+});
+
+test('matvec and dot product exact matrix vector operations', () => {
+  // 2x2 matrix multiplication: A = [[1, 2], [3, 4]], x = [5, 6]
+  // y[0] = 1*5 + 2*6 = 17, y[1] = 3*5 + 4*6 = 39
+  const A = [new Float64Array([1, 2]), new Float64Array([3, 4])];
+  const x = new Float64Array([5, 6]);
+  const y = matvec(A, x);
+  assert.equal(y[0], 17);
+  assert.equal(y[1], 39);
+
+  // Dot product: [1, 2, 3] . [4, 5, 6] = 4 + 10 + 18 = 32
+  const dotVal = dot(new Float64Array([1, 2, 3]), new Float64Array([4, 5, 6]));
+  assert.equal(dotVal, 32);
+
+  // Zero vector dot product
+  assert.equal(dot(new Float64Array([0, 0]), new Float64Array([10, 20])), 0);
+});
+
+test('portfolioVariance, portfolioVol, and portfolioReturn math precision', () => {
+  // 2-asset diagonal cov: cov = [[0.04, 0], [0, 0.01]], w = [0.5, 0.5]
+  // var = 0.5^2 * 0.04 + 0.5^2 * 0.01 = 0.25 * 0.05 = 0.0125
+  // vol = sqrt(0.0125) = 0.11180339887...
+  const cov = [new Float64Array([0.04, 0]), new Float64Array([0, 0.01])];
+  const w = new Float64Array([0.5, 0.5]);
+  const mu = new Float64Array([0.12, 0.06]);
+
+  const pVar = portfolioVariance(cov, w);
+  assert.equal(pVar, 0.0125);
+
+  const pVol = portfolioVol(cov, w);
+  assert.equal(pVol, Math.sqrt(0.0125));
+
+  const pRet = portfolioReturn(w, mu);
+  assert.equal(pRet, 0.09); // 0.5*0.12 + 0.5*0.06
+});
+
+test('checkCholeskyPSD positive semi-definite matrix validation', () => {
+  // 2x2 Identity matrix (PSD) -> true
+  const identity = [new Float64Array([1, 0]), new Float64Array([0, 1])];
+  assert.equal(checkCholeskyPSD(identity), true);
+
+  // 2x2 Valid covariance matrix (PSD) -> true
+  const psd = [new Float64Array([1, 0.5]), new Float64Array([0.5, 1])];
+  assert.equal(checkCholeskyPSD(psd), true);
+
+  // 2x2 Non-PSD matrix (negative eigenvalue: det = 1 - 4 = -3) -> false
+  const nonPsd = [new Float64Array([1, 2]), new Float64Array([2, 1])];
+  assert.equal(checkCholeskyPSD(nonPsd), false);
+
+  // Master correlation matrix FULL_CORR check
+  const fullCorr = buildFullCorrelation();
+  assert.equal(checkCholeskyPSD(fullCorr), true);
+});
+
+test('ASSET_KEYS and CORR_LOWER string and dimension integrity', () => {
+  assert.equal(ASSET_KEYS.length, 17);
+  assert.equal(CORR_LOWER.length, 17);
+
+  // Every diagonal element in CORR_LOWER must be exactly 1.0
+  for (let i = 0; i < 17; i++) {
+    assert.equal(CORR_LOWER[i][i], 1.0, `CORR_LOWER[${i}][${i}] should be 1.0`);
+    assert.equal(CORR_LOWER[i].length, i + 1, `CORR_LOWER[${i}] length should be ${i + 1}`);
+  }
+});
+
+
 

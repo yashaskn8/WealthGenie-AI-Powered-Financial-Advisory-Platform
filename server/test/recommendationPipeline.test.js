@@ -1,7 +1,26 @@
 import 'dotenv/config';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runPipeline, resolveBackendType, filterEligible, deriveWeights, parseProfile, PIPELINE_CONFIG, enforceDiversity } from '../services/RecommendationPipeline.js';
+import {
+  runPipeline,
+  resolveBackendType,
+  filterEligible,
+  deriveWeights,
+  parseProfile,
+  PIPELINE_CONFIG,
+  enforceDiversity,
+  computeInstrumentScore,
+  scoreReturn,
+  scoreRisk,
+  scoreTax,
+  scoreLiquidity,
+  scoreCost,
+  scoreGoal,
+  scoreHorizon,
+  rankInstruments,
+  normaliseConfidenceScores,
+  INSTRUMENT_KEY_MAP,
+} from '../services/RecommendationPipeline.js';
 
 test('RecommendationPipeline resolveBackendType mapping precision', () => {
   assert.equal(resolveBackendType({ id: 'ppf' }), 'PPF');
@@ -502,6 +521,96 @@ test('RecommendationPipeline handles totalScore <= 0 edge case during weight nor
   const totalWeight = res.instruments.reduce((s, i) => s + i.allocationWeight, 0);
   assert.equal(parseFloat(totalWeight.toFixed(4)), 1.0);
 });
+
+test('scoreReturn, scoreTax, scoreLiquidity, scoreCost direct unit math', () => {
+  // scoreReturn: postTaxRate * RETURN_MULTIPLIER (3.5)
+  assert.equal(scoreReturn(10), 35);
+  assert.equal(scoreReturn(0), 0);
+
+  // scoreTax:
+  // 1) EEE -> -12
+  assert.equal(scoreTax({ taxType: 'eee' }, { mr: 0.30 }), -12);
+  // 2) taxEfficiencyScore -> (5 - score) * mr * TAX_PENALTY_SCALE (8)
+  //    (5 - 2) * 0.30 * 8 = 7.2 (floating point: 7.199999999999999)
+  const taxScore = scoreTax({ taxEfficiencyScore: 2 }, { mr: 0.30 });
+  assert.ok(Math.abs(taxScore - 7.2) < 1e-10, `Expected ~7.2, got ${taxScore}`);
+  // 3) slab -> mr * 20
+  assert.equal(scoreTax({ taxType: 'slab' }, { mr: 0.20 }), 4.0);
+
+  // scoreLiquidity: (score - LIQUIDITY_CENTER(3)) * LIQUIDITY_SCALE(4), clamped >= 0
+  assert.equal(scoreLiquidity({ liquidityScore: 5 }), 8);  // (5-3)*4 = 8
+  assert.equal(scoreLiquidity({ liquidityScore: 1 }), 0);  // Math.max(0, (1-3)*4) = 0
+  // lockIn fallbacks
+  assert.equal(scoreLiquidity({ lockIn: 0 }), 5);
+  assert.equal(scoreLiquidity({ lockIn: 2 }), 2);
+  assert.equal(scoreLiquidity({ lockIn: 5 }), 0);
+
+  // scoreCost: er=0 -> -COST_FREE_BONUS(-3), er>0 -> er * COST_PENALTY_SCALE(100)
+  assert.equal(scoreCost({ expenseRatio: 0 }), -3);
+  assert.equal(scoreCost({ expenseRatio: 1.5 }), 150);
+});
+
+test('scoreGoal and scoreHorizon direct factor precision', () => {
+  // scoreGoal: matchCount * GOAL_TAG_POINTS(5), capped at GOAL_TAG_CAP(15)
+  const invWithTags = { goalTags: ['Retirement', 'Wealth Growth', 'Tax Saving'] };
+  assert.equal(scoreGoal(invWithTags, { goals: ['Retirement'] }), 5);
+  assert.equal(scoreGoal(invWithTags, { goals: ['Retirement', 'Wealth Growth', 'Tax Saving', 'Child Education'] }), 15);
+  assert.equal(scoreGoal(invWithTags, { goals: [] }), 0);
+
+  // scoreHorizon for lockIn=3, idealHorizon={min:5, max:10}:
+  const invHoriz = { lockIn: 3, idealHorizon: { min: 5, max: 10 } };
+
+  // horizon=2: lockIn(3) > horizon(2) -> no LOCK_FIT. ideal: 2>=0 -> +PARTIAL(5). Total=5
+  assert.equal(scoreHorizon(invHoriz, { horizon: 2 }), 5);
+
+  // horizon=7: lockIn(3)<=7 -> +LOCK_FIT(15). 7 in [5,10] -> +PERFECT(15). Total=30
+  assert.equal(scoreHorizon(invHoriz, { horizon: 7 }), 30);
+
+  // horizon=4: lockIn(3)<=4 -> +LOCK_FIT(15). 4 in [3,15] -> +GOOD(10). Total=25
+  assert.equal(scoreHorizon(invHoriz, { horizon: 4 }), 25);
+
+  // No idealHorizon, lockIn=0: +LOCK_FIT(15) + NO_LOCK(5) = 20
+  assert.equal(scoreHorizon({ lockIn: 0 }, { horizon: 5 }), 20);
+});
+
+test('normaliseConfidenceScores mapping and invalid score filtering', () => {
+  assert.deepEqual(normaliseConfidenceScores(null), {});
+  assert.deepEqual(normaliseConfidenceScores(undefined), {});
+  assert.deepEqual(normaliseConfidenceScores('invalid'), {});
+
+  // Mapped keys
+  const raw = {
+    'Public_Provident_Fund': 0.95,
+    'Bank_FD': 0.80,
+    'Nifty_Index': 0.88,
+    'Custom_Key': 0.70,
+    'Bad_Key': NaN,
+    'String_Val': '0.50',
+  };
+
+  const norm = normaliseConfidenceScores(raw);
+  assert.equal(norm['PPF'], 0.95);
+  assert.equal(norm['FD'], 0.80);
+  assert.equal(norm['Index_MF'], 0.88);
+  assert.equal(norm['Custom_Key'], 0.70);
+  assert.equal(norm['Bad_Key'], undefined);
+  assert.equal(norm['String_Val'], undefined);
+});
+
+test('rankInstruments sorts descending by score', () => {
+  const scored = [
+    { id: 'b', score: 10 },
+    { id: 'a', score: 25 },
+    { id: 'c', score: 5 },
+  ];
+
+  const ranked = rankInstruments(scored);
+  assert.equal(ranked[0].id, 'a');
+  assert.equal(ranked[1].id, 'b');
+  assert.equal(ranked[2].id, 'c');
+});
+
+
 
 
 

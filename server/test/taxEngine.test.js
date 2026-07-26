@@ -428,3 +428,39 @@ test('computeTax zero/invalid/NaN income, effectiveRate precision', () => {
   assert.equal(posRes.effectiveRate, expectedEff);
 });
 
+test('getTaxSlab, compareTaxRegimes, getEffectiveMarginalRate fallback and guard branches', () => {
+  // getTaxSlab with invalid regime -> falls back to 'new'
+  const invReg = getTaxSlab(1_000_000, 'invalid_regime');
+  const newReg = getTaxSlab(1_000_000, 'new');
+  assert.equal(invReg, newReg);
+
+  // getTaxSlab with NaN / negative income
+  const nanSlab = getTaxSlab(NaN);
+  assert.equal(nanSlab, 0);
+  const negSlab = getTaxSlab(-500_000);
+  assert.equal(negSlab, 0);
+
+  // compareTaxRegimes with NaN / negative income
+  const nanComp = compareTaxRegimes(NaN);
+  assert.equal(nanComp.recommended, 'new');
+  assert.equal(nanComp.newRegime.taxAmount, 0);
+
+  const negComp = compareTaxRegimes(-100_000);
+  assert.equal(negComp.recommended, 'new');
+  assert.equal(negComp.newRegime.taxAmount, 0);
+
+  // getEffectiveMarginalRate with deltaIncome <= 0
+  assert.equal(getEffectiveMarginalRate(1_000_000, 'new', {}, 'salary', CURRENT_FY, 0), 0);
+  assert.equal(getEffectiveMarginalRate(1_000_000, 'new', {}, 'salary', CURRENT_FY, -100), 0);
+
+  // computeTaxWithDeductions with different income sources
+  const pensionTax = computeTaxWithDeductions(1_000_000, 'new', {}, 'pension');
+  const bizTax = computeTaxWithDeductions(1_000_000, 'new', {}, 'business');
+  assert.ok(typeof pensionTax.taxAmount === 'number');
+  assert.ok(typeof bizTax.taxAmount === 'number');
+  // Salary/pension has standard deduction, business does not
+  assert.ok(pensionTax.taxAmount <= bizTax.taxAmount);
+});
+
+
+

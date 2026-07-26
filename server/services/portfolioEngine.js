@@ -4,13 +4,13 @@
  */
 import { INSTRUMENT_PARAMS as CENTRAL_PARAMS, RISK_FREE_RATE } from './instrumentConstants.js';
 const INSTRUMENT_PARAMS = CENTRAL_PARAMS;
-const ASSET_KEYS = [
+export const ASSET_KEYS = [
     'Equity_MF', 'ELSS', 'ETF', 'Debt_MF', 'FD', 'Gold', 'NPS', 'PPF',
     'RBI_Bond', 'G-Sec', 'SGB', 'Liquid_MF', 'Arbitrage_MF', 'Hybrid_MF',
     'Index_MF', 'Midcap_MF', 'Smallcap_MF',
 ];
 // lower triangular values
-const CORR_LOWER = [
+export const CORR_LOWER = [
     /* Equity_MF   */ [1.00],
     /* ELSS        */ [0.93, 1.00],
     /* ETF         */ [0.95, 0.91, 1.00],
@@ -29,7 +29,7 @@ const CORR_LOWER = [
     /* Midcap_MF   */ [0.88, 0.86, 0.85, 0.10, 0.04, 0.06, 0.78, 0.03, 0.05, 0.08, 0.08, 0.02, 0.12, 0.74, 0.86, 1.00],
     /* Smallcap_MF */ [0.82, 0.80, 0.78, 0.08, 0.03, 0.05, 0.72, 0.02, 0.04, 0.06, 0.06, 0.01, 0.10, 0.68, 0.80, 0.92, 1.00],
 ];
-function buildFullCorrelation() {
+export function buildFullCorrelation() {
     const n = ASSET_KEYS.length;
     const C = Array.from({ length: n }, () => new Float64Array(n));
     for (let i = 0; i < n; i++) {
@@ -41,7 +41,7 @@ function buildFullCorrelation() {
     }
     return C;
 }
-function checkCholeskyPSD(matrix) {
+export function checkCholeskyPSD(matrix) {
     const n = matrix.length;
     const L = Array.from({ length: n }, () => new Float64Array(n));
     for (let i = 0; i < n; i++) {
@@ -72,7 +72,7 @@ const FULL_CORR = buildFullCorrelation();
 if (!checkCholeskyPSD(FULL_CORR)) {
     console.warn('[portfolioEngine] Warning: Master correlation matrix is not Positive Semi-Definite (PSD)!');
 }
-function matvec(A, x) {
+export function matvec(A, x) {
     const n = x.length;
     const y = new Float64Array(n);
     for (let i = 0; i < n; i++) {
@@ -83,22 +83,22 @@ function matvec(A, x) {
     }
     return y;
 }
-function dot(a, b) {
+export function dot(a, b) {
     let s = 0;
     for (let i = 0; i < a.length; i++)
         s += a[i] * b[i];
     return s;
 }
-function portfolioVariance(cov, w) {
+export function portfolioVariance(cov, w) {
     return dot(w, matvec(cov, w));
 }
-function portfolioVol(cov, w) {
+export function portfolioVol(cov, w) {
     return Math.sqrt(Math.max(0, portfolioVariance(cov, w)));
 }
-function portfolioReturn(w, mu) {
+export function portfolioReturn(w, mu) {
     return dot(w, mu);
 }
-function projectSimplex(v) {
+export function projectSimplex(v) {
     const n = v.length;
     const u = Array.from(v).sort((a, b) => b - a); // descending
     let cumSum = 0;

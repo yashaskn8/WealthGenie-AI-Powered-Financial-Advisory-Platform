@@ -11,7 +11,7 @@ for (const [key, p] of Object.entries(CENTRAL_PARAMS)) {
 /**
  * Halton low-discrepancy sequence generator.
  */
-function halton(index, base) {
+export function halton(index, base) {
     let result = 0;
     let f = 1 / base;
     let i = index;
@@ -25,7 +25,7 @@ function halton(index, base) {
 /**
  * Box-Muller transform — generates a normally distributed random number.
  */
-function boxMuller(u1, u2) {
+export function boxMuller(u1, u2) {
     if (u1 === undefined || u1 <= 0 || u1 >= 1) {
         u1 = Math.random() || 0.5;
     }
@@ -39,7 +39,7 @@ function boxMuller(u1, u2) {
 /**
  * Compute percentile from a sorted array using linear interpolation.
  */
-function percentile(sortedArr, p) {
+export function percentile(sortedArr, p) {
     if (sortedArr.length === 0)
         return 0;
     const idx = (p / 100) * (sortedArr.length - 1);
@@ -49,7 +49,7 @@ function percentile(sortedArr, p) {
         return sortedArr[lower];
     return sortedArr[lower] + (sortedArr[upper] - sortedArr[lower]) * (idx - lower);
 }
-function buildProjectionHorizon(years) {
+export function buildProjectionHorizon(years) {
     const numericYears = Number(years);
     const requestedYears = Number.isFinite(numericYears) && numericYears > 0 ? numericYears : 1;
     const totalMonths = Math.max(1, Math.round(requestedYears * 12));
@@ -67,7 +67,7 @@ function buildProjectionHorizon(years) {
         yearsArray: checkpointMonths.map(month => Number((month / 12).toFixed(2))),
     };
 }
-function annuityDueFV(monthlyInvestment, monthlyRate, totalMonths) {
+export function annuityDueFV(monthlyInvestment, monthlyRate, totalMonths) {
     if (!monthlyInvestment || monthlyInvestment <= 0 || totalMonths <= 0)
         return 0;
     if (Math.abs(monthlyRate) < 1e-12) {
@@ -306,7 +306,7 @@ export function runMonteCarlo({ monthlyInvestment, postTaxAnnualReturn, annualVo
 /**
  * Generate an empty result set (for invalid inputs).
  */
-function emptyResult(years, simulations) {
+export function emptyResult(years, simulations) {
     const horizon = buildProjectionHorizon(years);
     const zeros = Array.from({ length: horizon.yearsArray.length }, () => 0);
     return {
