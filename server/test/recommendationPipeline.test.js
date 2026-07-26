@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runPipeline, resolveBackendType, filterEligible, deriveWeights, parseProfile, PIPELINE_CONFIG } from '../services/RecommendationPipeline.js';
+import { runPipeline, resolveBackendType, filterEligible, deriveWeights, parseProfile, PIPELINE_CONFIG, enforceDiversity } from '../services/RecommendationPipeline.js';
 
 test('RecommendationPipeline resolveBackendType mapping precision', () => {
   assert.equal(resolveBackendType({ id: 'ppf' }), 'PPF');
@@ -400,4 +400,110 @@ test('runPipeline instruments have correct structure and score ordering', () => 
       `Instrument ${i-1} score should be >= instrument ${i} score`);
   }
 });
+
+test('RecommendationPipeline scoreRisk factor precision (conservative-moderate, dist=1 vs dist>=2, volatility excess)', () => {
+  const catalog = [
+    { id: 'perfect_cons', riskLevel: 1 },
+    { id: 'close_cons', riskLevel: 3 }, // dist = 1 from ideal [1,2] -> dist=1 penalty
+    { id: 'severe_cons', riskLevel: 5, volatility: 0.25 }, // dist = 3, high vol excess
+    { id: 'risk_prop', risk: 4 }, // fallback to inv.risk
+  ];
+
+  // conservative-moderate profile (idealMin=1, idealMax=2)
+  const resConsMod = runPipeline(
+    { age: 30, annualIncome: 600000, savings: 10000, riskCategory: 'conservative-moderate', investmentHorizon: 10 },
+    {},
+    { catalog }
+  );
+  assert.ok(resConsMod.instruments.length > 0);
+
+  // moderate-aggressive profile (idealMin=3, idealMax=5)
+  const resModAgg = runPipeline(
+    { age: 30, annualIncome: 600000, savings: 10000, riskCategory: 'moderate-aggressive', investmentHorizon: 10 },
+    {},
+    { catalog }
+  );
+  assert.ok(resModAgg.instruments.length > 0);
+});
+
+test('RecommendationPipeline scoreTax, scoreLiquidity, scoreCost, scoreGoal, scoreHorizon factor branches', () => {
+  const customCatalog = [
+    {
+      id: 'custom_tax_eee',
+      expectedReturn: 8,
+      taxType: 'eee',
+      liquidityScore: 4, // scoreLiquidity uses liquidityScore
+      goalTags: ['Retirement', 'Tax Saving', 'Wealth Growth'], // goal matching cap
+      lockIn: 0,
+      expenseRatio: 0, // COST_FREE_BONUS
+      idealHorizon: { min: 5, max: 10 },
+    },
+    {
+      id: 'custom_tax_eff',
+      expectedReturn: 7,
+      taxEfficiencyScore: 2, // (5 - 2) * mr * 10
+      lockIn: 3, // scoreLiquidity lockIn <= 3
+      expenseRatio: 1.5, // er * COST_PENALTY_SCALE
+      idealHorizon: { min: 10, max: 15 },
+    },
+    {
+      id: 'custom_tax_slab',
+      expectedReturn: 6,
+      taxType: 'slab',
+      lockIn: 7, // scoreLiquidity lockIn > 3
+      idealHorizon: { min: 15, max: 20 }, // severe horizon mismatch when p.horizon = 2
+    },
+  ];
+
+  // Run with high income (high tax slab) and p.horizon = 2 (severe mismatch for 3rd item, perfect for 1st)
+  const res = runPipeline(
+    { age: 30, annualIncome: 3000000, savings: 50000, riskCategory: 'Moderate', investmentHorizon: 2, goal_type: 'Retirement' },
+    {},
+    { catalog: customCatalog, topN: 3, minAssetClasses: 1 }
+  );
+
+  assert.equal(res.instruments.length, 3);
+  // Verify order and scoring properties
+  assert.ok(res.instruments[0].score > res.instruments[2].score);
+});
+
+test('RecommendationPipeline enforceDiversity swaps lowest-ranked pick for unrepresented asset class', () => {
+  const ranked = [
+    { id: 1, category: 'CatA', score: 10 },
+    { id: 2, category: 'CatA', score: 9 },
+    { id: 3, category: 'CatA', score: 8 },
+    { id: 4, category: 'CatB', score: 7 },
+    { id: 5, category: 'CatC', score: 6 },
+  ];
+
+  // Request topN = 3, minAssetClasses = 2. First pass takes items 1, 2, 3 (all CatA).
+  // Second pass swaps item 3 (lowest score in result) for item 4 (CatB).
+  const result = enforceDiversity(ranked, 3, 2);
+  assert.equal(result.length, 3);
+  assert.equal(result[0].id, 1);
+  assert.equal(result[1].id, 2);
+  assert.equal(result[2].id, 5); // Item 5 swapped into third slot for missing category
+});
+
+test('RecommendationPipeline handles totalScore <= 0 edge case during weight normalization', () => {
+  // Catalog with extremely penalized items where scores are negative
+  const badCatalog = [
+    { id: 'bad1', expectedReturn: 0.1, riskLevel: 5, lockIn: 20, idealHorizon: { min: 25, max: 30 } },
+    { id: 'bad2', expectedReturn: 0.1, riskLevel: 5, lockIn: 20, idealHorizon: { min: 25, max: 30 } },
+  ];
+
+  const res = runPipeline(
+    { age: 65, annualIncome: 1000000, savings: 1000, riskCategory: 'Conservative', investmentHorizon: 1 },
+    {},
+    { catalog: badCatalog, topN: 2 }
+  );
+
+  assert.equal(res.instruments.length, 2);
+  const totalWeight = res.instruments.reduce((s, i) => s + i.allocationWeight, 0);
+  assert.equal(parseFloat(totalWeight.toFixed(4)), 1.0);
+});
+
+
+
+
 

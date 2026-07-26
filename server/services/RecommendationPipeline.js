@@ -545,4 +545,5 @@ function normaliseConfidenceScores(rawScores) {
 }
 
 // ── Exports for testing ─────────────────────────────────────────
-export { PIPELINE_CONFIG, resolveBackendType, deriveWeights, parseProfile };
+export { PIPELINE_CONFIG, resolveBackendType, deriveWeights, parseProfile, enforceDiversity };
+
