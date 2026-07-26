@@ -10,34 +10,65 @@ A decoupled, full-stack financial advisory and wealth management platform built 
 
 ---
 
-## 📐 System Architecture
+## 🏛 System Architecture
 
 WealthGenie uses a decoupled three-tier microservice architecture to separate user interaction, core financial computation, and machine learning inference.
 
+```mermaid
+graph TD
+    Client["React 19 SPA (Vite)"]
+    
+    subgraph Gateway ["Express.js API Gateway (Node.js)"]
+        TaxEngine["Tax Engine (FY 2025-26)"]
+        QMC["Quasi-Monte Carlo (Halton)"]
+        PortfolioOpt["Portfolio Optimizer (MPT)"]
+        ScoringPipe["Multi-Factor Recommendation Pipeline"]
+    end
+    
+    DataStore[("MongoDB Store")]
+    MLService["FastAPI ML Service (Scikit-Learn + SHAP)"]
+    GeminiAPI["Google Gemini API (Advisory Chat)"]
+
+    Client -->|"REST / HTTPS"| Gateway
+    Gateway -->|"Mongoose ODM"| DataStore
+    Gateway -->|"HTTP / REST"| MLService
+    Gateway -->|"SDK / HTTPS"| GeminiAPI
+    
+    ScoringPipe --> TaxEngine
+    ScoringPipe --> QMC
+    ScoringPipe --> PortfolioOpt
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                       React 19 Frontend (Vite)                          │
-│          • Interactive Rebalancing UI     • Tax Comparison Dashboard    │
-│          • Goal Progress & Scenario Simulator • Conversational AI Chat  │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │ REST / JSON
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                       Express.js API Gateway                            │
-│  ┌──────────────────────┬──────────────────────┬──────────────────────┐ │
-│  │     Tax Engine       │ Quasi-Monte Carlo    │   Portfolio Engine   │ │
-│  │ (Old vs. New Regime) │  (Halton Sequences)  │(MinVar/Sharpe/Parity)│ │
-│  └──────────────────────┴──────────────────────┴──────────────────────┘ │
-│  ┌─────────────────────────────────────────────┬──────────────────────┐ │
-│  │       Multi-Factor Scoring Pipeline        │ MongoDB Data Store   │ │
-│  └─────────────────────────────────────────────┴──────────────────────┘ │
-└──────────────────────┬──────────────────────────────────────────────────┘
-                       │ HTTP / REST
-                       ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     FastAPI ML Microservice                             │
-│   • Decision Tree & Random Forest Ensembles  • SHAP Value Explainer     │
-└─────────────────────────────────────────────────────────────────────────┘
+
+---
+
+## 🔄 Computational & Recommendation Pipeline
+
+The diagram below details the data flow when evaluating investor profiles, calculating tax efficiencies, optimizing allocations, and deriving explainable recommendations:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Investor as User / Client
+    participant Frontend as React 19 SPA
+    participant Gateway as Express.js Gateway
+    participant Tax as Tax Engine
+    participant QMC as Quasi-Monte Carlo Engine
+    participant MPT as Portfolio Engine
+    participant ML as FastAPI ML Microservice
+
+    Investor->>Frontend: Submit Profile (Income, Savings, Risk, Horizon)
+    Frontend->>Gateway: POST /api/recommend
+    Gateway->>Tax: Compute Old vs New Tax Liability (Section 87A, 80C/80D)
+    Tax-->>Gateway: Tax Slabs & Effective Rates
+    Gateway->>QMC: Run GBM Simulations via Halton Sequences
+    QMC-->>Gateway: P10, P50, P90 Wealth Percentiles
+    Gateway->>MPT: Solve Min Variance / Max Sharpe Allocations
+    MPT-->>Gateway: Asset Weight Vectors
+    Gateway->>ML: POST /predict (Profile Vector)
+    ML-->>Gateway: Suitability Scores + SHAP Feature Attributions
+    Gateway->>Gateway: Synthesize Multi-Factor Utility Score & Enforce Diversity
+    Gateway-->>Frontend: Ranked Recommendations with Explainability
+    Frontend-->>Investor: Display Recommendations, Trajectories & Tax Breakdown
 ```
 
 ---
@@ -105,7 +136,7 @@ deploy-wealthgenie/
 │
 ├── ml-service/               # FastAPI Machine Learning Microservice
 │   ├── model/                # Training pipelines, dataset builders, model persistence
-│   ├── tests/                # Pytest suit for ML validation
+│   ├── tests/                # Pytest suite for ML validation
 │   ├── main.py               # FastAPI service initialization and endpoint handlers
 │   └── requirements.txt
 │
