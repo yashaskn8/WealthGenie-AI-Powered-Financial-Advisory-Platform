@@ -6,7 +6,7 @@
 [![Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn_|_SHAP-F7931E?style=flat-square&logo=scikitlearn)](https://scikit-learn.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** integrates multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and explainable ML recommendation pipelines.
+A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** combines multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and explainable ML recommendation pipelines.
 
 ---
 
@@ -57,9 +57,9 @@ sequenceDiagram
     participant ML as FastAPI ML Microservice
 
     Investor->>Frontend: Submit Profile (Income, Savings, Risk, Horizon)
-    Frontend->>Gateway: POST /api/recommend
+    Frontend->>Gateway: POST /api/recommend/recommend
     Gateway->>Tax: Compute Old vs New Tax Liability (Section 87A, 80C/80D)
-    Tax-->>Gateway: Tax Slabs & Effective Rates
+    Tax-->>Gateway: Tax Slabs & Effective Marginal Rates
     Gateway->>QMC: Run GBM Simulations via Halton Sequences
     QMC-->>Gateway: P10, P50, P90 Wealth Percentiles
     Gateway->>MPT: Solve Min Variance / Max Sharpe Allocations
@@ -77,7 +77,8 @@ sequenceDiagram
 
 ### 1. Progressive Tax Engine (Indian FY 2025-26)
 Calculates exact tax liabilities under both the **Old Tax Regime** and **New Tax Regime** to identify the optimal filing path.
-- **New Regime Slab Modeling**: 0% up to ₹4L, 5% (₹4L-8L), 10% (₹8L-12L), 15% (₹12L-15L), 20% (₹15L-20L), 25% (₹20L-24L), 30% (>₹24L).
+- **New Regime Slab Modeling**: 0% (₹0–4L), 5% (₹4L–8L), 10% (₹8L–12L), 15% (₹12L–16L), 20% (₹16L–20L), 25% (₹20L–24L), and 30% (>₹24L).
+- **Old Regime Slab Modeling**: 0% (₹0–2.5L), 5% (₹2.5L–5L), 20% (₹5L–10L), and 30% (>₹10L).
 - **Section 87A Rebate Cliffs**: Computes full tax relief up to ₹7L (Old) and ₹12L (New) with exact marginal relief formulas to eliminate tax cliff artifacts.
 - **Granular Surcharge Tiers & Deductions**: Implements multi-bracket surcharges (10%, 15%, 25%, 37%) with marginal relief caps, standard deductions, Section 80C, 80D (self/senior breakdown), and Section 80CCD(2) employer NPS rules.
 
@@ -92,14 +93,16 @@ Provides three distinct asset allocation strategies derived from Modern Portfoli
 - **Maximum Sharpe Ratio**: Maximizes excess return per unit of risk ($\frac{\mathbf{w}^T \mathbf{\mu} - R_f}{\sqrt{\mathbf{w}^T \mathbf{\Sigma} \mathbf{w}}}$).
 - **Risk Parity**: Equalizes risk contributions across asset classes using iterative risk budget optimization.
 
-### 4. Metadata-Driven Recommendation Pipeline
-Calculates allocation scores across equities, fixed income, gold, and liquid funds using a multi-objective utility function:
-$$\text{Score} = f(\text{Return}) + f(\text{Risk Alignment}) + f(\text{Tax Efficiency}) + f(\text{Liquidity}) + f(\text{Cost}) + f(\text{Horizon})$$
-- Enforces asset class diversity thresholds and eligibility constraints (age limits, lock-in requirements, minimum savings).
+### 4. Four-Stage Recommendation Pipeline
+Orchestrates metadata-driven recommendation scoring across financial instruments:
+1. **Eligibility Filtering**: Gating instruments by age boundaries, income minimums, and lock-in constraints.
+2. **Multi-Factor Utility Scoring**: Weighing returns, risk capacity alignment, tax efficiency, liquidity, expense ratios, and horizon fit.
+3. **ML Confidence Boosting**: Merging FastAPI microservice model confidence into relative scoring ranks.
+4. **Diversity Enforcement**: Guaranteeing top recommendations span distinct asset classes.
 
 ### 5. Explainable ML Engine (FastAPI)
-- Uses trained tree ensemble models to evaluate investor risk profiles and output asset suitability confidence scores.
-- Computes **SHAP (SHapley Additive exPlanations)** feature attributions for every prediction, rendering transparent explanations for recommended allocations.
+- Uses trained Random Forest tree ensemble models to evaluate investor risk profiles and output asset suitability confidence scores.
+- Computes **TreeSHAP (SHapley Additive exPlanations)** feature attributions for every prediction, rendering transparent explanations for recommended allocations.
 
 ---
 
@@ -210,11 +213,12 @@ uvicorn main:app --reload --port 8000
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/tax/compare` | Evaluates Old vs. New tax regime liabilities for a given income/deduction profile |
+| `GET / POST` | `/api/tax/compute`, `/api/tax/compare` | Evaluates Old vs. New tax regime liabilities for income/deduction profile |
 | `POST` | `/api/portfolio/optimize` | Solves Min Variance, Max Sharpe, or Risk Parity allocations for selected assets |
+| `POST` | `/api/portfolio/rebalance` | Calculates target drift and transactional directives for current portfolio |
 | `POST` | `/api/montecarlo/simulate` | Runs Quasi-Monte Carlo simulation and returns $P_{10}, P_{50}, P_{90}$ wealth bands |
-| `POST` | `/api/recommend` | Runs multi-factor scoring pipeline and returns ranked investment suggestions |
-| `POST` | `/api/chat` | Context-aware AI advisory assistance grounded in user financial profile |
+| `POST` | `/api/recommend/recommend` | Runs 4-stage scoring pipeline and returns ranked investment suggestions |
+| `POST` | `/api/chat/message` | Context-aware AI advisory assistance grounded in user financial profile |
 
 ---
 
