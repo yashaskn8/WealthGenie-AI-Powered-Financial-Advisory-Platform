@@ -64,3 +64,5 @@ server/coverage/
 reactapp/coverage/
 coverage/
 .nyc_output/
+.stryker-tmp/
+server/.stryker-tmp/
