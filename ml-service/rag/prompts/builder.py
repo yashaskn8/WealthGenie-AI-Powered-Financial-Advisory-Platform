@@ -1,14 +1,15 @@
 """
 WealthGenie RAG Subsystem - Prompt Builder
-Constructs strict grounding prompts separating system instructions, evidence context, and investor query.
+Constructs strict, tamper-proof grounding prompts separating system instructions, evidence context, and investor query.
 """
 
 from typing import Dict, List, Any, Optional
 from rag.schema import RetrievedChunk
+from rag.security.prompt_sanitizer import PromptSanitizer
 
 
 class PromptBuilder:
-    """Constructs structured, tamper-proof prompts for LLM grounded generation."""
+    """Constructs structured, hardened prompts for LLM grounded generation."""
 
     SYSTEM_PROMPT = (
         "You are WealthGenie AI, a trusted Indian financial advisory assistant. "
@@ -21,6 +22,9 @@ class PromptBuilder:
         "4. Be professional, concise, and structured."
     )
 
+    def __init__(self, sanitizer: Optional[PromptSanitizer] = None):
+        self.sanitizer = sanitizer or PromptSanitizer()
+
     def build_prompt(
         self,
         question: str,
@@ -28,13 +32,17 @@ class PromptBuilder:
         user_profile: Optional[Dict[str, Any]] = None,
         chat_history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
-        """Assembles prompt parts into a formatted string."""
-        context_blocks = []
+        """Assembles and sanitizes prompt parts into a secure formatted string."""
+        # 1. Sanitize user question
+        safe_question, violations = self.sanitizer.sanitize_user_input(question)
 
+        # 2. Build and sanitize context blocks
+        context_blocks = []
         for idx, ret in enumerate(retrieved_chunks, start=1):
             chunk = ret.chunk
+            safe_content = self.sanitizer.sanitize_retrieved_context(chunk.content)
             source_info = f"Document: {chunk.metadata.title} (Source: {chunk.metadata.source})"
-            context_blocks.append(f"[{idx}] {source_info}\nExcerpt:\n{chunk.content}")
+            context_blocks.append(f"[{idx}] {source_info}\nExcerpt:\n{safe_content}")
 
         context_str = "\n\n".join(context_blocks) if context_blocks else "No relevant context found."
 
@@ -48,7 +56,7 @@ class PromptBuilder:
             f"=== SYSTEM INSTRUCTIONS ===\n{self.SYSTEM_PROMPT}\n\n"
             f"{profile_str}"
             f"=== AUTHORITATIVE RETRIEVED EVIDENCE CONTEXT ===\n{context_str}\n\n"
-            f"=== USER QUESTION ===\n{question}\n\n"
+            f"=== USER QUESTION ===\n{safe_question}\n\n"
             f"=== GROUNDED ADVISORY RESPONSE ==="
         )
         return prompt
