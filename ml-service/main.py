@@ -101,15 +101,26 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"TreeSHAP Explainer initialization failed ({e}); serving without SHAP attributions.")
 
+    # 5. Initialize & Seed RAG Knowledge Base
+    try:
+        from rag.seed_knowledge import seed_default_knowledge_base
+        seed_default_knowledge_base()
+        logger.info("RAG Knowledge Base initialized & seeded successfully.")
+    except Exception as e:
+        logger.warning(f"RAG Knowledge Base initialization failed: {e}")
+
     logger.info(f"ModelRegistry initialized with registered models: {[m['key'] for m in registry.list_models()]}")
     yield
 
 
 app = FastAPI(
-    title="WealthGenie ML Platform",
-    version="3.5.0",
+    title="WealthGenie ML & RAG Platform",
+    version="4.0.0",
     lifespan=lifespan
 )
+
+from rag.router import rag_router
+app.include_router(rag_router)
 
 cors_origins_env = os.environ.get("CORS_ORIGINS")
 origins = cors_origins_env.split(",") if cors_origins_env else ["http://localhost:5000", "http://localhost:5173"]
