@@ -4,6 +4,7 @@ Constructs strict, tamper-proof grounding prompts separating system instructions
 """
 
 from typing import Dict, List, Any, Optional
+from rag.context.manager import ContextManager
 from rag.schema import RetrievedChunk
 from rag.security.prompt_sanitizer import PromptSanitizer
 
@@ -22,8 +23,13 @@ class PromptBuilder:
         "4. Be professional, concise, and structured."
     )
 
-    def __init__(self, sanitizer: Optional[PromptSanitizer] = None):
+    def __init__(
+        self,
+        sanitizer: Optional[PromptSanitizer] = None,
+        context_manager: Optional[ContextManager] = None,
+    ):
         self.sanitizer = sanitizer or PromptSanitizer()
+        self.context_manager = context_manager or ContextManager()
 
     def build_prompt(
         self,
@@ -32,13 +38,16 @@ class PromptBuilder:
         user_profile: Optional[Dict[str, Any]] = None,
         chat_history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
-        """Assembles and sanitizes prompt parts into a secure formatted string."""
+        """Assembles, manages context budgeting/deduplication, and sanitizes prompt parts."""
         # 1. Sanitize user question
         safe_question, violations = self.sanitizer.sanitize_user_input(question)
 
-        # 2. Build and sanitize context blocks
+        # 2. Manage Context (Deduplicate, Merge Adjacent, Apply Budget)
+        managed_chunks = self.context_manager.process_chunks(retrieved_chunks)
+
+        # 3. Build and sanitize context blocks
         context_blocks = []
-        for idx, ret in enumerate(retrieved_chunks, start=1):
+        for idx, ret in enumerate(managed_chunks, start=1):
             chunk = ret.chunk
             safe_content = self.sanitizer.sanitize_retrieved_context(chunk.content)
             source_info = f"Document: {chunk.metadata.title} (Source: {chunk.metadata.source})"
