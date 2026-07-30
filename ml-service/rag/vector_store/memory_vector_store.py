@@ -1,10 +1,13 @@
 """
 WealthGenie RAG Subsystem - Persistent Vector Store Implementation
-High-performance Cosine Similarity vector store with document indexing and disk persistence.
+High-performance Cosine Similarity vector store with atomic writes, checksum verification, backup snapshots, and corruption recovery.
 """
 
+import hashlib
 import json
 import logging
+import os
+import shutil
 from pathlib import Path
 from typing import Dict, List, Any
 import numpy as np
@@ -17,10 +20,13 @@ logger = logging.getLogger("wealthgenie.rag.vector_store")
 
 
 class PersistentVectorStore(BaseVectorStore):
-    """Vector database implementation supporting fast Cosine Similarity vector search."""
+    """Hardened vector database supporting Cosine Similarity search, atomic writes, and corruption recovery."""
+
+    VERSION = "2.0"
 
     def __init__(self, index_path: Path = None):
         self.index_path = index_path or RAGConfig().vector_store_path
+        self.backup_path = self.index_path.with_suffix(".json.bak")
         self._chunks: List[TextChunk] = []
         self._embeddings: List[List[float]] = []
         self.load()
@@ -89,28 +95,85 @@ class PersistentVectorStore(BaseVectorStore):
         unique_docs = len({c.document_id for c in self._chunks})
         dimension = len(self._embeddings[0]) if self._embeddings else 0
         return {
+            "version": self.VERSION,
             "total_chunks": len(self._chunks),
             "unique_documents": unique_docs,
             "embedding_dimension": dimension,
             "index_path": str(self.index_path),
+            "backup_exists": self.backup_path.exists(),
         }
 
     def save(self) -> None:
-        """Persists chunks and vector embeddings to JSON index on disk."""
+        """
+        Persists chunks and vector embeddings to disk using atomic write and backup snapshot creation.
+        """
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
-        serialized = [chunk.model_dump() for chunk in self._chunks]
-        with open(self.index_path, "w", encoding="utf-8") as f:
-            json.dump(serialized, f, indent=2)
+
+        serialized_chunks = [chunk.model_dump() for chunk in self._chunks]
+        payload_str = json.dumps(serialized_chunks)
+        checksum = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
+
+        wrapped_index = {
+            "version": self.VERSION,
+            "sha256": checksum,
+            "total_chunks": len(serialized_chunks),
+            "chunks": serialized_chunks,
+        }
+
+        # 1. Atomic Write to Temporary File
+        tmp_path = self.index_path.with_suffix(".tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(wrapped_index, f, indent=2)
+
+        # 2. Backup Snapshot Creation
+        if self.index_path.exists():
+            try:
+                shutil.copy2(self.index_path, self.backup_path)
+            except Exception as e:
+                logger.warning(f"Could not create backup snapshot: {e}")
+
+        # 3. Replace Atomic Move
+        os.replace(tmp_path, self.index_path)
+        logger.info(f"Safely persisted vector index (v{self.VERSION}, checksum: {checksum[:8]}) to {self.index_path}")
 
     def load(self) -> None:
-        """Loads index from disk if file exists."""
+        """Loads index from disk with corruption detection and backup recovery."""
         if not self.index_path.exists():
             return
+
         try:
-            with open(self.index_path, "r", encoding="utf-8") as f:
-                serialized = json.load(f)
-            self._chunks = [TextChunk(**item) for item in serialized]
-            self._embeddings = [c.embedding for c in self._chunks if c.embedding]
-            logger.info(f"Loaded {len(self._chunks)} chunks into PersistentVectorStore from {self.index_path}")
+            self._load_from_path(self.index_path)
         except Exception as e:
-            logger.warning(f"Failed to load vector store from {self.index_path}: {e}")
+            logger.error(f"Failed to load primary vector index from {self.index_path}: {e}")
+            if self.backup_path.exists():
+                logger.warning(f"Attempting corruption recovery from backup: {self.backup_path}")
+                try:
+                    self._load_from_path(self.backup_path)
+                    logger.info("Successfully recovered vector store index from backup!")
+                except Exception as backup_err:
+                    logger.error(f"Backup recovery also failed: {backup_err}")
+            else:
+                logger.error("No backup snapshot available for recovery.")
+
+    def _load_from_path(self, file_path: Path) -> None:
+        """Helper to parse and validate index file format (v1.0 list vs v2.0 wrapped dict)."""
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if isinstance(data, dict) and "chunks" in data:
+            # Format v2.0
+            chunks_list = data["chunks"]
+            expected_hash = data.get("sha256")
+            if expected_hash:
+                actual_hash = hashlib.sha256(json.dumps(chunks_list).encode("utf-8")).hexdigest()
+                if actual_hash != expected_hash:
+                    raise ValueError(f"Vector index checksum mismatch! Expected {expected_hash[:8]}, got {actual_hash[:8]}")
+        elif isinstance(data, list):
+            # Format v1.0 (backward compatibility)
+            chunks_list = data
+        else:
+            raise ValueError("Invalid vector index structure.")
+
+        self._chunks = [TextChunk(**item) for item in chunks_list]
+        self._embeddings = [c.embedding for c in self._chunks if c.embedding]
+        logger.info(f"Loaded {len(self._chunks)} chunks into PersistentVectorStore from {file_path}")
