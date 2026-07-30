@@ -26,7 +26,16 @@ from llm.dataset.loader import load_dataset_file, save_dataset_file
 from llm.training.trainer import LoRATrainingPlatform
 from llm.training.schema import FineTuningConfig, LoRAConfigSchema, FineTuningReport
 
-__version__ = "3.3.0"
+from llm.evaluation.evaluator import LLMEvaluator
+from llm.evaluation.metrics import (
+    compute_perplexity,
+    compute_bleu,
+    compute_rouge,
+    compute_bertscore_approx,
+    compute_grounding_faithfulness,
+)
+
+__version__ = "3.4.0"
 
 __all__ = [
     "LLMConfig",
@@ -51,4 +60,10 @@ __all__ = [
     "FineTuningConfig",
     "LoRAConfigSchema",
     "FineTuningReport",
+    "LLMEvaluator",
+    "compute_perplexity",
+    "compute_bleu",
+    "compute_rouge",
+    "compute_bertscore_approx",
+    "compute_grounding_faithfulness",
 ]
