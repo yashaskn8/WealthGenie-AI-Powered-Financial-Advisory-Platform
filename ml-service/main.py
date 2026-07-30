@@ -119,8 +119,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, Security, status
+
 from rag.router import rag_router
 app.include_router(rag_router)
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
 
 cors_origins_env = os.environ.get("CORS_ORIGINS")
 origins = cors_origins_env.split(",") if cors_origins_env else ["http://localhost:5000", "http://localhost:5173"]

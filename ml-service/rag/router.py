@@ -1,15 +1,17 @@
 """
-WealthGenie RAG Subsystem - FastAPI Router
-Exposes dedicated RAG endpoints (/rag/query, /rag/index, /rag/documents, /rag/status, /rag/health).
+WealthGenie RAG Subsystem - Hardened FastAPI Router
+Exposes enterprise RAG endpoints with rate-limiting, error handling, security headers, and document lifecycle control.
 """
 
 import logging
+import time
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
 from rag.config import RAGConfig
 from rag.ingestion.pipeline import IngestionPipeline
+from rag.lifecycle.manager import DocumentLifecycleManager
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest, RAGQueryResponse
 
@@ -25,6 +27,32 @@ query_pipeline = RAGPipeline(
     vector_store=ingestion_pipeline.vector_store,
     config=rag_config,
 )
+lifecycle_manager = DocumentLifecycleManager(vector_store=ingestion_pipeline.vector_store)
+
+# In-memory simple rate limiting: IP -> List of request timestamps
+_RATE_LIMIT_STORE: Dict[str, List[float]] = {}
+MAX_REQUESTS_PER_MINUTE = 60
+
+
+def check_rate_limit(client_ip: str) -> None:
+    """Enforces simple sliding window rate limiting (60 requests/minute)."""
+    now = time.time()
+    timestamps = _RATE_LIMIT_STORE.get(client_ip, [])
+    # Filter timestamps within last 60s
+    recent = [t for t in timestamps if now - t < 60.0]
+
+    if len(recent) >= MAX_REQUESTS_PER_MINUTE:
+        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Maximum 60 requests per minute allowed.",
+        )
+
+    recent.append(now)
+    _RATE_LIMIT_STORE[client_ip] = recent
+
+
+
 
 
 class IngestTextRequest(BaseModel):
@@ -32,6 +60,7 @@ class IngestTextRequest(BaseModel):
     content: str = Field(..., min_length=10, description="Raw text content to ingest")
     source: str = Field("api_input", description="Source identifier")
     author: Optional[str] = Field("Financial Authority", description="Author")
+    tenant_id: str = Field("default", description="Tenant isolation scope")
 
 
 @rag_router.get("/health")
@@ -56,17 +85,20 @@ def rag_status():
         "embedding_dimension": rag_config.embedding_dim,
         "chunk_size": rag_config.chunk_size,
         "chunk_overlap": rag_config.chunk_overlap,
-        "cache_hits": ingestion_pipeline.embedder.cache.hits if ingestion_pipeline.embedder.cache else 0,
-        "cache_misses": ingestion_pipeline.embedder.cache.misses if ingestion_pipeline.embedder.cache else 0,
+        "retrieval_strategy": rag_config.retrieval_strategy,
+        "reranker_strategy": rag_config.reranker_strategy,
     }
 
 
 @rag_router.post("/query", response_model=RAGQueryResponse)
-def query_rag(request: RAGQueryRequest):
+def query_rag(request: RAGQueryRequest, req: Request):
     """
     Executes grounded RAG query search over authoritative knowledge base.
     Returns answer, citations, evidence chunks, and timing metrics.
     """
+    client_ip = req.client.host if req.client else "127.0.0.1"
+    check_rate_limit(client_ip)
+
     try:
         return query_pipeline.query(request)
     except Exception as e:
@@ -75,10 +107,13 @@ def query_rag(request: RAGQueryRequest):
 
 
 @rag_router.post("/index")
-def index_document(request: IngestTextRequest):
+def index_document(request: IngestTextRequest, req: Request):
     """
     Ingests text document into vector store index incrementally.
     """
+    client_ip = req.client.host if req.client else "127.0.0.1"
+    check_rate_limit(client_ip)
+
     try:
         res = ingestion_pipeline.ingest_text(
             text=request.content,
@@ -90,11 +125,6 @@ def index_document(request: IngestTextRequest):
     except Exception as e:
         logger.error(f"Document ingestion failed: {e}")
         raise HTTPException(status_code=400, detail=f"Ingestion error: {str(e)}")
-
-
-from rag.lifecycle.manager import DocumentLifecycleManager
-
-lifecycle_manager = DocumentLifecycleManager(vector_store=ingestion_pipeline.vector_store)
 
 
 @rag_router.get("/documents")
