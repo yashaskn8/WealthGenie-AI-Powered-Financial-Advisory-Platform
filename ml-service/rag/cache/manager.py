@@ -70,9 +70,9 @@ class MultiLevelCacheManager:
         return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
     # --- Response Cache ---
-    def get_response(self, query: str) -> Optional[RAGQueryResponse]:
-        """Retrieves cached response for identical query text."""
-        k = self._hash_key(query)
+    def get_response(self, query: str, tenant_id: str = "default") -> Optional[RAGQueryResponse]:
+        """Retrieves cached response for identical query text within a tenant scope."""
+        k = self._hash_key(f"{tenant_id}:{query}")
         item = self._response_cache.get(k)
         if item:
             if item.is_expired():
@@ -84,9 +84,9 @@ class MultiLevelCacheManager:
         self.stats["response_misses"] += 1
         return None
 
-    def put_response(self, query: str, response: RAGQueryResponse) -> None:
-        """Stores RAG query response in response cache."""
-        k = self._hash_key(query)
+    def put_response(self, query: str, response: RAGQueryResponse, tenant_id: str = "default") -> None:
+        """Stores RAG query response in tenant-scoped response cache."""
+        k = self._hash_key(f"{tenant_id}:{query}")
         self._response_cache[k] = CacheItem(response, ttl_seconds=self.response_ttl)
 
     # --- Retrieval Candidate Cache ---

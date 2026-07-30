@@ -17,8 +17,14 @@ class BaseVectorStore(ABC):
         pass
 
     @abstractmethod
-    def search(self, query_vector: List[float], top_k: int = 4, threshold: float = 0.0) -> List[RetrievedChunk]:
-        """Executes similarity vector search and returns top-k ranked chunks with similarity scores."""
+    def search(
+        self,
+        query_vector: List[float],
+        top_k: int = 4,
+        threshold: float = 0.0,
+        tenant_id: str = "default",
+    ) -> List[RetrievedChunk]:
+        """Executes tenant-isolated similarity vector search and returns top-k ranked chunks with similarity scores."""
         pass
 
     @abstractmethod

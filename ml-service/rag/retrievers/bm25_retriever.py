@@ -37,9 +37,14 @@ class BM25KeywordRetriever(BaseRetriever):
         cleaned = re.sub(r"[^\w\s]", " ", text.lower())
         return [w for w in cleaned.split() if len(w) > 1]
 
-    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0) -> List[RetrievedChunk]:
-        """Executes BM25 keyword search across vector store chunks."""
-        chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
+    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:
+        """Executes BM25 keyword search across tenant-scoped vector store chunks."""
+        all_chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
+        chunks = [
+            c for c in all_chunks
+            if getattr(c, "tenant_id", "default") == tenant_id
+            or getattr(c.metadata, "tenant_id", "default") == tenant_id
+        ]
         if not chunks:
             return []
 

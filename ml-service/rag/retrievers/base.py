@@ -12,8 +12,8 @@ class BaseRetriever(ABC):
     """Abstract base class for all chunk retrieval strategies."""
 
     @abstractmethod
-    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0) -> List[RetrievedChunk]:
-        """Retrieves and ranks relevant chunks for the given query text."""
+    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:
+        """Retrieves and ranks relevant chunks for the given query text within a tenant scope."""
         pass
 
     @property

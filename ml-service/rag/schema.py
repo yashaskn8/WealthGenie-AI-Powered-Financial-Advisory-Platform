@@ -16,6 +16,7 @@ class DocumentMetadata(BaseModel):
     document_type: str = Field("markdown", description="pdf, markdown, text, html, or csv")
     version: str = Field("1.0", description="Document schema version")
     author: Optional[str] = Field(None, description="Authoring authority (e.g. Income Tax Dept, AMFI)")
+    tenant_id: str = Field("default", description="Tenant isolation scope identifier")
     custom_metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -41,6 +42,7 @@ class TextChunk(BaseModel):
     document_id: str
     content: str
     metadata: ChunkMetadata
+    tenant_id: str = Field("default", description="Tenant isolation scope identifier")
     embedding: Optional[List[float]] = None
 
 
@@ -65,6 +67,7 @@ class RAGQueryRequest(BaseModel):
     """Request payload for RAG query execution."""
     question: str = Field(..., min_length=3, description="User advisory question")
     top_k: Optional[int] = Field(None, ge=1, le=20, description="Override default top-k retrieval count")
+    tenant_id: str = Field("default", description="Tenant isolation scope identifier")
     user_profile: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Contextual investor profile")
     include_citations: bool = Field(True, description="Whether to format inline citations")
 

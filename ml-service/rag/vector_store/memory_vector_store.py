@@ -54,9 +54,24 @@ class PersistentVectorStore(BaseVectorStore):
         logger.info(f"Added {added_count} new chunks to PersistentVectorStore. Total: {len(self._chunks)}")
         return added_count
 
-    def search(self, query_vector: List[float], top_k: int = 4, threshold: float = 0.0) -> List[RetrievedChunk]:
-        """Executes similarity search using Cosine Similarity."""
+    def search(
+        self,
+        query_vector: List[float],
+        top_k: int = 4,
+        threshold: float = 0.0,
+        tenant_id: str = "default",
+    ) -> List[RetrievedChunk]:
+        """Executes tenant-isolated similarity search using Cosine Similarity."""
         if not self._chunks or not self._embeddings:
+            return []
+
+        # Filter indices by tenant_id scope
+        valid_indices = [
+            i for i, c in enumerate(self._chunks)
+            if getattr(c, "tenant_id", "default") == tenant_id
+            or getattr(c.metadata, "tenant_id", "default") == tenant_id
+        ]
+        if not valid_indices:
             return []
 
         q_vec = np.array(query_vector, dtype=np.float32)
@@ -65,7 +80,8 @@ class PersistentVectorStore(BaseVectorStore):
             return []
         q_vec = q_vec / q_norm
 
-        matrix = np.array(self._embeddings, dtype=np.float32)
+        sub_embeddings = [self._embeddings[i] for i in valid_indices]
+        matrix = np.array(sub_embeddings, dtype=np.float32)
         norms = np.linalg.norm(matrix, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
         matrix_normed = matrix / norms
@@ -74,15 +90,16 @@ class PersistentVectorStore(BaseVectorStore):
         similarities = np.dot(matrix_normed, q_vec)
 
         # Rank indices by descending similarity score
-        top_indices = np.argsort(similarities)[::-1][:top_k]
+        top_sub_indices = np.argsort(similarities)[::-1][:top_k]
 
         results: List[RetrievedChunk] = []
-        for rank, idx in enumerate(top_indices, start=1):
-            score = float(similarities[idx])
+        for rank, sub_idx in enumerate(top_sub_indices, start=1):
+            score = float(similarities[sub_idx])
             if score >= threshold:
+                original_idx = valid_indices[sub_idx]
                 results.append(
                     RetrievedChunk(
-                        chunk=self._chunks[idx],
+                        chunk=self._chunks[original_idx],
                         score=round(score, 4),
                         rank=rank,
                     )
