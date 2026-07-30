@@ -40,7 +40,12 @@ from llm.inference.tools import ToolCallingEngine, ToolCallResult
 from llm.inference.rag_integration import RAGLLMPipeline
 from llm.schema import ChatMessage
 
-__version__ = "3.5.0"
+from llm.ops.circuit_breaker import CircuitBreaker, CircuitState
+from llm.ops.audit_logger import AuditLogger, AuditEntry, llm_audit_logger
+from llm.ops.rate_limiter import TokenBucketRateLimiter, llm_rate_limiter
+from llm.ops.health_monitor import LLMHealthMonitor
+
+__version__ = "3.6.0"
 
 __all__ = [
     "LLMConfig",
@@ -76,4 +81,12 @@ __all__ = [
     "ToolCallingEngine",
     "ToolCallResult",
     "RAGLLMPipeline",
+    "CircuitBreaker",
+    "CircuitState",
+    "AuditLogger",
+    "AuditEntry",
+    "llm_audit_logger",
+    "TokenBucketRateLimiter",
+    "llm_rate_limiter",
+    "LLMHealthMonitor",
 ]
