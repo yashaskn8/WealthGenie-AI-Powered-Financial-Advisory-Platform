@@ -18,7 +18,12 @@ from llm.schema import (
     QuantizationType,
 )
 
-__version__ = "3.1.0"
+from llm.dataset.pipeline import FinancialDatasetPipeline
+from llm.dataset.cleaner import clean_text
+from llm.dataset.formatter import format_sample_to_text
+from llm.dataset.loader import load_dataset_file, save_dataset_file
+
+__version__ = "3.2.0"
 
 __all__ = [
     "LLMConfig",
@@ -34,4 +39,9 @@ __all__ = [
     "LLMMetadata",
     "LLMProviderType",
     "QuantizationType",
+    "FinancialDatasetPipeline",
+    "clean_text",
+    "format_sample_to_text",
+    "load_dataset_file",
+    "save_dataset_file",
 ]
