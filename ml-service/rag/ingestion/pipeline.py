@@ -17,6 +17,8 @@ from rag.schema import Document, TextChunk
 from rag.vector_store.base import BaseVectorStore
 from rag.vector_store.memory_vector_store import PersistentVectorStore
 
+from rag.lifecycle.manager import DocumentLifecycleManager
+
 logger = logging.getLogger("wealthgenie.rag.ingestion")
 
 
@@ -67,6 +69,10 @@ class IngestionPipeline:
 
         # 4. Store Chunks in Vector Store
         added_count = self.vector_store.add_chunks(chunks)
+
+        # 5. Register Document Metadata in DocumentLifecycleManager
+        lifecycle_mgr = DocumentLifecycleManager(vector_store=self.vector_store)
+        lifecycle_mgr.register_document(document, len(chunks))
 
         return {
             "status": "success",

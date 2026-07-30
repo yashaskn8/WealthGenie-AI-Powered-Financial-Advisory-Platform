@@ -92,8 +92,34 @@ def index_document(request: IngestTextRequest):
         raise HTTPException(status_code=400, detail=f"Ingestion error: {str(e)}")
 
 
+from rag.lifecycle.manager import DocumentLifecycleManager
+
+lifecycle_manager = DocumentLifecycleManager(vector_store=ingestion_pipeline.vector_store)
+
+
 @rag_router.get("/documents")
-def list_documents():
-    """Lists metadata for all unique indexed documents in vector store."""
-    stats = ingestion_pipeline.vector_store.get_stats()
-    return {"status": "success", "document_summary": stats}
+def list_documents(include_inactive: bool = False):
+    """Lists all registered documents in the knowledge base."""
+    return {"documents": lifecycle_manager.list_documents(include_inactive=include_inactive)}
+
+
+@rag_router.delete("/documents/{doc_id}")
+def delete_document(doc_id: str, hard_delete: bool = True):
+    """Deletes or soft-deletes a document and purges vector index chunks."""
+    if hard_delete:
+        success = lifecycle_manager.hard_delete_document(doc_id)
+    else:
+        success = lifecycle_manager.soft_delete_document(doc_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
+    return {"status": "success", "message": f"Document '{doc_id}' deleted successfully."}
+
+
+@rag_router.put("/documents/{doc_id}")
+def update_document(doc_id: str, title: Optional[str] = None, author: Optional[str] = None):
+    """Updates metadata across document registry and vector store chunks."""
+    success = lifecycle_manager.update_metadata(doc_id, new_title=title, new_author=author)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
+    return {"status": "success", "message": f"Metadata updated for document '{doc_id}'."}
