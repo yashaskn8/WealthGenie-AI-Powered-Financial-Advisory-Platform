@@ -23,7 +23,10 @@ from llm.dataset.cleaner import clean_text
 from llm.dataset.formatter import format_sample_to_text
 from llm.dataset.loader import load_dataset_file, save_dataset_file
 
-__version__ = "3.2.0"
+from llm.training.trainer import LoRATrainingPlatform
+from llm.training.schema import FineTuningConfig, LoRAConfigSchema, FineTuningReport
+
+__version__ = "3.3.0"
 
 __all__ = [
     "LLMConfig",
@@ -44,4 +47,8 @@ __all__ = [
     "format_sample_to_text",
     "load_dataset_file",
     "save_dataset_file",
+    "LoRATrainingPlatform",
+    "FineTuningConfig",
+    "LoRAConfigSchema",
+    "FineTuningReport",
 ]
