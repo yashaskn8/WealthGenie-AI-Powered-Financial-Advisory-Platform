@@ -1,0 +1,131 @@
+"""
+WealthGenie RAG Subsystem - RAG Evaluation Engine
+Evaluates retrieval and grounded generation quality, generating and persisting structured evaluation reports.
+"""
+
+import json
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, Any, List, Set, Optional
+
+from model.config import BASE_DIR
+from rag.evaluation.metrics import (
+    compute_recall_at_k,
+    compute_precision_at_k,
+    compute_mrr,
+    compute_hit_rate,
+    compute_ndcg,
+    compute_context_coverage,
+    compute_chunk_diversity,
+    compute_citation_accuracy,
+    compute_grounding_score,
+)
+from rag.schema import RAGQueryResponse, RetrievedChunk
+
+EVALS_DIR = BASE_DIR / "reports" / "rag_evals"
+EVALS_DIR.mkdir(parents=True, exist_ok=True)
+
+logger = logging.getLogger("wealthgenie.rag.evaluation")
+
+
+class RAGEvaluator:
+    """Production evaluation engine for measuring retrieval quality and answer grounding."""
+
+    def __init__(self, evals_dir: Path = EVALS_DIR):
+        self.evals_dir = evals_dir
+        self.evals_dir.mkdir(parents=True, exist_ok=True)
+
+    def evaluate_query_response(
+        self,
+        query: str,
+        response: RAGQueryResponse,
+        ground_truth_chunk_ids: Optional[Set[str]] = None,
+        k: int = 4,
+    ) -> Dict[str, Any]:
+        """
+        Evaluates a single RAG query response across all retrieval and generation quality metrics.
+        """
+        retrieved_ids = [r.chunk.chunk_id for r in response.retrieved_chunks]
+        retrieved_texts = [r.chunk.content for r in response.retrieved_chunks]
+        embeddings = [r.chunk.embedding for r in response.retrieved_chunks if r.chunk.embedding]
+
+        gt_ids = ground_truth_chunk_ids or set(retrieved_ids)
+
+        recall_k = compute_recall_at_k(retrieved_ids, gt_ids, k)
+        precision_k = compute_precision_at_k(retrieved_ids, gt_ids, k)
+        mrr = compute_mrr(retrieved_ids, gt_ids)
+        hit_rate = compute_hit_rate(retrieved_ids, gt_ids, k)
+        ndcg = compute_ndcg(retrieved_ids, gt_ids, k)
+
+        coverage = compute_context_coverage(query, retrieved_texts)
+        diversity = compute_chunk_diversity(embeddings) if embeddings else 1.0
+        citation_acc = compute_citation_accuracy(response.citations, response.retrieved_chunks)
+        grounding = compute_grounding_score(response.answer, retrieved_texts)
+
+        eval_results = {
+            "query": query,
+            "metrics": {
+                f"recall_at_{k}": round(recall_k, 4),
+                f"precision_at_{k}": round(precision_k, 4),
+                "mrr": round(mrr, 4),
+                "hit_rate": round(hit_rate, 4),
+                f"ndcg_at_{k}": round(ndcg, 4),
+                "context_coverage": round(coverage, 4),
+                "chunk_diversity": round(diversity, 4),
+                "citation_accuracy": round(citation_acc, 4),
+                "grounding_score": round(grounding, 4),
+            },
+            "retrieved_chunk_count": len(retrieved_ids),
+            "citations_count": len(response.citations),
+            "timing_metrics": response.metrics,
+        }
+
+        return eval_results
+
+    def evaluate_and_persist(
+        self,
+        query: str,
+        response: RAGQueryResponse,
+        ground_truth_chunk_ids: Optional[Set[str]] = None,
+        k: int = 4,
+    ) -> Path:
+        """
+        Evaluates query response and persists structured JSON evaluation report to evals_dir.
+        """
+        results = self.evaluate_query_response(query, response, ground_truth_chunk_ids, k)
+
+        timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        eval_id = f"eval_rag_{timestamp_str}"
+        eval_file = self.evals_dir / f"{eval_id}.json"
+
+        report = {
+            "eval_id": eval_id,
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            **results,
+        }
+
+        with open(eval_file, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
+        logger.info(f"RAG Evaluation report persisted successfully to {eval_file}")
+        return eval_file
+
+    def list_evaluation_reports(self) -> List[Dict[str, Any]]:
+        """Lists summaries of all historical RAG evaluation reports."""
+        summaries = []
+        for path in sorted(self.evals_dir.glob("eval_rag_*.json"), reverse=True):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                summaries.append({
+                    "eval_id": data.get("eval_id"),
+                    "timestamp": data.get("timestamp_utc"),
+                    "query": data.get("query"),
+                    "grounding_score": data.get("metrics", {}).get("grounding_score"),
+                    "mrr": data.get("metrics", {}).get("mrr"),
+                    "file_path": str(path),
+                })
+            except Exception as e:
+                logger.warning(f"Could not parse eval report {path}: {e}")
+        return summaries
