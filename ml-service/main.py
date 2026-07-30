@@ -122,7 +122,9 @@ app = FastAPI(
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, Security, status
 
 from rag.router import rag_router
+from llm.router import llm_router
 app.include_router(rag_router)
+app.include_router(llm_router)
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
