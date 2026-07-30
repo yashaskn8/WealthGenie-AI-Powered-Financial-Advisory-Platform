@@ -20,6 +20,7 @@ class RAGConfig(BaseModel):
     embedding_provider: str = Field("tf_idf_dense", description="Embedding provider: tf_idf_dense, sentence_transformer, or custom")
     top_k: int = Field(4, ge=1, le=20, description="Top-k chunks to retrieve")
     similarity_threshold: float = Field(0.1, ge=0.0, le=1.0, description="Minimum cosine similarity score")
+    reranker_strategy: str = Field("no_op", description="Reranker strategy: no_op, relevance_score, or cross_encoder")
     vector_store_path: Path = Field(STORAGE_DIR / "vector_index.json", description="Persisted vector store index path")
     cache_path: Path = Field(STORAGE_DIR / "embedding_cache.json", description="Persisted embedding cache path")
     document_registry_path: Path = Field(STORAGE_DIR / "documents.json", description="Document metadata store path")
