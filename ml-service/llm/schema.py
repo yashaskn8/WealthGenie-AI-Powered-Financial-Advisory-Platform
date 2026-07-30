@@ -62,3 +62,9 @@ class LLMGenerateResponse(BaseModel):
     latency_ms: float = Field(0.0, description="Total generation latency in milliseconds")
     model_name: str = Field(..., description="Model identifier used for generation")
     provider: str = Field(..., description="Provider backend used for generation")
+
+
+class ChatMessage(BaseModel):
+    """Represents a single chat turn in a multi-turn conversation."""
+    role: str = Field(..., description="Message role (system, user, assistant)")
+    content: str = Field(..., description="Message content text")

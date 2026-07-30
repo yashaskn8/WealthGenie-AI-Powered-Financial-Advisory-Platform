@@ -35,7 +35,12 @@ from llm.evaluation.metrics import (
     compute_grounding_faithfulness,
 )
 
-__version__ = "3.4.0"
+from llm.inference.conversation import ConversationHistory
+from llm.inference.tools import ToolCallingEngine, ToolCallResult
+from llm.inference.rag_integration import RAGLLMPipeline
+from llm.schema import ChatMessage
+
+__version__ = "3.5.0"
 
 __all__ = [
     "LLMConfig",
@@ -51,6 +56,7 @@ __all__ = [
     "LLMMetadata",
     "LLMProviderType",
     "QuantizationType",
+    "ChatMessage",
     "FinancialDatasetPipeline",
     "clean_text",
     "format_sample_to_text",
@@ -66,4 +72,8 @@ __all__ = [
     "compute_rouge",
     "compute_bertscore_approx",
     "compute_grounding_faithfulness",
+    "ConversationHistory",
+    "ToolCallingEngine",
+    "ToolCallResult",
+    "RAGLLMPipeline",
 ]
