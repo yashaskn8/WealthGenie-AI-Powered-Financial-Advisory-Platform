@@ -25,9 +25,9 @@ from rag.vector_store.memory_vector_store import PersistentVectorStore
 
 logger = logging.getLogger("wealthgenie.rag.retrieval")
 
-from rag.query_understanding.pipeline import QueryUnderstandingPipeline
-
+from rag.cache.manager import MultiLevelCacheManager
 from rag.observability.metrics_collector import RAGObservabilityCollector
+from rag.query_understanding.pipeline import QueryUnderstandingPipeline
 
 # Registry of built-in reranker strategies
 _RERANKER_REGISTRY: Dict[str, type] = {
@@ -72,7 +72,7 @@ def get_retriever(
 
 
 class RAGPipeline:
-    """End-to-End Retrieval-Augmented Generation pipeline with strategy retrieval and reranking."""
+    """End-to-End Retrieval-Augmented Generation pipeline with strategy retrieval, reranking, and multi-level caching."""
 
     def __init__(
         self,
@@ -81,6 +81,7 @@ class RAGPipeline:
         retriever: Optional[BaseRetriever] = None,
         reranker: Optional[BaseReranker] = None,
         query_understanding: Optional[QueryUnderstandingPipeline] = None,
+        cache_manager: Optional[MultiLevelCacheManager] = None,
         telemetry: Optional[RAGObservabilityCollector] = None,
         config: Optional[RAGConfig] = None,
     ):
@@ -95,12 +96,19 @@ class RAGPipeline:
         )
         self.reranker = reranker or get_reranker(self.config.reranker_strategy)
         self.query_understanding = query_understanding or QueryUnderstandingPipeline()
+        self.cache_manager = cache_manager or MultiLevelCacheManager()
         self.telemetry = telemetry or RAGObservabilityCollector()
         self.prompt_builder = PromptBuilder()
         self.citation_engine = CitationEngine()
 
     def query(self, request: RAGQueryRequest) -> RAGQueryResponse:
         """Executes full RAG query workflow and returns grounded response with citations."""
+        # Check Response Cache
+        cached_response = self.cache_manager.get_response(request.question)
+        if cached_response is not None:
+            logger.info(f"Serving cached RAG query response for '{request.question[:30]}...'")
+            return cached_response
+
         start_time = time.perf_counter()
         top_k = request.top_k or self.config.top_k
 
@@ -191,13 +199,15 @@ class RAGPipeline:
             "top_score": top_score,
         }
 
-        return RAGQueryResponse(
+        response = RAGQueryResponse(
             answer=answer,
             citations=citations,
             retrieved_chunks=final_chunks,
             metrics=metrics,
             grounded=len(final_chunks) > 0,
         )
+        self.cache_manager.put_response(request.question, response)
+        return response
 
     def _generate_grounded_answer(self, question: str, retrieved_chunks: List[RetrievedChunk]) -> str:
         """Synthesizes an advisory answer strictly grounded in retrieved evidence."""
