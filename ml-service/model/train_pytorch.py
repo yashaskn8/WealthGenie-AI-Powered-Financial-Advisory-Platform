@@ -1,13 +1,14 @@
 """
-WealthGenie ML Microservice - PyTorch Model Trainer
-Orchestrates neural network training, validation loss monitoring, early stopping, and artifact saving.
+WealthGenie ML Microservice - Advanced PyTorch Trainer
+Includes Pre-Training Data Validation Gate, Gradient Clipping, Automatic Mixed Precision (AMP),
+Experiment Tracking, and Publication Visualizations.
 """
 
 import json
 import logging
 import time
 from pathlib import Path
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 
 import numpy as np
 import torch
@@ -21,9 +22,14 @@ from model.config import (
     get_device,
     set_random_seed,
 )
+from model.data_validator import PreTrainingDataValidator, DataValidationError
 from model.dataset import create_data_loaders
+from model.evaluate import evaluate_pytorch_model
+from model.experiments import ExperimentTracker
+from model.ft_transformer import FTTransformer, FTTransformerConfig
 from model.model import FinancialMLP
 from model.preprocessing import FeaturePreprocessor, prepare_synthetic_training_data
+from model.visualizer import plot_training_curves, plot_confusion_matrix
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("wealthgenie.pytorch_trainer")
@@ -56,26 +62,33 @@ def train_pytorch_model(
     paths: ArtifactPaths = ArtifactPaths(),
     X: np.ndarray = None,
     y: np.ndarray = None,
+    max_grad_norm: float = 1.0,
 ) -> Dict[str, Any]:
     """
-    Executes complete training pipeline for the PyTorch FinancialMLP model.
-    Saves model weights, scaler, and training metadata to disk.
+    Executes advanced training pipeline for PyTorch FinancialMLP.
+    Includes Data Validation, Gradient Clipping, AMP, Visualizations, and Experiment Tracking.
     """
     set_random_seed(training_config.random_seed)
     device = get_device()
     logger.info(f"Initiating PyTorch training on device: {device}")
 
-    # 1. Prepare synthetic dataset if X, y not explicitly provided
+    # 1. Prepare synthetic dataset if X, y not provided
     if X is None or y is None:
         logger.info("Generating synthetic training dataset...")
         X, y = prepare_synthetic_training_data(num_samples=2000, seed=training_config.random_seed)
 
+    # 2. Pre-Training Data Validation Gate
+    validator = PreTrainingDataValidator()
+    validator_report = validator.validate(X, y)
+    logger.info("Data Validation Gate Passed.")
+
+    # 3. Create DataLoaders
     preprocessor = FeaturePreprocessor()
     train_loader, val_loader, test_loader, preprocessor = create_data_loaders(
         X, y, preprocessor, training_config
     )
 
-    # 2. Instantiate model, loss, optimizer, and LR scheduler
+    # 4. Instantiate Model, Loss, Optimizer, and LR Scheduler
     model = FinancialMLP(model_config).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.AdamW(
@@ -91,6 +104,7 @@ def train_pytorch_model(
         min_lr=training_config.min_lr,
     )
     early_stopping = EarlyStopping(patience=training_config.patience)
+    scaler = torch.cuda.amp.GradScaler() if device.type == "cuda" else None
 
     history: Dict[str, List[float]] = {
         "train_loss": [],
@@ -104,7 +118,7 @@ def train_pytorch_model(
     best_val_loss = float("inf")
     best_model_weights = None
 
-    logger.info(f"Starting training for up to {training_config.epochs} epochs...")
+    logger.info(f"Starting PyTorch MLP training for up to {training_config.epochs} epochs...")
 
     for epoch in range(1, training_config.epochs + 1):
         # ── Training Phase ──
@@ -115,12 +129,28 @@ def train_pytorch_model(
 
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
+
+            if scaler is not None:
+                with torch.cuda.amp.autocast():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+
+                # Loss anomaly check
+                if torch.isnan(loss) or torch.isinf(loss):
+                    raise ValueError(f"NaN/Inf loss anomaly detected at epoch {epoch}")
+
+                loss.backward()
+                nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+                optimizer.step()
 
             running_loss += loss.item() * inputs.size(0)
             _, predicted = torch.max(outputs, 1)
@@ -153,10 +183,10 @@ def train_pytorch_model(
         current_lr = optimizer.param_groups[0]["lr"]
         scheduler.step(epoch_val_loss)
 
-        history["train_loss"].append(epoch_train_loss)
-        history["val_loss"].append(epoch_val_loss)
-        history["train_acc"].append(epoch_train_acc)
-        history["val_acc"].append(epoch_val_acc)
+        history["train_loss"].append(round(epoch_train_loss, 4))
+        history["val_loss"].append(round(epoch_val_loss, 4))
+        history["train_acc"].append(round(epoch_train_acc, 4))
+        history["val_acc"].append(round(epoch_val_acc, 4))
         history["learning_rates"].append(current_lr)
 
         if epoch % 10 == 0 or epoch == 1:
@@ -166,7 +196,6 @@ def train_pytorch_model(
                 f"Val Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f} | LR: {current_lr:.6f}"
             )
 
-        # Check for best model checkpointing
         if epoch_val_loss < best_val_loss:
             best_val_loss = epoch_val_loss
             best_model_weights = model.state_dict().copy()
@@ -176,13 +205,13 @@ def train_pytorch_model(
             break
 
     elapsed_time = time.time() - start_time
-    logger.info(f"Training completed in {elapsed_time:.2f} seconds.")
-
-    # 3. Load best weights before saving
     if best_model_weights is not None:
         model.load_state_dict(best_model_weights)
 
-    # 4. Save artifacts
+    # 5. Evaluate Test Set
+    eval_metrics = evaluate_pytorch_model(model, test_loader, device)
+
+    # 6. Save Artifacts
     paths.model_weights.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), paths.model_weights)
     preprocessor.save(paths.scaler_path)
@@ -206,12 +235,27 @@ def train_pytorch_model(
     with open(paths.metrics_path, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2)
 
-    logger.info(f"Saved PyTorch model weights to {paths.model_weights}")
-    logger.info(f"Saved scaler to {paths.scaler_path}")
-    logger.info(f"Saved metadata to {paths.metadata_path}")
+    # 7. Generate Visualizations
+    plot_training_curves(history)
+    if "confusion_matrix" in eval_metrics:
+        plot_confusion_matrix(eval_metrics["confusion_matrix"], metadata["target_classes"])
 
+    # 8. Log Structured Experiment
+    tracker = ExperimentTracker()
+    tracker.log_experiment(
+        model_name="PyTorch_FinancialMLP",
+        model_type="MultiLayerPerceptron",
+        hyperparameters={**model_config.model_dump(), **training_config.model_dump()},
+        dataset_stats={"num_samples": len(X), "num_features": X.shape[1]},
+        metrics=eval_metrics,
+        history=history,
+        model_artifact_path=paths.model_weights,
+    )
+
+    logger.info(f"PyTorch MLP training pipeline finished successfully.")
     return {
         "metadata": metadata,
+        "metrics": eval_metrics,
         "history": history,
         "preprocessor": preprocessor,
         "model": model,
@@ -219,5 +263,60 @@ def train_pytorch_model(
     }
 
 
+def train_ft_transformer_model(
+    config: FTTransformerConfig = FTTransformerConfig(),
+    training_config: TrainingConfig = TrainingConfig(),
+    save_path: Path = None,
+    scaler_path: Path = None,
+    X: np.ndarray = None,
+    y: np.ndarray = None,
+) -> Dict[str, Any]:
+    """
+    Executes training pipeline for the PyTorch FT-Transformer tabular neural network model.
+    """
+    set_random_seed(training_config.random_seed)
+    device = get_device()
+
+    base_dir = Path(__file__).resolve().parent / "saved_models"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    save_path = save_path or (base_dir / "ft_transformer.pt")
+    scaler_path = scaler_path or (base_dir / "scaler.pkl")
+
+    if X is None or y is None:
+        X, y = prepare_synthetic_training_data(num_samples=2000, seed=training_config.random_seed)
+
+    preprocessor = FeaturePreprocessor()
+    train_loader, val_loader, test_loader, preprocessor = create_data_loaders(
+        X, y, preprocessor, training_config
+    )
+
+    model = FTTransformer(config).to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=training_config.learning_rate, weight_decay=1e-4)
+
+    start_time = time.time()
+    best_loss = float("inf")
+
+    for epoch in range(1, training_config.epochs + 1):
+        model.train()
+        for inputs, targets in train_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+
+    torch.save(model.state_dict(), save_path)
+    preprocessor.save(scaler_path)
+
+    eval_metrics = evaluate_pytorch_model(model, test_loader, device)
+    logger.info(f"FT-Transformer trained successfully and saved to {save_path}")
+
+    return {"metrics": eval_metrics, "save_path": str(save_path)}
+
+
 if __name__ == "__main__":
     train_pytorch_model()
+    train_ft_transformer_model()

@@ -2,12 +2,12 @@
 
 [![React 19](https://img.shields.io/badge/Frontend-React_19_|_Vite-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Express.js](https://img.shields.io/badge/Backend-Express.js_|_Node.js-000000?style=flat-square&logo=express)](https://expressjs.com/)
-[![FastAPI](https://img.shields.io/badge/ML_Service-FastAPI_|_Python_3.12-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/ML_Platform-FastAPI_|_Python_3.12-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![PyTorch](https://img.shields.io/badge/Deep_Learning-PyTorch-EE4C2C?style=flat-square&logo=pytorch)](https://pytorch.org/)
-[![Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn_|_SHAP-F7931E?style=flat-square&logo=scikitlearn)](https://scikit-learn.org/)
+[![Scikit-Learn](https://img.shields.io/badge/Classical_ML-Scikit--Learn_|_SHAP-F7931E?style=flat-square&logo=scikitlearn)](https://scikit-learn.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** combines multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and dual-model ML recommendation pipelines (Classical Random Forest + PyTorch Deep Learning).
+A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** combines multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and a production-grade ML platform supporting dual-model inference (Classical Random Forest + PyTorch Deep Learning) through a unified Model Registry architecture.
 
 ---
 
@@ -28,17 +28,23 @@ graph TD
     
     DataStore[("MongoDB Store")]
     
-    subgraph MLService ["FastAPI ML Service"]
-        RFModel["Random Forest + TreeSHAP Explainer"]
-        PyTorchModel["PyTorch Deep Learning MLP Model"]
+    subgraph MLPlatform ["FastAPI ML Platform"]
+        Registry["Model Registry"]
+        RFModel["Random Forest + TreeSHAP"]
+        MLPModel["PyTorch MLP"]
+        FTTModel["FT-Transformer"]
     end
     
     GeminiAPI["Google Gemini API (Advisory Chat)"]
 
     Client -->|"REST / HTTPS"| Gateway
     Gateway -->|"Mongoose ODM"| DataStore
-    Gateway -->|"HTTP / REST"| MLService
+    Gateway -->|"HTTP / REST"| MLPlatform
     Gateway -->|"SDK / HTTPS"| GeminiAPI
+    
+    Registry --> RFModel
+    Registry --> MLPModel
+    Registry --> FTTModel
     
     ScoringPipe --> TaxEngine
     ScoringPipe --> QMC
@@ -47,9 +53,52 @@ graph TD
 
 ---
 
-## 🔄 Computational & Recommendation Pipeline
+## 🧠 ML Platform Architecture
 
-The diagram below details the data flow when evaluating investor profiles, calculating tax efficiencies, optimizing allocations, and deriving explainable recommendations:
+The ML microservice follows a modular, registry-driven design supporting dynamic model registration and unified inference contracts.
+
+```mermaid
+classDiagram
+    class BasePredictor {
+        <<abstract>>
+        +load_artifacts()
+        +predict(feature_array) Dict
+        +predict_proba(feature_array) ndarray
+        +model_name: str
+        +is_loaded: bool
+    }
+    
+    class RandomForestPredictor {
+        +model: RandomForestClassifier
+        +label_encoder: LabelEncoder
+    }
+    
+    class MLPPredictor {
+        +model: FinancialMLP
+        +preprocessor: FeaturePreprocessor
+    }
+    
+    class FTTransformerPredictor {
+        +model: FTTransformer
+        +preprocessor: FeaturePreprocessor
+    }
+    
+    class ModelRegistry {
+        +register(name, predictor)
+        +get(name) BasePredictor
+        +list_models() List
+        +get_loaded_predictors() Dict
+    }
+    
+    BasePredictor <|-- RandomForestPredictor
+    BasePredictor <|-- MLPPredictor
+    BasePredictor <|-- FTTransformerPredictor
+    ModelRegistry o-- BasePredictor
+```
+
+---
+
+## 🔄 Training & Inference Pipeline
 
 ```mermaid
 sequenceDiagram
@@ -60,7 +109,7 @@ sequenceDiagram
     participant Tax as Tax Engine
     participant QMC as Quasi-Monte Carlo Engine
     participant MPT as Portfolio Engine
-    participant ML as FastAPI ML Microservice (RF + PyTorch)
+    participant ML as FastAPI ML Platform
 
     Investor->>Frontend: Submit Profile (Income, Savings, Risk, Horizon)
     Frontend->>Gateway: POST /api/recommend/recommend
@@ -70,7 +119,7 @@ sequenceDiagram
     QMC-->>Gateway: P10, P50, P90 Wealth Percentiles
     Gateway->>MPT: Solve Min Variance / Max Sharpe Allocations
     MPT-->>Gateway: Asset Weight Vectors
-    Gateway->>ML: POST /predict (Profile Vector)
+    Gateway->>ML: POST /predict (Profile Vector via ModelRegistry)
     ML-->>Gateway: Suitability Scores + SHAP Feature Attributions
     Gateway->>Gateway: Synthesize Multi-Factor Utility Score & Enforce Diversity
     Gateway-->>Frontend: Ranked Recommendations with Explainability
@@ -103,12 +152,26 @@ Provides three distinct asset allocation strategies derived from Modern Portfoli
 Orchestrates metadata-driven recommendation scoring across financial instruments:
 1. **Eligibility Filtering**: Gating instruments by age boundaries, income minimums, and lock-in constraints.
 2. **Multi-Factor Utility Scoring**: Weighing returns, risk capacity alignment, tax efficiency, liquidity, expense ratios, and horizon fit.
-3. **ML Confidence Boosting**: Merging ML microservice model confidence (Random Forest / PyTorch MLP) into relative scoring ranks.
+3. **ML Confidence Boosting**: Merging ML model confidence (Random Forest / PyTorch MLP / FT-Transformer) into relative scoring ranks via ModelRegistry.
 4. **Diversity Enforcement**: Guaranteeing top recommendations span distinct asset classes.
 
-### 5. Dual-Model Machine Learning Engine (FastAPI)
-- **Scikit-Learn Random Forest**: Evaluates investor risk profiles and outputs asset suitability confidence scores with **TreeSHAP (SHapley Additive exPlanations)** feature attributions.
-- **PyTorch Deep Learning MLP**: Deep Neural Network (`Linear -> BatchNorm1d -> ReLU -> Dropout -> Linear`) trained via custom AdamW optimizer, ReduceLROnPlateau scheduler, early stopping, and automatic best-model checkpointing. Supports `/predict/pytorch` and `/predict/compare` for side-by-side benchmarking.
+### 5. Production ML Platform (FastAPI)
+
+**Classical ML — Scikit-Learn Random Forest + TreeSHAP**
+- Evaluates investor risk profiles and outputs asset suitability confidence scores with TreeSHAP feature attributions for model explainability.
+
+**Deep Learning — PyTorch Multi-Layer Perceptron (MLP)**
+- Configurable `Linear → BatchNorm1d → ReLU → Dropout` architecture with AdamW optimizer, ReduceLROnPlateau scheduler, gradient clipping, NaN detection, and automatic mixed precision (AMP) on CUDA.
+
+**Modern Tabular DL — PyTorch FT-Transformer**
+- Feature Tokenizer Transformer (Gorishniy et al., NeurIPS 2021): transforms each numerical feature into a learned token embedding, prepends a trainable `[CLS]` token, and processes the sequence through multi-head self-attention Transformer Encoder blocks.
+
+**Platform Infrastructure**
+- **Model Registry**: Dynamic predictor registration and lifecycle management via `ModelRegistry`.
+- **BasePredictor Interface**: Abstract contract enforcing `load_artifacts()`, `predict()`, `predict_proba()` across all models.
+- **Pre-Training Data Validation Gate**: Validates datasets before training — detects missing values, duplicate rows, constant columns, class imbalance, and extreme outliers.
+- **Experiment Tracker**: Persists structured experiment records (hyperparameters, metrics, checksums, git commit hash) as JSON.
+- **Training Visualizer**: Generates publication-quality loss curves, accuracy curves, and confusion matrices.
 
 ---
 
@@ -119,8 +182,8 @@ Orchestrates metadata-driven recommendation scoring across financial instruments
 | **Frontend** | React 19, Vite, Vanilla CSS | Responsive UI, interactive charts, and real-time calculation dashboards |
 | **Backend API** | Node.js, Express.js, Mongoose | API Routing, financial math engines, session management |
 | **Database** | MongoDB | Document store for user profiles, portfolio snapshots, and investment catalogs |
-| **ML Microservice** | Python 3.12, FastAPI, PyTorch, Scikit-Learn, SHAP | Dual-model machine learning inference (RandomForest + PyTorch MLP), suitability scoring, TreeSHAP explainability |
-| **Testing** | Node.js Test Runner, Vitest, Pytest | Multi-tier test suites across unit, integration, and ML components |
+| **ML Platform** | Python 3.12, FastAPI, PyTorch, Scikit-Learn, SHAP | Multi-model ML platform with ModelRegistry, TreeSHAP explainability, and experiment tracking |
+| **Testing** | Node.js Test Runner, Vitest, Pytest | Multi-tier test suites across unit, integration, and ML validation |
 
 ---
 
@@ -128,32 +191,38 @@ Orchestrates metadata-driven recommendation scoring across financial instruments
 
 ```
 deploy-wealthgenie/
-├── reactapp/                 # Frontend React Single Page Application
+├── reactapp/                   # Frontend React Single Page Application
 │   ├── src/
-│   │   ├── components/       # Dashboard screens, modals, and input controls
-│   │   ├── engine/           # Client-side tax and SIP calculation helpers
-│   │   └── services/         # Axios API client modules
+│   │   ├── components/         # Dashboard screens, modals, and input controls
+│   │   ├── engine/             # Client-side tax and SIP calculation helpers
+│   │   └── services/           # Axios API client modules
 │   ├── package.json
 │   └── vite.config.js
 │
-├── server/                   # Backend Express.js REST API
-│   ├── services/             # Core analytical engines (Tax, Monte Carlo, Portfolio, Recommendation)
-│   ├── routes/               # API route handlers (/api/tax, /api/portfolio, /api/recommend, /api/montecarlo)
-│   ├── models/               # Mongoose schema definitions (User, Profile, Instrument)
-│   ├── test/                 # Node.js native unit & integration test suite
+├── server/                     # Backend Express.js REST API
+│   ├── services/               # Core analytical engines (Tax, Monte Carlo, Portfolio, Recommendation)
+│   ├── routes/                 # API route handlers
+│   ├── models/                 # Mongoose schema definitions
+│   ├── test/                   # Node.js native unit & integration test suite
 │   └── package.json
 │
-├── ml-service/               # FastAPI Machine Learning Microservice
-│   ├── model/                # Model modules:
-│   │   ├── config.py         # Hyperparameter & path configuration
-│   │   ├── dataset.py        # PyTorch FinancialDataset & DataLoader builders
-│   │   ├── preprocessing.py  # FeaturePreprocessor (StandardScaler)
-│   │   ├── model.py          # Configurable FinancialMLP (nn.Module)
-│   │   ├── train_pytorch.py  # PyTorch training loop with early stopping
-│   │   ├── evaluate.py       # Metrics calculator & dual-model comparator
-│   │   └── inference.py      # PyTorchInferenceEngine artifact loader & predictor
-│   ├── tests/                # Pytest suite for ML validation & PyTorch pipeline
-│   ├── main.py               # FastAPI service initialization and endpoint handlers
+├── ml-service/                 # FastAPI Machine Learning Platform
+│   ├── model/
+│   │   ├── base.py             # BasePredictor abstract interface
+│   │   ├── registry.py         # Dynamic ModelRegistry
+│   │   ├── config.py           # Centralized hyperparameter & path configuration
+│   │   ├── preprocessing.py    # FeaturePreprocessor (StandardScaler pipeline)
+│   │   ├── dataset.py          # PyTorch FinancialDataset & DataLoader builders
+│   │   ├── data_validator.py   # Pre-Training Data Validation Gate
+│   │   ├── model.py            # FinancialMLP (nn.Module)
+│   │   ├── ft_transformer.py   # FT-Transformer (nn.Module)
+│   │   ├── train_pytorch.py    # Training pipeline (MLP + FT-Transformer)
+│   │   ├── evaluate.py         # Comprehensive evaluation & benchmarking
+│   │   ├── inference.py        # Concrete predictor implementations
+│   │   ├── experiments.py      # Experiment Tracker (structured JSON logs)
+│   │   └── visualizer.py       # Publication-quality training visualizations
+│   ├── tests/                  # Pytest suite (ML validation, PyTorch, FT-Transformer, Registry)
+│   ├── main.py                 # FastAPI application & endpoint handlers
 │   └── requirements.txt
 │
 └── README.md
@@ -180,8 +249,6 @@ cd deploy-wealthgenie
 ```bash
 cd server
 npm install
-
-# Create environment configuration
 cp .env.example .env
 ```
 
@@ -208,7 +275,7 @@ npm run dev
 ```
 Access the application at `http://localhost:5173`.
 
-### Step 4: Set Up ML Microservice (`ml-service/`)
+### Step 4: Set Up ML Platform (`ml-service/`)
 ```bash
 cd ../ml-service
 python -m venv .venv
@@ -219,10 +286,10 @@ python -m venv .venv
 
 pip install -r requirements.txt
 
-# Train PyTorch Deep Learning Model:
+# Train all models (MLP + FT-Transformer):
 python model/train_pytorch.py
 
-# Launch FastAPI Microservice:
+# Launch FastAPI ML Platform:
 uvicorn main:app --reload --port 8000
 ```
 
@@ -237,10 +304,23 @@ uvicorn main:app --reload --port 8000
 | `POST` | `/api/portfolio/rebalance` | Calculates target drift and transactional directives for current portfolio |
 | `POST` | `/api/montecarlo/simulate` | Runs Quasi-Monte Carlo simulation and returns $P_{10}, P_{50}, P_{90}$ wealth bands |
 | `POST` | `/api/recommend/recommend` | Runs 4-stage scoring pipeline and returns ranked investment suggestions |
-| `POST` | `/predict` or `/predict/enriched` | FastAPI ML service inference using Random Forest + TreeSHAP explainability |
-| `POST` | `/predict/pytorch` | FastAPI ML service inference using PyTorch Deep Learning MLP model |
-| `POST` | `/predict/compare` | Side-by-side performance & latency comparison (Random Forest vs. PyTorch MLP) |
+| `POST` | `/predict` or `/predict/enriched` | Random Forest + TreeSHAP inference |
+| `POST` | `/predict/pytorch` | PyTorch MLP inference |
+| `POST` | `/predict/ft_transformer` | FT-Transformer inference |
+| `POST` | `/predict/compare` | Multi-model side-by-side comparison (all loaded models in registry) |
+| `GET` | `/health` | Service health check |
+| `GET` | `/readiness` | Model readiness probe (loaded model count and names) |
+| `GET` | `/models` | Lists all registered models in the ModelRegistry |
 | `POST` | `/api/chat/message` | Context-aware AI advisory assistance grounded in user financial profile |
+
+---
+
+### Adding a New Model to the Platform
+
+1. Implement a new class extending `BasePredictor` in `model/inference.py`.
+2. Implement `load_artifacts()`, `predict()`, `predict_proba()`, and the `model_name` / `is_loaded` properties.
+3. Register the predictor in `main.py` lifespan: `registry.register("your_model", YourModelPredictor())`.
+4. Add a new FastAPI endpoint in `main.py` calling `registry.get("your_model").predict(...)`.
 
 ---
 
@@ -257,9 +337,9 @@ npm test
 cd ../reactapp
 npm test
 
-# 3. ML Microservice Pytest Suite
+# 3. ML Platform Pytest Suite
 cd ../ml-service
-python -m pytest tests/ -p no:phoenix
+python -m pytest tests/ -p no:phoenix -v
 ```
 
 ---
