@@ -27,6 +27,8 @@ logger = logging.getLogger("wealthgenie.rag.retrieval")
 
 from rag.query_understanding.pipeline import QueryUnderstandingPipeline
 
+from rag.observability.metrics_collector import RAGObservabilityCollector
+
 # Registry of built-in reranker strategies
 _RERANKER_REGISTRY: Dict[str, type] = {
     "no_op": NoOpReranker,
@@ -79,6 +81,7 @@ class RAGPipeline:
         retriever: Optional[BaseRetriever] = None,
         reranker: Optional[BaseReranker] = None,
         query_understanding: Optional[QueryUnderstandingPipeline] = None,
+        telemetry: Optional[RAGObservabilityCollector] = None,
         config: Optional[RAGConfig] = None,
     ):
         self.config = config or RAGConfig()
@@ -92,6 +95,7 @@ class RAGPipeline:
         )
         self.reranker = reranker or get_reranker(self.config.reranker_strategy)
         self.query_understanding = query_understanding or QueryUnderstandingPipeline()
+        self.telemetry = telemetry or RAGObservabilityCollector()
         self.prompt_builder = PromptBuilder()
         self.citation_engine = CitationEngine()
 
@@ -124,22 +128,53 @@ class RAGPipeline:
         # Trim to final top_k after reranking
         final_chunks = reranked_chunks[:top_k]
 
-        # 3. Assemble Prompt Context
+        # 4. Assemble Prompt Context
+        t3 = time.perf_counter()
         prompt = self.prompt_builder.build_prompt(
             question=request.question,
             retrieved_chunks=final_chunks,
             user_profile=request.user_profile,
         )
+        prompt_latency = (time.perf_counter() - t3) * 1000.0
 
-        # 4. Generate Answer (Grounded Synthesis)
+        # 5. Generate Answer (Grounded Synthesis)
+        t4 = time.perf_counter()
         answer = self._generate_grounded_answer(request.question, final_chunks)
+        answer_latency = (time.perf_counter() - t4) * 1000.0
 
-        # 5. Extract Citations
+        # 6. Extract Citations
         citations = self.citation_engine.generate_citations(final_chunks)
         if request.include_citations and citations:
             answer += self.citation_engine.format_citations_markdown(citations)
 
         total_latency = (time.perf_counter() - start_time) * 1000.0
+
+        # Record Telemetry Trace
+        context_char_len = sum(len(c.chunk.content) for c in final_chunks)
+        top_score = final_chunks[0].score if final_chunks else 0.0
+        cache_hits = getattr(self.embedder.cache, "hits", 0) if getattr(self.embedder, "cache", None) else 0
+        cache_misses = getattr(self.embedder.cache, "misses", 0) if getattr(self.embedder, "cache", None) else 0
+
+        self.telemetry.record_query_trace(
+            query=request.question,
+            search_query=search_query,
+            retrieval_strategy=self.retriever.strategy_name,
+            reranker_strategy=self.reranker.reranker_name,
+            stage_latencies_ms={
+                "query_understanding": qu_latency,
+                "retrieval": retrieval_latency,
+                "reranking": reranking_latency,
+                "prompt_assembly": prompt_latency,
+                "answer_synthesis": answer_latency,
+            },
+            chunks_retrieved=len(retrieved_chunks),
+            chunks_after_rerank=len(final_chunks),
+            context_char_count=context_char_len,
+            citation_count=len(citations),
+            top_score=top_score,
+            cache_hits=cache_hits,
+            cache_misses=cache_misses,
+        )
 
         metrics = {
             "query_understanding_latency_ms": round(qu_latency, 2),
@@ -147,11 +182,13 @@ class RAGPipeline:
             "retrieval_strategy": self.retriever.strategy_name,
             "retrieval_latency_ms": round(retrieval_latency, 2),
             "reranking_latency_ms": round(reranking_latency, 2),
+            "prompt_assembly_latency_ms": round(prompt_latency, 2),
+            "answer_synthesis_latency_ms": round(answer_latency, 2),
             "total_latency_ms": round(total_latency, 2),
             "chunks_retrieved": len(retrieved_chunks),
             "chunks_after_reranking": len(final_chunks),
             "reranker": self.reranker.reranker_name,
-            "top_score": final_chunks[0].score if final_chunks else 0.0,
+            "top_score": top_score,
         }
 
         return RAGQueryResponse(
