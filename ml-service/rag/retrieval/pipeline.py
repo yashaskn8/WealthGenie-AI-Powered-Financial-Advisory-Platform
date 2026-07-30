@@ -25,6 +25,8 @@ from rag.vector_store.memory_vector_store import PersistentVectorStore
 
 logger = logging.getLogger("wealthgenie.rag.retrieval")
 
+from rag.query_understanding.pipeline import QueryUnderstandingPipeline
+
 # Registry of built-in reranker strategies
 _RERANKER_REGISTRY: Dict[str, type] = {
     "no_op": NoOpReranker,
@@ -76,6 +78,7 @@ class RAGPipeline:
         vector_store: Optional[BaseVectorStore] = None,
         retriever: Optional[BaseRetriever] = None,
         reranker: Optional[BaseReranker] = None,
+        query_understanding: Optional[QueryUnderstandingPipeline] = None,
         config: Optional[RAGConfig] = None,
     ):
         self.config = config or RAGConfig()
@@ -88,6 +91,7 @@ class RAGPipeline:
             config=self.config,
         )
         self.reranker = reranker or get_reranker(self.config.reranker_strategy)
+        self.query_understanding = query_understanding or QueryUnderstandingPipeline()
         self.prompt_builder = PromptBuilder()
         self.citation_engine = CitationEngine()
 
@@ -96,17 +100,23 @@ class RAGPipeline:
         start_time = time.perf_counter()
         top_k = request.top_k or self.config.top_k
 
-        # 1. Strategy Retrieval
+        # 1. Query Understanding & Expansion
+        t0 = time.perf_counter()
+        qu_result = self.query_understanding.process(request.question)
+        search_query = qu_result["search_query"]
+        qu_latency = (time.perf_counter() - t0) * 1000.0
+
+        # 2. Strategy Retrieval
         t1 = time.perf_counter()
         retrieval_top_k = top_k * 2 if self.reranker.reranker_name != "no_op" else top_k
         retrieved_chunks = self.retriever.retrieve(
-            query=request.question,
+            query=search_query,
             top_k=retrieval_top_k,
             threshold=self.config.similarity_threshold,
         )
         retrieval_latency = (time.perf_counter() - t1) * 1000.0
 
-        # 2. Rerank Retrieved Chunks
+        # 3. Rerank Retrieved Chunks
         t2 = time.perf_counter()
         reranked_chunks = self.reranker.rerank(request.question, retrieved_chunks)
         reranking_latency = (time.perf_counter() - t2) * 1000.0
@@ -132,6 +142,8 @@ class RAGPipeline:
         total_latency = (time.perf_counter() - start_time) * 1000.0
 
         metrics = {
+            "query_understanding_latency_ms": round(qu_latency, 2),
+            "intent": qu_result["intent"],
             "retrieval_strategy": self.retriever.strategy_name,
             "retrieval_latency_ms": round(retrieval_latency, 2),
             "reranking_latency_ms": round(reranking_latency, 2),
