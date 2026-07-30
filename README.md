@@ -3,10 +3,11 @@
 [![React 19](https://img.shields.io/badge/Frontend-React_19_|_Vite-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Express.js](https://img.shields.io/badge/Backend-Express.js_|_Node.js-000000?style=flat-square&logo=express)](https://expressjs.com/)
 [![FastAPI](https://img.shields.io/badge/ML_Service-FastAPI_|_Python_3.12-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PyTorch](https://img.shields.io/badge/Deep_Learning-PyTorch-EE4C2C?style=flat-square&logo=pytorch)](https://pytorch.org/)
 [![Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn_|_SHAP-F7931E?style=flat-square&logo=scikitlearn)](https://scikit-learn.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** combines multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and explainable ML recommendation pipelines.
+A decoupled, full-stack financial advisory and wealth management platform built for Indian retail investors. **WealthGenie** combines multi-factor asset scoring, stochastic Quasi-Monte Carlo wealth projection, Markowitz modern portfolio theory, progressive tax optimization under Indian FY 2025-26 rules, and dual-model ML recommendation pipelines (Classical Random Forest + PyTorch Deep Learning).
 
 ---
 
@@ -26,7 +27,12 @@ graph TD
     end
     
     DataStore[("MongoDB Store")]
-    MLService["FastAPI ML Service (Scikit-Learn + SHAP)"]
+    
+    subgraph MLService ["FastAPI ML Service"]
+        RFModel["Random Forest + TreeSHAP Explainer"]
+        PyTorchModel["PyTorch Deep Learning MLP Model"]
+    end
+    
     GeminiAPI["Google Gemini API (Advisory Chat)"]
 
     Client -->|"REST / HTTPS"| Gateway
@@ -54,7 +60,7 @@ sequenceDiagram
     participant Tax as Tax Engine
     participant QMC as Quasi-Monte Carlo Engine
     participant MPT as Portfolio Engine
-    participant ML as FastAPI ML Microservice
+    participant ML as FastAPI ML Microservice (RF + PyTorch)
 
     Investor->>Frontend: Submit Profile (Income, Savings, Risk, Horizon)
     Frontend->>Gateway: POST /api/recommend/recommend
@@ -97,12 +103,12 @@ Provides three distinct asset allocation strategies derived from Modern Portfoli
 Orchestrates metadata-driven recommendation scoring across financial instruments:
 1. **Eligibility Filtering**: Gating instruments by age boundaries, income minimums, and lock-in constraints.
 2. **Multi-Factor Utility Scoring**: Weighing returns, risk capacity alignment, tax efficiency, liquidity, expense ratios, and horizon fit.
-3. **ML Confidence Boosting**: Merging FastAPI microservice model confidence into relative scoring ranks.
+3. **ML Confidence Boosting**: Merging ML microservice model confidence (Random Forest / PyTorch MLP) into relative scoring ranks.
 4. **Diversity Enforcement**: Guaranteeing top recommendations span distinct asset classes.
 
-### 5. Explainable ML Engine (FastAPI)
-- Uses trained Random Forest tree ensemble models to evaluate investor risk profiles and output asset suitability confidence scores.
-- Computes **TreeSHAP (SHapley Additive exPlanations)** feature attributions for every prediction, rendering transparent explanations for recommended allocations.
+### 5. Dual-Model Machine Learning Engine (FastAPI)
+- **Scikit-Learn Random Forest**: Evaluates investor risk profiles and outputs asset suitability confidence scores with **TreeSHAP (SHapley Additive exPlanations)** feature attributions.
+- **PyTorch Deep Learning MLP**: Deep Neural Network (`Linear -> BatchNorm1d -> ReLU -> Dropout -> Linear`) trained via custom AdamW optimizer, ReduceLROnPlateau scheduler, early stopping, and automatic best-model checkpointing. Supports `/predict/pytorch` and `/predict/compare` for side-by-side benchmarking.
 
 ---
 
@@ -113,7 +119,7 @@ Orchestrates metadata-driven recommendation scoring across financial instruments
 | **Frontend** | React 19, Vite, Vanilla CSS | Responsive UI, interactive charts, and real-time calculation dashboards |
 | **Backend API** | Node.js, Express.js, Mongoose | API Routing, financial math engines, session management |
 | **Database** | MongoDB | Document store for user profiles, portfolio snapshots, and investment catalogs |
-| **ML Service** | Python 3.12, FastAPI, Scikit-Learn, SHAP | Machine learning inference, suitability scoring, model explainability |
+| **ML Microservice** | Python 3.12, FastAPI, PyTorch, Scikit-Learn, SHAP | Dual-model machine learning inference (RandomForest + PyTorch MLP), suitability scoring, TreeSHAP explainability |
 | **Testing** | Node.js Test Runner, Vitest, Pytest | Multi-tier test suites across unit, integration, and ML components |
 
 ---
@@ -138,8 +144,15 @@ deploy-wealthgenie/
 │   └── package.json
 │
 ├── ml-service/               # FastAPI Machine Learning Microservice
-│   ├── model/                # Training pipelines, dataset builders, model persistence
-│   ├── tests/                # Pytest suite for ML validation
+│   ├── model/                # Model modules:
+│   │   ├── config.py         # Hyperparameter & path configuration
+│   │   ├── dataset.py        # PyTorch FinancialDataset & DataLoader builders
+│   │   ├── preprocessing.py  # FeaturePreprocessor (StandardScaler)
+│   │   ├── model.py          # Configurable FinancialMLP (nn.Module)
+│   │   ├── train_pytorch.py  # PyTorch training loop with early stopping
+│   │   ├── evaluate.py       # Metrics calculator & dual-model comparator
+│   │   └── inference.py      # PyTorchInferenceEngine artifact loader & predictor
+│   ├── tests/                # Pytest suite for ML validation & PyTorch pipeline
 │   ├── main.py               # FastAPI service initialization and endpoint handlers
 │   └── requirements.txt
 │
@@ -179,6 +192,7 @@ MONGODB_URI=mongodb://localhost:27017/wealthgenie
 JWT_SECRET=your_jwt_secret_key
 GEMINI_API_KEY=your_google_gemini_key
 ML_SERVICE_URL=http://localhost:8000
+ML_SERVICE_API_KEY=wealthgenie_secret_api_key_2026
 ```
 
 Start the backend server:
@@ -204,6 +218,11 @@ python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 
 pip install -r requirements.txt
+
+# Train PyTorch Deep Learning Model:
+python model/train_pytorch.py
+
+# Launch FastAPI Microservice:
 uvicorn main:app --reload --port 8000
 ```
 
@@ -218,6 +237,9 @@ uvicorn main:app --reload --port 8000
 | `POST` | `/api/portfolio/rebalance` | Calculates target drift and transactional directives for current portfolio |
 | `POST` | `/api/montecarlo/simulate` | Runs Quasi-Monte Carlo simulation and returns $P_{10}, P_{50}, P_{90}$ wealth bands |
 | `POST` | `/api/recommend/recommend` | Runs 4-stage scoring pipeline and returns ranked investment suggestions |
+| `POST` | `/predict` or `/predict/enriched` | FastAPI ML service inference using Random Forest + TreeSHAP explainability |
+| `POST` | `/predict/pytorch` | FastAPI ML service inference using PyTorch Deep Learning MLP model |
+| `POST` | `/predict/compare` | Side-by-side performance & latency comparison (Random Forest vs. PyTorch MLP) |
 | `POST` | `/api/chat/message` | Context-aware AI advisory assistance grounded in user financial profile |
 
 ---
@@ -237,7 +259,7 @@ npm test
 
 # 3. ML Microservice Pytest Suite
 cd ../ml-service
-pytest
+python -m pytest tests/ -p no:phoenix
 ```
 
 ---
