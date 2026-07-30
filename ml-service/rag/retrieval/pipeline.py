@@ -1,6 +1,6 @@
 """
 WealthGenie RAG Subsystem - End-to-End Retrieval & Generation Pipeline
-Executes query embedding, similarity search, reranking, prompt assembly, answer generation, and citation formatting.
+Executes strategy retrieval (Dense, Keyword, Hybrid), reranking, prompt assembly, answer generation, and citation formatting.
 """
 
 import logging
@@ -15,6 +15,10 @@ from rag.prompts.builder import PromptBuilder
 from rag.reranking.base import BaseReranker
 from rag.reranking.noop_reranker import NoOpReranker
 from rag.reranking.relevance_reranker import RelevanceScoreReranker
+from rag.retrievers.base import BaseRetriever
+from rag.retrievers.bm25_retriever import BM25KeywordRetriever
+from rag.retrievers.dense_retriever import DenseRetriever
+from rag.retrievers.hybrid_retriever import HybridRetriever
 from rag.schema import RAGQueryRequest, RAGQueryResponse, RetrievedChunk
 from rag.vector_store.base import BaseVectorStore
 from rag.vector_store.memory_vector_store import PersistentVectorStore
@@ -37,19 +41,52 @@ def get_reranker(strategy: str) -> BaseReranker:
     return cls()
 
 
+def get_retriever(
+    strategy: str,
+    embedder: BaseEmbeddingProvider,
+    vector_store: BaseVectorStore,
+    config: RAGConfig,
+) -> BaseRetriever:
+    """Resolves a retriever instance based on configured strategy (dense, keyword, hybrid)."""
+    if strategy == "dense":
+        return DenseRetriever(embedder=embedder, vector_store=vector_store)
+    elif strategy == "keyword":
+        return BM25KeywordRetriever(vector_store=vector_store)
+    elif strategy == "hybrid":
+        dense_ret = DenseRetriever(embedder=embedder, vector_store=vector_store)
+        keyword_ret = BM25KeywordRetriever(vector_store=vector_store)
+        return HybridRetriever(
+            dense_retriever=dense_ret,
+            keyword_retriever=keyword_ret,
+            fusion_mode=config.fusion_mode,
+            dense_weight=config.dense_weight,
+            keyword_weight=config.keyword_weight,
+        )
+    else:
+        logger.warning(f"Unknown retrieval strategy '{strategy}', falling back to dense.")
+        return DenseRetriever(embedder=embedder, vector_store=vector_store)
+
+
 class RAGPipeline:
-    """End-to-End Retrieval-Augmented Generation pipeline with optional reranking."""
+    """End-to-End Retrieval-Augmented Generation pipeline with strategy retrieval and reranking."""
 
     def __init__(
         self,
         embedder: Optional[BaseEmbeddingProvider] = None,
         vector_store: Optional[BaseVectorStore] = None,
+        retriever: Optional[BaseRetriever] = None,
         reranker: Optional[BaseReranker] = None,
         config: Optional[RAGConfig] = None,
     ):
         self.config = config or RAGConfig()
         self.embedder = embedder or DenseVectorEmbeddingProvider(dimension=self.config.embedding_dim)
         self.vector_store = vector_store or PersistentVectorStore()
+        self.retriever = retriever or get_retriever(
+            strategy=self.config.retrieval_strategy,
+            embedder=self.embedder,
+            vector_store=self.vector_store,
+            config=self.config,
+        )
         self.reranker = reranker or get_reranker(self.config.reranker_strategy)
         self.prompt_builder = PromptBuilder()
         self.citation_engine = CitationEngine()
@@ -59,22 +96,17 @@ class RAGPipeline:
         start_time = time.perf_counter()
         top_k = request.top_k or self.config.top_k
 
-        # 1. Embed Query Question
-        t0 = time.perf_counter()
-        query_vector = self.embedder.embed_text(request.question)
-        embedding_latency = (time.perf_counter() - t0) * 1000.0
-
-        # 2. Similarity Vector Search (retrieve more candidates for reranking)
+        # 1. Strategy Retrieval
         t1 = time.perf_counter()
         retrieval_top_k = top_k * 2 if self.reranker.reranker_name != "no_op" else top_k
-        retrieved_chunks = self.vector_store.search(
-            query_vector=query_vector,
+        retrieved_chunks = self.retriever.retrieve(
+            query=request.question,
             top_k=retrieval_top_k,
             threshold=self.config.similarity_threshold,
         )
         retrieval_latency = (time.perf_counter() - t1) * 1000.0
 
-        # 3. Rerank Retrieved Chunks
+        # 2. Rerank Retrieved Chunks
         t2 = time.perf_counter()
         reranked_chunks = self.reranker.rerank(request.question, retrieved_chunks)
         reranking_latency = (time.perf_counter() - t2) * 1000.0
@@ -82,17 +114,17 @@ class RAGPipeline:
         # Trim to final top_k after reranking
         final_chunks = reranked_chunks[:top_k]
 
-        # 4. Assemble Prompt Context
+        # 3. Assemble Prompt Context
         prompt = self.prompt_builder.build_prompt(
             question=request.question,
             retrieved_chunks=final_chunks,
             user_profile=request.user_profile,
         )
 
-        # 5. Generate Answer (Grounded Synthesis)
+        # 4. Generate Answer (Grounded Synthesis)
         answer = self._generate_grounded_answer(request.question, final_chunks)
 
-        # 6. Extract Citations
+        # 5. Extract Citations
         citations = self.citation_engine.generate_citations(final_chunks)
         if request.include_citations and citations:
             answer += self.citation_engine.format_citations_markdown(citations)
@@ -100,7 +132,7 @@ class RAGPipeline:
         total_latency = (time.perf_counter() - start_time) * 1000.0
 
         metrics = {
-            "embedding_latency_ms": round(embedding_latency, 2),
+            "retrieval_strategy": self.retriever.strategy_name,
             "retrieval_latency_ms": round(retrieval_latency, 2),
             "reranking_latency_ms": round(reranking_latency, 2),
             "total_latency_ms": round(total_latency, 2),
