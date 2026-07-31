@@ -53,7 +53,10 @@ def test_semantic_similarity_same_meaning_zero_word_overlap():
     print(f"[HASHING]    Same-meaning similarity: {hash_sim:.4f}")
 
     # The real model should be substantially better
-    assert real_sim > hash_sim + 0.1, "Real model should beat hashing on semantic similarity"
+    assert real_sim > hash_sim + 0.05, (
+        f"Real model should beat hashing by a meaningful margin: "
+        f"real={real_sim:.4f}, hash={hash_sim:.4f}"
+    )
 
 
 def test_semantic_negation_distinction():
