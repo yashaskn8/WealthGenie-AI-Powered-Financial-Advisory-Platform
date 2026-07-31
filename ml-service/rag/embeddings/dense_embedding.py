@@ -107,7 +107,10 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
         logger.info(f"Loading sentence-transformer model '{self._model_name}'...")
         from sentence_transformers import SentenceTransformer
         self._model = SentenceTransformer(self._model_name)
-        self._dim = self._model.get_sentence_embedding_dimension()
+        if hasattr(self._model, "get_embedding_dimension"):
+            self._dim = self._model.get_embedding_dimension()
+        else:
+            self._dim = self._model.get_sentence_embedding_dimension()
         logger.info(
             f"Sentence-transformer model loaded: '{self._model_name}' "
             f"(dimension={self._dim}, batch_size={self._batch_size})"
