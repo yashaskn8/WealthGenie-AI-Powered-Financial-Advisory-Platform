@@ -21,7 +21,7 @@ This log documents the empirical research, system architecture, performance benc
 
 4. **Base LLM Evaluation Harness (Phase 4)**
    - **Implementation**: Evaluated base open-weight `Qwen/Qwen2.5-0.5B-Instruct` across 25 financial advisory prompts against hand-labeled gold reference answers.
-   - **Committed Report**: [`ml-service/reports/llm_eval_report.json`](ml-service/reports/llm_eval_report.json) (Mean BLEU: **0.0278**, Mean ROUGE-L: **0.2844**, Mean Lexical Overlap: **0.4998**, Mean Semantic Embedding Similarity: **0.4998**, Mean Faithfulness: **0.5608**). Includes worst 3 failure cases with root-cause analysis (lack of domain grounding without RAG).
+   - **Committed Report**: [`ml-service/reports/llm_eval_report.json`](ml-service/reports/llm_eval_report.json) (Mean BLEU: **0.0278**, Mean ROUGE-L: **0.2844**, Mean Lexical Overlap: **0.4998**, Mean Semantic Embedding Similarity: **0.6660**, Mean Faithfulness: **0.5608**). Includes worst 3 failure cases with root-cause analysis (lack of domain grounding without RAG).
 
 ---
 
@@ -56,9 +56,9 @@ I conducted an ablation study comparing the lightweight hash-based n-gram bucket
    - **Problem**: `verify_api_key()` in `ml-service/main.py` previously checked `if not expected_key: return api_key or "dev-mode"`, silently disabling authentication whenever `ML_SERVICE_API_KEY` was unset in any environment.
    - **Fix**: Updated `verify_api_key()` to fail closed by default. An explicit `ENVIRONMENT=local` env flag is now mandatory to permit dev-mode bypass when `ML_SERVICE_API_KEY` is unset. Non-local environments return HTTP 500 (misconfiguration error). Verified by [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py#L231).
 
-2. **Mislabeled Metric (`compute_bertscore_approx`)**
-   - **Problem**: `compute_bertscore_approx()` in `ml-service/llm/evaluation/metrics.py` computed a rescaled Jaccard word-overlap score (surface n-gram token overlap) while claiming to approximate BERTScore.
-   - **Fix**: Renamed the function to [`compute_lexical_overlap_score()`](ml-service/llm/evaluation/metrics.py#L102), updated docstrings to explicitly state it measures surface lexical overlap, and added [`compute_embedding_semantic_similarity()`](ml-service/llm/evaluation/metrics.py#L128) using SentenceTransformer 384D vector cosine similarity.
+2. **Mislabeled Metric & Import Path Fix (`compute_bertscore_approx`)**
+   - **Problem**: `compute_bertscore_approx()` in `ml-service/llm/evaluation/metrics.py` computed a rescaled Jaccard word-overlap score (surface n-gram token overlap) while claiming to approximate BERTScore. Additionally, `compute_embedding_semantic_similarity()` contained an invalid import path (`from rag.embeddings.provider import ...` instead of `rag.embeddings.dense_embedding`), causing a silent fallback to the lexical score (0.4998).
+   - **Fix**: Renamed the lexical function to [`compute_lexical_overlap_score()`](ml-service/llm/evaluation/metrics.py#L102), corrected the import path to `rag.embeddings.dense_embedding.SentenceTransformerEmbeddingProvider`, cached the embedder instance, and re-evaluated the benchmark. The true SentenceTransformer dense semantic embedding similarity score is **0.6660** (compared to the silent fallback score of 0.4998).
 
 3. **Horizontal Scaling Claims & Disclosure Honesty**
    - **Problem**: Prior documentation could be interpreted as claiming multi-host container cluster infrastructure.

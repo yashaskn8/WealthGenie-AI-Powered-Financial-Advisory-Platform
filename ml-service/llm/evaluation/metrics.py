@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Set, Tuple
 def compute_perplexity(loss: float) -> float:
     """Calculates perplexity score from cross-entropy loss: PPL = exp(loss)."""
     try:
-        return round(float(math.exp(loss)), 4)
+        return round(math.exp(loss), 4)
     except OverflowError:
         return float("inf")
 
@@ -126,25 +126,29 @@ def compute_bertscore_approx(reference: str, candidate: str) -> float:
     return compute_lexical_overlap_score(reference, candidate)
 
 
+_GLOBAL_EMBEDDER = None
+
 def compute_embedding_semantic_similarity(reference: str, candidate: str) -> float:
     """
     Computes semantic vector similarity between reference and candidate text
     using SentenceTransformer ('all-MiniLM-L6-v2') dense embeddings.
     """
+    global _GLOBAL_EMBEDDER
     if not reference or not candidate:
         return 0.0
     try:
         import numpy as _np  # type: ignore[import-not-found]
         import sys
         from pathlib import Path
-        # Ensure ml-service is importable for rag.embeddings.provider
-        _ml_svc = str(Path(__file__).resolve().parent.parent.parent)
-        if _ml_svc not in sys.path:
-            sys.path.insert(0, _ml_svc)
-        from rag.embeddings.provider import SentenceTransformerEmbeddingProvider  # type: ignore[import-not-found]
-        embedder = SentenceTransformerEmbeddingProvider()
-        ref_vec = _np.array(embedder.embed_text(reference))
-        cand_vec = _np.array(embedder.embed_text(candidate))
+        if _GLOBAL_EMBEDDER is None:
+            _ml_svc = str(Path(__file__).resolve().parent.parent.parent)
+            if _ml_svc not in sys.path:
+                sys.path.insert(0, _ml_svc)
+            from rag.embeddings.dense_embedding import SentenceTransformerEmbeddingProvider  # type: ignore[import-not-found]
+            _GLOBAL_EMBEDDER = SentenceTransformerEmbeddingProvider()
+
+        ref_vec = _np.array(_GLOBAL_EMBEDDER.embed_text(reference))
+        cand_vec = _np.array(_GLOBAL_EMBEDDER.embed_text(candidate))
 
         norm_ref = float(_np.linalg.norm(ref_vec))
         norm_cand = float(_np.linalg.norm(cand_vec))

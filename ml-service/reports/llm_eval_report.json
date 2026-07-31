@@ -19,7 +19,7 @@
     "mean_rouge1": 0.3928,
     "mean_rougeL": 0.2844,
     "mean_lexical_overlap_score": 0.4998,
-    "mean_semantic_embedding_similarity": 0.4998,
+    "mean_semantic_embedding_similarity": 0.666,
     "mean_faithfulness_score": 0.5608,
     "mean_latency_ms": 8445.73
   },
@@ -35,12 +35,30 @@
         "rouge2": 0.0,
         "rougeL": 0.0667,
         "lexical_overlap_score": 0.4277,
-        "semantic_embedding_similarity": 0.4277,
+        "semantic_embedding_similarity": 0.4476,
         "faithfulness_score": 0.2457,
         "hallucination_score": 0.7543,
-        "composite_quality_score": 0.2336
+        "composite_quality_score": 0.2375
       },
-      "failure_analysis": "Low semantic embedding similarity to gold reference; Low surface n-gram BLEU overlap; Incomplete context grounding"
+      "failure_analysis": "Low semantic embedding similarity; low surface n-gram BLEU overlap"
+    },
+    {
+      "id": "eval_21",
+      "instruction": "What is the tax treatment of health insurance premium under Section 80D?",
+      "generated_response": "Under Section 80D of the Income Tax Act, 1961, a health insurance premium paid by an individual or company for the purpose of providing health care services to its employees or clients is not considered taxable income. This means that the entire premium amount is exempt from taxation.\n\nHowever",
+      "gold_reference": "Section 80D offers deductions up to Rs 25,000 for self/family and up to Rs 50,000 for senior citizen parents on health insurance premiums.",
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2857,
+        "rouge2": 0.0909,
+        "rougeL": 0.1538,
+        "lexical_overlap_score": 0.4643,
+        "semantic_embedding_similarity": 0.4904,
+        "faithfulness_score": 0.5143,
+        "hallucination_score": 0.4857,
+        "composite_quality_score": 0.3246
+      },
+      "failure_analysis": "Low semantic embedding similarity; low surface n-gram BLEU overlap"
     },
     {
       "id": "eval_23",
@@ -53,30 +71,12 @@
         "rouge2": 0.0,
         "rougeL": 0.1176,
         "lexical_overlap_score": 0.4375,
-        "semantic_embedding_similarity": 0.4375,
+        "semantic_embedding_similarity": 0.7175,
         "faithfulness_score": 0.3627,
         "hallucination_score": 0.6373,
-        "composite_quality_score": 0.2711
+        "composite_quality_score": 0.3271
       },
-      "failure_analysis": "Low semantic embedding similarity to gold reference; Low surface n-gram BLEU overlap; Incomplete context grounding"
-    },
-    {
-      "id": "eval_08",
-      "instruction": "What is SEBI's mandate regarding Mutual Fund riskometers?",
-      "generated_response": "SEBI (Securities and Exchange Board of India) has a specific mandate to ensure the fair and efficient functioning of the securities market in India. One of their key responsibilities includes overseeing mutual funds and ensuring that they comply with various regulatory requirements.\n\nRegarding the SEBI's mandate regarding Mutual Fund Riskometers:",
-      "gold_reference": "SEBI requires all mutual fund schemes to display a 6-level riskometer updated monthly based on actual underlying portfolio risk.",
-      "metrics": {
-        "bleu": 0.0,
-        "rouge1": 0.25,
-        "rouge2": 0.0526,
-        "rougeL": 0.15,
-        "lexical_overlap_score": 0.4556,
-        "semantic_embedding_similarity": 0.4556,
-        "faithfulness_score": 0.3706,
-        "hallucination_score": 0.6294,
-        "composite_quality_score": 0.2864
-      },
-      "failure_analysis": "Low semantic embedding similarity to gold reference; Low surface n-gram BLEU overlap; Incomplete context grounding"
+      "failure_analysis": "Low semantic embedding similarity; low surface n-gram BLEU overlap"
     }
   ],
   "per_sample_results": [
@@ -96,10 +96,10 @@
         "rouge2": 0.2353,
         "rougeL": 0.3714,
         "lexical_overlap_score": 0.5377,
-        "semantic_embedding_similarity": 0.5377,
+        "semantic_embedding_similarity": 0.6952,
         "faithfulness_score": 0.588,
         "hallucination_score": 0.412,
-        "composite_quality_score": 0.4394
+        "composite_quality_score": 0.4709
       }
     },
     {
@@ -118,10 +118,10 @@
         "rouge2": 0.2258,
         "rougeL": 0.3529,
         "lexical_overlap_score": 0.5875,
-        "semantic_embedding_similarity": 0.5875,
+        "semantic_embedding_similarity": 0.5975,
         "faithfulness_score": 0.7159,
         "hallucination_score": 0.2841,
-        "composite_quality_score": 0.4777
+        "composite_quality_score": 0.4797
       }
     },
     {
@@ -140,10 +140,10 @@
         "rouge2": 0.129,
         "rougeL": 0.2353,
         "lexical_overlap_score": 0.5138,
-        "semantic_embedding_similarity": 0.5138,
+        "semantic_embedding_similarity": 0.8068,
         "faithfulness_score": 0.735,
         "hallucination_score": 0.265,
-        "composite_quality_score": 0.3996
+        "composite_quality_score": 0.4582
       }
     },
     {
@@ -162,10 +162,10 @@
         "rouge2": 0.0476,
         "rougeL": 0.3478,
         "lexical_overlap_score": 0.5176,
-        "semantic_embedding_similarity": 0.5176,
+        "semantic_embedding_similarity": 0.7224,
         "faithfulness_score": 0.4667,
         "hallucination_score": 0.5333,
-        "composite_quality_score": 0.3699
+        "composite_quality_score": 0.4109
       }
     },
     {
@@ -184,10 +184,10 @@
         "rouge2": 0.0345,
         "rougeL": 0.1333,
         "lexical_overlap_score": 0.4873,
-        "semantic_embedding_similarity": 0.4873,
+        "semantic_embedding_similarity": 0.662,
         "faithfulness_score": 0.589,
         "hallucination_score": 0.411,
-        "composite_quality_score": 0.3394
+        "composite_quality_score": 0.3743
       }
     },
     {
@@ -206,10 +206,10 @@
         "rouge2": 0.0,
         "rougeL": 0.0667,
         "lexical_overlap_score": 0.4277,
-        "semantic_embedding_similarity": 0.4277,
+        "semantic_embedding_similarity": 0.4476,
         "faithfulness_score": 0.2457,
         "hallucination_score": 0.7543,
-        "composite_quality_score": 0.2336
+        "composite_quality_score": 0.2375
       }
     },
     {
@@ -228,10 +228,10 @@
         "rouge2": 0.1739,
         "rougeL": 0.2917,
         "lexical_overlap_score": 0.4724,
-        "semantic_embedding_similarity": 0.4724,
+        "semantic_embedding_similarity": 0.6709,
         "faithfulness_score": 0.525,
         "hallucination_score": 0.475,
-        "composite_quality_score": 0.366
+        "composite_quality_score": 0.4057
       }
     },
     {
@@ -250,10 +250,10 @@
         "rouge2": 0.0526,
         "rougeL": 0.15,
         "lexical_overlap_score": 0.4556,
-        "semantic_embedding_similarity": 0.4556,
+        "semantic_embedding_similarity": 0.6615,
         "faithfulness_score": 0.3706,
         "hallucination_score": 0.6294,
-        "composite_quality_score": 0.2864
+        "composite_quality_score": 0.3275
       }
     },
     {
@@ -272,10 +272,10 @@
         "rouge2": 0.069,
         "rougeL": 0.1667,
         "lexical_overlap_score": 0.472,
-        "semantic_embedding_similarity": 0.472,
+        "semantic_embedding_similarity": 0.5394,
         "faithfulness_score": 0.6462,
         "hallucination_score": 0.3538,
-        "composite_quality_score": 0.3514
+        "composite_quality_score": 0.3649
       }
     },
     {
@@ -294,10 +294,10 @@
         "rouge2": 0.1875,
         "rougeL": 0.5294,
         "lexical_overlap_score": 0.5,
-        "semantic_embedding_similarity": 0.5,
+        "semantic_embedding_similarity": 0.7639,
         "faithfulness_score": 0.5559,
         "hallucination_score": 0.4441,
-        "composite_quality_score": 0.4171
+        "composite_quality_score": 0.4698
       }
     },
     {
@@ -316,10 +316,10 @@
         "rouge2": 0.087,
         "rougeL": 0.2083,
         "lexical_overlap_score": 0.4712,
-        "semantic_embedding_similarity": 0.4712,
+        "semantic_embedding_similarity": 0.5984,
         "faithfulness_score": 0.4789,
         "hallucination_score": 0.5211,
-        "composite_quality_score": 0.3259
+        "composite_quality_score": 0.3514
       }
     },
     {
@@ -338,10 +338,10 @@
         "rouge2": 0.2222,
         "rougeL": 0.4211,
         "lexical_overlap_score": 0.5269,
-        "semantic_embedding_similarity": 0.5269,
+        "semantic_embedding_similarity": 0.8134,
         "faithfulness_score": 0.5048,
         "hallucination_score": 0.4952,
-        "composite_quality_score": 0.3959
+        "composite_quality_score": 0.4532
       }
     },
     {
@@ -360,10 +360,10 @@
         "rouge2": 0.0952,
         "rougeL": 0.2727,
         "lexical_overlap_score": 0.4923,
-        "semantic_embedding_similarity": 0.4923,
+        "semantic_embedding_similarity": 0.7328,
         "faithfulness_score": 0.6163,
         "hallucination_score": 0.3837,
-        "composite_quality_score": 0.3747
+        "composite_quality_score": 0.4228
       }
     },
     {
@@ -382,10 +382,10 @@
         "rouge2": 0.1,
         "rougeL": 0.3333,
         "lexical_overlap_score": 0.475,
-        "semantic_embedding_similarity": 0.475,
+        "semantic_embedding_similarity": 0.906,
         "faithfulness_score": 0.5654,
         "hallucination_score": 0.4346,
-        "composite_quality_score": 0.3697
+        "composite_quality_score": 0.4559
       }
     },
     {
@@ -404,10 +404,10 @@
         "rouge2": 0.0952,
         "rougeL": 0.2273,
         "lexical_overlap_score": 0.4545,
-        "semantic_embedding_similarity": 0.4545,
+        "semantic_embedding_similarity": 0.5218,
         "faithfulness_score": 0.5048,
         "hallucination_score": 0.4952,
-        "composite_quality_score": 0.3282
+        "composite_quality_score": 0.3417
       }
     },
     {
@@ -426,10 +426,10 @@
         "rouge2": 0.24,
         "rougeL": 0.3462,
         "lexical_overlap_score": 0.5565,
-        "semantic_embedding_similarity": 0.5565,
+        "semantic_embedding_similarity": 0.649,
         "faithfulness_score": 0.735,
         "hallucination_score": 0.265,
-        "composite_quality_score": 0.4588
+        "composite_quality_score": 0.4773
       }
     },
     {
@@ -448,10 +448,10 @@
         "rouge2": 0.4444,
         "rougeL": 0.5789,
         "lexical_overlap_score": 0.6471,
-        "semantic_embedding_similarity": 0.6471,
+        "semantic_embedding_similarity": 0.7914,
         "faithfulness_score": 0.81,
         "hallucination_score": 0.19,
-        "composite_quality_score": 0.5693
+        "composite_quality_score": 0.5982
       }
     },
     {
@@ -470,10 +470,10 @@
         "rouge2": 0.1667,
         "rougeL": 0.2632,
         "lexical_overlap_score": 0.4655,
-        "semantic_embedding_similarity": 0.4655,
+        "semantic_embedding_similarity": 0.6407,
         "faithfulness_score": 0.5357,
         "hallucination_score": 0.4643,
-        "composite_quality_score": 0.3571
+        "composite_quality_score": 0.3921
       }
     },
     {
@@ -492,10 +492,10 @@
         "rouge2": 0.0455,
         "rougeL": 0.2174,
         "lexical_overlap_score": 0.4808,
-        "semantic_embedding_similarity": 0.4808,
+        "semantic_embedding_similarity": 0.6494,
         "faithfulness_score": 0.4375,
         "hallucination_score": 0.5625,
-        "composite_quality_score": 0.3233
+        "composite_quality_score": 0.357
       }
     },
     {
@@ -514,10 +514,10 @@
         "rouge2": 0.2,
         "rougeL": 0.4375,
         "lexical_overlap_score": 0.4875,
-        "semantic_embedding_similarity": 0.4875,
+        "semantic_embedding_similarity": 0.6196,
         "faithfulness_score": 0.6028,
         "hallucination_score": 0.3972,
-        "composite_quality_score": 0.4031
+        "composite_quality_score": 0.4295
       }
     },
     {
@@ -536,10 +536,10 @@
         "rouge2": 0.0909,
         "rougeL": 0.1538,
         "lexical_overlap_score": 0.4643,
-        "semantic_embedding_similarity": 0.4643,
+        "semantic_embedding_similarity": 0.4904,
         "faithfulness_score": 0.5143,
         "hallucination_score": 0.4857,
-        "composite_quality_score": 0.3193
+        "composite_quality_score": 0.3246
       }
     },
     {
@@ -558,10 +558,10 @@
         "rouge2": 0.05,
         "rougeL": 0.2381,
         "lexical_overlap_score": 0.4941,
-        "semantic_embedding_similarity": 0.4941,
+        "semantic_embedding_similarity": 0.6244,
         "faithfulness_score": 0.525,
         "hallucination_score": 0.475,
-        "composite_quality_score": 0.3503
+        "composite_quality_score": 0.3763
       }
     },
     {
@@ -580,10 +580,10 @@
         "rouge2": 0.0,
         "rougeL": 0.1176,
         "lexical_overlap_score": 0.4375,
-        "semantic_embedding_similarity": 0.4375,
+        "semantic_embedding_similarity": 0.7175,
         "faithfulness_score": 0.3627,
         "hallucination_score": 0.6373,
-        "composite_quality_score": 0.2711
+        "composite_quality_score": 0.3271
       }
     },
     {
@@ -602,10 +602,10 @@
         "rouge2": 0.1579,
         "rougeL": 0.35,
         "lexical_overlap_score": 0.55,
-        "semantic_embedding_similarity": 0.55,
+        "semantic_embedding_similarity": 0.8665,
         "faithfulness_score": 0.7194,
         "hallucination_score": 0.2806,
-        "composite_quality_score": 0.4339
+        "composite_quality_score": 0.4972
       }
     },
     {
@@ -624,10 +624,10 @@
         "rouge2": 0.1111,
         "rougeL": 0.3,
         "lexical_overlap_score": 0.52,
-        "semantic_embedding_similarity": 0.52,
+        "semantic_embedding_similarity": 0.461,
         "faithfulness_score": 0.6702,
         "hallucination_score": 0.3298,
-        "composite_quality_score": 0.402
+        "composite_quality_score": 0.3902
       }
     }
   ]

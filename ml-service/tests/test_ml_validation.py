@@ -57,7 +57,15 @@ def test_feature_parity_train_inference():
     req = PredictRequest(
         risk_category='Moderate',
         goal_type='wealth-building',
-        **raw_inputs
+        age=raw_inputs['age'],
+        annual_income=raw_inputs['annual_income'],
+        monthly_savings=raw_inputs['monthly_savings'],
+        investment_horizon=raw_inputs['investment_horizon'],
+        liquid_savings=raw_inputs['liquid_savings'],
+        existing_debt=raw_inputs['existing_debt'],
+        dependents=raw_inputs['dependents'],
+        emergency_fund_months=raw_inputs['emergency_fund_months'],
+        risk_tolerance='Moderate'
     )
     
     feat_serve = engineer_features(

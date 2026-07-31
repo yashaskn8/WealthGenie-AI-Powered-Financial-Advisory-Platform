@@ -12,20 +12,20 @@
   ],
   "sample_count": 20000,
   "class_counts": {
-    "Equity_MF": 5250,
-    "ELSS": 3843,
-    "ETF": 700,
-    "Debt_MF": 45,
-    "FD": 38,
-    "RBI_Bond": 10124
+    "Equity_MF": 4758,
+    "ELSS": 1131,
+    "ETF": 501,
+    "Debt_MF": 3690,
+    "FD": 1412,
+    "RBI_Bond": 8508
   },
   "class_percentages": {
-    "Equity_MF": 26.25,
-    "ELSS": 19.21,
-    "ETF": 3.5,
-    "Debt_MF": 0.22,
-    "FD": 0.19,
-    "RBI_Bond": 50.62
+    "Equity_MF": 23.79,
+    "ELSS": 5.66,
+    "ETF": 2.5,
+    "Debt_MF": 18.45,
+    "FD": 7.06,
+    "RBI_Bond": 42.54
   },
   "normalized_market_metrics": {
     "Equity_MF": {
