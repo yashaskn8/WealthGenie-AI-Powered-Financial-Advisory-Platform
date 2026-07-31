@@ -90,18 +90,23 @@ def prepare_synthetic_training_data(
     ])
 
     # 2. Rule-based synthetic target labels (0 to 5)
+    # 0: Equity_MF, 1: ELSS, 2: ETF, 3: Debt_MF, 4: FD, 5: RBI_Bond
     y = np.zeros(num_samples, dtype=int)
     for i in range(num_samples):
-        # 0: Equity_MF, 1: ELSS, 2: ETF, 3: Debt_MF, 4: FD, 5: RBI_Bond
-        if investment_horizon[i] >= 3 and annual_income[i] >= 800000 and age[i] <= 55 and np.random.rand() > 0.3:
+        if age[i] > 60 or emergency_fund_months[i] < 2:
+            if risk_score[i] < 30:
+                y[i] = 5  # RBI_Bond
+            else:
+                y[i] = 4  # FD
+        elif investment_horizon[i] >= 3 and annual_income[i] >= 800000 and age[i] <= 50 and np.random.rand() > 0.4:
             y[i] = 1  # ELSS
-        elif risk_score[i] >= 60 and investment_horizon[i] >= 5:
+        elif risk_score[i] >= 65 and investment_horizon[i] >= 5:
             y[i] = 0  # Equity_MF
-        elif risk_score[i] >= 40 and investment_horizon[i] >= 3:
+        elif risk_score[i] >= 45 and investment_horizon[i] >= 3:
             y[i] = 2  # ETF
-        elif risk_score[i] >= 25 or investment_horizon[i] >= 2:
+        elif risk_score[i] >= 30:
             y[i] = 3  # Debt_MF
-        elif emergency_fund_months[i] < 3 or age[i] > 60:
+        elif risk_score[i] >= 20:
             y[i] = 4  # FD
         else:
             y[i] = 5  # RBI_Bond
