@@ -161,6 +161,24 @@ Calculates exact tax liabilities under both the Old and New Tax Regimes, Section
 
 ---
 
+## 🔍 System Reality & Transparency Disclosure
+
+To ensure complete clarity for reviewers, the table below outlines what is wired into the live product, what exists as a real standalone evaluation artifact, and what is explicitly out of scope:
+
+| Category | Feature / Component | Implementation & Verification Status |
+| :--- | :--- | :--- |
+| **Wired into Product** | Express Gateway IntentGate | **Real & Live**: Classifies factual tax/mutual fund queries and routes to FastAPI `/rag/query` ([`ragClient.js`](server/services/ragClient.js)). |
+| **Wired into Product** | Random Forest Classifier | **Real & Live**: Serves investor risk profiling via Scikit-Learn pipeline with TreeSHAP explainability (`model.pkl`). |
+| **Real Standalone** | Empirical RAG Subsystem | **Real & Persisted**: SentenceTransformer (`all-MiniLM-L6-v2`) 384D dense vector search benchmarked across 35 queries ([`rag_eval_report.json`](ml-service/reports/rag_eval_report.json)). |
+| **Real Standalone** | Multi-Model DL Benchmark | **Real & Persisted**: Random Forest, PyTorch MLP, and FT-Transformer benchmarked on exact same 20K NAV dataset ([`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json)). |
+| **Real Standalone** | Base LLM Evaluation Harness | **Real & Persisted**: Base `Qwen/Qwen2.5-0.5B-Instruct` model evaluated on 25 prompts against gold references ([`llm_eval_report.json`](ml-service/reports/llm_eval_report.json)). |
+| **Real Standalone** | Embedding Ablation Study | **Real & Persisted**: Hash-based `DenseVectorEmbeddingProvider` vs `SentenceTransformer` comparative study ([`embedding_ablation.json`](ml-service/reports/embedding_ablation.json)). |
+| **Real Standalone** | Multi-Process Scaling | **Local Single-Host Simulation**: Local worker process load test. *(Multi-host container cluster is out of scope for local dev).* |
+| **Explicitly Out of Scope** | LoRA / QLoRA Fine-Tuning | **Out of Scope**: Base open-weight model evaluation performed without fine-tuning due to CPU compute constraints. |
+| **Explicitly Out of Scope** | Computer Vision / VLM | **Out of Scope**: Focused exclusively on tabular ML, text RAG, and financial LLM advisory. |
+
+---
+
 ## 📁 Repository Organization
 
 ```

@@ -12,7 +12,8 @@ from llm.evaluation.metrics import (
     compute_perplexity,
     compute_bleu,
     compute_rouge,
-    compute_bertscore_approx,
+    compute_lexical_overlap_score,
+    compute_embedding_semantic_similarity,
     compute_grounding_faithfulness,
 )
 from llm.providers.base import BaseLLMProvider
@@ -33,14 +34,17 @@ class LLMEvaluator:
         """Calculates single-sample generation quality and grounding metrics."""
         bleu = compute_bleu(reference, candidate)
         rouge_scores = compute_rouge(reference, candidate)
-        bertscore = compute_bertscore_approx(reference, candidate)
+        lexical_sim = compute_lexical_overlap_score(reference, candidate)
+        semantic_sim = compute_embedding_semantic_similarity(reference, candidate)
 
         res = {
             "bleu": bleu,
             "rouge1": rouge_scores["rouge1"],
             "rouge2": rouge_scores["rouge2"],
             "rougeL": rouge_scores["rougeL"],
-            "bertscore": bertscore,
+            "lexical_overlap_score": lexical_sim,
+            "semantic_embedding_similarity": semantic_sim,
+            "bertscore_approx": lexical_sim,  # Kept for backward compatibility
         }
 
         if context_chunks:

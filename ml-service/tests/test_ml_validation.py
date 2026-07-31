@@ -226,3 +226,41 @@ def test_shap_efficiency_axiom():
             assert abs((base_val + shap_sum) - expected_prob) < 1e-4
     except ImportError:
         pytest.skip("shap library not available, skipping efficiency axiom test")
+
+
+def test_fail_closed_auth_when_api_key_unset(client):
+    """
+    Asserts HTTP 500 error when ML_SERVICE_API_KEY is unset and ENVIRONMENT is not 'local'.
+    """
+    old_key = os.environ.pop("ML_SERVICE_API_KEY", None)
+    old_env = os.environ.pop("ENVIRONMENT", None)
+    try:
+        os.environ["ENVIRONMENT"] = "production"
+        resp = client.post("/predict", json={})
+        assert resp.status_code == 500
+        assert "Server Misconfiguration" in resp.json()["detail"]
+    finally:
+        if old_key is not None:
+            os.environ["ML_SERVICE_API_KEY"] = old_key
+        if old_env is not None:
+            os.environ["ENVIRONMENT"] = old_env
+
+
+def test_dev_mode_auth_bypass_with_local_environment(client):
+    """
+    Asserts dev-mode auth bypass works when ENVIRONMENT='local' even if ML_SERVICE_API_KEY is unset.
+    """
+    old_key = os.environ.pop("ML_SERVICE_API_KEY", None)
+    old_env = os.environ.get("ENVIRONMENT")
+    try:
+        os.environ["ENVIRONMENT"] = "local"
+        resp = client.get("/health")
+        assert resp.status_code == 200
+    finally:
+        if old_key is not None:
+            os.environ["ML_SERVICE_API_KEY"] = old_key
+        if old_env is not None:
+            os.environ["ENVIRONMENT"] = old_env
+        else:
+            os.environ.pop("ENVIRONMENT", None)
+

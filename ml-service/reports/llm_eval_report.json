@@ -1,0 +1,634 @@
+{
+  "evaluation_metadata": {
+    "title": "WealthGenie Base Open-Weight LLM Evaluation Report",
+    "evaluated_model": "Qwen/Qwen2.5-0.5B-Instruct (Base Open-Weight Model, Non-Fine-Tuned)",
+    "eval_timestamp": "2026-07-31T11:02:01.163472+00:00",
+    "sample_count": 25,
+    "note": "This report evaluates the base, non-fine-tuned Qwen2.5-0.5B-Instruct model against hand-labeled gold reference answers. Fine-tuning is explicitly out of scope for this pass.",
+    "metrics_dictionary": {
+      "bleu": "N-gram precision with brevity penalty (0.0 to 1.0)",
+      "rouge1": "Unigram recall against gold reference (0.0 to 1.0)",
+      "rougeL": "Longest Common Subsequence recall (0.0 to 1.0)",
+      "lexical_overlap_score": "Rescaled Jaccard word-overlap (0.4 + 0.6*Jaccard). Fast surface metric, NOT BERTScore.",
+      "semantic_embedding_similarity": "SentenceTransformer (all-MiniLM-L6-v2) 384D vector cosine similarity.",
+      "faithfulness_score": "Lexical & semantic grounding ratio against context chunks."
+    }
+  },
+  "aggregate_metrics": {
+    "mean_bleu": 0.0278,
+    "mean_rouge1": 0.3928,
+    "mean_rougeL": 0.2844,
+    "mean_lexical_overlap_score": 0.4998,
+    "mean_semantic_embedding_similarity": 0.4998,
+    "mean_faithfulness_score": 0.5608,
+    "mean_latency_ms": 8445.73
+  },
+  "worst_3_failure_analysis": [
+    {
+      "id": "eval_06",
+      "instruction": "How should a 25-year-old aggressive investor allocate their monthly surplus?",
+      "generated_response": "Allocating your monthly surplus to different investments can be a smart strategy for maximizing returns while managing risk. Here’s how you might structure your allocation:\n\n1. **High-Risk, High-Payoff Investments**: Consider investing in high-risk, high-reward assets like stocks or real estate. These typically",
+      "gold_reference": "A 25-year-old aggressive investor should allocate 70-80% to high-growth equity mutual funds (flexi-cap, small/mid cap) and 20-30% to fixed income/emergency liquid reserves.",
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.1071,
+        "rouge2": 0.0,
+        "rougeL": 0.0667,
+        "lexical_overlap_score": 0.4277,
+        "semantic_embedding_similarity": 0.4277,
+        "faithfulness_score": 0.2457,
+        "hallucination_score": 0.7543,
+        "composite_quality_score": 0.2336
+      },
+      "failure_analysis": "Low semantic embedding similarity to gold reference; Low surface n-gram BLEU overlap; Incomplete context grounding"
+    },
+    {
+      "id": "eval_23",
+      "instruction": "Why should investors rebalance their portfolio periodically?",
+      "generated_response": "Investors should regularly rebalance their portfolios to ensure that they have a diversified mix of assets that can adapt to market changes and provide the best possible returns over time. This is especially important for those who want to minimize risk exposure while maximizing potential gains.\n\nHere are some reasons why regular rebalancing is crucial",
+      "gold_reference": "Periodic rebalancing aligns portfolio risk with target asset allocation by trimming outperforming assets and buying underperforming ones.",
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2353,
+        "rouge2": 0.0,
+        "rougeL": 0.1176,
+        "lexical_overlap_score": 0.4375,
+        "semantic_embedding_similarity": 0.4375,
+        "faithfulness_score": 0.3627,
+        "hallucination_score": 0.6373,
+        "composite_quality_score": 0.2711
+      },
+      "failure_analysis": "Low semantic embedding similarity to gold reference; Low surface n-gram BLEU overlap; Incomplete context grounding"
+    },
+    {
+      "id": "eval_08",
+      "instruction": "What is SEBI's mandate regarding Mutual Fund riskometers?",
+      "generated_response": "SEBI (Securities and Exchange Board of India) has a specific mandate to ensure the fair and efficient functioning of the securities market in India. One of their key responsibilities includes overseeing mutual funds and ensuring that they comply with various regulatory requirements.\n\nRegarding the SEBI's mandate regarding Mutual Fund Riskometers:",
+      "gold_reference": "SEBI requires all mutual fund schemes to display a 6-level riskometer updated monthly based on actual underlying portfolio risk.",
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.25,
+        "rouge2": 0.0526,
+        "rougeL": 0.15,
+        "lexical_overlap_score": 0.4556,
+        "semantic_embedding_similarity": 0.4556,
+        "faithfulness_score": 0.3706,
+        "hallucination_score": 0.6294,
+        "composite_quality_score": 0.2864
+      },
+      "failure_analysis": "Low semantic embedding similarity to gold reference; Low surface n-gram BLEU overlap; Incomplete context grounding"
+    }
+  ],
+  "per_sample_results": [
+    {
+      "id": "eval_01",
+      "category": "taxation",
+      "instruction": "What is the maximum tax deduction allowed under Section 80C of the Income Tax Act?",
+      "context_chunks": [
+        "Section 80C of the Income Tax Act allows an overall tax deduction up to Rs 1,500,000 (1.5 lakh) per financial year across eligible instruments such as ELSS, PPF, EPF, and tax-saver FDs."
+      ],
+      "gold_reference": "Under Section 80C of the Income Tax Act, taxpayers can claim a maximum deduction of Rs 1.5 lakh (Rs 150,000) per financial year for investments in ELSS, PPF, EPF, and tax-saver FDs.",
+      "generated_response": "Under Section 80C of the Income Tax Act, there is no specific limit for a maximum tax deduction. However, it's important to note that the amount you can deduct depends on your income and other factors such as your age, marital status, and number of dependents.\n\nFor individuals earning",
+      "latency_ms": 8514.5,
+      "metrics": {
+        "bleu": 0.1624,
+        "rouge1": 0.4375,
+        "rouge2": 0.2353,
+        "rougeL": 0.3714,
+        "lexical_overlap_score": 0.5377,
+        "semantic_embedding_similarity": 0.5377,
+        "faithfulness_score": 0.588,
+        "hallucination_score": 0.412,
+        "composite_quality_score": 0.4394
+      }
+    },
+    {
+      "id": "eval_02",
+      "category": "taxation",
+      "instruction": "How does Section 87A rebate work under the New Tax Regime (Section 115BAC)?",
+      "context_chunks": [
+        "Under the New Tax Regime (Section 115BAC) for FY 2024-25 / AY 2025-26, resident individuals with taxable income up to Rs 7,00,000 receive a full tax rebate under Section 87A up to Rs 25,000, making their net tax liability zero."
+      ],
+      "gold_reference": "Under the New Tax Regime, Section 87A provides a tax rebate up to Rs 25,000 for resident individuals with net taxable income up to Rs 7 lakh, resulting in zero net tax liability.",
+      "generated_response": "Under the New Tax Regime (Section 115BAC), Section 87A of the Income Tax Act, 1961 is a special provision that allows individuals to claim a refund of their income tax liability for certain expenses incurred in connection with the purchase or acquisition of property",
+      "latency_ms": 8426.18,
+      "metrics": {
+        "bleu": 0.1447,
+        "rouge1": 0.5357,
+        "rouge2": 0.2258,
+        "rougeL": 0.3529,
+        "lexical_overlap_score": 0.5875,
+        "semantic_embedding_similarity": 0.5875,
+        "faithfulness_score": 0.7159,
+        "hallucination_score": 0.2841,
+        "composite_quality_score": 0.4777
+      }
+    },
+    {
+      "id": "eval_03",
+      "category": "mutual_funds",
+      "instruction": "What is the lock-in period for ELSS mutual funds compared to other tax-saving instruments?",
+      "context_chunks": [
+        "ELSS mutual funds have a mandatory lock-in period of 3 years, which is the shortest among all Section 80C tax-saving options compared to PPF (15 years) and Tax Saver FDs (5 years)."
+      ],
+      "gold_reference": "ELSS mutual funds have a mandatory 3-year lock-in period, which is the shortest lock-in among Section 80C options compared to 5 years for Tax Saver FDs and 15 years for PPF.",
+      "generated_response": "The lock-in period for Eligibility-Only Savings (ELSS) mutual funds in India varies depending on the fund's type and the investor's age at the time of purchase. Generally, the lock-in period for a new fund can be up to 18 months or more, but it may",
+      "latency_ms": 8524.49,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.3667,
+        "rouge2": 0.129,
+        "rougeL": 0.2353,
+        "lexical_overlap_score": 0.5138,
+        "semantic_embedding_similarity": 0.5138,
+        "faithfulness_score": 0.735,
+        "hallucination_score": 0.265,
+        "composite_quality_score": 0.3996
+      }
+    },
+    {
+      "id": "eval_04",
+      "category": "government_schemes",
+      "instruction": "What is the annual contribution limit for Public Provident Fund (PPF)?",
+      "context_chunks": [
+        "A subscriber can deposit a minimum of Rs 500 and a maximum of Rs 1,500,000 (1.5 lakh) in a PPF account in a financial year, either in lump sum or installments."
+      ],
+      "gold_reference": "The minimum annual deposit for a PPF account is Rs 500 and the maximum limit is Rs 1.5 lakh per financial year.",
+      "generated_response": "The annual contribution limit for the Public Provident Fund (PPF) in India is Rs 10,000 per year. This amount can be used to contribute towards various expenses such as education, healthcare, travel, and personal development.\n\nHowever, it's important to note that this is",
+      "latency_ms": 8618.26,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.5,
+        "rouge2": 0.0476,
+        "rougeL": 0.3478,
+        "lexical_overlap_score": 0.5176,
+        "semantic_embedding_similarity": 0.5176,
+        "faithfulness_score": 0.4667,
+        "hallucination_score": 0.5333,
+        "composite_quality_score": 0.3699
+      }
+    },
+    {
+      "id": "eval_05",
+      "category": "taxation",
+      "instruction": "What additional tax benefit is available for NPS contributions under Section 80CCD(1B)?",
+      "context_chunks": [
+        "Section 80CCD(1B) offers an exclusive additional tax deduction of up to Rs 50,000 for Tier-I National Pension System (NPS) contributions, over and above the Rs 1.5 lakh limit of Section 80C."
+      ],
+      "gold_reference": "Section 80CCD(1B) allows an additional exclusive deduction up to Rs 50,000 for NPS Tier-I deposits over and above the Section 80C limit of Rs 1.5 lakh.",
+      "generated_response": "Under Section 80C of the Income Tax Act, 1961, a company can make a deduction in its income for every Rs. 5000 invested by its employees as part of their employment-related expenses. This deduction is known as \"NPS (Non-Provid",
+      "latency_ms": 8772.85,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2857,
+        "rouge2": 0.0345,
+        "rougeL": 0.1333,
+        "lexical_overlap_score": 0.4873,
+        "semantic_embedding_similarity": 0.4873,
+        "faithfulness_score": 0.589,
+        "hallucination_score": 0.411,
+        "composite_quality_score": 0.3394
+      }
+    },
+    {
+      "id": "eval_06",
+      "category": "asset_allocation",
+      "instruction": "How should a 25-year-old aggressive investor allocate their monthly surplus?",
+      "context_chunks": [
+        "Young investors with long horizons (>10 years) can allocate 70-80% to equity mutual funds (Flexi Cap, Large & Mid Cap, ELSS) and 20-30% to debt/emergency funds."
+      ],
+      "gold_reference": "A 25-year-old aggressive investor should allocate 70-80% to high-growth equity mutual funds (flexi-cap, small/mid cap) and 20-30% to fixed income/emergency liquid reserves.",
+      "generated_response": "Allocating your monthly surplus to different investments can be a smart strategy for maximizing returns while managing risk. Here’s how you might structure your allocation:\n\n1. **High-Risk, High-Payoff Investments**: Consider investing in high-risk, high-reward assets like stocks or real estate. These typically",
+      "latency_ms": 8414.12,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.1071,
+        "rouge2": 0.0,
+        "rougeL": 0.0667,
+        "lexical_overlap_score": 0.4277,
+        "semantic_embedding_similarity": 0.4277,
+        "faithfulness_score": 0.2457,
+        "hallucination_score": 0.7543,
+        "composite_quality_score": 0.2336
+      }
+    },
+    {
+      "id": "eval_07",
+      "category": "fixed_income",
+      "instruction": "What is the key feature of RBI Floating Rate Savings Bonds (FRSB)?",
+      "context_chunks": [
+        "RBI Floating Rate Savings Bonds have a 7-year tenure and semi-annual interest payout. The coupon rate is benchmarked to National Savings Certificate (NSC) rate + 0.35% and resets every 6 months."
+      ],
+      "gold_reference": "RBI Floating Rate Savings Bonds carry a 7-year lock-in with semi-annual interest reset to NSC yield + 0.35%, guaranteeing sovereign security.",
+      "generated_response": "The key feature of RBI Floating Rate Savings Bonds (FRSB) is that they offer a floating interest rate based on market conditions rather than fixed rates set by the government. This means that the investor's return on their investment can fluctuate depending on the prevailing market interest rates at the time of purchase.",
+      "latency_ms": 8020.41,
+      "metrics": {
+        "bleu": 0.0686,
+        "rouge1": 0.2917,
+        "rouge2": 0.1739,
+        "rougeL": 0.2917,
+        "lexical_overlap_score": 0.4724,
+        "semantic_embedding_similarity": 0.4724,
+        "faithfulness_score": 0.525,
+        "hallucination_score": 0.475,
+        "composite_quality_score": 0.366
+      }
+    },
+    {
+      "id": "eval_08",
+      "category": "regulation",
+      "instruction": "What is SEBI's mandate regarding Mutual Fund riskometers?",
+      "context_chunks": [
+        "SEBI mandates six riskometer categories (Low, Low to Moderate, Moderate, Moderately High, High, Very High) evaluated monthly based on scheme portfolio holdings."
+      ],
+      "gold_reference": "SEBI requires all mutual fund schemes to display a 6-level riskometer updated monthly based on actual underlying portfolio risk.",
+      "generated_response": "SEBI (Securities and Exchange Board of India) has a specific mandate to ensure the fair and efficient functioning of the securities market in India. One of their key responsibilities includes overseeing mutual funds and ensuring that they comply with various regulatory requirements.\n\nRegarding the SEBI's mandate regarding Mutual Fund Riskometers:",
+      "latency_ms": 8445.86,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.25,
+        "rouge2": 0.0526,
+        "rougeL": 0.15,
+        "lexical_overlap_score": 0.4556,
+        "semantic_embedding_similarity": 0.4556,
+        "faithfulness_score": 0.3706,
+        "hallucination_score": 0.6294,
+        "composite_quality_score": 0.2864
+      }
+    },
+    {
+      "id": "eval_09",
+      "category": "taxation",
+      "instruction": "How are LTCG on equity shares and equity mutual funds taxed after Budget 2024?",
+      "context_chunks": [
+        "Post Budget 2024, Long-Term Capital Gains (LTCG) on equity mutual funds held over 12 months are taxed at 12.5% for gains exceeding the annual threshold of Rs 1.25 lakh."
+      ],
+      "gold_reference": "Long-term capital gains (LTCG) on equity mutual funds held for over 1 year are taxed at 12.5% on gains exceeding Rs 1.25 lakh in a financial year.",
+      "generated_response": "The Taxation of Equity Shares and Equity Mutual Funds in India is governed by the Income Tax Act (ITA). Here's a summary of how it works:\n\n1. **Equity Shares**: \n   - **Taxable**: Yes\n   - **Taxes Paid**: The income from equity shares",
+      "latency_ms": 8282.93,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2308,
+        "rouge2": 0.069,
+        "rougeL": 0.1667,
+        "lexical_overlap_score": 0.472,
+        "semantic_embedding_similarity": 0.472,
+        "faithfulness_score": 0.6462,
+        "hallucination_score": 0.3538,
+        "composite_quality_score": 0.3514
+      }
+    },
+    {
+      "id": "eval_10",
+      "category": "fixed_income",
+      "instruction": "What is the Senior Citizens Savings Scheme (SCSS) maximum deposit limit and interest payment frequency?",
+      "context_chunks": [
+        "The maximum deposit limit for SCSS is Rs 30 lakh per senior citizen individual. Interest is paid out quarterly on the first working day of April, July, October, and January."
+      ],
+      "gold_reference": "SCSS permits a maximum investment of Rs 30 lakh per individual aged 60+, with interest disbursed quarterly.",
+      "generated_response": "The Senior Citizens Savings Scheme (SCSS) in India has a maximum deposit limit of Rs 10 lakh per person for both individual and joint accounts. This means that individuals can contribute up to this amount each year towards their savings account.\n\nThe interest rate for SCSS deposits is fixed at 5",
+      "latency_ms": 8402.15,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.5294,
+        "rouge2": 0.1875,
+        "rougeL": 0.5294,
+        "lexical_overlap_score": 0.5,
+        "semantic_embedding_similarity": 0.5,
+        "faithfulness_score": 0.5559,
+        "hallucination_score": 0.4441,
+        "composite_quality_score": 0.4171
+      }
+    },
+    {
+      "id": "eval_11",
+      "category": "mutual_funds",
+      "instruction": "What is the difference between Direct and Regular mutual fund plans?",
+      "context_chunks": [
+        "Direct plans have a lower expense ratio because no distributor commission is paid, leading to higher net NAV and compounded returns over time compared to Regular plans."
+      ],
+      "gold_reference": "Direct mutual fund plans do not include distributor commission, resulting in a lower expense ratio and higher long-term returns compared to Regular plans.",
+      "generated_response": "The main difference between a direct and regular mutual fund plan in India lies in their structure and how they handle investments.\n\nA direct mutual fund plan is one where you directly invest your money into the fund's portfolio. This means that you own all of the shares or units of the fund, which can be",
+      "latency_ms": 8857.56,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.3043,
+        "rouge2": 0.087,
+        "rougeL": 0.2083,
+        "lexical_overlap_score": 0.4712,
+        "semantic_embedding_similarity": 0.4712,
+        "faithfulness_score": 0.4789,
+        "hallucination_score": 0.5211,
+        "composite_quality_score": 0.3259
+      }
+    },
+    {
+      "id": "eval_12",
+      "category": "emergency_fund",
+      "instruction": "How many months of living expenses should be kept in an emergency fund?",
+      "context_chunks": [
+        "Financial advisors recommend maintaining 3 to 6 months of essential living expenses in liquid avenues such as high-yield savings accounts or overnight/liquid funds."
+      ],
+      "gold_reference": "An emergency fund should cover 3 to 6 months of essential living expenses parked in liquid, low-volatility accounts.",
+      "generated_response": "The amount you keep in your emergency fund depends on several factors such as your income level, risk tolerance, and the length of time you plan to live. Generally, it is recommended that you have at least 3-6 months' worth of living expenses saved as an emergency fund.\n\nHere's a",
+      "latency_ms": 9026.81,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.5789,
+        "rouge2": 0.2222,
+        "rougeL": 0.4211,
+        "lexical_overlap_score": 0.5269,
+        "semantic_embedding_similarity": 0.5269,
+        "faithfulness_score": 0.5048,
+        "hallucination_score": 0.4952,
+        "composite_quality_score": 0.3959
+      }
+    },
+    {
+      "id": "eval_13",
+      "category": "taxation",
+      "instruction": "Can an individual claim both HRA and home loan tax benefits?",
+      "context_chunks": [
+        "Yes, a taxpayer can claim both HRA tax exemption under Section 10(13A) and home loan interest deduction under Section 24(b) if they live in rented housing while owning a home in a different city or renting out their owned property."
+      ],
+      "gold_reference": "Yes, both HRA exemption and home loan tax deductions can be claimed simultaneously if legitimate conditions regarding residence and workplace are satisfied.",
+      "generated_response": "Yes, an individual can claim both the Home Loan Tax Benefits (HRLB) and the House Rent Allowance (HRA) at the same time. The HRA is a special benefit that allows individuals to deduct up to 20% of their mortgage payments from their taxable income for the",
+      "latency_ms": 8619.84,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.381,
+        "rouge2": 0.0952,
+        "rougeL": 0.2727,
+        "lexical_overlap_score": 0.4923,
+        "semantic_embedding_similarity": 0.4923,
+        "faithfulness_score": 0.6163,
+        "hallucination_score": 0.3837,
+        "composite_quality_score": 0.3747
+      }
+    },
+    {
+      "id": "eval_14",
+      "category": "gold_investing",
+      "instruction": "What are Sovereign Gold Bonds (SGB) and what is their interest rate?",
+      "context_chunks": [
+        "Sovereign Gold Bonds (SGBs) are government securities denominated in grams of gold issued by the RBI. They offer a fixed interest rate of 2.50% per annum on the initial investment amount."
+      ],
+      "gold_reference": "Sovereign Gold Bonds (SGB) are RBI-issued paper gold securities paying 2.50% per annum fixed interest alongside gold price appreciation.",
+      "generated_response": "Sovereign Gold Bonds (SGBs) are a type of government bond that are issued by the Government of India to finance various public works projects such as infrastructure development, road construction, and other essential services. These bonds have a fixed maturity date and pay interest at a predetermined rate based on the yield",
+      "latency_ms": 8062.9,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.3684,
+        "rouge2": 0.1,
+        "rougeL": 0.3333,
+        "lexical_overlap_score": 0.475,
+        "semantic_embedding_similarity": 0.475,
+        "faithfulness_score": 0.5654,
+        "hallucination_score": 0.4346,
+        "composite_quality_score": 0.3697
+      }
+    },
+    {
+      "id": "eval_15",
+      "category": "portfolio_management",
+      "instruction": "What is systematic investment plan (SIP) rupee cost averaging?",
+      "context_chunks": [
+        "Rupee cost averaging via SIP involves investing a fixed amount regularly regardless of market levels, purchasing more fund units when prices drop and fewer units when prices rise."
+      ],
+      "gold_reference": "Rupee cost averaging allows investors to automatically buy more units during market dips and fewer during rallies by investing fixed amounts periodically.",
+      "generated_response": "A Systematic Investment Plan (SIP), also known as a SIP rupee cost averaging, is a type of investment strategy where you allocate your capital to different investments in a way that minimizes the impact of market volatility on your overall returns. The idea behind SIP is to spread out your investments over",
+      "latency_ms": 8899.13,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2381,
+        "rouge2": 0.0952,
+        "rougeL": 0.2273,
+        "lexical_overlap_score": 0.4545,
+        "semantic_embedding_similarity": 0.4545,
+        "faithfulness_score": 0.5048,
+        "hallucination_score": 0.4952,
+        "composite_quality_score": 0.3282
+      }
+    },
+    {
+      "id": "eval_16",
+      "category": "debt_funds",
+      "instruction": "How are debt mutual fund capital gains taxed after April 1, 2023?",
+      "context_chunks": [
+        "Gains from debt mutual funds acquired after April 1, 2023 with <=35% equity exposure are taxed as short-term capital gains at the investor's applicable income tax slab rate regardless of holding period."
+      ],
+      "gold_reference": "Debt mutual funds bought after April 1, 2023 are taxed as short-term capital gains at the investor's marginal slab rate regardless of holding duration.",
+      "generated_response": "Debt mutual funds (DMFs) have a different tax treatment for capital gains compared to equity mutual funds (EMFs). Here's how it works:\n\n1. **Capital Gains Taxation**: After April 1, 2023, the capital gains from investments in DMFs are subject",
+      "latency_ms": 8816.63,
+      "metrics": {
+        "bleu": 0.0996,
+        "rouge1": 0.4615,
+        "rouge2": 0.24,
+        "rougeL": 0.3462,
+        "lexical_overlap_score": 0.5565,
+        "semantic_embedding_similarity": 0.5565,
+        "faithfulness_score": 0.735,
+        "hallucination_score": 0.265,
+        "composite_quality_score": 0.4588
+      }
+    },
+    {
+      "id": "eval_17",
+      "category": "taxation",
+      "instruction": "What is the standard deduction under the New Tax Regime for salaried employees in FY 2024-25?",
+      "context_chunks": [
+        "Budget 2024 enhanced the standard deduction under the New Tax Regime (Section 115BAC) from Rs 50,000 to Rs 75,000 for salaried employees and pensioners."
+      ],
+      "gold_reference": "Under the New Tax Regime for FY 2024-25, salaried taxpayers receive a standard deduction of Rs 75,000.",
+      "generated_response": "The standard deduction for salaried employees in the New Tax Regime (NTR) for FY 2024-25 is Rs. 13,600 per year. This amount includes a flat rate of Rs. 13,600 plus a progressive",
+      "latency_ms": 7868.12,
+      "metrics": {
+        "bleu": 0.1634,
+        "rouge1": 0.7368,
+        "rouge2": 0.4444,
+        "rougeL": 0.5789,
+        "lexical_overlap_score": 0.6471,
+        "semantic_embedding_similarity": 0.6471,
+        "faithfulness_score": 0.81,
+        "hallucination_score": 0.19,
+        "composite_quality_score": 0.5693
+      }
+    },
+    {
+      "id": "eval_18",
+      "category": "asset_allocation",
+      "instruction": "What is the rule of 100 in asset allocation?",
+      "context_chunks": [
+        "The Rule of 100 suggests subtracting an investor's age from 100 to determine their equity allocation percentage, allocating the remainder to fixed income."
+      ],
+      "gold_reference": "The Rule of 100 calculates equity allocation as (100 minus age) percentage, allocating the remaining percentage to debt instruments.",
+      "generated_response": "The Rule of 100 is a simple way to estimate your total assets for retirement planning purposes. It's based on the idea that you should have at least $100,000 saved as a buffer against unexpected expenses or changes in income. This amount can be adjusted depending on",
+      "latency_ms": 7837.39,
+      "metrics": {
+        "bleu": 0.0554,
+        "rouge1": 0.375,
+        "rouge2": 0.1667,
+        "rougeL": 0.2632,
+        "lexical_overlap_score": 0.4655,
+        "semantic_embedding_similarity": 0.4655,
+        "faithfulness_score": 0.5357,
+        "hallucination_score": 0.4643,
+        "composite_quality_score": 0.3571
+      }
+    },
+    {
+      "id": "eval_19",
+      "category": "retirement",
+      "instruction": "What is the withdrawal rule for NPS Tier-I at retirement age (60)?",
+      "context_chunks": [
+        "Upon reaching age 60, NPS subscribers can withdraw up to 60% of the accumulated corpus tax-free as a lump sum, while the remaining 40% must be mandatorily converted into an annuity."
+      ],
+      "gold_reference": "At age 60, NPS permits up to 60% tax-free lump sum withdrawal, requiring at least 40% to purchase a monthly pension annuity.",
+      "generated_response": "The withdrawal rule for NPS Tier-I at retirement age (60) in India varies depending on your specific circumstances and the terms of your pension plan or insurance policy. Here’s a general overview:\n\n1. **Pension Plan Terms**: If you have a defined contribution pension plan like NPS (",
+      "latency_ms": 8268.96,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.35,
+        "rouge2": 0.0455,
+        "rougeL": 0.2174,
+        "lexical_overlap_score": 0.4808,
+        "semantic_embedding_similarity": 0.4808,
+        "faithfulness_score": 0.4375,
+        "hallucination_score": 0.5625,
+        "composite_quality_score": 0.3233
+      }
+    },
+    {
+      "id": "eval_20",
+      "category": "mutual_funds",
+      "instruction": "What is an index fund and how does its expense ratio compare to active funds?",
+      "context_chunks": [
+        "Index funds passively track a market benchmark like Nifty 50 or Sensex, resulting in lower turnover and significantly lower expense ratios (often 0.1-0.3%) compared to actively managed funds."
+      ],
+      "gold_reference": "Index funds passively replicate a market index, maintaining significantly lower expense ratios than actively managed funds.",
+      "generated_response": "An Index Fund is a type of mutual fund that tracks the performance of a specific market index or basket of stocks. It's designed to provide a diversified portfolio with low management fees compared to actively managed funds.\n\nThe expense ratio of an index fund typically ranges from 0% to 1%, depending on",
+      "latency_ms": 8701.6,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.5,
+        "rouge2": 0.2,
+        "rougeL": 0.4375,
+        "lexical_overlap_score": 0.4875,
+        "semantic_embedding_similarity": 0.4875,
+        "faithfulness_score": 0.6028,
+        "hallucination_score": 0.3972,
+        "composite_quality_score": 0.4031
+      }
+    },
+    {
+      "id": "eval_21",
+      "category": "taxation",
+      "instruction": "What is the tax treatment of health insurance premium under Section 80D?",
+      "context_chunks": [
+        "Section 80D provides deductions up to Rs 25,000 for self/family and an additional Rs 25,000 (or Rs 50,000 for senior citizen parents) for health insurance premiums under Old Tax Regime."
+      ],
+      "gold_reference": "Section 80D offers deductions up to Rs 25,000 for self/family and up to Rs 50,000 for senior citizen parents on health insurance premiums.",
+      "generated_response": "Under Section 80D of the Income Tax Act, 1961, a health insurance premium paid by an individual or company for the purpose of providing health care services to its employees or clients is not considered taxable income. This means that the entire premium amount is exempt from taxation.\n\nHowever",
+      "latency_ms": 8176.57,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2857,
+        "rouge2": 0.0909,
+        "rougeL": 0.1538,
+        "lexical_overlap_score": 0.4643,
+        "semantic_embedding_similarity": 0.4643,
+        "faithfulness_score": 0.5143,
+        "hallucination_score": 0.4857,
+        "composite_quality_score": 0.3193
+      }
+    },
+    {
+      "id": "eval_22",
+      "category": "fixed_income",
+      "instruction": "What is the penalty for premature closure of a 5-year bank Fixed Deposit?",
+      "context_chunks": [
+        "5-year Tax Saver Bank FDs have a mandatory lock-in and cannot be prematurely closed. Standard FDs allow premature closure subject to a 0.5% to 1.0% interest rate penalty."
+      ],
+      "gold_reference": "Tax Saver 5-year FDs cannot be closed prematurely. Regular FDs incur a 0.5-1% interest penalty on premature withdrawal.",
+      "generated_response": "The penalty for prematurely closing a 5-year fixed deposit in India can vary depending on several factors such as the type of deposit (e.g., demand deposit, savings account), the bank, and the specific circumstances of the transaction.\n\nIn general, there may be penalties for early withdrawal from a fixed deposit",
+      "latency_ms": 8859.28,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.4211,
+        "rouge2": 0.05,
+        "rougeL": 0.2381,
+        "lexical_overlap_score": 0.4941,
+        "semantic_embedding_similarity": 0.4941,
+        "faithfulness_score": 0.525,
+        "hallucination_score": 0.475,
+        "composite_quality_score": 0.3503
+      }
+    },
+    {
+      "id": "eval_23",
+      "category": "risk_management",
+      "instruction": "Why should investors rebalance their portfolio periodically?",
+      "context_chunks": [
+        "Rebalancing restores a portfolio's original target asset allocation, controlling risk exposure after market movements cause equities or debt to drift."
+      ],
+      "gold_reference": "Periodic rebalancing aligns portfolio risk with target asset allocation by trimming outperforming assets and buying underperforming ones.",
+      "generated_response": "Investors should regularly rebalance their portfolios to ensure that they have a diversified mix of assets that can adapt to market changes and provide the best possible returns over time. This is especially important for those who want to minimize risk exposure while maximizing potential gains.\n\nHere are some reasons why regular rebalancing is crucial",
+      "latency_ms": 8310.74,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.2353,
+        "rouge2": 0.0,
+        "rougeL": 0.1176,
+        "lexical_overlap_score": 0.4375,
+        "semantic_embedding_similarity": 0.4375,
+        "faithfulness_score": 0.3627,
+        "hallucination_score": 0.6373,
+        "composite_quality_score": 0.2711
+      }
+    },
+    {
+      "id": "eval_24",
+      "category": "regulation",
+      "instruction": "What is AMFI and what is its role in the Indian mutual fund industry?",
+      "context_chunks": [
+        "Association of Mutual Funds in India (AMFI) is the self-regulatory industry body promoting investor education, code of conduct, and ARN registration for fund distributors."
+      ],
+      "gold_reference": "AMFI is the industry association of SEBI-registered mutual fund asset management companies in India, setting standards and distributor practices.",
+      "generated_response": "AMFI stands for \"All India Mutual Fund Industry\" and it is a regulatory body that oversees all mutual funds in India. It ensures that all mutual funds operate within legal and ethical standards set by the government of India. The role of AMFI is to ensure that mutual funds comply with the laws and",
+      "latency_ms": 8203.6,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.55,
+        "rouge2": 0.1579,
+        "rougeL": 0.35,
+        "lexical_overlap_score": 0.55,
+        "semantic_embedding_similarity": 0.55,
+        "faithfulness_score": 0.7194,
+        "hallucination_score": 0.2806,
+        "composite_quality_score": 0.4339
+      }
+    },
+    {
+      "id": "eval_25",
+      "category": "taxation",
+      "instruction": "What is the tax implication of sovereign gold bond redemption at maturity (8 years)?",
+      "context_chunks": [
+        "Capital gains arising on redemption of Sovereign Gold Bonds (SGBs) at maturity (after 8 years) are completely exempt from capital gains tax for individual investors."
+      ],
+      "gold_reference": "Capital gains on SGBs redeemed at full maturity (8 years) are 100% exempt from capital gains tax for individual investors.",
+      "generated_response": "When you redeem a sovereign gold bond at maturity, there are several key points to consider regarding your tax implications:\n\n1. **Tax Implications for Investors**:\n   - **Capital Gains Tax**: If you hold the bond until its maturity date, you will be subject to capital gains tax on any",
+      "latency_ms": 8212.29,
+      "metrics": {
+        "bleu": 0.0,
+        "rouge1": 0.5,
+        "rouge2": 0.1111,
+        "rougeL": 0.3,
+        "lexical_overlap_score": 0.52,
+        "semantic_embedding_similarity": 0.52,
+        "faithfulness_score": 0.6702,
+        "hallucination_score": 0.3298,
+        "composite_quality_score": 0.402
+      }
+    }
+  ]
+}

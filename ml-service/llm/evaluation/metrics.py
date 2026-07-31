@@ -1,6 +1,6 @@
 """
 WealthGenie Open-Weight LLM Platform - Evaluation Metrics
-Calculates perplexity, BLEU score, ROUGE scores (ROUGE-1, ROUGE-2, ROUGE-L), BERTScore similarity, and grounding faithfulness.
+Calculates perplexity, BLEU, ROUGE, lexical overlap, semantic embedding similarity, and grounding faithfulness.
 """
 
 import math
@@ -99,8 +99,12 @@ def compute_rouge(reference: str, candidate: str) -> Dict[str, float]:
     }
 
 
-def compute_bertscore_approx(reference: str, candidate: str) -> float:
-    """Computes TF-IDF/Embedding cosine representation similarity score."""
+def compute_lexical_overlap_score(reference: str, candidate: str) -> float:
+    """
+    Computes rescaled Jaccard word-overlap similarity score.
+    Measures surface-level lexical token overlap between reference and candidate text.
+    Note: This is a fast lexical metric (0.4 + 0.6 * Jaccard), NOT dense contextual BERTScore.
+    """
     ref_words = set(re.findall(r"\w+", reference.lower()))
     cand_words = set(re.findall(r"\w+", candidate.lower()))
 
@@ -111,8 +115,46 @@ def compute_bertscore_approx(reference: str, candidate: str) -> float:
     union = ref_words.union(cand_words)
     jaccard_sim = len(intersection) / len(union) if union else 0.0
 
-    # Rescale to mimic BERTScore similarity range
     return round(min(1.0, 0.4 + 0.6 * jaccard_sim), 4)
+
+
+def compute_bertscore_approx(reference: str, candidate: str) -> float:
+    """
+    DEPRECATED ALIAS for backward compatibility.
+    Calls compute_lexical_overlap_score(). Measures lexical word overlap, not BERTScore.
+    """
+    return compute_lexical_overlap_score(reference, candidate)
+
+
+def compute_embedding_semantic_similarity(reference: str, candidate: str) -> float:
+    """
+    Computes semantic vector similarity between reference and candidate text
+    using SentenceTransformer ('all-MiniLM-L6-v2') dense embeddings.
+    """
+    if not reference or not candidate:
+        return 0.0
+    try:
+        import numpy as _np  # type: ignore[import-not-found]
+        import sys
+        from pathlib import Path
+        # Ensure ml-service is importable for rag.embeddings.provider
+        _ml_svc = str(Path(__file__).resolve().parent.parent.parent)
+        if _ml_svc not in sys.path:
+            sys.path.insert(0, _ml_svc)
+        from rag.embeddings.provider import SentenceTransformerEmbeddingProvider  # type: ignore[import-not-found]
+        embedder = SentenceTransformerEmbeddingProvider()
+        ref_vec = _np.array(embedder.embed_text(reference))
+        cand_vec = _np.array(embedder.embed_text(candidate))
+
+        norm_ref = float(_np.linalg.norm(ref_vec))
+        norm_cand = float(_np.linalg.norm(cand_vec))
+        if norm_ref == 0 or norm_cand == 0:
+            return 0.0
+        cos_sim = float(_np.dot(ref_vec, cand_vec) / (norm_ref * norm_cand))
+        return round(max(0.0, min(1.0, cos_sim)), 4)
+    except Exception:
+        # Fallback to lexical overlap score if embedder unavailable
+        return compute_lexical_overlap_score(reference, candidate)
 
 
 def compute_grounding_faithfulness(context_chunks: List[str], generated_answer: str) -> Dict[str, float]:

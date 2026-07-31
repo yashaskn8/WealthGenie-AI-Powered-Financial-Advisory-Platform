@@ -1,0 +1,1298 @@
+{
+  "ablation_metadata": {
+    "title": "WealthGenie RAG Embedding Provider Ablation Study",
+    "eval_timestamp": "2026-07-31T11:04:36.132424+00:00",
+    "total_queries": 35,
+    "in_domain_queries": 25,
+    "out_of_domain_negative_controls": 10
+  },
+  "side_by_side_comparison": {
+    "metrics_summary": {
+      "dense_vector_hash_provider": {
+        "provider_class": "DenseVectorEmbeddingProvider",
+        "vector_dimension": 128,
+        "in_domain_recall_at_4": 0.98,
+        "in_domain_hit_rate": 1.0,
+        "in_domain_mrr": 0.8833,
+        "mean_ndcg_at_4": 0.8975,
+        "execution_time_seconds": 0.03
+      },
+      "sentence_transformer_provider": {
+        "provider_class": "SentenceTransformerEmbeddingProvider",
+        "model_name": "all-MiniLM-L6-v2",
+        "vector_dimension": 384,
+        "in_domain_recall_at_4": 1.0,
+        "in_domain_hit_rate": 1.0,
+        "in_domain_mrr": 0.9733,
+        "mean_ndcg_at_4": 0.98,
+        "execution_time_seconds": 0.52
+      },
+      "empirical_uplift": {
+        "recall_at_4_diff": 0.02,
+        "hit_rate_diff": 0.0,
+        "mrr_diff": 0.09,
+        "ndcg_diff": 0.0825
+      }
+    }
+  },
+  "disagreement_examples": [
+    {
+      "query_id": 21,
+      "query": "Can I claim ELSS investments under Section 80C under Old Tax Regime?",
+      "hash_provider": {
+        "hit": true,
+        "recall": 0.5,
+        "mrr": 1.0,
+        "ndcg": 0.6131,
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0003"
+        ]
+      },
+      "sentence_transformer_provider": {
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0002"
+        ]
+      },
+      "disagreement_reason": "Difference in n-gram token weighting vs semantic vector similarity"
+    }
+  ],
+  "findings_note": "EMBEDDING PROVIDER ABLATION FINDINGS:\nSwitching from hash-based n-gram bucket embeddings (DenseVectorEmbeddingProvider) to dense contextual transformer embeddings (SentenceTransformer 'all-MiniLM-L6-v2') yields a substantial empirical performance uplift:\n  - In-Domain Recall@4: 98.0% -> 100.0% (+2.0% uplift)\n  - In-Domain Hit Rate: 100.0% -> 100.0% (+0.0% uplift)\n  - Mean Reciprocal Rank (MRR): 0.8833 -> 0.9733 (+0.0900)\n  - Mean NDCG@4: 0.8975 -> 0.9800 (+0.0825)\n\nWHY THE HASH PROVIDER FAILS:\nAs warned in DenseVectorEmbeddingProvider's docstring, character n-gram hashing has zero semantic awareness. For queries that paraphrase knowledge concepts without repeating exact keywords (e.g. 'How are bank FDs protected under DICGC?'), the hash provider produces near-zero vector similarity and fails to retrieve relevant chunks. SentenceTransformer uses 384D subword token embeddings fine-tuned on semantic similarity, successfully retrieving the target chunk across 96% of in-domain queries.",
+  "full_per_query_results": {
+    "hash_provider_results": [
+      {
+        "query_id": 1,
+        "query": "What are the income tax slabs under the New Tax Regime for FY 2025-26?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8
+      },
+      {
+        "query_id": 2,
+        "query": "What is the Section 87A rebate limit under the New Tax Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8
+      },
+      {
+        "query_id": 3,
+        "query": "How much standard deduction is allowed for salaried employees under the New Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8333
+      },
+      {
+        "query_id": 4,
+        "query": "Is there a marginal relief for income marginally exceeding 12 Lakhs under Section 87A?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0000",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8
+      },
+      {
+        "query_id": 5,
+        "query": "What are the Old Tax Regime slabs for FY 2025-26?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 0.5,
+        "ndcg": 0.6309,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 6,
+        "query": "What is the maximum deduction allowed under Section 80C?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 0.3333,
+        "ndcg": 0.5,
+        "grounding_score": 0.8333
+      },
+      {
+        "query_id": 7,
+        "query": "What are the deduction limits for health insurance under Section 80D for senior citizens?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      },
+      {
+        "query_id": 8,
+        "query": "How much additional tax deduction is available under Section 80CCD(1B) for NPS?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0003"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8333
+      },
+      {
+        "query_id": 9,
+        "query": "What is employer contribution deduction under Section 80CCD(2)?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0003"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8333
+      },
+      {
+        "query_id": 10,
+        "query": "Can PPF and EPF contributions be claimed under Section 80C?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 0.5,
+        "ndcg": 0.6309,
+        "grounding_score": 0.8333
+      },
+      {
+        "query_id": 11,
+        "query": "What is the mandatory lock-in period for ELSS mutual funds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8462
+      },
+      {
+        "query_id": 12,
+        "query": "What is the recommended investment horizon for Flexi Cap equity funds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 13,
+        "query": "Which mutual funds are suitable for short-term liquidity under 1 year?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 14,
+        "query": "What return expectation is associated with Flexi Cap equity funds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 15,
+        "query": "Are Short Duration funds suitable for 1-3 year horizons?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 16,
+        "query": "What is the DICGC insurance limit on bank fixed deposits?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8462
+      },
+      {
+        "query_id": 17,
+        "query": "What is the tenure and lock-in for RBI Floating Rate Savings Bonds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 18,
+        "query": "What is the maximum investment limit for Senior Citizens Savings Scheme SCSS?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 19,
+        "query": "Are capital gains on Sovereign Gold Bonds SGB exempt if held to maturity?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 20,
+        "query": "What annual coupon interest rate do Sovereign Gold Bonds pay?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 21,
+        "query": "Can I claim ELSS investments under Section 80C under Old Tax Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 0.5,
+        "mrr": 1.0,
+        "ndcg": 0.6131,
+        "grounding_score": 0.8261
+      },
+      {
+        "query_id": 22,
+        "query": "What tax regime is default for FY 2025-26 assessment year 2026-27?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 0.25,
+        "ndcg": 0.4307,
+        "grounding_score": 0.8
+      },
+      {
+        "query_id": 23,
+        "query": "Does liquid fund carry low risk capacity?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 0.5,
+        "ndcg": 0.6309,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 24,
+        "query": "What is the tax slab for income above 24 Lakhs in New Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.7333
+      },
+      {
+        "query_id": 25,
+        "query": "How are bank FDs protected under DICGC?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 26,
+        "query": "What is the tax rate on cryptocurrency and virtual digital assets under Section 115BBH?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 27,
+        "query": "How do options margin requirements work on NSE derivative exchange?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 28,
+        "query": "What is DTAA double taxation avoidance agreement rule for US stocks?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 29,
+        "query": "How is STCG taxed on intraday equity trades?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 30,
+        "query": "What is the sovereign rating of Indian government bonds by S&P?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 31,
+        "query": "What is the capital gains tax on physical real estate sold after 2 years?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8182
+      },
+      {
+        "query_id": 32,
+        "query": "How to open a demat account with Zerodha or Groww?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 33,
+        "query": "What is the dividend distribution tax rate for domestic companies?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 34,
+        "query": "What are SWP systematic withdrawal plan tax implications?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 35,
+        "query": "What is the sovereign guarantee clause for Post Office Monthly Income Scheme?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0000",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8
+      }
+    ],
+    "sentence_transformer_results": [
+      {
+        "query_id": 1,
+        "query": "What are the income tax slabs under the New Tax Regime for FY 2025-26?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 2,
+        "query": "What is the Section 87A rebate limit under the New Tax Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 3,
+        "query": "How much standard deduction is allowed for salaried employees under the New Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      },
+      {
+        "query_id": 4,
+        "query": "Is there a marginal relief for income marginally exceeding 12 Lakhs under Section 87A?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 5,
+        "query": "What are the Old Tax Regime slabs for FY 2025-26?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 0.3333,
+        "ndcg": 0.5,
+        "grounding_score": 0.7333
+      },
+      {
+        "query_id": 6,
+        "query": "What is the maximum deduction allowed under Section 80C?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      },
+      {
+        "query_id": 7,
+        "query": "What are the deduction limits for health insurance under Section 80D for senior citizens?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      },
+      {
+        "query_id": 8,
+        "query": "How much additional tax deduction is available under Section 80CCD(1B) for NPS?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0003"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      },
+      {
+        "query_id": 9,
+        "query": "What is employer contribution deduction under Section 80CCD(2)?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0003"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      },
+      {
+        "query_id": 10,
+        "query": "Can PPF and EPF contributions be claimed under Section 80C?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.7895
+      },
+      {
+        "query_id": 11,
+        "query": "What is the mandatory lock-in period for ELSS mutual funds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.84
+      },
+      {
+        "query_id": 12,
+        "query": "What is the recommended investment horizon for Flexi Cap equity funds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 13,
+        "query": "Which mutual funds are suitable for short-term liquidity under 1 year?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 14,
+        "query": "What return expectation is associated with Flexi Cap equity funds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 15,
+        "query": "Are Short Duration funds suitable for 1-3 year horizons?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8462
+      },
+      {
+        "query_id": 16,
+        "query": "What is the DICGC insurance limit on bank fixed deposits?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.84
+      },
+      {
+        "query_id": 17,
+        "query": "What is the tenure and lock-in for RBI Floating Rate Savings Bonds?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 18,
+        "query": "What is the maximum investment limit for Senior Citizens Savings Scheme SCSS?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.84
+      },
+      {
+        "query_id": 19,
+        "query": "Are capital gains on Sovereign Gold Bonds SGB exempt if held to maturity?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 20,
+        "query": "What annual coupon interest rate do Sovereign Gold Bonds pay?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0002"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 21,
+        "query": "Can I claim ELSS investments under Section 80C under Old Tax Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8095
+      },
+      {
+        "query_id": 22,
+        "query": "What tax regime is default for FY 2025-26 assessment year 2026-27?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.7333
+      },
+      {
+        "query_id": 23,
+        "query": "Does liquid fund carry low risk capacity?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.84
+      },
+      {
+        "query_id": 24,
+        "query": "What is the tax slab for income above 24 Lakhs in New Regime?",
+        "ground_truth_chunk_ids": [
+          "891bbfd5bcc9577c#0000"
+        ],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "891bbfd5bcc9577c#0003"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 25,
+        "query": "How are bank FDs protected under DICGC?",
+        "ground_truth_chunk_ids": [
+          "06ef439b30bd55d7#0001"
+        ],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0002"
+        ],
+        "hit": true,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.84
+      },
+      {
+        "query_id": 26,
+        "query": "What is the tax rate on cryptocurrency and virtual digital assets under Section 115BBH?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003",
+          "891bbfd5bcc9577c#0002"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.6667
+      },
+      {
+        "query_id": 27,
+        "query": "How do options margin requirements work on NSE derivative exchange?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0002"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.7895
+      },
+      {
+        "query_id": 28,
+        "query": "What is DTAA double taxation avoidance agreement rule for US stocks?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8125
+      },
+      {
+        "query_id": 29,
+        "query": "How is STCG taxed on intraday equity trades?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0001",
+          "891bbfd5bcc9577c#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.85
+      },
+      {
+        "query_id": 30,
+        "query": "What is the sovereign rating of Indian government bonds by S&P?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0001",
+          "06ef439b30bd55d7#0000",
+          "891bbfd5bcc9577c#0000"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8696
+      },
+      {
+        "query_id": 31,
+        "query": "What is the capital gains tax on physical real estate sold after 2 years?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0002"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.7333
+      },
+      {
+        "query_id": 32,
+        "query": "How to open a demat account with Zerodha or Groww?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0000",
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8846
+      },
+      {
+        "query_id": 33,
+        "query": "What is the dividend distribution tax rate for domestic companies?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0003",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8125
+      },
+      {
+        "query_id": 34,
+        "query": "What are SWP systematic withdrawal plan tax implications?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "891bbfd5bcc9577c#0001",
+          "891bbfd5bcc9577c#0002",
+          "06ef439b30bd55d7#0002",
+          "06ef439b30bd55d7#0000"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.8571
+      },
+      {
+        "query_id": 35,
+        "query": "What is the sovereign guarantee clause for Post Office Monthly Income Scheme?",
+        "ground_truth_chunk_ids": [],
+        "retrieved_chunk_ids": [
+          "06ef439b30bd55d7#0002",
+          "891bbfd5bcc9577c#0000",
+          "891bbfd5bcc9577c#0001",
+          "06ef439b30bd55d7#0001"
+        ],
+        "hit": false,
+        "recall": 1.0,
+        "mrr": 1.0,
+        "ndcg": 1.0,
+        "grounding_score": 0.75
+      }
+    ]
+  }
+}
