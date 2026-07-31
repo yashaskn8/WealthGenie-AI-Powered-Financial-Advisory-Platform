@@ -58,15 +58,21 @@ def test_api_llm_provider():
 
 
 def test_huggingface_llm_provider_fallback():
-    provider = HuggingFaceLLMProvider(model_id="Qwen/Qwen2.5-0.5B-Instruct", device="cpu")
-    assert provider.is_healthy()
-
-    meta = provider.get_metadata()
+    # Unloaded instance should raise RuntimeError when calling generate (no fake fallback response)
+    unloaded_provider = HuggingFaceLLMProvider(model_id="Qwen/Qwen2.5-0.5B-Instruct", device="cpu", load_weights=False)
+    meta = unloaded_provider.get_metadata()
     assert meta.model_name == "Qwen/Qwen2.5-0.5B-Instruct"
 
     req = LLMGenerateRequest(prompt="Income tax slabs 2026")
-    res = provider.generate(req)
+    with pytest.raises(RuntimeError, match="is not loaded"):
+        unloaded_provider.generate(req)
+
+    # Loaded instance generates real tokens
+    loaded_provider = LocalLLMLoader.load_provider(provider_type="huggingface", model_id="Qwen/Qwen2.5-0.5B-Instruct", device="cpu")
+    assert loaded_provider.is_healthy()
+    res = loaded_provider.generate(req)
     assert len(res.text) > 0
+    assert res.provider == "huggingface"
 
 
 def test_local_llm_loader():

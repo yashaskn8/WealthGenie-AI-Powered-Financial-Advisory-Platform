@@ -36,6 +36,7 @@ class LocalLLMLoader:
                 device=target_device,
                 quantization=quantization,
                 cache_dir=cache_dir,
+                load_weights=True,
             )
         elif provider_type == "api":
             from llm.providers.api_provider import APILLMProvider

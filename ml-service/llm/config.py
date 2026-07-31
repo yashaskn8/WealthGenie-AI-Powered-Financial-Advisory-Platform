@@ -31,7 +31,7 @@ def auto_detect_device() -> str:
 class LLMConfig(BaseModel):
     """Centralized configuration for Open-Weight LLM infrastructure."""
     model_config = ConfigDict(protected_namespaces=())
-    default_provider: str = Field("mock", description="Default active provider: mock, huggingface, api, or local")
+    default_provider: str = Field("huggingface", description="Default active provider: mock, huggingface, api, or local")
     model_id: str = Field("Qwen/Qwen2.5-0.5B-Instruct", description="Default Hugging Face model identifier or local checkpoint path")
     device: str = Field(default_factory=auto_detect_device, description="Hardware device target: auto, cuda, cpu, mps")
     quantization: str = Field("float16", description="Quantization mode: float32, float16, bfloat16, int8, int4")

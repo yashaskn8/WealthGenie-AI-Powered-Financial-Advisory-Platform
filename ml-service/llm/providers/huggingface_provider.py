@@ -50,15 +50,22 @@ class HuggingFaceLLMProvider(BaseLLMProvider):
         """Loads model weights and tokenizer from Hugging Face hub or local cache."""
         try:
             import torch
-            from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+            from transformers import AutoTokenizer, AutoModelForCausalLM
 
             logger.info(f"Loading Hugging Face model '{self.model_id}' on device '{self.device}'...")
 
             torch_dtype = torch.float32
-            if self.quantization in ("float16", "fp16"):
-                torch_dtype = torch.float16
-            elif self.quantization in ("bfloat16", "bf16") and hasattr(torch, "bfloat16"):
-                torch_dtype = torch.bfloat16
+            if self.device == "cpu":
+                if self.quantization in ("float16", "fp16", "bfloat16", "bf16"):
+                    logger.info(
+                        f"CPU device detected — overriding float16/quantization '{self.quantization}' to float32 for generation stability."
+                    )
+                torch_dtype = torch.float32
+            else:
+                if self.quantization in ("float16", "fp16"):
+                    torch_dtype = torch.float16
+                elif self.quantization in ("bfloat16", "bf16") and hasattr(torch, "bfloat16"):
+                    torch_dtype = torch.bfloat16
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_id,
@@ -82,60 +89,50 @@ class HuggingFaceLLMProvider(BaseLLMProvider):
             logger.info(f"Hugging Face model '{self.model_id}' loaded successfully.")
 
         except Exception as e:
-            logger.warning(f"Could not load native weights for '{self.model_id}': {e}. Operating in lightweight fallback mode.")
+            logger.warning(f"Could not load native weights for '{self.model_id}': {e}.")
             self._is_loaded = False
 
     def generate(self, request: LLMGenerateRequest) -> LLMGenerateResponse:
         t0 = time.perf_counter()
 
-        if self._is_loaded and self.model is not None and self.tokenizer is not None:
-            try:
-                import torch
-                full_prompt = f"{request.system_prompt}\nUser: {request.prompt}\nAssistant:"
-                inputs = self.tokenizer(full_prompt, return_tensors="pt")
-                if self.device != "cpu" and hasattr(inputs, "to"):
-                    inputs = inputs.to(self.device)
+        if not self._is_loaded or self.model is None or self.tokenizer is None:
+            raise RuntimeError(
+                f"Hugging Face model '{self.model_id}' is not loaded. "
+                "Ensure weights are downloaded and loaded successfully."
+            )
 
-                with torch.no_grad():
-                    outputs = self.model.generate(
-                        **inputs,
-                        max_new_tokens=request.max_new_tokens,
-                        temperature=request.temperature,
-                        top_p=request.top_p,
-                        do_sample=request.temperature > 0.0,
-                    )
+        try:
+            import torch
+            full_prompt = f"{request.system_prompt}\nUser: {request.prompt}\nAssistant:"
+            inputs = self.tokenizer(full_prompt, return_tensors="pt")
+            if self.device != "cpu" and hasattr(inputs, "to"):
+                inputs = inputs.to(self.device)
 
-                generated_ids = outputs[0][inputs.input_ids.shape[1]:]
-                text = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-                latency_ms = (time.perf_counter() - t0) * 1000.0
-
-                return LLMGenerateResponse(
-                    text=text.strip(),
-                    finish_reason="stop",
-                    prompt_tokens=inputs.input_ids.shape[1],
-                    completion_tokens=len(generated_ids),
-                    latency_ms=round(latency_ms, 2),
-                    model_name=self.model_id,
-                    provider="huggingface",
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=request.max_new_tokens,
+                    temperature=request.temperature,
+                    top_p=request.top_p,
+                    do_sample=request.temperature > 0.0,
                 )
-            except Exception as e:
-                logger.error(f"Hugging Face generation failed: {e}. Falling back to domain response generator.")
 
-        # Fallback domain generation if model weights unavailable offline
-        body = (
-            f"WealthGenie Open-Weight Model ({self.model_id}): In response to '{request.prompt[:60]}...', "
-            "financial analysis confirms compliance with standard regulatory guidelines and portfolio risk boundaries."
-        )
-        latency_ms = (time.perf_counter() - t0) * 1000.0
-        return LLMGenerateResponse(
-            text=body,
-            finish_reason="stop",
-            prompt_tokens=len(request.prompt.split()) + 15,
-            completion_tokens=len(body.split()),
-            latency_ms=round(latency_ms, 2),
-            model_name=self.model_id,
-            provider="huggingface_fallback",
-        )
+            generated_ids = outputs[0][inputs.input_ids.shape[1]:]
+            text = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+
+            return LLMGenerateResponse(
+                text=text.strip(),
+                finish_reason="stop",
+                prompt_tokens=inputs.input_ids.shape[1],
+                completion_tokens=len(generated_ids),
+                latency_ms=round(latency_ms, 2),
+                model_name=self.model_id,
+                provider="huggingface",
+            )
+        except Exception as e:
+            logger.error(f"Hugging Face generation failed for '{self.model_id}': {e}")
+            raise RuntimeError(f"Hugging Face generation failed for '{self.model_id}': {e}") from e
 
     def generate_stream(self, request: LLMGenerateRequest) -> Generator[str, None, None]:
         res = self.generate(request)
@@ -155,4 +152,6 @@ class HuggingFaceLLMProvider(BaseLLMProvider):
         )
 
     def is_healthy(self) -> bool:
+        if self.load_weights:
+            return self._is_loaded
         return True
