@@ -181,6 +181,9 @@ def get_embedding_provider(config=None) -> BaseEmbeddingProvider:
     Returns:
         - SentenceTransformerEmbeddingProvider for "sentence_transformer" (production default)
         - DenseVectorEmbeddingProvider for "tf_idf_dense" (lightweight lexical fallback)
+
+    If sentence-transformers is not installed, falls back to the hashing provider
+    with a warning rather than crashing.
     """
     if config is None:
         from rag.config import RAGConfig
@@ -189,7 +192,15 @@ def get_embedding_provider(config=None) -> BaseEmbeddingProvider:
     provider_name = config.embedding_provider
 
     if provider_name == "sentence_transformer":
-        return SentenceTransformerEmbeddingProvider()
+        try:
+            return SentenceTransformerEmbeddingProvider()
+        except ImportError:
+            logger.warning(
+                "sentence-transformers package is not installed. "
+                "Falling back to DenseVectorEmbeddingProvider (lexical hashing). "
+                "Install with: pip install sentence-transformers"
+            )
+            return DenseVectorEmbeddingProvider(dimension=config.embedding_dim, enable_cache=True)
     elif provider_name == "tf_idf_dense":
         return DenseVectorEmbeddingProvider(dimension=config.embedding_dim, enable_cache=True)
     else:
