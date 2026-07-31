@@ -3,7 +3,13 @@ WealthGenie ML Microservice - Preprocessing Module
 Handles feature normalization, tensor formatting, and preprocessor persistence.
 """
 
+import sys
 from pathlib import Path
+
+_ml_service_dir = str(Path(__file__).resolve().parent.parent)
+if _ml_service_dir not in sys.path:
+    sys.path.insert(0, _ml_service_dir)
+
 import json
 import joblib
 import numpy as np
@@ -12,6 +18,8 @@ from sklearn.preprocessing import StandardScaler
 from typing import Dict, Tuple, Any, Optional
 
 from model.config import ArtifactPaths, PyTorchModelConfig
+
+
 
 
 class FeaturePreprocessor:

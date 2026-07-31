@@ -26,6 +26,8 @@ import { ConversationStateMachine, CONVERSATION_STATES } from './conversationSta
 import { LayeredMemoryManager } from './layeredMemoryManager.js';
 import { ExplainabilityEngine } from './explainabilityEngine.js';
 import { ToolTraceGraph, promptVersion, policyVersion } from './toolTraceGraph.js';
+import { queryRAG } from './ragClient.js';
+import { isFactualQuery } from './intentGate.js';
 
 const CHAT_RATE_LIMIT = 30;
 const HISTORY_WINDOW = 20;
@@ -96,6 +98,39 @@ export async function processChat({ userId, user, message, sessionId }) {
   }
 
   const systemPrompt = `${baseSystemPrompt}\n\n${formattedMemoryContext}`;
+
+  // ── Phase 1 Architecture Truth: Hybrid RAG Routing for Factual/Regulatory Queries ──
+  if (isFactualQuery(message)) {
+    console.info(`[Chat] Message classified as factual/regulatory. Routing to FastAPI RAG service: "${message.substring(0, 60)}..."`);
+    const ragResult = await queryRAG({ query: securityContext.sanitizedMessage });
+    if (ragResult && ragResult.answer) {
+      console.info(`[Chat] RAG retrieval successful (${ragResult.citations?.length || 0} citations). Returning grounded response.`);
+
+      const responseText = ImmutableSecurityPipeline.enforceCompliance(ragResult.answer);
+
+      // Persist conversation turn in MongoDB
+      conversation.messages.push({ role: 'user', content: securityContext.sanitizedMessage, timestamp: new Date() });
+      conversation.messages.push({ role: 'model', content: responseText, timestamp: new Date() });
+      await conversation.save();
+
+      try { PrometheusMetrics.inc('rag_queries_total'); } catch (_) {}
+
+      return {
+        version: '3.0',
+        response: responseText,
+        session_id: sessionId,
+        grounded: ragResult.grounded !== undefined ? ragResult.grounded : true,
+        provider: 'rag',
+        citations: ragResult.citations || [],
+        retrieved_chunks: ragResult.retrieved_chunks || [],
+        metrics: ragResult.metrics || {},
+        messages_this_hour: rateCheck.count,
+        rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
+      };
+    } else {
+      console.warn('[Chat] RAG service unavailable or returned empty answer. Falling back to dual-provider LLM pipeline.');
+    }
+  }
 
   const recentHistory = conversation.messages.slice(-HISTORY_WINDOW).map(m => ({ role: m.role, parts: [{ text: m.content }] }));
   recentHistory.push({ role: 'user', parts: [{ text: securityContext.sanitizedMessage }] });

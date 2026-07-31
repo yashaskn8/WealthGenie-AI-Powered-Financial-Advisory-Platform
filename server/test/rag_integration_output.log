@@ -1,0 +1,33 @@
+[Chat] Message classified as factual/regulatory. Routing to FastAPI RAG service: "How much deduction is allowed under Section 80C for ELSS?..."
+[Chat] RAG retrieval successful (1 citations). Returning grounded response.
+
+[INTEGRATION TEST VERIFIED OUTPUT]
+Grounded Response Snippet: Based on authoritative financial documentation:
+
+According to **NPS Tax Relief** [1]:
+Section 80CCD(1B) provides an additional tax deduction of Rs 50,000 for National Pension System. ...
+Citations Count: 1
+First Citation: {
+  citation_id: 1,
+  document_title: 'NPS Tax Relief',
+  source: 'api_test',
+  chunk_id: '775118a6f9df8315#0000',
+  excerpt: 'Section 80CCD(1B) provides an additional tax deduction of Rs 50,000 for National Pension System.',
+  relevance_score: 1
+}
+Retrieved Chunks: 1
+▶ Phase 1 Architecture Truth — RAG Chat Integration Tests
+  ✔ Routes factual tax question through IntentGate to RAG and returns grounded citations from seed knowledge (84.9455ms)
+[Chat] Gemini adapter unavailable/failed, falling back to Groq adapter...
+[Chat] Dual providers failed, executing local fallback adapter...
+[Chat] [local_fallback] State: Fallback. Response: 754 chars. Tools: 0. Verif: unverified.
+  ✔ Routes non-factual conversational turn away from RAG to general LLM provider (9.4475ms)
+✔ Phase 1 Architecture Truth — RAG Chat Integration Tests (95.4392ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3235.4488

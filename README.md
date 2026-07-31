@@ -61,30 +61,35 @@ graph TD
 
 ## 📚 RAG Subsystem Architecture & Workflow
 
-The RAG platform retrieves authoritative financial context (Income Tax Acts, SEBI/AMFI guidelines) to ground AI advisory responses and prevent hallucinations.
+The RAG platform retrieves authoritative financial context (Income Tax Acts, SEBI/AMFI guidelines) to ground AI advisory responses and eliminate hallucinations. Factual and regulatory queries received at the Express gateway are classified via an intent gate and routed directly to the FastAPI RAG query pipeline, while open-ended conversational turns are handled by Gemini (hybrid architecture).
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Investor
-    participant Gateway as Express.js Gateway
-    participant RAG as RAG Query Pipeline
+    participant Gateway as Express.js Gateway (IntentGate)
+    participant RAG as RAG Query Pipeline (FastAPI)
     participant Embedder as Dense Embedding Engine
     participant Store as Vector Store (Cosine Similarity)
-    participant Citations as Citation Engine
+    participant Gemini as Google Gemini API
 
-    User->>Gateway: POST /rag/query (Question)
-    Gateway->>RAG: Forward RAG Query
-    RAG->>Embedder: embed_text(question)
-    Embedder-->>RAG: 128D Dense Vector
-    RAG->>Store: search(query_vector, top_k=4)
-    Store-->>RAG: Top-k Relevant Evidence Chunks + Scores
-    RAG->>RAG: Assemble Tamper-Proof Grounding Prompt
-    RAG->>Citations: generate_citations(chunks)
-    Citations-->>RAG: Inline Citations & Reference Markdown
-    RAG-->>Gateway: Grounded Response + Excerpts + Citations + Latency Metrics
-    Gateway-->>User: Display Evidence-Backed Advisory
+    User->>Gateway: POST /api/chat/message (Question)
+    Gateway->>Gateway: isFactualQuery(message)
+    alt Factual / Regulatory Query (Tax, ELSS, SEBI/AMFI)
+        Gateway->>RAG: POST /rag/query (queryRAG via ragClient.js)
+        RAG->>Embedder: embed_text(question)
+        Embedder-->>RAG: 384D Dense Vector
+        RAG->>Store: search(query_vector, top_k=4)
+        Store-->>RAG: Top-k Grounding Chunks + Metadata
+        RAG->>RAG: Synthesize Grounded Answer & Citations
+        RAG-->>Gateway: Grounded Response + Source Citations
+    else Open-Ended Conversational Turn
+        Gateway->>Gemini: Generate Conversational Advice
+        Gemini-->>Gateway: AI Advisory Text
+    end
+    Gateway-->>User: Display Evidence-Backed Advisory / Chat Response
 ```
+
 
 ---
 
