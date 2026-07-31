@@ -1,5 +1,5 @@
 import os
-import numpy as np
+import numpy as np  # type: ignore[import-not-found]
 import pytest
 from pydantic import ValidationError
 from fastapi.testclient import TestClient
@@ -186,9 +186,9 @@ def test_shap_efficiency_axiom():
     Checks that SHAP values sum to prediction probability minus expected value within tolerance.
     """
     try:
-        import joblib
+        import joblib  # type: ignore[import-not-found]
         import os
-        import shap
+        import shap  # type: ignore[import-not-found]
         
         model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'model', 'model.pkl')
         if not os.path.exists(model_path):

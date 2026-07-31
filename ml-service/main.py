@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from dotenv import load_dotenv
-import numpy as np
+import numpy as np  # type: ignore[import-not-found]
 from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
