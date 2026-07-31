@@ -113,6 +113,22 @@ Full per-query breakdown and aggregate metrics are persisted in [`ml-service/rep
 
 ---
 
+### 🧠 Multi-Model Deep Learning Benchmark (RF vs PyTorch MLP vs FT-Transformer)
+
+All three candidate models were trained and evaluated on the **exact same 20,000 NAV-derived investor profile dataset** (16 canonical engineered features, identical 60% train / 20% validation / 20% test stratified split, `random_state=42`).
+
+Real model checkpoints are saved in [`ml-service/model/checkpoints/`](ml-service/model/checkpoints/). Full metric breakdowns, per-class confusion matrices, and environment profiles are persisted in [`ml-service/reports/multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json).
+
+| Architecture | Test Accuracy | Balanced Acc | Macro F1 | MCC | Training Time | Checkpoint |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Random Forest** *(n_est=100, depth=15)* | **95.63%** | **0.9221** | **0.9144** | **0.9393** | 4.16s | `model/model.pkl` |
+| **PyTorch MLP** *(Linear+BN+ReLU+Dropout)* | **95.60%** | **0.9126** | **0.9174** | **0.9390** | 17.50s | [`mlp_benchmark.pt`](ml-service/model/checkpoints/mlp_benchmark.pt) |
+| **FT-Transformer** *(NeurIPS 2021)* | **97.05%** | **0.9220** | **0.9331** | **0.9590** | 79.15s | [`ft_transformer_benchmark.pt`](ml-service/model/checkpoints/ft_transformer_benchmark.pt) |
+
+> **Note on Training & Convergence**: The PyTorch MLP and FT-Transformer were trained for a reduced number of epochs (50 and 30 epochs respectively) on CPU due to environment compute constraints. While the FT-Transformer achieved higher overall Accuracy and Macro-F1 (97.05% vs 95.63%), Random Forest remains highly competitive on balanced accuracy (92.21%) and trains 19x faster. Both PyTorch models are fully functional and reproducible via `python ml-service/scripts/run_multi_model_benchmark.py`.
+
+---
+
 ## ⚡ Core Computational & AI Engines
 
 ### 1. Production RAG Subsystem (FastAPI)
