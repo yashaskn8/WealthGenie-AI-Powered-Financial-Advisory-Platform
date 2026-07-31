@@ -1,0 +1,956 @@
+{
+  "report_name": "RAG Subsystem Production Evaluation Report",
+  "timestamp_utc": "2026-07-31T09:48:53.271474+00:00",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "vector_store_type": "PersistentVectorStore (Cosine Similarity)",
+  "total_queries_evaluated": 35,
+  "summary_counts": {
+    "in_domain_total": 25,
+    "in_domain_hits": 24,
+    "in_domain_misses": 1,
+    "out_of_domain_negative_controls": 10
+  },
+  "aggregate_metrics": {
+    "mean_recall_at_4_all": 0.9714,
+    "mean_precision_at_4_all": 0.4643,
+    "mean_mrr_all": 0.9714,
+    "mean_hit_rate_all": 0.9714,
+    "in_domain_recall_at_4": 0.96,
+    "in_domain_precision_at_4": 0.25,
+    "in_domain_mrr": 0.96,
+    "in_domain_hit_rate": 0.96,
+    "mean_ndcg_at_4": 0.9679,
+    "mean_context_coverage": 0.6539,
+    "mean_chunk_diversity": 0.481,
+    "mean_citation_accuracy": 1.0,
+    "mean_grounding_score": 0.7716
+  },
+  "per_query_results": [
+    {
+      "query_id": 1,
+      "query": "What are the income tax slabs under the New Tax Regime for FY 2025-26?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0000"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 2,
+      "query": "What is the Section 87A rebate limit under the New Tax Regime?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0003"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 3,
+      "query": "How much standard deduction is allowed for salaried employees under the New Regime?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 4,
+      "query": "Is there a marginal relief for income marginally exceeding 12 Lakhs under Section 87A?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0003"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8889,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 5,
+      "query": "What are the Old Tax Regime slabs for FY 2025-26?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "06ef439b30bd55d7#0002"
+      ],
+      "hit_status": "MISS",
+      "metrics": {
+        "recall_at_4": 0.0,
+        "precision_at_4": 0.0,
+        "mrr": 0.0,
+        "hit_rate": 0.0,
+        "ndcg_at_4": 0.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.5312,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6875
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 6,
+      "query": "What is the maximum deduction allowed under Section 80C?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 7,
+      "query": "What are the deduction limits for health insurance under Section 80D for senior citizens?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 8,
+      "query": "How much additional tax deduction is available under Section 80CCD(1B) for NPS?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0003"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.7143,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 9,
+      "query": "What is employer contribution deduction under Section 80CCD(2)?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0003"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 10,
+      "query": "Can PPF and EPF contributions be claimed under Section 80C?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 11,
+      "query": "What is the mandatory lock-in period for ELSS mutual funds?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0000"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0000",
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 12,
+      "query": "What is the recommended investment horizon for Flexi Cap equity funds?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0000"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0000",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.7143,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 13,
+      "query": "Which mutual funds are suitable for short-term liquidity under 1 year?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.875,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 14,
+      "query": "What return expectation is associated with Flexi Cap equity funds?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0000"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0000",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 15,
+      "query": "Are Short Duration funds suitable for 1-3 year horizons?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 1.0,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 16,
+      "query": "What is the DICGC insurance limit on bank fixed deposits?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 17,
+      "query": "What is the tenure and lock-in for RBI Floating Rate Savings Bonds?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 18,
+      "query": "What is the maximum investment limit for Senior Citizens Savings Scheme SCSS?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8889,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 19,
+      "query": "Are capital gains on Sovereign Gold Bonds SGB exempt if held to maturity?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 1.0,
+        "chunk_diversity": 0.517,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.8696
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 20,
+      "query": "What annual coupon interest rate do Sovereign Gold Bonds pay?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0002"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.875,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 21,
+      "query": "Can I claim ELSS investments under Section 80C under Old Tax Regime?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "ground_truth_chunk_count": 2,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0001",
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.5,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 0.8772,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.5664,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.8095
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 22,
+      "query": "What tax regime is default for FY 2025-26 assessment year 2026-27?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0000"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "06ef439b30bd55d7#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.7143,
+        "chunk_diversity": 0.5312,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6875
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 23,
+      "query": "Does liquid fund carry low risk capacity?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 24,
+      "query": "What is the tax slab for income above 24 Lakhs in New Regime?",
+      "ground_truth_chunk_ids": [
+        "891bbfd5bcc9577c#0000"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0003"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 25,
+      "query": "How are bank FDs protected under DICGC?",
+      "ground_truth_chunk_ids": [
+        "06ef439b30bd55d7#0001"
+      ],
+      "ground_truth_chunk_count": 1,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "HIT",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 26,
+      "query": "What is the tax rate on cryptocurrency and virtual digital assets under Section 115BBH?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.3333,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 27,
+      "query": "How are US stock investments taxed for Indian residents under DTAA?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "06ef439b30bd55d7#0001"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.2857,
+        "chunk_diversity": 0.5796,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.8235
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 28,
+      "query": "What is the indexation benefit calculation for real estate sold after 2 years?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.1111,
+        "chunk_diversity": 0.4865,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.7333
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 29,
+      "query": "What is the minimum margin requirement for options trading in NSE derivatives?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0000"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.1429,
+        "chunk_diversity": 0.5797,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.7895
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 30,
+      "query": "How is dividend income taxed for non-resident Indian NRI investors?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0001",
+        "06ef439b30bd55d7#0000"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.3333,
+        "chunk_diversity": 0.5617,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.8125
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 31,
+      "query": "What are the rules for Sovereign Wealth Fund tax exemption under Section 10(23FE)?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4444,
+        "chunk_diversity": 0.5617,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 32,
+      "query": "What is the GST rate on term life insurance policies in India?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "06ef439b30bd55d7#0002"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4286,
+        "chunk_diversity": 0.4865,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.7333
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 33,
+      "query": "What is the penalty for late filing of Income Tax Return ITR under Section 234F?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0000",
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0002",
+        "891bbfd5bcc9577c#0003"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.3333,
+        "chunk_diversity": 0.3811,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6667
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 34,
+      "query": "What is the lock-in period for National Savings Certificates NSC?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "06ef439b30bd55d7#0002",
+        "06ef439b30bd55d7#0001",
+        "06ef439b30bd55d7#0000",
+        "891bbfd5bcc9577c#0002"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.5248,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.84
+      },
+      "citations_count": 4
+    },
+    {
+      "query_id": 35,
+      "query": "What are the tax implications of ESOP exercise for startup employees under Section 192?",
+      "ground_truth_chunk_ids": [],
+      "ground_truth_chunk_count": 0,
+      "retrieved_chunk_ids": [
+        "891bbfd5bcc9577c#0001",
+        "891bbfd5bcc9577c#0003",
+        "891bbfd5bcc9577c#0000",
+        "06ef439b30bd55d7#0000"
+      ],
+      "hit_status": "OUT_OF_DOMAIN",
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.375,
+        "chunk_diversity": 0.5617,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.8125
+      },
+      "citations_count": 4
+    }
+  ]
+}

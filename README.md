@@ -90,6 +90,26 @@ sequenceDiagram
     Gateway-->>User: Display Evidence-Backed Advisory / Chat Response
 ```
 
+---
+
+### 📊 Empirical RAG Subsystem Evaluation Results
+
+Retrieval performance and answer grounding quality were benchmarked across a hand-labeled dataset of 35 evaluation queries (25 in-domain Indian tax & mutual fund regulatory questions, 10 out-of-domain negative control queries) using `rag/evaluation/evaluator.py`.
+
+Full per-query breakdown and aggregate metrics are persisted in [`ml-service/reports/rag_eval_report.json`](ml-service/reports/rag_eval_report.json).
+
+| Metric | Benchmark Result | Description |
+| :--- | :--- | :--- |
+| **Embedding Provider** | `all-MiniLM-L6-v2` | 384-dimensional dense vector embeddings |
+| **In-Domain Recall@4** | **96.0%** (24 / 25) | Proportion of relevant knowledge chunks retrieved in top 4 |
+| **In-Domain Hit Rate** | **96.0%** | Fraction of queries where at least one correct chunk is surfaced |
+| **In-Domain MRR** | **0.9600** | Mean Reciprocal Rank of first relevant chunk |
+| **Mean NDCG@4** | **0.9679** | Normalized Discounted Cumulative Gain at $k=4$ |
+| **Citation Accuracy** | **100.0%** | Percentage of inline citations correctly referencing retrieved chunks |
+| **Mean Grounding Score**| **0.7716** | Lexical & semantic grounding score of answer against retrieved text |
+| **Negative Controls** | **10 OOD Queries** | Explicitly tracked out-of-domain queries (crypto tax, US stocks DTAA, options margins) |
+
+
 
 ---
 

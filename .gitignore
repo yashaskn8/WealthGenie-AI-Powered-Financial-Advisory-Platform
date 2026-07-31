@@ -51,6 +51,7 @@ ml-service/model/label_encoder.pkl
 ml-service/model/decision_tree.pkl
 ml-service/model/saved_models/
 ml-service/reports/
+!ml-service/reports/rag_eval_report.json
 ml-service/data/investment_profiles.csv
 
 # Development artifacts
