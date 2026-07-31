@@ -19,8 +19,8 @@ class RAGConfig(BaseModel):
     """Centralized configuration for Retrieval-Augmented Generation pipeline."""
     chunk_size: int = Field(512, ge=64, le=4096, description="Default chunk size in characters")
     chunk_overlap: int = Field(64, ge=0, le=512, description="Overlap between consecutive chunks")
-    embedding_dim: int = Field(128, description="Dense embedding vector dimension")
-    embedding_provider: str = Field("tf_idf_dense", description="Embedding provider: tf_idf_dense, sentence_transformer, or custom")
+    embedding_dim: int = Field(384, description="Dense embedding vector dimension")
+    embedding_provider: str = Field("sentence_transformer", description="Embedding provider: sentence_transformer, tf_idf_dense, or custom")
     top_k: int = Field(4, ge=1, le=20, description="Top-k chunks to retrieve")
     similarity_threshold: float = Field(0.1, ge=0.0, le=1.0, description="Minimum cosine similarity score")
     retrieval_strategy: str = Field("hybrid", description="Retrieval strategy: dense, keyword, or hybrid")

@@ -10,7 +10,7 @@ from typing import Dict, Any, List, Optional
 from rag.chunking.base import BaseChunker
 from rag.chunking.fixed_chunker import FixedSizeChunker
 from rag.embeddings.base import BaseEmbeddingProvider
-from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
+from rag.embeddings.dense_embedding import get_embedding_provider
 from rag.ingestion.cleaner import clean_text
 from rag.ingestion.loaders import DocumentLoader
 from rag.schema import Document, TextChunk
@@ -33,7 +33,7 @@ class IngestionPipeline:
     ):
         self.loader = DocumentLoader()
         self.chunker = chunker or FixedSizeChunker(chunk_size=512, chunk_overlap=64)
-        self.embedder = embedder or DenseVectorEmbeddingProvider(dimension=128)
+        self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or PersistentVectorStore()
 
     def ingest_file(self, file_path: Path, title: Optional[str] = None, author: Optional[str] = None) -> Dict[str, Any]:

@@ -10,7 +10,7 @@ from typing import Dict, Any, List
 import numpy as np
 
 from rag.config import RAGConfig
-from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
+from rag.embeddings.dense_embedding import get_embedding_provider
 from rag.ingestion.pipeline import IngestionPipeline
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest
@@ -45,7 +45,7 @@ class RAGBenchmarkSuite:
         if vector_store_path:
             self.config.vector_store_path = vector_store_path
 
-        self.embedder = DenseVectorEmbeddingProvider(dimension=64, enable_cache=False)
+        self.embedder = get_embedding_provider(self.config)
         self.vector_store = PersistentVectorStore(index_path=self.config.vector_store_path)
         self.ingestion_pipeline = IngestionPipeline(embedder=self.embedder, vector_store=self.vector_store)
         self.query_pipeline = RAGPipeline(embedder=self.embedder, vector_store=self.vector_store, config=self.config)

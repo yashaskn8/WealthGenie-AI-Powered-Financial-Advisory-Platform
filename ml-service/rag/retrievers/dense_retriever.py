@@ -5,7 +5,7 @@ Retrieves chunks by embedding the query and searching the vector store using Cos
 
 from typing import List, Optional
 from rag.embeddings.base import BaseEmbeddingProvider
-from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
+from rag.embeddings.dense_embedding import get_embedding_provider
 from rag.retrievers.base import BaseRetriever
 from rag.schema import RetrievedChunk
 from rag.vector_store.base import BaseVectorStore
@@ -20,7 +20,7 @@ class DenseRetriever(BaseRetriever):
         embedder: Optional[BaseEmbeddingProvider] = None,
         vector_store: Optional[BaseVectorStore] = None,
     ):
-        self.embedder = embedder or DenseVectorEmbeddingProvider(dimension=128)
+        self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or PersistentVectorStore()
 
     def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:

@@ -6,6 +6,8 @@ Tests response caching, retrieval caching, TTL expiration, invalidation, and pip
 import time
 from rag.cache.manager import MultiLevelCacheManager, CacheItem
 from rag.config import RAGConfig
+from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
+from rag.vector_store.memory_vector_store import PersistentVectorStore
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest, RAGQueryResponse
 
@@ -53,10 +55,12 @@ def test_cache_invalidation_and_stats():
 
 
 def test_rag_pipeline_response_caching_integration(tmp_path):
-    config = RAGConfig(vector_store_path=tmp_path / "cache_index.json")
+    config = RAGConfig(vector_store_path=tmp_path / "cache_index.json", embedding_dim=64)
+    embedder = DenseVectorEmbeddingProvider(dimension=64, enable_cache=False)
+    vector_store = PersistentVectorStore(index_path=tmp_path / "cache_index.json")
     cache_mgr = MultiLevelCacheManager()
 
-    pipeline = RAGPipeline(cache_manager=cache_mgr, config=config)
+    pipeline = RAGPipeline(embedder=embedder, vector_store=vector_store, cache_manager=cache_mgr, config=config)
     req = RAGQueryRequest(question="How much deduction is allowed under 80C?")
 
     # First query -> Miss

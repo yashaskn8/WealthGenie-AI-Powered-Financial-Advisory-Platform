@@ -10,7 +10,7 @@ from typing import Dict, Any, List, Optional
 from rag.citations.engine import CitationEngine
 from rag.config import RAGConfig
 from rag.embeddings.base import BaseEmbeddingProvider
-from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
+from rag.embeddings.dense_embedding import get_embedding_provider
 from rag.prompts.builder import PromptBuilder
 from rag.reranking.base import BaseReranker
 from rag.reranking.noop_reranker import NoOpReranker
@@ -86,7 +86,7 @@ class RAGPipeline:
         config: Optional[RAGConfig] = None,
     ):
         self.config = config or RAGConfig()
-        self.embedder = embedder or DenseVectorEmbeddingProvider(dimension=self.config.embedding_dim)
+        self.embedder = embedder or get_embedding_provider(self.config)
         self.vector_store = vector_store or PersistentVectorStore()
         self.retriever = retriever or get_retriever(
             strategy=self.config.retrieval_strategy,

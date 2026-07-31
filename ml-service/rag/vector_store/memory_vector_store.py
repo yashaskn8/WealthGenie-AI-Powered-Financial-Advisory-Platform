@@ -29,6 +29,7 @@ class PersistentVectorStore(BaseVectorStore):
         self.backup_path = self.index_path.with_suffix(".json.bak")
         self._chunks: List[TextChunk] = []
         self._embeddings: List[List[float]] = []
+        self._stored_embedding_dim: int = 0
         self.load()
 
     def add_chunks(self, chunks: List[TextChunk]) -> int:
@@ -75,6 +76,18 @@ class PersistentVectorStore(BaseVectorStore):
             return []
 
         q_vec = np.array(query_vector, dtype=np.float32)
+
+        # Dimension mismatch guard
+        if self._embeddings:
+            stored_dim = len(self._embeddings[0])
+            query_dim = len(query_vector)
+            if query_dim != stored_dim:
+                raise ValueError(
+                    f"Embedding dimension mismatch: query vector is {query_dim}-dim "
+                    f"but stored index is {stored_dim}-dim. "
+                    f"Re-ingest documents with the current embedding provider."
+                )
+
         q_norm = np.linalg.norm(q_vec)
         if q_norm == 0:
             return []
@@ -134,6 +147,7 @@ class PersistentVectorStore(BaseVectorStore):
             "version": self.VERSION,
             "sha256": checksum,
             "total_chunks": len(serialized_chunks),
+            "embedding_dimension": len(self._embeddings[0]) if self._embeddings else 0,
             "chunks": serialized_chunks,
         }
 
@@ -193,4 +207,5 @@ class PersistentVectorStore(BaseVectorStore):
 
         self._chunks = [TextChunk(**item) for item in chunks_list]
         self._embeddings = [c.embedding for c in self._chunks if c.embedding]
-        logger.info(f"Loaded {len(self._chunks)} chunks into PersistentVectorStore from {file_path}")
+        self._stored_embedding_dim = len(self._embeddings[0]) if self._embeddings else 0
+        logger.info(f"Loaded {len(self._chunks)} chunks (dim={self._stored_embedding_dim}) into PersistentVectorStore from {file_path}")

@@ -4,6 +4,8 @@ Tests telemetry trace recording, JSON file persistence, summary statistics, and 
 """
 
 from rag.config import RAGConfig
+from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
+from rag.vector_store.memory_vector_store import PersistentVectorStore
 from rag.observability.metrics_collector import RAGObservabilityCollector
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest
@@ -44,6 +46,7 @@ def test_observability_trace_recording(tmp_path):
 
 def test_telemetry_snapshot_persistence(tmp_path):
     collector = RAGObservabilityCollector(telemetry_dir=tmp_path)
+
     collector.record_query_trace(
         query="Test query",
         search_query="Test query",
@@ -63,10 +66,12 @@ def test_telemetry_snapshot_persistence(tmp_path):
 
 
 def test_rag_pipeline_telemetry_integration(tmp_path):
-    config = RAGConfig(vector_store_path=tmp_path / "obs_index.json")
+    config = RAGConfig(vector_store_path=tmp_path / "obs_index.json", embedding_dim=64)
+    embedder = DenseVectorEmbeddingProvider(dimension=64, enable_cache=False)
+    vector_store = PersistentVectorStore(index_path=tmp_path / "obs_index.json")
     collector = RAGObservabilityCollector(telemetry_dir=tmp_path)
 
-    pipeline = RAGPipeline(telemetry=collector, config=config)
+    pipeline = RAGPipeline(embedder=embedder, vector_store=vector_store, telemetry=collector, config=config)
     res = pipeline.query(RAGQueryRequest(question="How much can I deduct under Section 80C?"))
 
     assert "prompt_assembly_latency_ms" in res.metrics
