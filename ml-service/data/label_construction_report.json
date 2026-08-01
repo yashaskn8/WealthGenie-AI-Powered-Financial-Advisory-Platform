@@ -1,7 +1,7 @@
 {
   "policy_config_version": "1.0.0",
   "label_source": "NAV-derived historical performance statistics & documented suitability policy configuration",
-  "market_data_path": "C:\\Users\\prana\\OneDrive\\Desktop\\deploy-wealthgenie\\ml-service\\data\\market_performance.csv",
+  "market_data_path": "C:\\Users\\prana\\OneDrive\\Desktop\\WealthGenie-AI-Powered-Financial-Advisory-Platform\\ml-service\\data\\market_performance.csv",
   "covered_categories": [
     "Equity_MF",
     "ELSS",

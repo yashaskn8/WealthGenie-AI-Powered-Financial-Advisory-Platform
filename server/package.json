@@ -1,5 +1,5 @@
 {
-  "name": "wealthgenie-server",
+  "name": "wealthgenie-ai-server",
   "version": "1.0.0",
   "description": "WealthGenie Express.js Backend - Tax-optimized AI financial advisory",
   "main": "server.js",
