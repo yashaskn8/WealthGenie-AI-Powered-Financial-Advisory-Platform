@@ -1,12 +1,22 @@
 import React, { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { motion } from 'framer-motion';
-import { Target, PieChart as PieChartIcon, TrendingUp, Landmark, Briefcase, Wallet, Sparkles, ShieldCheck, ArrowUpRight, Percent, Info } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PieChart as PieChartIcon, TrendingUp, Landmark, Briefcase, Wallet, Sparkles, ShieldCheck, Info, Layers } from 'lucide-react';
 import { computeAllocation } from '../recommendationEngine';
 import { getEligibleInvestments } from '../recommendationEngine';
 import { RISK_COLORS } from '../investmentDatabase';
 import JargonTooltip from './JargonTooltip';
 import './AllocationPlanner.css';
+
+// Rich Gradient Palettes for SVG Donut Slices
+const SLICE_GRADIENTS = [
+  { id: 'grad-sky', primary: '#38bdf8', stop1: '#0ea5e9', stop2: '#38bdf8', glow: 'rgba(56, 189, 248, 0.45)' },
+  { id: 'grad-emerald', primary: '#34d399', stop1: '#059669', stop2: '#34d399', glow: 'rgba(52, 211, 153, 0.45)' },
+  { id: 'grad-purple', primary: '#c084fc', stop1: '#7c3aed', stop2: '#c084fc', glow: 'rgba(192, 132, 252, 0.45)' },
+  { id: 'grad-amber', primary: '#fbbf24', stop1: '#d97706', stop2: '#fbbf24', glow: 'rgba(251, 191, 36, 0.45)' },
+  { id: 'grad-pink', primary: '#f472b6', stop1: '#db2777', stop2: '#f472b6', glow: 'rgba(244, 114, 182, 0.45)' },
+  { id: 'grad-cyan', primary: '#22d3ee', stop1: '#0891b2', stop2: '#22d3ee', glow: 'rgba(34, 211, 238, 0.45)' },
+];
 
 const getCategoryIcon = (cat) => {
   if (!cat) return <Wallet size={20} />;
@@ -17,9 +27,9 @@ const getCategoryIcon = (cat) => {
 };
 
 const RISK_PRESETS = [
-  { id: 'Safe & Stable', label: 'Safe & Stable', desc: 'Focus on safety & guaranteed returns' },
-  { id: 'Balanced Growth', label: 'Balanced Growth', desc: 'Optimal mix of growth & protection' },
-  { id: 'Aggressive Growth', label: 'Aggressive Growth', desc: 'Maximum wealth growth over time' },
+  { id: 'Safe & Stable', label: 'Safe & Stable' },
+  { id: 'Balanced Growth', label: 'Balanced Growth' },
+  { id: 'Aggressive Growth', label: 'Aggressive Growth' },
 ];
 
 const CATEGORY_EXPLANATIONS = {
@@ -48,7 +58,17 @@ const AllocationPlanner = ({ profile }) => {
     return computeAllocation({ ...profile, risk_appetite: overrideRisk }, eligible);
   }, [profile, eligible, riskView]);
 
-  const allocation = baseAllocation;
+  const allocation = useMemo(() => {
+    return baseAllocation.map((item, idx) => {
+      const grad = SLICE_GRADIENTS[idx % SLICE_GRADIENTS.length];
+      return {
+        ...item,
+        gradId: grad.id,
+        themeColor: grad.primary,
+        glowColor: grad.glow,
+      };
+    });
+  }, [baseAllocation]);
 
   // Compute blended return
   const blendedReturn = useMemo(() => {
@@ -133,144 +153,214 @@ const AllocationPlanner = ({ profile }) => {
 
       {/* MAIN CONTENT GRID */}
       <div className="ap-main-grid">
-        {/* LEFT: Visual Donut Chart */}
+        {/* LEFT: Stunning Donut Chart with SVG Gradients & Glow */}
         <motion.div 
           className="ap-donut-panel"
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.15 }}
         >
+          <div className="donut-chart-header">
+            <div className="donut-chart-title">
+              <Layers size={15} className="text-sky" />
+              <span>Investment Breakdown</span>
+            </div>
+            <div className="donut-chart-count">{allocation.length} Asset Classes</div>
+          </div>
+
           <div className="donut-chart-wrapper">
-            <ResponsiveContainer width="100%" height={360}>
+            {/* Background Ambient Radial Ring Glow */}
+            <div className="donut-glow-ring" />
+
+            <ResponsiveContainer width="100%" height={380}>
               <PieChart>
+                <defs>
+                  {/* SVG Gradients for Slices */}
+                  {SLICE_GRADIENTS.map(g => (
+                    <linearGradient key={g.id} id={g.id} x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor={g.stop1} />
+                      <stop offset="100%" stopColor={g.stop2} />
+                    </linearGradient>
+                  ))}
+                  {/* Soft Drop Glow Filter */}
+                  <filter id="pie-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
                 <Pie 
                   data={allocation} 
                   dataKey="allocationPct" 
                   cx="50%" cy="50%"
-                  innerRadius={110} outerRadius={160} 
-                  paddingAngle={4}
-                  cornerRadius={6} 
-                  stroke="rgba(10, 16, 30, 0.9)" 
+                  innerRadius={112} 
+                  outerRadius={162} 
+                  paddingAngle={5}
+                  cornerRadius={8} 
+                  stroke="rgba(10, 16, 30, 0.95)" 
                   strokeWidth={3}
                   onMouseEnter={(_, index) => setHoveredSlice(allocation[index])}
                   onMouseLeave={() => setHoveredSlice(null)}
                 >
-                  {allocation.map((a, i) => (
-                    <Cell 
-                      key={i} 
-                      fill={a.color} 
-                      style={{ 
-                        filter: `drop-shadow(0px 4px 12px ${a.color}60)`, 
-                        cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }} 
-                    />
-                  ))}
+                  {allocation.map((a, i) => {
+                    const isHovered = hoveredSlice?.id === a.id;
+                    return (
+                      <Cell 
+                        key={i} 
+                        fill={`url(#${a.gradId})`} 
+                        style={{ 
+                          filter: isHovered 
+                            ? `drop-shadow(0px 0px 16px ${a.themeColor})` 
+                            : `drop-shadow(0px 4px 10px ${a.glowColor})`,
+                          cursor: 'pointer',
+                          transform: isHovered ? 'scale(1.04)' : 'scale(1)',
+                          transformOrigin: 'center center',
+                          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                        }} 
+                      />
+                    );
+                  })}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Donut Center Label */}
+            {/* Donut Center Display */}
             <div className="ap-donut-center">
-              {hoveredSlice ? (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
-                  <div className="center-hover-name">{hoveredSlice.name}</div>
-                  <div className="center-hover-pct" style={{ color: hoveredSlice.color }}>
-                    {hoveredSlice.allocationPct.toFixed(1)}%
-                  </div>
-                  <div className="center-hover-amt">
-                    ₹{hoveredSlice.monthlyAmount?.toLocaleString("en-IN")}/mo
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-                  <div className="donut-value-text">
-                    ₹{savings.toLocaleString("en-IN")}
-                  </div>
-                  <div className="donut-sub-text">PER MONTH</div>
-                </motion.div>
-              )}
+              <AnimatePresence mode="wait">
+                {hoveredSlice ? (
+                  <motion.div 
+                    key="hovered"
+                    initial={{ opacity: 0, scale: 0.88 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    exit={{ opacity: 0, scale: 0.88 }}
+                    transition={{ duration: 0.2 }}
+                    className="center-content-wrap"
+                  >
+                    <div className="center-hover-tag" style={{ background: `${hoveredSlice.themeColor}20`, color: hoveredSlice.themeColor, border: `1px solid ${hoveredSlice.themeColor}40` }}>
+                      {hoveredSlice.cat || 'Asset'}
+                    </div>
+                    <div className="center-hover-name">{hoveredSlice.abbr || hoveredSlice.name}</div>
+                    <div className="center-hover-pct" style={{ color: hoveredSlice.themeColor }}>
+                      {hoveredSlice.allocationPct.toFixed(1)}%
+                    </div>
+                    <div className="center-hover-amt">
+                      ₹{hoveredSlice.monthlyAmount?.toLocaleString("en-IN")}/mo
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="default"
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="center-content-wrap"
+                  >
+                    <div className="donut-center-badge">TOTAL INVESTMENT</div>
+                    <div className="donut-value-text">
+                      ₹{savings.toLocaleString("en-IN")}
+                    </div>
+                    <div className="donut-sub-text">PER MONTH</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
           {/* Donut Legend */}
           <div className="ap-legend-grid">
-            {allocation.map((item, idx) => (
-              <div 
-                key={idx} 
-                className={`legend-chip ${hoveredSlice?.id === item.id ? 'active' : ''}`}
-                onMouseEnter={() => setHoveredSlice(item)}
-                onMouseLeave={() => setHoveredSlice(null)}
-              >
-                <span className="legend-dot" style={{ background: item.color, boxShadow: `0 0 8px ${item.color}` }} />
-                <span className="legend-name">{item.abbr || item.name}</span>
-                <span className="legend-pct" style={{ color: item.color }}>{item.allocationPct.toFixed(1)}%</span>
-              </div>
-            ))}
+            {allocation.map((item, idx) => {
+              const isHovered = hoveredSlice?.id === item.id;
+              return (
+                <div 
+                  key={idx} 
+                  className={`legend-chip ${isHovered ? 'active' : ''}`}
+                  style={{
+                    borderColor: isHovered ? item.themeColor : 'rgba(255, 255, 255, 0.07)',
+                    boxShadow: isHovered ? `0 0 14px ${item.glowColor}` : 'none'
+                  }}
+                  onMouseEnter={() => setHoveredSlice(item)}
+                  onMouseLeave={() => setHoveredSlice(null)}
+                >
+                  <span className="legend-dot" style={{ background: item.themeColor, boxShadow: `0 0 8px ${item.themeColor}` }} />
+                  <span className="legend-name">{item.abbr || item.name}</span>
+                  <span className="legend-pct" style={{ color: item.themeColor }}>{item.allocationPct.toFixed(1)}%</span>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
 
         {/* RIGHT: Detailed Investment Allocation Cards */}
         <div className="ap-cards-panel">
-          {allocation.map((a, index) => (
-            <motion.div 
-              key={a.id} 
-              className="ap-alloc-card" 
-              style={{ '--card-accent': a.color }}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.15 + (index * 0.08) }}
-            >
-              <div className="ap-card-top">
-                <div className="ap-card-info-group">
-                  <div className="ap-card-icon" style={{ 
-                    background: `linear-gradient(135deg, ${a.color}25, ${a.color}08)`,
-                    color: a.color, 
-                    borderColor: `${a.color}40`,
-                    boxShadow: `0 4px 16px ${a.color}20`
-                  }}>
-                    {getCategoryIcon(a.cat || a.name)}
-                  </div>
-                  <div>
-                    <div className="ap-card-header-row">
-                      <h3 className="ap-card-name">{a.name}</h3>
+          {allocation.map((a, index) => {
+            const isHovered = hoveredSlice?.id === a.id;
+            return (
+              <motion.div 
+                key={a.id} 
+                className={`ap-alloc-card ${isHovered ? 'active-card' : ''}`} 
+                style={{ 
+                  '--card-accent': a.themeColor,
+                  borderColor: isHovered ? a.themeColor : 'rgba(255, 255, 255, 0.08)',
+                  boxShadow: isHovered ? `0 16px 40px rgba(0,0,0,0.5), 0 0 24px ${a.glowColor}` : '0 10px 30px rgba(0, 0, 0, 0.3)'
+                }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 + (index * 0.08) }}
+                onMouseEnter={() => setHoveredSlice(a)}
+                onMouseLeave={() => setHoveredSlice(null)}
+              >
+                <div className="ap-card-top">
+                  <div className="ap-card-info-group">
+                    <div className="ap-card-icon" style={{ 
+                      background: `linear-gradient(135deg, ${a.themeColor}30, ${a.themeColor}10)`,
+                      color: a.themeColor, 
+                      borderColor: `${a.themeColor}50`,
+                      boxShadow: `0 4px 16px ${a.glowColor}`
+                    }}>
+                      {getCategoryIcon(a.cat || a.name)}
                     </div>
-                    <div className="ap-card-desc">
-                      {CATEGORY_EXPLANATIONS[a.cat] || CATEGORY_EXPLANATIONS[a.name] || a.cat || ''}
+                    <div>
+                      <div className="ap-card-header-row">
+                        <h3 className="ap-card-name">{a.name}</h3>
+                      </div>
+                      <div className="ap-card-desc">
+                        {CATEGORY_EXPLANATIONS[a.cat] || CATEGORY_EXPLANATIONS[a.name] || a.cat || ''}
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="ap-card-pct-badge" style={{ color: a.themeColor, textShadow: `0 0 12px ${a.glowColor}` }}>
+                    {a.allocationPct.toFixed(1)}%
                   </div>
                 </div>
 
-                <div className="ap-card-pct-badge" style={{ color: a.color }}>
-                  {a.allocationPct.toFixed(1)}%
+                {/* Card Metrics Row */}
+                <div className="ap-card-metrics-grid">
+                  <div className="metric-pill">
+                    <span className="metric-label">Monthly SIP</span>
+                    <span className="metric-val text-sky">₹{a.monthlyAmount?.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="metric-pill">
+                    <span className="metric-label">Return (after tax)</span>
+                    <span className="metric-val text-green">{a.postTaxRate}%/yr</span>
+                  </div>
+                  <div className="metric-pill">
+                    <span className="metric-label">Safety & Risk</span>
+                    <span className="risk-tag" style={{ color: RISK_COLORS[a.riskLabel] || '#f59e0b', borderColor: `${RISK_COLORS[a.riskLabel] || '#f59e0b'}30` }}>
+                      {a.riskLabel} Risk
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Card Metrics Row */}
-              <div className="ap-card-metrics-grid">
-                <div className="metric-pill">
-                  <span className="metric-label">Monthly SIP</span>
-                  <span className="metric-val text-sky">₹{a.monthlyAmount?.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="metric-pill">
-                  <span className="metric-label">Return (after tax)</span>
-                  <span className="metric-val text-green">{a.postTaxRate}%/yr</span>
-                </div>
-                <div className="metric-pill">
-                  <span className="metric-label">Safety & Risk</span>
-                  <span className="risk-tag" style={{ color: RISK_COLORS[a.riskLabel] || '#f59e0b', borderColor: `${RISK_COLORS[a.riskLabel] || '#f59e0b'}30` }}>
-                    {a.riskLabel} Risk
-                  </span>
-                </div>
-              </div>
-
-              {a.concentrationBadge && (
-                <div className="ap-conc-badge">
-                  <Info size={13} /> {a.concentrationBadge}
-                </div>
-              )}
-            </motion.div>
-          ))}
+                {a.concentrationBadge && (
+                  <div className="ap-conc-badge">
+                    <Info size={13} /> {a.concentrationBadge}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 

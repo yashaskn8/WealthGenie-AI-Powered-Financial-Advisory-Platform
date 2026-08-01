@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   AllocationPlanner — Modern Glassmorphic Financial Allocation UI
+   AllocationPlanner — Modern Glassmorphic Financial Allocation UI v2
    ═══════════════════════════════════════════════════════════════════ */
 
 .ap-page {
@@ -169,7 +169,7 @@
 /* ─── Main Grid Layout ────────────────────────────────────────────── */
 .ap-main-grid {
   display: grid;
-  grid-template-columns: 44% 56%;
+  grid-template-columns: 46% 54%;
   gap: 28px;
   margin: 28px 0;
   align-items: start;
@@ -177,20 +177,62 @@
 
 /* Donut Panel */
 .ap-donut-panel {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.95));
-  backdrop-filter: blur(36px) saturate(160%);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.96));
+  backdrop-filter: blur(40px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-top: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 24px;
-  padding: 24px 20px 20px;
+  border-radius: 26px;
+  padding: 22px 22px 20px;
   position: relative;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
+}
+
+.donut-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.donut-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.donut-chart-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 3px 10px;
+  border-radius: 8px;
 }
 
 .donut-chart-wrapper {
   position: relative;
   width: 100%;
+}
+
+.donut-glow-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(139, 92, 246, 0.04) 50%, transparent 70%);
+  pointer-events: none;
+  filter: blur(20px);
 }
 
 .ap-donut-center {
@@ -200,44 +242,78 @@
   transform: translate(-50%, -50%);
   text-align: center;
   pointer-events: none;
+  width: 180px;
+}
+
+.center-content-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-center-badge {
+  font-size: 0.52rem;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 1.8px;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  background: rgba(56, 189, 248, 0.08);
+  border-radius: 6px;
 }
 
 .donut-value-text {
-  font-size: 2.2rem;
+  font-size: 2.3rem;
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 0 24px rgba(56, 189, 248, 0.5);
-  letter-spacing: -0.02em;
-  line-height: 1;
+  text-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .donut-sub-text {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: #64748b;
-  margin-top: 6px;
+  margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 800;
 }
 
+.center-hover-tag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
 .center-hover-name {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: #f8fafc;
   margin-bottom: 2px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .center-hover-pct {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 900;
   line-height: 1;
+  text-shadow: 0 0 20px currentColor;
 }
 
 .center-hover-amt {
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: #cbd5e1;
   margin-top: 4px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Donut Legend Chips */
@@ -246,8 +322,8 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -257,17 +333,16 @@
   gap: 8px;
   padding: 6px 12px;
   background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   font-size: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .legend-chip:hover, .legend-chip.active {
   background: rgba(30, 41, 59, 0.9);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .legend-dot {
@@ -303,6 +378,7 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
 .ap-alloc-card::before {
@@ -312,10 +388,9 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
 }
 
-.ap-alloc-card:hover {
+.ap-alloc-card:hover, .ap-alloc-card.active-card {
   transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--card-accent, #38bdf8) 12%, transparent);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--card-accent, #38bdf8);
 }
 
 .ap-card-top {
