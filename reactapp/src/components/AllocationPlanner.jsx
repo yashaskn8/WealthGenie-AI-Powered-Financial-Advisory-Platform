@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
-import { Target, PieChart as PieChartIcon, TrendingUp, Landmark, Briefcase, Wallet } from 'lucide-react';
+import { Target, PieChart as PieChartIcon, TrendingUp, Landmark, Briefcase, Wallet, Sparkles, ShieldCheck, ArrowUpRight, Percent, Info } from 'lucide-react';
 import { computeAllocation } from '../recommendationEngine';
 import { getEligibleInvestments } from '../recommendationEngine';
 import { RISK_COLORS } from '../investmentDatabase';
@@ -16,16 +16,20 @@ const getCategoryIcon = (cat) => {
   return <Wallet size={20} />;
 };
 
-const RISK_PRESETS = ['Safe & Stable', 'Balanced Growth', 'Aggressive Growth'];
+const RISK_PRESETS = [
+  { id: 'Safe & Stable', label: 'Safe & Stable', desc: 'Focus on safety & guaranteed returns' },
+  { id: 'Balanced Growth', label: 'Balanced Growth', desc: 'Optimal mix of growth & protection' },
+  { id: 'Aggressive Growth', label: 'Aggressive Growth', desc: 'Maximum wealth growth over time' },
+];
 
 const CATEGORY_EXPLANATIONS = {
-  'Equity': 'Company Shares (High Growth, High Risk)',
-  'Debt': 'Fixed Income & FD (Steady Yield, Medium Risk)',
-  'Government': 'Government-Backed Savings (Highest Safety, Steady Return)',
-  'Equity-Debt': 'Hybrid Mix (Balanced Safety & Growth)',
-  'Commodity': 'Gold & Precious Metals (Inflation Shield, Stable)',
-  'Alternative': 'Alternative Investments (High Diversification)',
-  'Gold': 'Gold & Precious Metals (Inflation Shield, Stable)'
+  'Equity': 'Company Shares — High growth potential over time',
+  'Debt': 'Fixed Income & FD — Steady, reliable interest income',
+  'Government': 'Government Savings — 100% safe capital protection',
+  'Equity-Debt': 'Hybrid Funds — Balanced safety and growth',
+  'Commodity': 'Gold & Metals — Protects against inflation',
+  'Alternative': 'Alternative Assets — Extra portfolio diversification',
+  'Gold': 'Gold & Metals — Protects against inflation'
 };
 
 const AllocationPlanner = ({ profile }) => {
@@ -57,12 +61,12 @@ const AllocationPlanner = ({ profile }) => {
   const debtGovtExposure = useMemo(() =>
     allocation.filter(a => a.cat === "Government" || a.cat === "Debt" || a.cat === "Equity-Debt").reduce((s, a) => s + a.allocationPct, 0), [allocation]);
   const altExposure = useMemo(() =>
-    allocation.filter(a => a.cat === "Commodity" || a.cat === "Alternative").reduce((s, a) => s + a.allocationPct, 0), [allocation]);
+    allocation.filter(a => a.cat === "Commodity" || a.cat === "Alternative" || a.cat === "Gold").reduce((s, a) => s + a.allocationPct, 0), [allocation]);
   
   const rationaleText = useMemo(() => {
-    if (riskView === 'Aggressive Growth') return "Focuses on growing your money as much as possible over the long term. This uses high company shares (equity) concentration to beat inflation, with more short-term ups and downs.";
-    if (riskView === 'Safe & Stable') return "Prioritizes keeping your money safe and getting steady returns. This relies heavily on government-backed and safer debt savings, with minimal exposure to company shares.";
-    return "Combines safety and growth. This spreads your money across different categories to capture stock market growth while protecting your capital with safe assets.";
+    if (riskView === 'Aggressive Growth') return "Focuses on growing your money as much as possible over the long term using high-growth equity shares to beat inflation.";
+    if (riskView === 'Safe & Stable') return "Prioritizes keeping your hard-earned money safe with government-backed savings and fixed deposits with minimal risk.";
+    return "Combines safety and growth. Spreads your money across categories to capture market growth while keeping a strong safety cushion.";
   }, [riskView]);
 
   const [hoveredSlice, setHoveredSlice] = useState(null);
@@ -70,13 +74,10 @@ const AllocationPlanner = ({ profile }) => {
   if (!allocation || allocation.length === 0) {
     return (
       <motion.div className="ap-page" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Target size={28} color="#f43f5e" /> Portfolio Allocation Planner
-        </h1>
         <div className="ap-empty">
-          <div style={{ fontSize: '3rem', color: '#0ea5e9' }}><PieChartIcon size={64} /></div>
-          <h3>Nothing to show here</h3>
-          <p>Adjust your profile settings to unlock investment options.</p>
+          <div className="ap-empty-icon"><PieChartIcon size={48} /></div>
+          <h3>No allocation available</h3>
+          <p>Adjust your profile settings to unlock personalized investment options.</p>
         </div>
       </motion.div>
     );
@@ -84,101 +85,100 @@ const AllocationPlanner = ({ profile }) => {
 
   return (
     <div className="ap-page">
+      {/* Top Banner Header */}
       <motion.div
-        style={{ textAlign: 'center', marginBottom: 8 }}
+        className="ap-header-section"
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="ap-page-badge">
-          <PieChartIcon size={11} />
-          AI-Recommended <JargonTooltip term="Asset Allocation">Investment Split</JargonTooltip>
+          <Sparkles size={13} className="text-sky" />
+          <span>SMART MONEY MIX</span>
         </div>
-        <h1 className="ap-page-title">Your Personalised Investment Plan</h1>
+        <h1 className="ap-page-title">
+          Where to <span className="title-gradient">Invest Your Money</span>
+        </h1>
         <p className="ap-page-subtitle">
-          Here's how we suggest splitting your ₹{savings.toLocaleString("en-IN")}/month savings to grow your money while keeping risk in check.
+          How to split your <strong>₹{savings.toLocaleString("en-IN")}/month</strong> savings to grow wealth safely.
         </p>
 
         {/* Risk Presets Segmented Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
-          <div className="risk-presets-segmented" style={{ 
-            display: 'inline-flex', 
-            background: 'rgba(15, 23, 42, 0.6)', 
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: 4, 
-            borderRadius: 14,
-            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
-          }}>
+        <div className="risk-presets-container">
+          <div className="risk-presets-segmented">
             {RISK_PRESETS.map(preset => {
-              const isActive = riskView === preset;
+              const isActive = riskView === preset.id;
               return (
                 <button
-                  key={preset}
-                  onClick={() => { setRiskView(preset); }}
-                  style={{
-                    padding: '8px 20px',
-                    borderRadius: 10,
-                    border: 'none',
-                    background: isActive ? 'linear-gradient(135deg, #0ea5e9, #38bdf8)' : 'transparent',
-                    color: isActive ? '#fff' : '#94a3b8',
-                    fontWeight: isActive ? 800 : 600,
-                    fontSize: '0.82rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: isActive ? '0 4px 15px rgba(14, 165, 233, 0.4)' : 'none'
-                  }}
+                  key={preset.id}
+                  onClick={() => setRiskView(preset.id)}
+                  className={`risk-preset-btn ${isActive ? 'active' : ''}`}
                 >
-                  {preset}
+                  <span>{preset.label}</span>
                 </button>
               );
             })}
           </div>
         </div>
-        <div style={{ 
-          maxWidth: 600, margin: '14px auto 0', fontSize: '0.85rem', color: '#cbd5e1', 
-          background: 'rgba(15,23,42,0.6)', padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)'
-        }}>
-          <strong>Why this mix?</strong> {rationaleText}
+
+        {/* Rationale Banner */}
+        <div className="ap-rationale-box">
+          <div className="rationale-header">
+            <ShieldCheck size={16} className="text-sky" />
+            <span>Why This Strategy Works</span>
+          </div>
+          <p>{rationaleText}</p>
         </div>
       </motion.div>
-      <div className="ap-header-divider" />
 
+      {/* MAIN CONTENT GRID */}
       <div className="ap-main-grid">
-        {/* LEFT: Donut */}
+        {/* LEFT: Visual Donut Chart */}
         <motion.div 
           className="ap-donut-panel"
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.15 }}
         >
-          <div style={{ width: '100%', height: 380, position: 'relative' }}>
-            <ResponsiveContainer>
+          <div className="donut-chart-wrapper">
+            <ResponsiveContainer width="100%" height={360}>
               <PieChart>
                 <Pie 
                   data={allocation} 
                   dataKey="allocationPct" 
                   cx="50%" cy="50%"
-                  innerRadius={115} outerRadius={165} 
-                  paddingAngle={3} 
-                  stroke="rgba(15, 23, 42, 0.8)" 
+                  innerRadius={110} outerRadius={160} 
+                  paddingAngle={4}
+                  cornerRadius={6} 
+                  stroke="rgba(10, 16, 30, 0.9)" 
                   strokeWidth={3}
                   onMouseEnter={(_, index) => setHoveredSlice(allocation[index])}
                   onMouseLeave={() => setHoveredSlice(null)}
                 >
-                  {allocation.map((a, i) => <Cell key={i} fill={a.color} style={{ filter: `drop-shadow(0px 0px 8px ${a.color}80)`, cursor: 'pointer', transition: 'all 0.3s ease' }} />)}
+                  {allocation.map((a, i) => (
+                    <Cell 
+                      key={i} 
+                      fill={a.color} 
+                      style={{ 
+                        filter: `drop-shadow(0px 4px 12px ${a.color}60)`, 
+                        cursor: 'pointer',
+                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }} 
+                    />
+                  ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            <div className="ap-donut-center" style={{ pointerEvents: 'none' }}>
+
+            {/* Donut Center Label */}
+            <div className="ap-donut-center">
               {hoveredSlice ? (
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 4, color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>
-                    {hoveredSlice.name}
-                  </div>
-                  <div style={{ color: hoveredSlice.color, fontSize: '1.8rem', fontWeight: 900, textAlign: 'center', textShadow: `0 0 15px ${hoveredSlice.color}80` }}>
+                  <div className="center-hover-name">{hoveredSlice.name}</div>
+                  <div className="center-hover-pct" style={{ color: hoveredSlice.color }}>
                     {hoveredSlice.allocationPct.toFixed(1)}%
                   </div>
-                  <div style={{ color: '#94a3b8', marginTop: 4, textAlign: 'center', fontWeight: 600 }}>
+                  <div className="center-hover-amt">
                     ₹{hoveredSlice.monthlyAmount?.toLocaleString("en-IN")}/mo
                   </div>
                 </motion.div>
@@ -192,84 +192,123 @@ const AllocationPlanner = ({ profile }) => {
               )}
             </div>
           </div>
+
+          {/* Donut Legend */}
+          <div className="ap-legend-grid">
+            {allocation.map((item, idx) => (
+              <div 
+                key={idx} 
+                className={`legend-chip ${hoveredSlice?.id === item.id ? 'active' : ''}`}
+                onMouseEnter={() => setHoveredSlice(item)}
+                onMouseLeave={() => setHoveredSlice(null)}
+              >
+                <span className="legend-dot" style={{ background: item.color, boxShadow: `0 0 8px ${item.color}` }} />
+                <span className="legend-name">{item.abbr || item.name}</span>
+                <span className="legend-pct" style={{ color: item.color }}>{item.allocationPct.toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
-        {/* RIGHT: Allocation Cards */}
+        {/* RIGHT: Detailed Investment Allocation Cards */}
         <div className="ap-cards-panel">
           {allocation.map((a, index) => (
             <motion.div 
               key={a.id} 
               className="ap-alloc-card" 
-              style={{ borderLeftColor: a.color, '--hover-color': a.color }}
+              style={{ '--card-accent': a.color }}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 + (index * 0.1) }}
+              transition={{ delay: 0.15 + (index * 0.08) }}
             >
               <div className="ap-card-top">
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ 
-                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `linear-gradient(135deg, ${a.color}20, ${a.color}05)`,
-                    color: a.color, border: `1px solid ${a.color}30`,
-                    boxShadow: `inset 0 0 10px ${a.color}10`
+                <div className="ap-card-info-group">
+                  <div className="ap-card-icon" style={{ 
+                    background: `linear-gradient(135deg, ${a.color}25, ${a.color}08)`,
+                    color: a.color, 
+                    borderColor: `${a.color}40`,
+                    boxShadow: `0 4px 16px ${a.color}20`
                   }}>
                     {getCategoryIcon(a.cat || a.name)}
                   </div>
                   <div>
-                    <div className="ap-card-name" style={{ textShadow: `0 0 10px ${a.color}40` }}>{a.abbr || a.name}</div>
-                    <div className="ap-card-fullname">{a.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4, fontWeight: 500 }}>
+                    <div className="ap-card-header-row">
+                      <h3 className="ap-card-name">{a.name}</h3>
+                    </div>
+                    <div className="ap-card-desc">
                       {CATEGORY_EXPLANATIONS[a.cat] || CATEGORY_EXPLANATIONS[a.name] || a.cat || ''}
                     </div>
                   </div>
                 </div>
-                <div className="ap-card-pct" style={{ color: a.color, textShadow: `0 0 15px ${a.color}60` }}>
+
+                <div className="ap-card-pct-badge" style={{ color: a.color }}>
                   {a.allocationPct.toFixed(1)}%
                 </div>
               </div>
-              <div className="ap-card-details">
-                <span>₹{a.monthlyAmount?.toLocaleString("en-IN")}/mo</span>
-                <span>Returns (after tax): {a.postTaxRate}%</span>
-                <span className="ap-risk-badge" style={{ color: RISK_COLORS[a.riskLabel] || '#f59e0b' }}>
-                  {a.riskLabel}
-                </span>
+
+              {/* Card Metrics Row */}
+              <div className="ap-card-metrics-grid">
+                <div className="metric-pill">
+                  <span className="metric-label">Monthly SIP</span>
+                  <span className="metric-val text-sky">₹{a.monthlyAmount?.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="metric-pill">
+                  <span className="metric-label">Return (after tax)</span>
+                  <span className="metric-val text-green">{a.postTaxRate}%/yr</span>
+                </div>
+                <div className="metric-pill">
+                  <span className="metric-label">Safety & Risk</span>
+                  <span className="risk-tag" style={{ color: RISK_COLORS[a.riskLabel] || '#f59e0b', borderColor: `${RISK_COLORS[a.riskLabel] || '#f59e0b'}30` }}>
+                    {a.riskLabel} Risk
+                  </span>
+                </div>
               </div>
+
               {a.concentrationBadge && (
-                <div className="ap-conc-badge">{a.concentrationBadge}</div>
+                <div className="ap-conc-badge">
+                  <Info size={13} /> {a.concentrationBadge}
+                </div>
               )}
             </motion.div>
           ))}
         </div>
       </div>
 
-      {/* Blended Return */}
+      {/* SUMMARY STATS & BLENDED RETURN BAR */}
       <motion.div 
-        className="ap-blended-bar"
-        initial={{ opacity: 0, y: 30 }}
+        className="ap-summary-container"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.35 }}
       >
-        <div className="ap-blended-label">Your Overall Return (After Taxes)</div>
-        <div className="ap-blended-value">{blendedReturn.toFixed(1)}%</div>
-        <div className="ap-blended-sub">This is your estimated yearly return across all investments, after accounting for taxes.</div>
+        <div className="ap-blended-bar">
+          <div className="blended-left">
+            <div className="blended-label">ESTIMATED ANNUAL RETURN (POST-TAX)</div>
+            <div className="blended-value">
+              {blendedReturn.toFixed(1)}% <span className="per-year">per year</span>
+            </div>
+            <div className="blended-sub">
+              Calculated using current interest rates & post-tax projections.
+            </div>
+          </div>
+          <div className="blended-right">
+            <div className="summary-pill">
+              <span className="sp-label">Equity Shares</span>
+              <span className="sp-val text-sky">{equityExposure.toFixed(1)}%</span>
+            </div>
+            <div className="summary-pill">
+              <span className="sp-label">FD & Safer Funds</span>
+              <span className="sp-val text-purple">{debtGovtExposure.toFixed(1)}%</span>
+            </div>
+            {altExposure > 0 && (
+              <div className="summary-pill">
+                <span className="sp-label">Gold & Others</span>
+                <span className="sp-val text-orange">{altExposure.toFixed(1)}%</span>
+              </div>
+            )}
+          </div>
+        </div>
       </motion.div>
-
-      {/* KPI Cards */}
-      <div className="ap-kpi-row">
-        <div className="ap-kpi-card">
-          <div className="ap-kpi-label">Stocks & Mutual Funds</div>
-          <div className="ap-kpi-value" style={{ color: '#a855f7' }}>{equityExposure.toFixed(0)}%</div>
-        </div>
-        <div className="ap-kpi-card">
-          <div className="ap-kpi-label">Safer Investments (FDs, Bonds)</div>
-          <div className="ap-kpi-value" style={{ color: '#3b82f6' }}>{debtGovtExposure.toFixed(0)}%</div>
-        </div>
-        <div className="ap-kpi-card">
-          <div className="ap-kpi-label">Gold & Others</div>
-          <div className="ap-kpi-value" style={{ color: '#eab308' }}>{altExposure.toFixed(0)}%</div>
-        </div>
-      </div>
     </div>
   );
 };
