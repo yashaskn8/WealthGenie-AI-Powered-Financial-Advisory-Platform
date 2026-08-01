@@ -14,7 +14,7 @@
 | **Embedding ablation study** | [`embedding_ablation.json`](ml-service/reports/embedding_ablation.json) | Semantic vs hash: +2.0% Recall, +0.09 MRR |
 | **Base LLM evaluation** | [`llm_eval_report.json`](ml-service/reports/llm_eval_report.json) | BLEU 0.028, ROUGE-L 0.284, Semantic Sim 0.666 |
 | **Fail-closed auth** | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) | HTTP 500 when `ML_SERVICE_API_KEY` unset in non-local env |
-| **Docs-sync CI check** | [`scripts/check_docs_sync.js`](scripts/check_docs_sync.js) | Statically verifies README matches code |
+| **Docs-sync CI check** | [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
 
 ---
 
@@ -25,6 +25,7 @@
 - **RAG eval "\_all" aggregate metrics are inflated** by out-of-domain negative controls scoring vacuous 1.0s — the in-domain numbers (96% Recall@4, 0.9600 MRR) are the honest ones.
 - **Observed retrieval miss**: an 80C/ELSS query returned an 80CCD/NPS citation in a passing integration test — known, not investigated further.
 - **Multi-process scaling test** is a local single-host worker process load simulation, not a multi-host container cluster benchmark.
+- **`investment_master.json` physical duplication**: Identical copies currently exist at `reactapp/src/data/investment_master.json` and `server/data/investment_master.json` — documented as a known, undone structural item (no build-time single-source-of-truth merging attempted in this pass).
 
 ---
 
@@ -46,4 +47,4 @@
 | [`ml-service/reports/`](ml-service/reports/) | All persisted benchmark JSON reports |
 | [`ml-service/tests/test_ml_validation.py`](ml-service/tests/test_ml_validation.py) | ML validation test suite (9 pass, 2 skip) |
 | [`server/test/ragIntegration.test.js`](server/test/ragIntegration.test.js) | RAG integration test (2 pass) |
-| [`scripts/check_docs_sync.js`](scripts/check_docs_sync.js) | Static docs-vs-code sync checker |
+| [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Static docs-vs-code sync checker |

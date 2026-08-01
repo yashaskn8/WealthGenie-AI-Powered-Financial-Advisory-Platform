@@ -296,7 +296,7 @@ node --test test/ragIntegration.test.js
 ### Docs-Code Sync Check
 
 ```bash
-node scripts/check_docs_sync.js
+node scripts/docs/check_docs_sync.js
 ```
 
 Statically verifies that README architecture claims match actual code in `geminiChatService.js`, `ragClient.js`, and `ml-service/main.py`.
@@ -333,13 +333,20 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 │   └── test/                  # node:test test files
 ├── ml-service/                # FastAPI ML microservice
 │   ├── main.py                # FastAPI app, endpoints, auth
-│   ├── model/                 # model.pkl, checkpoints, inference
+│   ├── schemas.py             # Pydantic request/response schemas
+│   ├── model/                 # Core ML models subpackages
+│   │   ├── architecture/      # FT-Transformer, FinancialMLP, BasePredictor
+│   │   ├── training/          # train, train_pytorch, build_dataset
+│   │   ├── data/              # preprocessing, dataset, data_validator, label_construction, feature_engineering
+│   │   ├── serving/           # registry, inference
+│   │   ├── evaluation/        # evaluate, experiments, visualizer, explainer
+│   │   └── checkpoints/       # Saved PyTorch checkpoint weights
 │   ├── rag/                   # RAG subsystem (embeddings, retrieval, reranking, etc.)
 │   ├── llm/                   # LLM registry, providers, evaluation metrics
 │   ├── scripts/               # run_llm_eval.py, run_embedding_ablation.py
 │   ├── reports/               # Persisted JSON evaluation reports
 │   └── tests/                 # pytest validation tests
-├── scripts/                   # check_docs_sync.js, loadtest
+├── scripts/                   # Shared scripts (docs/check_docs_sync.js)
 ├── RESEARCH_LOG.md            # Engineering research narrative
 ├── PROJECT_STATUS.md          # Final status: what works, what doesn't
 └── README.md                  # This file

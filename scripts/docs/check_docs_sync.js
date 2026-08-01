@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT_DIR = path.resolve(__dirname, '..');
+const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const README_PATH = path.join(ROOT_DIR, 'README.md');
 const RAG_CLIENT_PATH = path.join(ROOT_DIR, 'server', 'services', 'ragClient.js');
 const CHAT_SERVICE_PATH = path.join(ROOT_DIR, 'server', 'services', 'geminiChatService.js');

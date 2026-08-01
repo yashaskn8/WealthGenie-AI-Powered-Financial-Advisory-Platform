@@ -18,10 +18,10 @@ from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 
-from explainer import ModelExplainer
-from feature_engineering import engineer_features, to_model_array
-from model.inference import RandomForestPredictor, MLPPredictor, FTTransformerPredictor
-from model.registry import registry
+from model.evaluation.explainer import ModelExplainer
+from model.data.feature_engineering import engineer_features, to_model_array
+from model.serving.inference import RandomForestPredictor, MLPPredictor, FTTransformerPredictor
+from model.serving.registry import registry
 from schemas import HealthResponse, PredictRequest, PredictResponse
 
 load_dotenv()
@@ -85,7 +85,7 @@ async def lifespan(app: FastAPI):
     mlp_pred.load_artifacts()
     if not mlp_pred.is_loaded:
         logger.info("Auto-training baseline PyTorch MLP model...")
-        from model.train_pytorch import train_pytorch_model
+        from model.training.train_pytorch import train_pytorch_model
         train_pytorch_model()
         mlp_pred.load_artifacts()
     registry.register("mlp", mlp_pred)
@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
     ft_pred.load_artifacts()
     if not ft_pred.is_loaded:
         logger.info("Auto-training baseline FT-Transformer model...")
-        from model.train_pytorch import train_ft_transformer_model
+        from model.training.train_pytorch import train_ft_transformer_model
         train_ft_transformer_model()
         ft_pred.load_artifacts()
     registry.register("ft_transformer", ft_pred)

@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 
 from model.config import TrainingConfig
-from model.preprocessing import FeaturePreprocessor
+from model.data.preprocessing import FeaturePreprocessor
 
 
 class FinancialDataset(Dataset):

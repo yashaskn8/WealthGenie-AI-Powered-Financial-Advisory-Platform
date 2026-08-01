@@ -22,14 +22,14 @@ from model.config import (
     get_device,
     set_random_seed,
 )
-from model.data_validator import PreTrainingDataValidator, DataValidationError
-from model.dataset import create_data_loaders
-from model.evaluate import evaluate_pytorch_model
-from model.experiments import ExperimentTracker
-from model.ft_transformer import FTTransformer, FTTransformerConfig
-from model.model import FinancialMLP
-from model.preprocessing import FeaturePreprocessor, prepare_synthetic_training_data
-from model.visualizer import plot_training_curves, plot_confusion_matrix
+from model.data.data_validator import PreTrainingDataValidator, DataValidationError
+from model.data.dataset import create_data_loaders
+from model.evaluation.evaluate import evaluate_pytorch_model
+from model.evaluation.experiments import ExperimentTracker
+from model.architecture.ft_transformer import FTTransformer, FTTransformerConfig
+from model.architecture.model import FinancialMLP
+from model.data.preprocessing import FeaturePreprocessor, prepare_synthetic_training_data
+from model.evaluation.visualizer import plot_training_curves, plot_confusion_matrix
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("wealthgenie.pytorch_trainer")

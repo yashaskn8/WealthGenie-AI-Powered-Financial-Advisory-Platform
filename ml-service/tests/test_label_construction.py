@@ -23,11 +23,11 @@ SYS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SYS_PATH not in sys.path:
     sys.path.append(SYS_PATH)
 
-from model.label_construction import construct_supervisory_targets, CORE_CATEGORIES
+from model.data.label_construction import construct_supervisory_targets, CORE_CATEGORIES
 
 ML_SERVICE_DIR = Path(__file__).resolve().parents[1]
-LABEL_MODULE_PATH = ML_SERVICE_DIR / "model" / "label_construction.py"
-TRAIN_MODULE_PATH = ML_SERVICE_DIR / "model" / "train.py"
+LABEL_MODULE_PATH = ML_SERVICE_DIR / "model" / "data" / "label_construction.py"
+TRAIN_MODULE_PATH = ML_SERVICE_DIR / "model" / "training" / "train.py"
 METADATA_PATH = ML_SERVICE_DIR / "model" / "metadata.json"
 REPORT_PATH = ML_SERVICE_DIR / "data" / "label_construction_report.json"
 
@@ -176,7 +176,7 @@ def test_invalid_suitability_config_raises_value_error(tmp_path):
     bad_config = tmp_path / "corrupted_config.json"
     bad_config.write_text("{ invalid json structure", encoding="utf-8")
 
-    from model.label_construction import load_suitability_config
+    from model.data.label_construction import load_suitability_config
     with pytest.raises(ValueError, match="Invalid suitability configuration file"):
         load_suitability_config(bad_config)
 
@@ -185,7 +185,7 @@ def test_missing_performance_csv_fallback(tmp_path):
     """Verify missing performance CSV falls back safely to default category metrics."""
     non_existent = tmp_path / "missing_market_performance.csv"
 
-    from model.label_construction import load_historical_performance_metrics, DEFAULT_CATEGORY_METRICS
+    from model.data.label_construction import load_historical_performance_metrics, DEFAULT_CATEGORY_METRICS
     metrics = load_historical_performance_metrics(non_existent)
     for cat in CORE_CATEGORIES:
         assert cat in metrics

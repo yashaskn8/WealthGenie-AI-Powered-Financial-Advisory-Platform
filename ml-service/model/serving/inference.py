@@ -13,11 +13,11 @@ import joblib
 import numpy as np
 import torch
 
-from model.base import BasePredictor
+from model.architecture.base import BasePredictor
 from model.config import ArtifactPaths, PyTorchModelConfig, get_device
-from model.ft_transformer import FTTransformer, FTTransformerConfig
-from model.model import FinancialMLP
-from model.preprocessing import FeaturePreprocessor
+from model.architecture.ft_transformer import FTTransformer, FTTransformerConfig
+from model.architecture.model import FinancialMLP
+from model.data.preprocessing import FeaturePreprocessor
 
 logger = logging.getLogger("wealthgenie.inference")
 

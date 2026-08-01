@@ -35,8 +35,8 @@ SYS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SYS_PATH not in sys.path:
     sys.path.append(SYS_PATH)
 
-from feature_engineering import engineer_features, to_model_array, get_feature_names
-from model.label_construction import construct_supervisory_targets, load_suitability_config, CORE_CATEGORIES
+from model.data.feature_engineering import engineer_features, to_model_array, get_feature_names
+from model.data.label_construction import construct_supervisory_targets, load_suitability_config, CORE_CATEGORIES
 from model.generate_production_reports import (
     calculate_calibration_metrics, compute_bootstrap_confidence_intervals,
     run_label_sensitivity_analysis, run_recommendation_stability_tests,

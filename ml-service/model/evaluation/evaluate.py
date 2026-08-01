@@ -17,7 +17,7 @@ from sklearn.metrics import (
 )
 
 from model.config import ArtifactPaths, get_device, PyTorchModelConfig
-from model.preprocessing import FeaturePreprocessor
+from model.data.preprocessing import FeaturePreprocessor
 
 
 def compute_top_k_accuracy(y_true: np.ndarray, y_proba: np.ndarray, k: int = 2) -> float:

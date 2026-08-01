@@ -5,8 +5,8 @@ Tests predictor registration, dynamic retrieval, and BasePredictor interface com
 
 import pytest
 import numpy as np
-from model.base import BasePredictor
-from model.registry import ModelRegistry
+from model.architecture.base import BasePredictor
+from model.serving.registry import ModelRegistry
 
 
 class DummyPredictor(BasePredictor):

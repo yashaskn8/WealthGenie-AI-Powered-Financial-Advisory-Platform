@@ -7,9 +7,9 @@ import pytest
 import torch
 import numpy as np
 
-from model.ft_transformer import FTTransformer, FTTransformerConfig, FeatureTokenizer
-from model.train_pytorch import train_ft_transformer_model
-from model.preprocessing import prepare_synthetic_training_data
+from model.architecture.ft_transformer import FTTransformer, FTTransformerConfig, FeatureTokenizer
+from model.training.train_pytorch import train_ft_transformer_model
+from model.data.preprocessing import prepare_synthetic_training_data
 from model.config import TrainingConfig
 
 

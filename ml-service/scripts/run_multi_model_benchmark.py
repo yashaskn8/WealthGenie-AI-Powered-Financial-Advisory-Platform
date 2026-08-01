@@ -50,11 +50,11 @@ from sklearn.metrics import (
     classification_report,
 )
 
-from feature_engineering import engineer_features, get_feature_names
-from model.label_construction import construct_supervisory_targets
+from model.data.feature_engineering import engineer_features, get_feature_names
+from model.data.label_construction import construct_supervisory_targets
 from model.config import PyTorchModelConfig, set_random_seed, get_device
-from model.model import FinancialMLP
-from model.ft_transformer import FTTransformer, FTTransformerConfig
+from model.architecture.model import FinancialMLP
+from model.architecture.ft_transformer import FTTransformer, FTTransformerConfig
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 SEED = 42

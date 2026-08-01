@@ -16,12 +16,12 @@ from model.config import (
     get_device,
     set_random_seed,
 )
-from model.preprocessing import FeaturePreprocessor, prepare_synthetic_training_data
-from model.dataset import FinancialDataset, create_data_loaders
-from model.model import FinancialMLP
-from model.train_pytorch import train_pytorch_model
-from model.evaluate import evaluate_pytorch_model, compare_models
-from model.inference import PyTorchInferenceEngine
+from model.data.preprocessing import FeaturePreprocessor, prepare_synthetic_training_data
+from model.data.dataset import FinancialDataset, create_data_loaders
+from model.architecture.model import FinancialMLP
+from model.training.train_pytorch import train_pytorch_model
+from model.evaluation.evaluate import evaluate_pytorch_model, compare_models
+from model.serving.inference import PyTorchInferenceEngine
 
 
 @pytest.fixture

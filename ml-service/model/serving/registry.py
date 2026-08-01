@@ -5,7 +5,7 @@ Centralized registry for dynamic model registration, lookup, and unified multi-m
 
 import logging
 from typing import Dict, List, Any, Optional, Type
-from model.base import BasePredictor
+from model.architecture.base import BasePredictor
 
 logger = logging.getLogger("wealthgenie.model_registry")
 

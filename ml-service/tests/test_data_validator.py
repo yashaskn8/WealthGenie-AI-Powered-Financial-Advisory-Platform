@@ -5,7 +5,7 @@ Tests dataset quality gate checks, missing value detection, constant column dete
 
 import pytest
 import numpy as np
-from model.data_validator import PreTrainingDataValidator, DataValidationError
+from model.data.data_validator import PreTrainingDataValidator, DataValidationError
 
 
 def test_data_validator_passed():

@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 from fastapi.testclient import TestClient
 
-from feature_engineering import engineer_features, to_model_array, get_feature_names
+from model.data.feature_engineering import engineer_features, to_model_array, get_feature_names
 from schemas import PredictRequest
 from main import app, get_decision_path_description, model
 
@@ -307,7 +307,7 @@ def test_ft_transformer_reglu_vs_gelu_activations():
     both execute successfully, produce distinct output tensors, and support backward passes.
     """
     import torch
-    from model.ft_transformer import FTTransformer, FTTransformerConfig
+    from model.architecture.ft_transformer import FTTransformer, FTTransformerConfig
 
     config_reglu = FTTransformerConfig(input_dim=16, d_token=32, activation="reglu")
     model_reglu = FTTransformer(config_reglu)

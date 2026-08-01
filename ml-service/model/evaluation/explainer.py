@@ -4,7 +4,7 @@ Uses TreeExplainer for fast, exact SHAP values on RandomForest/GradientBoosting.
 """
 
 import numpy as np
-from feature_engineering import FEATURE_NAMES, FEATURE_DISPLAY
+from model.data.feature_engineering import FEATURE_NAMES, FEATURE_DISPLAY
 
 class ModelExplainer:
     """Wraps the trained pipeline with SHAP TreeExplainer."""
