@@ -272,3 +272,73 @@ def test_dev_mode_auth_bypass_with_local_environment(client):
         else:
             os.environ.pop("ENVIRONMENT", None)
 
+
+def test_rag_80c_elss_citation_regression():
+    """
+    Regression Test (Bug 2 Fix): Ensures 'How much deduction is allowed under Section 80C for ELSS?'
+    returns the correct Section 80C citation at top position when processed through RAG pipeline.
+    """
+    from rag.ingestion.pipeline import IngestionPipeline
+    from rag.retrieval.pipeline import RAGPipeline
+    from rag.config import RAGConfig
+    from rag.schema import RAGQueryRequest
+    from rag.seed_knowledge import TAX_REGULATIONS_2025, MUTUAL_FUNDS_SUITABILITY
+
+    pipeline = IngestionPipeline()
+    pipeline.ingest_text(text=TAX_REGULATIONS_2025, title="Income Tax Regulations FY 2025-26", source="Income Tax Dept", author="CBDT")
+    pipeline.ingest_text(text=MUTUAL_FUNDS_SUITABILITY, title="SEBI & AMFI Guidelines", source="SEBI", author="SEBI")
+
+    config = RAGConfig()
+    rag = RAGPipeline(embedder=pipeline.embedder, vector_store=pipeline.vector_store, config=config)
+
+    query = "How much deduction is allowed under Section 80C for ELSS?"
+    response = rag.query(RAGQueryRequest(question=query))
+
+    assert len(response.citations) > 0, "Expected citations array to be non-empty"
+    top_citation = response.citations[0]
+    assert any(term in top_citation.excerpt for term in ["80C", "1,50,000", "1.5 Lakhs"]), (
+        f"Top citation must contain Section 80C details, got: {top_citation.excerpt}"
+    )
+
+
+def test_ft_transformer_reglu_vs_gelu_activations():
+    """
+    Regression Test (Bug 3 Fix): Verifies that ReGLU and GELU activations in FTTransformer
+    both execute successfully, produce distinct output tensors, and support backward passes.
+    """
+    import torch
+    from model.ft_transformer import FTTransformer, FTTransformerConfig
+
+    config_reglu = FTTransformerConfig(input_dim=16, d_token=32, activation="reglu")
+    model_reglu = FTTransformer(config_reglu)
+    model_reglu.eval()
+
+    config_gelu = FTTransformerConfig(input_dim=16, d_token=32, activation="gelu")
+    model_gelu = FTTransformer(config_gelu)
+    model_gelu.eval()
+
+    torch.manual_seed(42)
+    x = torch.randn(4, 16)
+
+    # Share tokenizer/cls/head weights to isolate FFN activation difference
+    model_gelu.tokenizer.load_state_dict(model_reglu.tokenizer.state_dict())
+    model_gelu.cls_token.data.copy_(model_reglu.cls_token.data)
+    model_gelu.head.load_state_dict(model_reglu.head.state_dict())
+
+    out_reglu = model_reglu(x)
+    out_gelu = model_gelu(x)
+
+    assert out_reglu.shape == (4, 6)
+    assert out_gelu.shape == (4, 6)
+    assert not torch.allclose(out_reglu, out_gelu, atol=1e-4), "ReGLU and GELU activations must produce different outputs"
+
+    # Verify backward pass on both
+    model_reglu.train()
+    loss_reglu = model_reglu(x).sum()
+    loss_reglu.backward()
+
+    model_gelu.train()
+    loss_gelu = model_gelu(x).sum()
+    loss_gelu.backward()
+
+

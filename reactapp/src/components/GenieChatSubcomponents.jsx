@@ -4,9 +4,41 @@
  * Extracted from GenieChat.jsx for maintainability.
  */
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ChevronRight, TrendingUp, TrendingDown, Shield, Target, BarChart3, Zap, AlertTriangle, DollarSign, Copy, ThumbsUp, ThumbsDown, Info } from 'lucide-react';
+import { Sparkles, ChevronRight, TrendingUp, TrendingDown, Shield, Target, BarChart3, Zap, AlertTriangle, DollarSign, Copy, ThumbsUp, ThumbsDown, Info, BookOpen, ChevronDown } from 'lucide-react';
 import chatGenie from '../assets/chat_genie.png';
 import { parseActionCards, useStreamedText, streamedMessages } from '../utils/genieChatHelpers.js';
+
+// ── Citations List Component ──────────────────────────────────────
+export function CitationsList({ citations }) {
+  const [isOpen, setIsOpen] = useState(false);
+  if (!citations || citations.length === 0) return null;
+
+  return (
+    <div className="genie-citations">
+      <button 
+        type="button" 
+        className="citations-toggle-btn" 
+        onClick={() => setIsOpen(prev => !prev)}
+      >
+        <BookOpen size={12} style={{ marginRight: 4 }} />
+        <span>Sources ({citations.length})</span>
+        <ChevronDown size={12} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', marginLeft: 'auto' }} />
+      </button>
+      {isOpen && (
+        <div className="citations-list">
+          {citations.map((c, i) => (
+            <div key={i} className="citation-item">
+              <div className="citation-title">
+                <span className="citation-idx">[{c.citation_id || i + 1}]</span> {c.document_title || c.source || 'Knowledge Base'}
+              </div>
+              {c.excerpt && <div className="citation-excerpt">"{c.excerpt}"</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Severity theme config ─────────────────────────────────────────
 const severityColors = {
@@ -175,6 +207,9 @@ export const MessageBubble = ({ msg, onAction, isLatest }) => {
           <MessageContent content={content} onAction={onAction} />
           {shouldStream && !done && <span className="stream-cursor">|</span>}
         </div>
+        {isAssistant && msg.citations && msg.citations.length > 0 && (
+          <CitationsList citations={msg.citations} />
+        )}
         <div className="bubble-meta">
           <span className="bubble-time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           {isAssistant && msg.latency_ms && <span className="bubble-latency">{(msg.latency_ms / 1000).toFixed(1)}s</span>}

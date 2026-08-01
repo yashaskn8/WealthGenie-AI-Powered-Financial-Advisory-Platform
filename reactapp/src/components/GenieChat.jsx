@@ -134,7 +134,7 @@ const GenieChat = ({ profile, onNavigate }) => {
     setIsLoading(true);
     try {
       const data = await api.sendChatMessage(messageText, sessionId);
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response, timestamp: new Date().toISOString(), latency_ms: data.latency_ms, _streamed: false }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response, timestamp: new Date().toISOString(), latency_ms: data.latency_ms, citations: data.citations || [], _streamed: false }]);
       setRateLimit({ remaining: data.rate_limit_remaining, total: 30 });
     } catch (err) { setError(err.message || 'Genie is temporarily unavailable.'); }
     finally { setIsLoading(false); inputRef.current?.focus(); }

@@ -11,6 +11,16 @@ import torch.nn.functional as F
 from pydantic import BaseModel, Field
 
 
+class ReGLU(nn.Module):
+    """
+    ReGLU Activation Module (Gorishniy et al., NeurIPS 2021).
+    Splits input in half along last dimension, GELU-gates first half with second half.
+    """
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        a, b = x.chunk(2, dim=-1)
+        return F.gelu(a) * b
+
+
 class FTTransformerConfig(BaseModel):
     """Configuration hyperparameters for FT-Transformer architecture."""
     input_dim: int = Field(16, description="Number of numerical features")
@@ -22,6 +32,7 @@ class FTTransformerConfig(BaseModel):
     ffn_dropout: float = Field(0.1, description="FFN dropout rate")
     residual_dropout: float = Field(0.0, description="Residual connection dropout rate")
     output_dim: int = Field(6, description="Number of target output classes")
+    activation: str = Field("gelu", description="FFN activation: 'reglu' or 'gelu'")
 
 
 class FeatureTokenizer(nn.Module):
@@ -72,15 +83,27 @@ class FTTransformer(nn.Module):
 
         # 3. Transformer Encoder Blocks
         d_ffn = int(config.d_token * config.d_ffn_factor)
+        act_key = config.activation.lower() if isinstance(config.activation, str) else "reglu"
+
+        if act_key == "reglu":
+            activation_fn = ReGLU()
+            dim_feedforward = d_ffn * 2
+        else:
+            activation_fn = "gelu"
+            dim_feedforward = d_ffn
+
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=config.d_token,
             nhead=config.n_heads,
-            dim_feedforward=d_ffn,
+            dim_feedforward=dim_feedforward,
             dropout=config.ffn_dropout,
-            activation="reglu" if hasattr(F, "reglu") else "gelu",
+            activation=activation_fn,
             batch_first=True,
             norm_first=True,
         )
+        if act_key == "reglu":
+            encoder_layer.linear2 = nn.Linear(d_ffn, config.d_token)
+
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=config.n_blocks)
 
         # 4. Final Head on [CLS] token
