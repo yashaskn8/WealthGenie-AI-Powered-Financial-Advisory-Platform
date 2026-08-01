@@ -1,4 +1,4 @@
-# WealthGenie
+# WealthGenie: AI-Powered Financial Advisory Platform
 
 Indian investor financial advisory platform: risk profiling via ML classifiers, tax regulation Q&A via RAG, and chat-based financial guidance via dual LLM providers.
 
@@ -323,7 +323,7 @@ Statically verifies that README architecture claims match actual code in `gemini
 ## Repository Structure
 
 ```
-deploy-wealthgenie/
+WealthGenie-AI-Powered-Financial-Advisory-Platform/
 ├── reactapp/                  # React frontend (Vite + TypeScript)
 ├── server/                    # Express API gateway
 │   ├── routes/                # auth, chat, goals, portfolio, tax, etc.
