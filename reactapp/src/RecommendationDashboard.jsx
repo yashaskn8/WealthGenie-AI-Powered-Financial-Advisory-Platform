@@ -470,9 +470,9 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
         
         <div className="dashboard-header" style={{position: 'relative', paddingBottom: 20, marginBottom: 6}}>
           <div className="dashboard-title-group">
-            <span className="dashboard-subtitle">YOUR INVESTMENT PLAN</span>
+            <span className="dashboard-subtitle">YOUR PERSONAL SAVINGS & INVESTMENT PLAN</span>
             <h1 className="dashboard-title" style={{fontSize: '1.8rem'}}>
-              Your Personalized Plan <span style={{ 
+              Your Personal Wealth Plan <span style={{ 
                 background: 'linear-gradient(135deg, #38bdf8, #818cf8)', 
                 WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' 
               }}>{userProfile?.name ? `for ${userProfile.name}` : ''}</span>

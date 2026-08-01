@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Trash2, Sparkles, RefreshCw, Scale, Coins, Percent, Target, ArrowLeft, ExternalLink, Mic, MicOff } from 'lucide-react';
+import { X, Send, Trash2, Sparkles, RefreshCw, Scale, Coins, Percent, Target, ArrowLeft, ExternalLink, Mic, MicOff, ChevronRight, TrendingUp } from 'lucide-react';
 import JargonTooltip from './JargonTooltip';
 import './GenieChat.css';
 import * as api from '../services/api';
@@ -106,22 +106,47 @@ const GenieChat = ({ profile, onNavigate }) => {
   };
 
   const handleAction = useCallback((action) => {
-    if (action.action === 'navigate' && action.target && onNavigate) {
+    if (!action) return;
+    const target = action.target || action.url || '';
+    if (onNavigate) {
       const TARGET_MAPPING = {
         '/rebalancer': 'rebalancer',
+        '/portfolio-rebalance': 'rebalancer',
         '/stepup': 'sip-planner',
         '/tax': 'tax-optimizer',
+        '/tax-optimizer': 'tax-optimizer',
         '/goals': 'goals',
-        '/comparison': 'compare'
+        '/comparison': 'compare',
+        '/compare': 'compare',
+        '/investments': 'compare',
+        '/invest': 'compare',
+        '/recommendations': 'dashboard',
+        '/dashboard': 'dashboard',
+        '/profile': 'profile',
+        '/calculators': 'sip-planner',
+        '/allocation': 'allocation',
       };
-      const page = TARGET_MAPPING[action.target];
-      if (page) {
-        if (['rebalancer', 'sip-planner', 'tax-optimizer'].includes(page)) {
-          setActiveWorkspace(page);
-        } else {
-          onNavigate(page);
-          setIsOpen(false); // Close chatbot panel on successful navigation
-        }
+
+      let page = TARGET_MAPPING[target];
+      if (!page && target) {
+        const lower = target.toLowerCase();
+        if (lower.includes('rebal')) page = 'rebalancer';
+        else if (lower.includes('tax')) page = 'tax-optimizer';
+        else if (lower.includes('step') || lower.includes('sip') || lower.includes('calc')) page = 'sip-planner';
+        else if (lower.includes('goal')) page = 'goals';
+        else if (lower.includes('comp') || lower.includes('invest')) page = 'compare';
+        else if (lower.includes('prof')) page = 'profile';
+        else if (lower.includes('alloc')) page = 'allocation';
+        else page = 'dashboard';
+      }
+
+      if (!page) page = 'dashboard';
+
+      if (['rebalancer', 'sip-planner', 'tax-optimizer'].includes(page)) {
+        setActiveWorkspace(page);
+      } else {
+        onNavigate(page);
+        setIsOpen(false); // Close chatbot panel on successful navigation
       }
     }
   }, [onNavigate]);
@@ -167,7 +192,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                 <div className="genie-avatar-wrap"><span className="ba-letter">G</span></div>
                 <div>
                   <div className="genie-header-title">Genie <span className="genie-agentic-badge">AGENTIC AI</span></div>
-                  <div className="genie-header-sub"><span className="online-dot"></span> Financial Co-Pilot · Powered by Gemini</div>
+                  <div className="genie-header-sub"><span className="online-dot"></span> Your Money Helper · Powered by Gemini</div>
                 </div>
               </div>
               <div className="genie-header-actions">
@@ -184,13 +209,13 @@ const GenieChat = ({ profile, onNavigate }) => {
                   <div className="genie-welcome-glow" />
                   <div className="genie-welcome-avatar"><div className="welcome-avatar-ring"><span className="ba-letter ba-large">G</span></div></div>
                   <p className="welcome-headline">Hi{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''}! I'm <strong>Genie</strong></p>
-                  <p className="welcome-sub">Your agentic financial co-pilot. I generate <strong style={{ color: '#38bdf8' }}>interactive action plans</strong> with one-click execution.</p>
+                  <p className="welcome-sub">Your personal money guide. Ask me anything and I'll create <strong style={{ color: '#38bdf8' }}>simple action plans</strong> to help you start investing smartly.</p>
                   <PortfolioSnapshot profile={profile} />
                   <div className="welcome-capability-cards">
-                    <div className="capability-card"><Scale size={15} style={{color:'#38bdf8'}}/><span>Rebalancing</span></div>
-                    <div className="capability-card"><Percent size={15} style={{color:'#22c55e'}}/><span>Tax Saving</span></div>
-                    <div className="capability-card"><Coins size={15} style={{color:'#a855f7'}}/><span>SIP Step-Up</span></div>
-                    <div className="capability-card"><Target size={15} style={{color:'#f59e0b'}}/><span>Goal Tracking</span></div>
+                    <div className="capability-card"><Scale size={15} style={{color:'#38bdf8'}}/><span>Balance My Investments</span></div>
+                    <div className="capability-card"><Percent size={15} style={{color:'#22c55e'}}/><span>Save on Taxes</span></div>
+                    <div className="capability-card"><Coins size={15} style={{color:'#a855f7'}}/><span>Grow My SIP</span></div>
+                    <div className="capability-card"><Target size={15} style={{color:'#f59e0b'}}/><span>Track My Goals</span></div>
                   </div>
                   {suggestedQuestions.length > 0 && (
                     <div className="welcome-suggestions">
@@ -208,7 +233,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                 <div className="chat-bubble chat-bubble--genie">
                   <div className="bubble-avatar"><span className="ba-letter">G</span></div>
                   <div className="typing-indicator">
-                    <div className="typing-label">Genie is analyzing your finances</div>
+                    <div className="typing-label">Genie is working on your plan...</div>
                     <div className="typing-dots"><span></span><span></span><span></span></div>
                   </div>
                 </div>
@@ -231,12 +256,12 @@ const GenieChat = ({ profile, onNavigate }) => {
                   {isListening ? <MicOff size={16} /> : <Mic size={16} />}
                 </button>
               )}
-              <input ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={isListening ? 'Listening...' : 'Ask Genie for a financial action plan...'} className="genie-input" maxLength={1000} disabled={isLoading || rateLimit.remaining === 0} />
+              <input ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={isListening ? 'Listening...' : 'Ask me anything about saving & investing...'} className="genie-input" maxLength={1000} disabled={isLoading || rateLimit.remaining === 0} />
               <button className="genie-send-btn" onClick={() => sendMessage()} disabled={isLoading || !input.trim() || rateLimit.remaining === 0}>
                 {isLoading ? <RefreshCw size={18} className="spin-icon" /> : <Send size={18} />}
               </button>
             </div>
-            <div className="genie-disclaimer">Agentic AI Co-Pilot · Not SEBI-registered advice · Powered by Gemini + Groq</div>
+            <div className="genie-disclaimer">AI-powered guidance · Not SEBI-registered advice · For learning purposes</div>
           </div>
 
           {activeWorkspace && (
@@ -248,16 +273,16 @@ const GenieChat = ({ profile, onNavigate }) => {
                   </button>
                   <div>
                     <div className="workspace-title">
-                      {activeWorkspace === 'rebalancer' && <span>Rebalancer Sandbox</span>}
-                      {activeWorkspace === 'sip-planner' && <span>Step-Up <JargonTooltip term="SIP">SIP</JargonTooltip> Sandbox</span>}
-                      {activeWorkspace === 'tax-optimizer' && 'Tax Regime Comparison'}
+                      {activeWorkspace === 'rebalancer' && <span>Investment Mix Planner</span>}
+                      {activeWorkspace === 'sip-planner' && <span>SIP Growth Calculator</span>}
+                      {activeWorkspace === 'tax-optimizer' && 'Tax Savings Helper'}
                     </div>
-                    <div className="workspace-subtitle">Interactive AI Agent Workspace</div>
+                    <div className="workspace-subtitle">Try it out — play with the numbers below!</div>
                   </div>
                 </div>
                 <div className="workspace-header-actions">
-                  <button className="workspace-fullscreen-btn" onClick={() => { onNavigate(activeWorkspace); setIsOpen(false); }} title="Open Fullscreen Tool">
-                    <ExternalLink size={14} /> Open Fullscreen
+                  <button className="workspace-fullscreen-btn" onClick={() => { onNavigate(activeWorkspace); setIsOpen(false); }} title="Open Full Page View">
+                    <ExternalLink size={14} /> Full Page View
                   </button>
                   <button className="workspace-close-btn" onClick={() => setActiveWorkspace(null)}>✕</button>
                 </div>
@@ -268,21 +293,21 @@ const GenieChat = ({ profile, onNavigate }) => {
                   <div className="workspace-sandbox">
                     <div className="sandbox-intro">
                       <Sparkles size={14} className="text-sky" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span>Adjust target asset allocations to simulate a low-cost, natural rebalancing plan.</span>
+                      <span>Decide how to split your money between stocks and safer options. Drag the slider to see what works best for you!</span>
                     </div>
 
                     <div className="sandbox-group">
                       <div className="sandbox-label-row">
-                        <span className="sandbox-label"><Scale size={14} /> Target <JargonTooltip term="Asset Allocation">Equity Allocation</JargonTooltip></span>
+                        <span className="sandbox-label"><Scale size={14} /> How much in <JargonTooltip term="Asset Allocation">stocks</JargonTooltip>?</span>
                         <span className="sandbox-val text-sky">{targetEquity}%</span>
                       </div>
                       <input type="range" min="10" max="90" step="5" value={targetEquity} onChange={e => setTargetEquity(Number(e.target.value))} className="sandbox-slider" />
-                      <div className="slider-limits"><span>10% Equity (Conservative)</span><span>90% Equity (Aggressive)</span></div>
+                      <div className="slider-limits"><span>10% — Play it safe</span><span>90% — Go for growth</span></div>
                     </div>
 
                     <div className="sandbox-group">
                       <div className="sandbox-label-row">
-                        <span className="sandbox-label"><Coins size={14} /> Monthly <JargonTooltip term="SIP">SIP</JargonTooltip> Amount</span>
+                        <span className="sandbox-label"><Coins size={14} /> Monthly investment (<JargonTooltip term="SIP">SIP</JargonTooltip>)</span>
                         <span className="sandbox-val text-sky">₹{rebalanceMonthlySIP.toLocaleString('en-IN')}</span>
                       </div>
                       <input type="range" min="1000" max="100000" step="1000" value={rebalanceMonthlySIP} onChange={e => setRebalanceMonthlySIP(Number(e.target.value))} className="sandbox-slider" />
@@ -307,17 +332,17 @@ const GenieChat = ({ profile, onNavigate }) => {
                       <div className="inflow-title">Directed Monthly Allocation Plan:</div>
                       <div className="inflow-rows">
                         <div className="inflow-row">
-                           <span className="inflow-label"><JargonTooltip term="Equity">Equity Allocation</JargonTooltip>:</span>
+                           <span className="inflow-label">Goes into <JargonTooltip term="Equity">stocks</JargonTooltip>:</span>
                           <span className="inflow-val text-sky">₹{Math.round(rebalanceMonthlySIP * targetEquity / 100).toLocaleString('en-IN')}</span>
                         </div>
                         <div className="inflow-row">
-                          <span className="inflow-label"><JargonTooltip term="Debt Fund">Debt Allocation</JargonTooltip>:</span>
+                          <span className="inflow-label">Goes into <JargonTooltip term="Debt Fund">safer funds</JargonTooltip>:</span>
                           <span className="inflow-val text-purple">₹{Math.round(rebalanceMonthlySIP * (100 - targetEquity) / 100).toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                       <div className="inflow-insight">
                         <ChevronRight size={14} className="insight-icon" style={{ flexShrink: 0, marginTop: 2 }} />
-                        <span>Genie advises allocating ₹{Math.round(rebalanceMonthlySIP * (100 - targetEquity) / 100).toLocaleString('en-IN')} to debt investments. This naturally keeps your investment mix on track as your stocks grow, without triggers for extra taxes or fees.</span>
+                        <span>Tip: Putting ₹{Math.round(rebalanceMonthlySIP * (100 - targetEquity) / 100).toLocaleString('en-IN')} in safer funds helps protect your money. As your stocks grow, this balance keeps things steady — no extra charges or tax surprises.</span>
                       </div>
                     </div>
                   </div>
@@ -333,7 +358,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                     <div className="workspace-sandbox">
                       <div className="sandbox-intro">
                         <Sparkles size={14} className="text-purple" style={{ flexShrink: 0, marginTop: 2 }} />
-                        <span>Simulate compounding growth with a yearly booster SIP to multiply your terminal wealth.</span>
+                        <span>See how increasing your monthly investment a little each year can make a huge difference over time!</span>
                       </div>
 
                       <div className="sandbox-group">
@@ -392,12 +417,12 @@ const GenieChat = ({ profile, onNavigate }) => {
                         <div className="boost-header">
                           <TrendingUp size={20} className="text-green" />
                           <div>
-                            <div className="boost-title">Hyper-Compounding Bonus: +{pct}%</div>
-                            <div className="boost-val">Extra ₹{(diff / 100000).toFixed(1)}L Saved</div>
+                            <div className="boost-title">Your Extra Earnings: +{pct}% more!</div>
+                            <div className="boost-val">You could earn ₹{(diff / 100000).toFixed(1)}L extra</div>
                           </div>
                         </div>
                         <div className="boost-details">
-                          Total Invested: ₹{(stepUpVal.totalInvested / 100000).toFixed(1)}L (vs ₹{(stdVal.totalInvested / 100000).toFixed(1)}L for Flat). The yearly {sipStepUpPercent}% increase adds over ₹{diff.toLocaleString('en-IN')} in extra growth by compounding your savings over time.
+                          You'd invest ₹{(stepUpVal.totalInvested / 100000).toFixed(1)}L total (instead of ₹{(stdVal.totalInvested / 100000).toFixed(1)}L without yearly increase). By adding just {sipStepUpPercent}% more each year, your money grows an extra ₹{diff.toLocaleString('en-IN')} — that's the power of small, steady increases!
                         </div>
                       </div>
                     </div>
@@ -411,7 +436,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                     <div className="workspace-sandbox">
                       <div className="sandbox-intro">
                         <Sparkles size={14} className="text-orange" style={{ flexShrink: 0, marginTop: 2 }} />
-                        <span>Optimize regime selection dynamically based on custom annual gross income and deductions.</span>
+                        <span>Find out which tax system saves you more money! Adjust your income and deductions below to compare.</span>
                       </div>
 
                       <div className="sandbox-group">
@@ -425,7 +450,7 @@ const GenieChat = ({ profile, onNavigate }) => {
 
                       <div className="sandbox-group">
                         <div className="sandbox-label-row">
-                          <span className="sandbox-label"><Percent size={14} /> <JargonTooltip term="Section 80C">Section 80C</JargonTooltip> Deductions (Old Regime)</span>
+                          <span className="sandbox-label"><Percent size={14} /> <JargonTooltip term="Section 80C">80C Tax Savings</JargonTooltip> (PPF, ELSS, LIC etc.)</span>
                           <span className="sandbox-val text-orange">{formatFullINR(tax80C)}</span>
                         </div>
                         <input type="range" min="0" max="150000" step="5000" value={tax80C} onChange={e => setTax80C(Number(e.target.value))} className="sandbox-slider" />
@@ -434,7 +459,7 @@ const GenieChat = ({ profile, onNavigate }) => {
 
                       <div className="sandbox-group">
                         <div className="sandbox-label-row">
-                          <span className="sandbox-label"><Coins size={14} /> Section 80CCD(1B) (<JargonTooltip term="NPS">NPS</JargonTooltip>) Deductions</span>
+                          <span className="sandbox-label"><Coins size={14} /> Extra <JargonTooltip term="NPS">NPS</JargonTooltip> Tax Benefit (₹50K max)</span>
                           <span className="sandbox-val text-orange">{formatFullINR(taxNPS)}</span>
                         </div>
                         <input type="range" min="0" max="50000" step="5000" value={taxNPS} onChange={e => setTaxNPS(Number(e.target.value))} className="sandbox-slider" />
@@ -444,9 +469,9 @@ const GenieChat = ({ profile, onNavigate }) => {
                       {/* Side-by-side Comparative Table */}
                       <div className="tax-comparison-table">
                         <div className="tax-table-header">
-                          <div className="tax-th">Parameter</div>
-                          <div className="tax-th text-center">New Regime</div>
-                          <div className="tax-th text-center">Old Regime</div>
+                          <div className="tax-th">What's Compared</div>
+                          <div className="tax-th text-center">New Tax System</div>
+                          <div className="tax-th text-center">Old Tax System</div>
                         </div>
                         <div className="tax-table-row">
                           <div className="tax-td">Gross Income</div>
@@ -454,17 +479,17 @@ const GenieChat = ({ profile, onNavigate }) => {
                           <div className="tax-td text-center">{formatFullINR(taxGrossIncome)}</div>
                         </div>
                         <div className="tax-table-row">
-                          <div className="tax-td">Std Deduction</div>
+                          <div className="tax-td">Standard Deduction (auto)</div>
                           <div className="tax-td text-center text-green">-{formatFullINR(75000)}</div>
                           <div className="tax-td text-center text-green">-{formatFullINR(50000)}</div>
                         </div>
                         <div className="tax-table-row">
-                          <div className="tax-td">80C/NPS Deductions</div>
+                          <div className="tax-td">Your Savings (80C + NPS)</div>
                           <div className="tax-td text-center text-grey">Nil</div>
                           <div className="tax-td text-center text-green">-{formatFullINR(Math.min(150000, tax80C) + Math.min(50000, taxNPS))}</div>
                         </div>
                         <div className="tax-table-row font-bold border-t border-b">
-                          <div className="tax-td">Computed Tax</div>
+                          <div className="tax-td">Tax You Pay</div>
                           <div className="tax-td text-center text-sky">{formatFullINR(taxes.taxNew)}</div>
                           <div className="tax-td text-center text-purple">{formatFullINR(taxes.taxOld)}</div>
                         </div>
@@ -473,13 +498,13 @@ const GenieChat = ({ profile, onNavigate }) => {
                       {/* Verdict Banner */}
                       <div className={`tax-verdict-card ${taxes.betterRegime === 'new' ? 'verdict-new' : 'verdict-old'}`}>
                         <div className="verdict-title">
-                          Regime Verdict: {taxes.betterRegime === 'new' ? 'NEW REGIME WINS' : 'OLD REGIME WINS'}
+                          Result: {taxes.betterRegime === 'new' ? 'NEW TAX SYSTEM SAVES MORE!' : 'OLD TAX SYSTEM SAVES MORE!'}
                         </div>
                         <div className="verdict-desc">
                           {taxes.difference === 0 ? (
-                            <span>Both regimes result in the exact same tax output. New Regime is recommended for its absolute simplicity and zero capital lock-in.</span>
+                            <span>Both systems charge the same tax! We recommend the New System since it's simpler — no need to collect receipts or proofs.</span>
                           ) : (
-                            <span>The <strong className="font-bold">{taxes.betterRegime.toUpperCase()} Regime</strong> is mathematically superior, saving you <strong className="font-bold">{formatFullINR(taxes.difference)}</strong> in taxes this year!</span>
+                            <span>The <strong className="font-bold">{taxes.betterRegime === 'new' ? 'New' : 'Old'} Tax System</strong> is better for you, saving <strong className="font-bold">{formatFullINR(taxes.difference)}</strong> in taxes this year!</span>
                           )}
                         </div>
                       </div>

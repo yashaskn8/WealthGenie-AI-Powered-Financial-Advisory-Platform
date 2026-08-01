@@ -297,15 +297,17 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
         return <ErrorBoundary><AllocationPlanner profile={userProfile} /></ErrorBoundary>;
       case 'profile':
         return (
-          <ProfileEditor
-            userProfile={userProfile}
-            onProfileUpdate={onProfileUpdate}
-          />
+          <ErrorBoundary>
+            <ProfileEditor
+              userProfile={userProfile}
+              onProfileUpdate={onProfileUpdate}
+            />
+          </ErrorBoundary>
         );
       case 'insights':
-        return <InsightsScreen profile={userProfile} recommendations={recommendations} />;
+        return <ErrorBoundary><InsightsScreen profile={userProfile} recommendations={recommendations} /></ErrorBoundary>;
       case 'help':
-        return <HelpTourScreen />;
+        return <ErrorBoundary><HelpTourScreen /></ErrorBoundary>;
       default:
         return (
           <div style={{ padding: '80px 20px', maxWidth: 600, margin: '0 auto', color: '#fff', textAlign: 'center' }}>

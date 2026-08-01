@@ -6,13 +6,39 @@ import * as api from './services/api';
 const GOALS_OPTIONS = ['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'];
 const RISK_OPTIONS = ['Low', 'Medium', 'High'];
 
+const DEFAULT_PROFILE = {
+  age: 32,
+  monthly_income: 65000,
+  monthly_savings: 12000,
+  risk_appetite: 'Medium',
+  investment_goals: ['Retirement', 'Wealth Growth'],
+  investment_horizon: 15,
+  taxRegime: 'new',
+  liquid_savings: 0,
+  existing_debt: 0,
+  dependents: 0,
+  emergency_fund_months: 0,
+  risk_tolerance: 'Moderate',
+  goal_type: 'wealth-building',
+};
+
 const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
 
-  // Editable draft state
-  const [draft, setDraft] = useState({ ...userProfile });
+  // Editable draft state with comprehensive safety fallbacks
+  const safeProfile = React.useMemo(() => ({
+    ...DEFAULT_PROFILE,
+    ...(userProfile || {}),
+    investment_goals: Array.isArray(userProfile?.investment_goals) ? userProfile.investment_goals : DEFAULT_PROFILE.investment_goals
+  }), [userProfile]);
+
+  const [draft, setDraft] = useState(safeProfile);
+
+  React.useEffect(() => {
+    setDraft(safeProfile);
+  }, [safeProfile]);
 
   const getTaxRegimeRecommendation = (monthlyIncome) => {
     const annualIncome = Number(monthlyIncome) * 12;
@@ -123,20 +149,23 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
   };
 
   const toggleGoal = (goal) => {
-    setDraft(prev => ({
-      ...prev,
-      investment_goals: prev.investment_goals.includes(goal)
-        ? prev.investment_goals.filter(g => g !== goal)
-        : [...prev.investment_goals, goal]
-    }));
+    setDraft(prev => {
+      const currentGoals = Array.isArray(prev?.investment_goals) ? prev.investment_goals : [];
+      return {
+        ...prev,
+        investment_goals: currentGoals.includes(goal)
+          ? currentGoals.filter(g => g !== goal)
+          : [...currentGoals, goal]
+      };
+    });
   };
 
   const renderValue = (field) => {
     const val = draft[field.key];
-    if (field.type === 'currency') return `₹${Number(val).toLocaleString('en-IN')}`;
-    if (field.type === 'goals') return Array.isArray(val) ? val.join(', ') : val;
-    if (field.type === 'slider') return `${val}${field.suffix || ''}`;
-    return val;
+    if (field.type === 'currency') return `₹${Number(val || 0).toLocaleString('en-IN')}`;
+    if (field.type === 'goals') return Array.isArray(val) ? val.join(', ') : (val || '');
+    if (field.type === 'slider') return `${val || field.min || 0}${field.suffix || ''}`;
+    return val || '';
   };
 
   const renderEditField = (field) => {
@@ -285,10 +314,11 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
 
 
     if (field.type === 'goals') {
+      const goalsArray = Array.isArray(val) ? val : [];
       return (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {GOALS_OPTIONS.map(g => {
-            const active = val.includes(g);
+            const active = goalsArray.includes(g);
             return (
               <button
                 key={g}

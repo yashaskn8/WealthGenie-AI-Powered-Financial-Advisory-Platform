@@ -11,27 +11,27 @@ import logoImg from '../assets/logo.png';
 
 const NAV_GROUPS = [
   {
-    title: 'OVERVIEW',
+    title: 'MY OVERVIEW',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'health', label: 'Financial Health', icon: Activity },
+      { id: 'health', label: 'Money Health', icon: Activity },
       { id: 'goals', label: 'My Goals', icon: Target },
     ]
   },
   {
-    title: 'TOOLS',
+    title: 'PLANNING TOOLS',
     items: [
-      { id: 'rebalancer', label: 'Mix Balancer', icon: ArrowLeftRight },
-      { id: 'sip-planner', label: 'Growth Planner', icon: TrendingUp },
-      { id: 'goal-planner', label: 'Goal Setup', icon: Crosshair },
-      { id: 'allocation', label: 'Investment Mix', icon: PieChart },
-      { id: 'post-tax', label: 'Actual Returns', icon: FileText },
-      { id: 'tax-optimizer', label: 'Tax Saver', icon: Shield },
-      { id: 'compare', label: 'Investment Explorer', icon: Layers },
+      { id: 'rebalancer', label: 'Balance My Mix', icon: ArrowLeftRight },
+      { id: 'sip-planner', label: 'Grow My SIP', icon: TrendingUp },
+      { id: 'goal-planner', label: 'Plan a Goal', icon: Crosshair },
+      { id: 'allocation', label: 'Where to Invest', icon: PieChart },
+      { id: 'post-tax', label: 'Real Returns', icon: FileText },
+      { id: 'tax-optimizer', label: 'Save on Taxes', icon: Shield },
+      { id: 'compare', label: 'Compare Options', icon: Layers },
     ]
   },
   {
-    title: 'ACCOUNT',
+    title: 'MY ACCOUNT',
     items: [
       { id: 'profile', label: 'My Profile', icon: User },
     ]
