@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
-import { TrendingUp, Rocket, PiggyBank, ArrowUpRight, Wallet, Calendar, Target, Sparkles } from 'lucide-react';
+import { TrendingUp, Rocket, PiggyBank, ArrowUpRight, Wallet, Calendar, Target, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatINR, formatCompactINR } from '../utils/indianNumberFormat';
 import { getStepUpProjectionData } from '../utils/sipCalculator';
 import JargonTooltip from './JargonTooltip';
@@ -10,16 +10,10 @@ import './StepUpPlanner.css';
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="sup-tooltip" style={{
-        background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(14, 165, 233, 0.3)', borderRadius: 14, padding: 14,
-        boxShadow: '0 12px 28px rgba(0,0,0,0.6)'
-      }}>
-        <p className="sup-tooltip-label" style={{ fontWeight: 800, margin: '0 0 6px 0', fontSize: '0.85rem', color: '#94a3b8' }}>
-          {label}
-        </p>
+      <div className="sup-tooltip">
+        <p className="sup-tooltip-label">{label}</p>
         {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color, fontWeight: 700, margin: '4px 0', fontSize: '0.85rem' }}>
+          <p key={i} style={{ color: p.color, fontWeight: 700, margin: '6px 0', fontSize: '0.85rem' }}>
             {p.name}: {formatINR(p.value)}
           </p>
         ))}
@@ -28,7 +22,6 @@ const CustomTooltip = ({ active, payload, label }) => {
   }
   return null;
 };
-
 
 const StepUpPlanner = ({ profile }) => {
   const [baseSIP, setBaseSIP] = useState(profile?.monthly_savings || 12000);
@@ -74,157 +67,69 @@ const StepUpPlanner = ({ profile }) => {
   }, [projections]);
 
   return (
-    <div className="stepup-page" style={{ position: 'relative', overflow: 'hidden' }}>
-      <style>{`
-        .sup-slider {
-          -webkit-appearance: none !important;
-          appearance: none !important;
-          width: 100% !important;
-          height: 20px !important;
-          background: transparent !important;
-          outline: none !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          border: none !important;
-          box-sizing: border-box !important;
-          cursor: pointer !important;
-        }
-        .sup-slider::-webkit-slider-runnable-track {
-          width: 100% !important;
-          height: 4px !important;
-          border-radius: 100px !important;
-          background: var(--sup-track-gradient, rgba(255,255,255,0.06)) !important;
-          box-shadow: inset 0 1px 3px rgba(0,0,0,0.5) !important;
-          border: none !important;
-          box-sizing: border-box !important;
-        }
-        .sup-slider::-webkit-slider-thumb {
-          -webkit-appearance: none !important;
-          appearance: none !important;
-          width: 16px !important;
-          height: 16px !important;
-          margin-top: -6px !important;
-          box-sizing: border-box !important;
-          border-radius: 50% !important;
-          background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 60%, #94a3b8 100%) !important;
-          border: 3px solid #0ea5e9 !important;
-          cursor: pointer !important;
-          box-shadow: 0 0 10px rgba(14, 165, 233, 0.5), 0 1px 4px rgba(0,0,0,0.4) !important;
-          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease !important;
-        }
-        .sup-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.15) !important;
-          box-shadow: 0 0 18px rgba(14, 165, 233, 0.7), 0 0 5px rgba(14, 165, 233, 0.4), 0 2px 6px rgba(0,0,0,0.5) !important;
-        }
-        .sup-slider-purple::-webkit-slider-thumb {
-          border-color: #a78bfa !important;
-          box-shadow: 0 0 10px rgba(167, 139, 250, 0.5), 0 1px 4px rgba(0,0,0,0.4) !important;
-        }
-        .sup-slider-purple::-webkit-slider-thumb:hover {
-          box-shadow: 0 0 18px rgba(167, 139, 250, 0.7), 0 0 5px rgba(167, 139, 250, 0.4), 0 2px 6px rgba(0,0,0,0.5) !important;
-        }
-        .sup-hero-input {
-          background: transparent;
-          border: none;
-          font-size: 1.8rem;
-          font-weight: 900;
-          outline: none;
-          padding: 0;
-          font-family: inherit;
-          width: 100%;
-          transition: color 0.2s ease;
-        }
-        .sup-hero-input::-webkit-outer-spin-button,
-        .sup-hero-input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .sup-hero-input-container {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          margin-top: 4px;
-          border-bottom: 1px dashed rgba(255,255,255,0.1);
-          padding-bottom: 2px;
-          transition: border-color 0.2s ease;
-        }
-        .sup-hero-input-container:focus-within {
-          border-bottom-color: var(--focus-color, #0ea5e9);
-        }
-      `}</style>
-
+    <div className="stepup-page">
       {/* Floating Ambient Orbs */}
       <div className="sup-bg-orb sup-bg-orb--1"></div>
       <div className="sup-bg-orb sup-bg-orb--2"></div>
 
+      {/* Page Header */}
       <motion.div
-        style={{ textAlign: 'center', marginBottom: 8 }}
+        className="sup-header-center"
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="sup-page-badge">
-          <TrendingUp size={11} style={{ marginRight: 6 }} />
-          Growth Planner
+          <TrendingUp size={12} />
+          <span>BOOSTER SAVINGS PLANNER</span>
         </div>
-        <h1 className="sup-page-title">Grow Your Monthly Savings (Step-Up <JargonTooltip term="SIP">SIP</JargonTooltip>)</h1>
+        <h1 className="sup-page-title">
+          Grow Your Monthly Savings <span className="title-gradient">(Step-Up SIP)</span>
+        </h1>
         <p className="sup-page-subtitle">
-          See how a simple yearly increase in your savings can secure your financial freedom.
+          Increase your savings slightly each year to build massive long-term wealth effortlessly.
         </p>
       </motion.div>
 
-      <div className="sup-header-divider" />
-
-      {/* Onboarding block */}
+      {/* Explanation Banner */}
       <motion.div 
         className="sup-onboarding-card"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        style={{
-          background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.07) 0%, rgba(14, 165, 233, 0.03) 100%)',
-          border: '1px solid rgba(167, 139, 250, 0.2)',
-          borderRadius: '20px',
-          padding: '20px 24px',
-          marginBottom: '32px',
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          backdropFilter: 'blur(20px)',
-          textAlign: 'left'
-        }}
       >
-        <div style={{ background: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa', padding: '12px', borderRadius: '14px' }}>
-          <Sparkles size={24} />
+        <div className="onboard-icon-badge">
+          <Sparkles size={20} />
         </div>
-        <div>
-          <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', fontWeight: 800, color: '#fff' }}>What is a Step-Up <JargonTooltip term="SIP">SIP</JargonTooltip>?</h4>
-          <p style={{ margin: 0, fontSize: '0.88rem', color: '#94a3b8', lineHeight: 1.5 }}>
-            Instead of investing the same amount forever, a <strong>Step-Up <JargonTooltip term="SIP">SIP</JargonTooltip></strong> increases your monthly savings slightly (e.g., 10%) each year as your income grows. This small, gradual adjustment supercharges your wealth over the long run!
+        <div className="onboard-text">
+          <h4>How Step-Up SIP Multiplies Your Wealth</h4>
+          <p>
+            A <strong>Step-Up SIP</strong> increases your monthly savings automatically by a small percentage (e.g., 10%) each year as your salary increases. This small annual adjustment compounds exponentially!
           </p>
         </div>
       </motion.div>
 
-      {/* Interactive Controls & Forms */}
+      {/* SPACIOUS 2x2 CONTROL CARDS GRID */}
       <motion.div
-        className="sup-controls"
+        className="sup-controls-grid"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
       >
-        {/* SIP Base Input Card */}
-        <div className="sup-control-card" style={{'--card-accent': '#0ea5e9', '--card-accent-rgb': '14, 165, 233'}}>
-          <div className="sup-card-accent-bar" />
-          <div className="sup-control-top" style={{ marginBottom: 4 }}>
-            <div className="sup-control-icon" style={{ background: 'rgba(14, 165, 233, 0.1)', color: '#38bdf8' }}><Wallet size={15} /></div>
-            <label>Starting Monthly Savings (<JargonTooltip term="SIP">SIP</JargonTooltip>)</label>
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 8, lineHeight: 1.3 }}>
-            The initial amount you want to save every month.
+        {/* Card 1: Base SIP */}
+        <div className="sup-control-card card-sky">
+          <div className="sup-card-header">
+            <div className="sup-icon-box box-sky">
+              <Wallet size={18} />
+            </div>
+            <div>
+              <h3 className="sup-card-title">Starting Monthly Savings</h3>
+              <p className="sup-card-desc">Initial amount saved every month</p>
+            </div>
           </div>
           
-          <div className="sup-hero-input-container" style={{ '--focus-color': '#0ea5e9' }}>
-            <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#38bdf8' }}>₹</span>
+          <div className="sup-input-row">
+            <span className="unit-symbol text-sky">₹</span>
             <input 
               type="number"
               value={baseSIP}
@@ -235,36 +140,40 @@ const StepUpPlanner = ({ profile }) => {
               onBlur={() => {
                 if (baseSIP === '' || Number(baseSIP) < 500) setBaseSIP(500);
               }}
-              className="sup-hero-input"
-              style={{ color: '#38bdf8' }}
+              className="sup-num-input text-sky"
             />
           </div>
 
-          <input
-            type="range" 
-            value={Number(baseSIP) || 0} 
-            onChange={e => setBaseSIP(Number(e.target.value))}
-            min="1000" 
-            max="100000" 
-            step="1000" 
-            className="sup-slider"
-            style={{ '--sup-track-gradient': `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${((Math.min(100000, Number(baseSIP)) - 1000) / 99000) * 100}%, rgba(255,255,255,0.06) ${((Math.min(100000, Number(baseSIP)) - 1000) / 99000) * 100}%, rgba(255,255,255,0.06) 100%)` }}
-          />
-          <div className="sup-range-labels"><span>₹1K</span><span>₹100K</span></div>
+          <div className="sup-slider-wrap">
+            <input
+              type="range" 
+              value={Number(baseSIP) || 0} 
+              onChange={e => setBaseSIP(Number(e.target.value))}
+              min="1000" 
+              max="100000" 
+              step="1000" 
+              className="sup-slider slider-sky"
+            />
+            <div className="sup-range-labels">
+              <span>₹1,000</span>
+              <span>₹1,00,000</span>
+            </div>
+          </div>
         </div>
 
-        {/* Step Up Annual Input Card */}
-        <div className="sup-control-card" style={{'--card-accent': '#a78bfa', '--card-accent-rgb': '167, 139, 250'}}>
-          <div className="sup-card-accent-bar" />
-          <div className="sup-control-top" style={{ marginBottom: 4 }}>
-            <div className="sup-control-icon" style={{ background: 'rgba(167, 139, 250, 0.1)', color: '#a78bfa' }}><TrendingUp size={15} /></div>
-            <label>Annual Increase (Step-Up %)</label>
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 8, lineHeight: 1.3 }}>
-            Increase your monthly savings by this percentage every year.
+        {/* Card 2: Annual Step-Up % */}
+        <div className="sup-control-card card-purple">
+          <div className="sup-card-header">
+            <div className="sup-icon-box box-purple">
+              <TrendingUp size={18} />
+            </div>
+            <div>
+              <h3 className="sup-card-title">Yearly Step-Up Increase</h3>
+              <p className="sup-card-desc">Annual percentage increase in savings</p>
+            </div>
           </div>
           
-          <div className="sup-hero-input-container" style={{ '--focus-color': '#a78bfa' }}>
+          <div className="sup-input-row">
             <input 
               type="number"
               value={stepUpPercent}
@@ -275,48 +184,39 @@ const StepUpPlanner = ({ profile }) => {
               onBlur={() => {
                 if (stepUpPercent === '' || Number(stepUpPercent) < 0) setStepUpPercent(0);
               }}
-              className="sup-hero-input"
-              style={{ color: '#a78bfa' }}
+              className="sup-num-input text-purple"
             />
-            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#a78bfa' }}>%</span>
+            <span className="unit-symbol text-purple">%</span>
           </div>
 
-          <input
-            type="range" 
-            value={Number(stepUpPercent) || 0} 
-            onChange={e => setStepUpPercent(Number(e.target.value))}
-            min="0" 
-            max="50" 
-            step="1" 
-            className="sup-slider sup-slider-purple"
-            style={{ '--sup-track-gradient': `linear-gradient(to right, #a78bfa 0%, #a78bfa ${(Math.min(50, Number(stepUpPercent)) / 50) * 100}%, rgba(255,255,255,0.06) ${(Math.min(50, Number(stepUpPercent)) / 50) * 100}%, rgba(255,255,255,0.06) 100%)` }}
-          />
-          <div className="sup-range-labels"><span>0%</span><span>50%</span></div>
+          <div className="sup-slider-wrap">
+            <input
+              type="range" 
+              value={Number(stepUpPercent) || 0} 
+              onChange={e => setStepUpPercent(Number(e.target.value))}
+              min="0" 
+              max="50" 
+              step="1" 
+              className="sup-slider slider-purple"
+            />
+            <div className="sup-range-labels">
+              <span>0% (Flat)</span>
+              <span>50%</span>
+            </div>
+          </div>
 
-          {/* Preset Buttons */}
-          <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
+          {/* Quick Presets */}
+          <div className="sup-presets-row">
             {[
               { label: 'Flat (0%)', val: 0 },
-              { label: '5% Plan', val: 5 },
-              { label: 'Rec: 10%', val: 10 }
+              { label: '5% Increase', val: 5 },
+              { label: 'Recommended 10%', val: 10 }
             ].map(preset => (
               <button
                 key={preset.val}
                 type="button"
                 onClick={() => setStepUpPercent(preset.val)}
-                style={{
-                  flex: 1,
-                  padding: '6px 4px',
-                  borderRadius: '8px',
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  border: stepUpPercent === preset.val ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.05)',
-                  background: stepUpPercent === preset.val ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.02)',
-                  color: stepUpPercent === preset.val ? '#c084fc' : '#94a3b8',
-                  transition: 'all 0.2s ease',
-                  whiteSpace: 'nowrap'
-                }}
+                className={`preset-btn ${stepUpPercent === preset.val ? 'active' : ''}`}
               >
                 {preset.label}
               </button>
@@ -324,18 +224,19 @@ const StepUpPlanner = ({ profile }) => {
           </div>
         </div>
 
-        {/* Investment Horizon Input Card */}
-        <div className="sup-control-card" style={{'--card-accent': '#0ea5e9', '--card-accent-rgb': '14, 165, 233'}}>
-          <div className="sup-card-accent-bar" />
-          <div className="sup-control-top" style={{ marginBottom: 4 }}>
-            <div className="sup-control-icon" style={{ background: 'rgba(14, 165, 233, 0.1)', color: '#38bdf8' }}><Calendar size={15} /></div>
-            <label>Investing Period (Horizon)</label>
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 8, lineHeight: 1.3 }}>
-            How long you plan to keep your money invested.
+        {/* Card 3: Horizon */}
+        <div className="sup-control-card card-sky">
+          <div className="sup-card-header">
+            <div className="sup-icon-box box-sky">
+              <Calendar size={18} />
+            </div>
+            <div>
+              <h3 className="sup-card-title">Investment Period</h3>
+              <p className="sup-card-desc">Years you plan to stay invested</p>
+            </div>
           </div>
           
-          <div className="sup-hero-input-container" style={{ '--focus-color': '#0ea5e9' }}>
+          <div className="sup-input-row">
             <input 
               type="number"
               value={years}
@@ -346,40 +247,44 @@ const StepUpPlanner = ({ profile }) => {
               onBlur={() => {
                 if (years === '' || Number(years) < 1) setYears(1);
               }}
-              className="sup-hero-input"
-              style={{ color: '#38bdf8' }}
+              className="sup-num-input text-sky"
             />
-            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#38bdf8' }}>Yrs</span>
+            <span className="unit-symbol text-sky">Years</span>
           </div>
 
-          <input
-            type="range" 
-            value={Number(years) || 0} 
-            onChange={e => setYears(Number(e.target.value))}
-            min="1" 
-            max="40" 
-            step="1" 
-            className="sup-slider"
-            style={{ '--sup-track-gradient': `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${((Math.min(40, Number(years)) - 1) / 39) * 100}%, rgba(255,255,255,0.06) ${((Math.min(40, Number(years)) - 1) / 39) * 100}%, rgba(255,255,255,0.06) 100%)` }}
-          />
-          <div className="sup-range-labels"><span>1 yr</span><span>40 yrs</span></div>
+          <div className="sup-slider-wrap">
+            <input
+              type="range" 
+              value={Number(years) || 0} 
+              onChange={e => setYears(Number(e.target.value))}
+              min="1" 
+              max="40" 
+              step="1" 
+              className="sup-slider slider-sky"
+            />
+            <div className="sup-range-labels">
+              <span>1 Year</span>
+              <span>40 Years</span>
+            </div>
+          </div>
         </div>
 
-        {/* Expected CAGR Input Card */}
-        <div className="sup-control-card" style={{'--card-accent': '#a78bfa', '--card-accent-rgb': '167, 139, 250'}}>
-          <div className="sup-card-accent-bar" />
-          <div className="sup-control-top" style={{ marginBottom: 4 }}>
-            <div className="sup-control-icon" style={{ background: 'rgba(167, 139, 250, 0.1)', color: '#a78bfa' }}><Target size={15} /></div>
-            <label>Expected Growth Rate (<JargonTooltip term="CAGR">CAGR</JargonTooltip>)</label>
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 8, lineHeight: 1.3 }}>
-            The estimated yearly return rate of your investments.
+        {/* Card 4: Expected CAGR */}
+        <div className="sup-control-card card-purple">
+          <div className="sup-card-header">
+            <div className="sup-icon-box box-purple">
+              <Target size={18} />
+            </div>
+            <div>
+              <h3 className="sup-card-title">Expected Growth Rate (CAGR)</h3>
+              <p className="sup-card-desc">Estimated average yearly return</p>
+            </div>
           </div>
           
-          <div className="sup-hero-input-container" style={{ '--focus-color': '#a78bfa' }}>
+          <div className="sup-input-row">
             <input 
               type="number"
-              step="0.1"
+              step="0.5"
               value={returnRate}
               onChange={e => {
                 const val = e.target.value === '' ? '' : Math.min(50, Number(e.target.value));
@@ -388,71 +293,82 @@ const StepUpPlanner = ({ profile }) => {
               onBlur={() => {
                 if (returnRate === '' || Number(returnRate) < 1) setReturnRate(1);
               }}
-              className="sup-hero-input"
-              style={{ color: '#a78bfa' }}
+              className="sup-num-input text-purple"
             />
-            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#a78bfa' }}>% p.a.</span>
+            <span className="unit-symbol text-purple">% p.a.</span>
           </div>
 
-          <input
-            type="range" 
-            value={Number(returnRate) || 0} 
-            onChange={e => setReturnRate(Number(e.target.value))}
-            min="1" 
-            max="30" 
-            step="0.5" 
-            className="sup-slider sup-slider-purple"
-            style={{ '--sup-track-gradient': `linear-gradient(to right, #a78bfa 0%, #a78bfa ${((Math.min(30, Number(returnRate)) - 1) / 29) * 100}%, rgba(255,255,255,0.06) ${((Math.min(30, Number(returnRate)) - 1) / 29) * 100}%, rgba(255,255,255,0.06) 100%)` }}
-          />
-          <div className="sup-range-labels"><span>1%</span><span>30%</span></div>
+          <div className="sup-slider-wrap">
+            <input
+              type="range" 
+              value={Number(returnRate) || 0} 
+              onChange={e => setReturnRate(Number(e.target.value))}
+              min="1" 
+              max="30" 
+              step="0.5" 
+              className="sup-slider slider-purple"
+            />
+            <div className="sup-range-labels">
+              <span>1%</span>
+              <span>30%</span>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Key Compounding Metrics */}
-      <div className="sup-metrics" style={{ marginTop: 24 }}>
-        <motion.div className="sup-metric-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <div className="sup-metric-icon" style={{ background: 'rgba(56, 189, 248, 0.08)', color: '#38bdf8' }}><PiggyBank size={20} /></div>
-          <span className="sup-metric-label">Regular Savings (Flat <JargonTooltip term="SIP">SIP</JargonTooltip>)</span>
-          <span className="sup-metric-value" style={{ color: '#e2e8f0' }}>{formatCompactINR(flatFinal)}</span>
-          <span className="sup-metric-sub">Invested: {formatCompactINR(flatInvested)}</span>
+      {/* KEY COMPOUNDING RESULT CARDS */}
+      <div className="sup-results-grid">
+        <motion.div 
+          className="result-card" 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.25 }}
+        >
+          <div className="result-icon icon-grey">
+            <PiggyBank size={20} />
+          </div>
+          <span className="result-label">Regular Savings (Flat SIP)</span>
+          <span className="result-value text-white">{formatCompactINR(flatFinal)}</span>
+          <span className="result-sub">Invested: {formatCompactINR(flatInvested)}</span>
         </motion.div>
 
-        <motion.div className="sup-metric-card sup-metric-card--highlight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-          <div className="sup-metric-icon" style={{ background: 'rgba(167, 139, 250, 0.08)', color: '#a78bfa' }}><Rocket size={20} /></div>
-          <span className="sup-metric-label">Booster Savings (Step-Up <JargonTooltip term="SIP">SIP</JargonTooltip>)</span>
-          <span className="sup-metric-value" style={{ color: '#a78bfa', textShadow: '0 0 12px rgba(139,92,246,0.4)' }}>{formatCompactINR(stepUpFinal)}</span>
-          <span className="sup-metric-sub">Invested: {formatCompactINR(stepUpInvested)}</span>
+        <motion.div 
+          className="result-card result-card--booster" 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.35 }}
+        >
+          <div className="result-icon icon-purple">
+            <Rocket size={20} />
+          </div>
+          <span className="result-label">Booster Savings (Step-Up SIP)</span>
+          <span className="result-value text-purple">{formatCompactINR(stepUpFinal)}</span>
+          <span className="result-sub">Invested: {formatCompactINR(stepUpInvested)}</span>
         </motion.div>
 
-        <motion.div className="sup-metric-card sup-metric-card--success" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-          <div className="sup-metric-icon" style={{ background: 'rgba(74, 222, 128, 0.08)', color: '#4ade80' }}><ArrowUpRight size={20} /></div>
-          <span className="sup-metric-label">Extra Wealth Gained</span>
-          <span className="sup-metric-value" style={{ color: '#4ade80', textShadow: '0 0 12px rgba(74,222,128,0.35)' }}>+ {formatCompactINR(additionalCorpus)}</span>
-          <span className="sup-metric-sub" style={{ color: '#22c55e', fontWeight: 700 }}>{additionalPercent}% more wealth</span>
+        <motion.div 
+          className="result-card result-card--gain" 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.45 }}
+        >
+          <div className="result-icon icon-green">
+            <ArrowUpRight size={20} />
+          </div>
+          <span className="result-label">Extra Wealth Gained</span>
+          <span className="result-value text-green">+ {formatCompactINR(additionalCorpus)}</span>
+          <span className="result-sub text-green-bold">{additionalPercent}% more total wealth!</span>
         </motion.div>
       </div>
 
       {/* Details Toggle Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '24px' }}>
+      <div className="chart-toggle-wrap">
         <button
           onClick={() => setShowDetails(!showDetails)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            color: '#fff',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            transition: 'all 0.2s ease'
-          }}
+          className="chart-toggle-btn"
         >
-          {showDetails ? 'Hide Growth Chart' : 'Show Growth Chart'}
+          <span>{showDetails ? 'Hide Growth Chart' : 'Show Growth Chart'}</span>
+          {showDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </div>
 
@@ -463,27 +379,27 @@ const StepUpPlanner = ({ profile }) => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
         >
-          <h3>Savings without boost vs Booster <JargonTooltip term="SIP">SIP</JargonTooltip> growth projections</h3>
-          <div style={{ width: '100%', height: 400 }}>
+          <h3>Regular Savings vs. Booster Step-Up SIP Growth Comparison</h3>
+          <div style={{ width: '100%', height: 420 }}>
             <ResponsiveContainer>
-              <AreaChart data={chartData} margin={{ top: 16, right: 24, left: 16, bottom: 16 }}>
+              <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 16, bottom: 20 }}>
                 <defs>
                   <linearGradient id="flatGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                    <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.35} />
                     <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="stepGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.35} />
+                    <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.4} />
                     <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="year" stroke="#94a3b8" tick={{ fill: '#546178', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} minTickGap={20} />
-                <YAxis tickFormatter={formatCompactINR} stroke="#94a3b8" tick={{ fill: '#546178', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="year" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} minTickGap={20} />
+                <YAxis tickFormatter={formatCompactINR} stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ paddingTop: 16, fontWeight: 600, fontSize: '0.8rem' }} />
-                <Area type="monotone" dataKey="flatSIP" name="Regular Savings (Flat SIP)" stroke="#0ea5e9" fill="url(#flatGrad)" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#0ea5e9', stroke: '#fff', strokeWidth: 2 }} />
-                <Area type="monotone" dataKey="stepUpSIP" name="Booster Savings (Step-Up SIP)" stroke="#a78bfa" fill="url(#stepGrad)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#a78bfa', stroke: '#fff', strokeWidth: 2 }} />
+                <Legend wrapperStyle={{ paddingTop: 20, fontWeight: 700, fontSize: '0.85rem' }} />
+                <Area type="monotone" dataKey="flatSIP" name="Regular Savings (Flat SIP)" stroke="#0ea5e9" fill="url(#flatGrad)" strokeWidth={2.5} dot={false} activeDot={{ r: 6, fill: '#0ea5e9', stroke: '#fff', strokeWidth: 2 }} />
+                <Area type="monotone" dataKey="stepUpSIP" name="Booster Savings (Step-Up SIP)" stroke="#a78bfa" fill="url(#stepGrad)" strokeWidth={3.5} dot={false} activeDot={{ r: 7, fill: '#a78bfa', stroke: '#fff', strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
