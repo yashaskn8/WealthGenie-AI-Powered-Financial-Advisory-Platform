@@ -39,7 +39,7 @@ Combining **Agentic AI tool orchestration**, **multi-model machine learning**, *
 ### 🤖 1. Agentic AI & LLM Systems
 - **DAG Tool Orchestration**: Dynamic multi-pass tool planning with dependency graph resolution.
 - **Intent Gate**: Real-time query classification (Factual Regulatory vs. Conversational Advisory).
-- **Dual LLM Resilience**: Production failover (Gemini 1.5 Pro → Groq Llama 3 → Local Templates).
+- **Dual LLM Resilience**: Production failover (Gemini 3.6 Flash → Groq Llama 3 → Local Templates).
 - **Math Anti-Hallucination**: Deterministic AST-based calculation interceptor and re-checker.
 - **State & Memory**: Multi-tiered session memory (Short-term, Mid-term, Long-term profile).
 
@@ -138,7 +138,7 @@ graph LR
         
         IntentGate -->|Conversational| AgentOrch["aiToolOrchestrator.js<br/>(Agentic Execution Loop)"]
         AgentOrch --> ProviderMgr["providerAbstraction.js<br/>(LLM Provider Fallback)"]
-        ProviderMgr --> Gemini["Gemini 1.5 Pro"]
+        ProviderMgr --> Gemini["Gemini 3.6 Flash"]
         ProviderMgr -.->|Fallback| Groq["Groq (Llama 3)"]
         
         AgentOrch --> ToolReg["financialToolRegistry.js"]
