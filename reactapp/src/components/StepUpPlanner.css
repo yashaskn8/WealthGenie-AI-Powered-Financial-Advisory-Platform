@@ -1,5 +1,5 @@
 /* ╔══════════════════════════════════════════════════════════════════╗
-   ║  SIP Step-Up Planner — Spacious Premium Glassmorphism v4        ║
+   ║  SIP Step-Up Planner — Spacious Premium Glassmorphism v5        ║
    ╚══════════════════════════════════════════════════════════════════╝ */
 
 .stepup-page {
@@ -161,7 +161,7 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .sup-icon-box {
@@ -202,25 +202,17 @@
   font-weight: 500;
 }
 
-/* Number Input Row */
-.sup-input-row {
+/* Value Hero Row (Inline Value Display) */
+.sup-value-hero {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  margin-bottom: 18px;
-  transition: border-color 0.2s ease;
-}
-
-.sup-input-row:focus-within {
-  border-color: rgba(255, 255, 255, 0.2);
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 4px 0;
 }
 
 .unit-symbol {
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -229,11 +221,12 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: 1.9rem;
+  font-size: 2.2rem;
   font-weight: 900;
   font-family: inherit;
   width: 100%;
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .sup-num-input::-webkit-outer-spin-button,
@@ -242,18 +235,18 @@
   margin: 0;
 }
 
-/* Slider Wrap */
+/* Dynamic Gradient Slider Track */
 .sup-slider-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sup-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 24px;
+  height: 28px;
   background: transparent;
   outline: none;
   cursor: pointer;
@@ -262,25 +255,18 @@
 
 input[type="range"].sup-slider::-webkit-slider-runnable-track {
   width: 100% !important;
-  height: 6px !important;
-  border-radius: 4px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
-}
-
-input[type="range"].slider-sky::-webkit-slider-runnable-track {
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.3), rgba(56, 189, 248, 0.1)) !important;
-}
-
-input[type="range"].slider-purple::-webkit-slider-runnable-track {
-  background: linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.1)) !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  border: none !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+  transition: background 0.15s ease !important;
 }
 
 input[type="range"].sup-slider::-webkit-slider-thumb {
   -webkit-appearance: none !important;
   appearance: none !important;
-  width: 18px !important;
-  height: 18px !important;
+  width: 20px !important;
+  height: 20px !important;
   margin-top: -6px !important;
   border-radius: 50% !important;
   background: #ffffff !important;
@@ -290,13 +276,13 @@ input[type="range"].sup-slider::-webkit-slider-thumb {
 }
 
 input[type="range"].slider-sky::-webkit-slider-thumb {
-  border: 3px solid #38bdf8 !important;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6) !important;
+  border: 3.5px solid #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
 }
 
 input[type="range"].slider-purple::-webkit-slider-thumb {
-  border: 3px solid #c084fc !important;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6) !important;
+  border: 3.5px solid #c084fc !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
 }
 
 input[type="range"].sup-slider::-webkit-slider-thumb:hover {

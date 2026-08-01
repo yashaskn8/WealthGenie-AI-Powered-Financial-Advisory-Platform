@@ -46,6 +46,12 @@ const StepUpPlanner = ({ profile }) => {
   const safeYears = Number(years) || 0;
   const safeStepUpPercent = Number(stepUpPercent) || 0;
 
+  // Compute dynamic percentage fills for track bars
+  const baseSipPct = Math.min(100, Math.max(0, ((Math.min(100000, Math.max(1000, safeBaseSIP)) - 1000) / 99000) * 100));
+  const stepUpPct = Math.min(100, Math.max(0, (Math.min(50, Math.max(0, safeStepUpPercent)) / 50) * 100));
+  const yearsPct = Math.min(100, Math.max(0, ((Math.min(40, Math.max(1, safeYears)) - 1) / 39) * 100));
+  const cagrPct = Math.min(100, Math.max(0, ((Math.min(30, Math.max(1, safeReturnRate)) - 1) / 29) * 100));
+
   const projections = useMemo(() => {
     return getStepUpProjectionData(safeBaseSIP, safeReturnRate, safeYears, safeStepUpPercent);
   }, [safeBaseSIP, safeReturnRate, safeYears, safeStepUpPercent]);
@@ -128,7 +134,7 @@ const StepUpPlanner = ({ profile }) => {
             </div>
           </div>
           
-          <div className="sup-input-row">
+          <div className="sup-value-hero">
             <span className="unit-symbol text-sky">₹</span>
             <input 
               type="number"
@@ -153,6 +159,9 @@ const StepUpPlanner = ({ profile }) => {
               max="100000" 
               step="1000" 
               className="sup-slider slider-sky"
+              style={{
+                background: `linear-gradient(to right, #38bdf8 0%, #0ea5e9 ${baseSipPct}%, rgba(255, 255, 255, 0.08) ${baseSipPct}%, rgba(255, 255, 255, 0.08) 100%)`
+              }}
             />
             <div className="sup-range-labels">
               <span>₹1,000</span>
@@ -173,7 +182,7 @@ const StepUpPlanner = ({ profile }) => {
             </div>
           </div>
           
-          <div className="sup-input-row">
+          <div className="sup-value-hero">
             <input 
               type="number"
               value={stepUpPercent}
@@ -198,6 +207,9 @@ const StepUpPlanner = ({ profile }) => {
               max="50" 
               step="1" 
               className="sup-slider slider-purple"
+              style={{
+                background: `linear-gradient(to right, #c084fc 0%, #a855f7 ${stepUpPct}%, rgba(255, 255, 255, 0.08) ${stepUpPct}%, rgba(255, 255, 255, 0.08) 100%)`
+              }}
             />
             <div className="sup-range-labels">
               <span>0% (Flat)</span>
@@ -236,7 +248,7 @@ const StepUpPlanner = ({ profile }) => {
             </div>
           </div>
           
-          <div className="sup-input-row">
+          <div className="sup-value-hero">
             <input 
               type="number"
               value={years}
@@ -261,6 +273,9 @@ const StepUpPlanner = ({ profile }) => {
               max="40" 
               step="1" 
               className="sup-slider slider-sky"
+              style={{
+                background: `linear-gradient(to right, #38bdf8 0%, #0ea5e9 ${yearsPct}%, rgba(255, 255, 255, 0.08) ${yearsPct}%, rgba(255, 255, 255, 0.08) 100%)`
+              }}
             />
             <div className="sup-range-labels">
               <span>1 Year</span>
@@ -281,7 +296,7 @@ const StepUpPlanner = ({ profile }) => {
             </div>
           </div>
           
-          <div className="sup-input-row">
+          <div className="sup-value-hero">
             <input 
               type="number"
               step="0.5"
@@ -307,6 +322,9 @@ const StepUpPlanner = ({ profile }) => {
               max="30" 
               step="0.5" 
               className="sup-slider slider-purple"
+              style={{
+                background: `linear-gradient(to right, #c084fc 0%, #a855f7 ${cagrPct}%, rgba(255, 255, 255, 0.08) ${cagrPct}%, rgba(255, 255, 255, 0.08) 100%)`
+              }}
             />
             <div className="sup-range-labels">
               <span>1%</span>
