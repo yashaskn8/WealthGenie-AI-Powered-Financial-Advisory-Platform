@@ -9,7 +9,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import numpy as np
 
 from rag.config import RAGConfig
@@ -24,7 +24,7 @@ class PersistentVectorStore(BaseVectorStore):
 
     VERSION = "2.0"
 
-    def __init__(self, index_path: Path = None):
+    def __init__(self, index_path: Optional[Path] = None):
         self.index_path = index_path or RAGConfig().vector_store_path
         self.backup_path = self.index_path.with_suffix(".json.bak")
         self._chunks: List[TextChunk] = []

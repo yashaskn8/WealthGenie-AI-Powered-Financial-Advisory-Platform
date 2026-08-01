@@ -166,7 +166,8 @@ def test_predict_enriched_endpoint_valid(client):
     assert data["enriched_features"]["savings_rate"] == 0.4000
     assert "model_version" in data
 
-def test_predict_enriched_endpoint_invalid_savings(client):
+def test_predict_enriched_endpoint_invalid_savings(client, monkeypatch):
+    monkeypatch.setenv("ML_SERVICE_API_KEY", API_KEY)
     payload = {
         "age": 30,
         "annual_income": 1200000,

@@ -27,7 +27,7 @@ class RAGConfig(BaseModel):
     fusion_mode: str = Field("rrf", description="Fusion strategy: rrf or weighted")
     dense_weight: float = Field(0.6, ge=0.0, le=1.0, description="Dense vector weight in weighted fusion")
     keyword_weight: float = Field(0.4, ge=0.0, le=1.0, description="Keyword BM25 weight in weighted fusion")
-    reranker_strategy: str = Field("relevance_score", description="Reranker strategy: no_op, relevance_score, or cross_encoder")
+    reranker_strategy: str = Field("no_op", description="Reranker strategy: no_op, relevance_score, or cross_encoder")
     vector_store_path: Path = Field(STORAGE_DIR / "vector_index.json", description="Persisted vector store index path")
     cache_path: Path = Field(STORAGE_DIR / "embedding_cache.json", description="Persisted embedding cache path")
     document_registry_path: Path = Field(STORAGE_DIR / "documents.json", description="Document metadata store path")

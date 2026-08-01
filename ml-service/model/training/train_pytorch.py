@@ -60,8 +60,8 @@ def train_pytorch_model(
     model_config: PyTorchModelConfig = PyTorchModelConfig(),
     training_config: TrainingConfig = TrainingConfig(),
     paths: ArtifactPaths = ArtifactPaths(),
-    X: np.ndarray = None,
-    y: np.ndarray = None,
+    X: Optional[np.ndarray] = None,
+    y: Optional[np.ndarray] = None,
     max_grad_norm: float = 1.0,
 ) -> Dict[str, Any]:
     """
@@ -104,7 +104,7 @@ def train_pytorch_model(
         min_lr=training_config.min_lr,
     )
     early_stopping = EarlyStopping(patience=training_config.patience)
-    scaler = torch.cuda.amp.GradScaler() if device.type == "cuda" else None
+    scaler = torch.amp.GradScaler(device.type) if device.type == "cuda" else None
 
     history: Dict[str, List[float]] = {
         "train_loss": [],
@@ -132,10 +132,12 @@ def train_pytorch_model(
             optimizer.zero_grad()
 
             if scaler is not None:
-                with torch.cuda.amp.autocast():
+                with torch.amp.autocast(device_type=device.type):
                     outputs = model(inputs)
                     loss = criterion(outputs, targets)
-                scaler.scale(loss).backward()
+                scaled_loss = scaler.scale(loss)
+                if isinstance(scaled_loss, torch.Tensor):
+                    scaled_loss.backward()
                 scaler.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
                 scaler.step(optimizer)
@@ -266,10 +268,10 @@ def train_pytorch_model(
 def train_ft_transformer_model(
     config: FTTransformerConfig = FTTransformerConfig(),
     training_config: TrainingConfig = TrainingConfig(),
-    save_path: Path = None,
-    scaler_path: Path = None,
-    X: np.ndarray = None,
-    y: np.ndarray = None,
+    save_path: Optional[Path] = None,
+    scaler_path: Optional[Path] = None,
+    X: Optional[np.ndarray] = None,
+    y: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
     """
     Executes training pipeline for the PyTorch FT-Transformer tabular neural network model.

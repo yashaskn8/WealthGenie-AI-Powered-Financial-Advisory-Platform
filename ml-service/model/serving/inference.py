@@ -25,7 +25,7 @@ logger = logging.getLogger("wealthgenie.inference")
 class RandomForestPredictor(BasePredictor):
     """Predictor wrapping trained Scikit-Learn RandomForest classifier."""
 
-    def __init__(self, model_path: Path = None, label_encoder_path: Path = None):
+    def __init__(self, model_path: Optional[Path] = None, label_encoder_path: Optional[Path] = None):
         self.model_path = model_path or (Path(__file__).resolve().parent / "model.pkl")
         self.label_encoder_path = label_encoder_path or (Path(__file__).resolve().parent / "label_encoder.pkl")
         self.model = None
@@ -151,7 +151,7 @@ class MLPPredictor(BasePredictor):
 class FTTransformerPredictor(BasePredictor):
     """Predictor wrapping trained PyTorch FT-Transformer model."""
 
-    def __init__(self, weights_path: Path = None, scaler_path: Path = None):
+    def __init__(self, weights_path: Optional[Path] = None, scaler_path: Optional[Path] = None):
         base_dir = Path(__file__).resolve().parent / "saved_models"
         self.weights_path = weights_path or (base_dir / "ft_transformer.pt")
         self.scaler_path = scaler_path or (base_dir / "scaler.pkl")

@@ -76,6 +76,9 @@ class ModelExplainer:
         Use TreeExplainer for exact contributions.
         Handles list formats (legacy) and single ndarrays (modern).
         """
+        if self.explainer is None:
+            raise RuntimeError("SHAP explainer is not initialized")
+
         raw = self.explainer.shap_values(scaled_features)
 
         if isinstance(raw, list):

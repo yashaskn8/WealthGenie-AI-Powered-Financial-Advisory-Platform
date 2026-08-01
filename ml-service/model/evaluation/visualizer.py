@@ -19,7 +19,7 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 logger = logging.getLogger("wealthgenie.visualizer")
 
 
-def plot_training_curves(history: Dict[str, List[float]], save_path: Path = None) -> Path:
+def plot_training_curves(history: Dict[str, List[float]], save_path: Optional[Path] = None) -> Path:
     """Generates publication-quality loss and accuracy curves per epoch."""
     if save_path is None:
         save_path = PLOTS_DIR / "training_curves.png"
@@ -62,7 +62,7 @@ def plot_training_curves(history: Dict[str, List[float]], save_path: Path = None
     return save_path
 
 
-def plot_confusion_matrix(matrix: List[List[int]], classes: List[str], save_path: Path = None) -> Path:
+def plot_confusion_matrix(matrix: List[List[int]], classes: List[str], save_path: Optional[Path] = None) -> Path:
     """Generates publication-quality Confusion Matrix heatmap."""
     if save_path is None:
         save_path = PLOTS_DIR / "confusion_matrix.png"

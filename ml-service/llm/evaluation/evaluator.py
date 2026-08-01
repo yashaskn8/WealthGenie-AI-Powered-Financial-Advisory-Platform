@@ -45,6 +45,7 @@ class LLMEvaluator:
             "lexical_overlap_score": lexical_sim,
             "semantic_embedding_similarity": semantic_sim,
             "bertscore_approx": lexical_sim,  # Kept for backward compatibility
+            "bertscore": lexical_sim,  # Canonical key expected by evaluate_provider
         }
 
         if context_chunks:

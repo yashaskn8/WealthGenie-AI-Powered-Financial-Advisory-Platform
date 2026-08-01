@@ -4,7 +4,7 @@ Validates datasets before model training to detect missing values, duplicates, c
 """
 
 import logging
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 import numpy as np
 
 logger = logging.getLogger("wealthgenie.data_validator")
@@ -23,7 +23,7 @@ class PreTrainingDataValidator:
         self.max_duplicate_ratio = max_duplicate_ratio
         self.min_class_samples = min_class_samples
 
-    def validate(self, X: np.ndarray, y: np.ndarray, feature_names: List[str] = None) -> Dict[str, Any]:
+    def validate(self, X: np.ndarray, y: np.ndarray, feature_names: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Runs comprehensive quality checks on feature matrix X and target array y.
         Returns a validation report. Raises DataValidationError if critical checks fail.

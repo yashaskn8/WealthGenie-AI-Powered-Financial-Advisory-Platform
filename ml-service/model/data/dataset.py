@@ -23,10 +23,10 @@ class FinancialDataset(Dataset):
     def __len__(self) -> int:
         return len(self.X)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         if self.y is not None:
-            return self.X[idx], self.y[idx]
-        return self.X[idx], torch.tensor(-1, dtype=torch.long)
+            return self.X[index], self.y[index]
+        return self.X[index], torch.tensor(-1, dtype=torch.long)
 
 
 def create_data_loaders(

@@ -17,7 +17,7 @@ logger = logging.getLogger("wealthgenie.rag.cache")
 class EmbeddingCache:
     """Disk and memory-backed cache for text vector embeddings."""
 
-    def __init__(self, cache_path: Path = None):
+    def __init__(self, cache_path: Optional[Path] = None):
         self.cache_path = cache_path or RAGConfig().cache_path
         self._cache: Dict[str, List[float]] = {}
         self.hits = 0
