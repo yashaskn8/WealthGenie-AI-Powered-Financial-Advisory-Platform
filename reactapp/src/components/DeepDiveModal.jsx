@@ -25,7 +25,7 @@ const TABS = [
   { id: 'Stress Test', icon: <Flame size={16} /> }
 ];
 
-const DeepDiveModal = ({ isOpen, onClose, investment, onSelectInvestment, allRecommendations, horizon }) => {
+const DeepDiveModal = ({ isOpen, onClose, investment, onSelectInvestment, allRecommendations, horizon, userProfile }) => {
   const [activeTab, setActiveTab] = useState('Overview');
   const calcMode = 'SIP';
   const [calcAmount, setCalcAmount] = useState(5000);
@@ -331,7 +331,7 @@ const DeepDiveModal = ({ isOpen, onClose, investment, onSelectInvestment, allRec
         {/* Scrollable Content Area */}
         <div className="ddm-scroll-container">
           {activeTab === 'Overview' && <OverviewTab inv={inv} comparisonData={comparisonData} onSelectInvestment={onSelectInvestment} />}
-          {activeTab === 'Where to Invest' && <WhereToInvestTab inv={inv} />}
+          {activeTab === 'Where to Invest' && <WhereToInvestTab inv={inv} userProfile={userProfile} />}
           {activeTab === 'Calculator' && <CalculatorTab {...calcProps} setCalcAmount={setCalcAmount} setCalcYears={setCalcYears} setCalcReturn={setCalcReturn} />}
           {activeTab === 'Tax' && <TaxTab inv={inv} />}
           {activeTab === 'History' && <HistoryTab inv={inv} historicalData={historicalData} />}

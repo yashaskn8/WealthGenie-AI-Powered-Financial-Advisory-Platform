@@ -20,6 +20,6 @@ describe('SebiDisclaimer Component', () => {
     render(<WhereToInvestTab inv={mockInv} />);
     const matches = screen.getAllByText(/Not SEBI-registered investment advice/i);
     expect(matches.length).toBeGreaterThan(0);
-    expect(screen.getByText(/Execution Pathway & Top 5 Recommendations/i)).toBeTruthy();
+    expect(screen.getByText(/Execution Pathway/i)).toBeTruthy();
   });
 });

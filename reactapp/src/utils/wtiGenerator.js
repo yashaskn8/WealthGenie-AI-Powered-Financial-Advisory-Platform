@@ -330,65 +330,122 @@ function getProductsForInstrument(inv, platformCat) {
     }
   }
 
-  // 15. Mutual Funds (specific named funds like parag_parikh_flexi, sbi_bluechip, etc.)
+  // 15. Mutual Funds (dynamically constructed instrument-specific AMC recommendations)
   if (platformCat === 'mf') {
-    const isSpecificFund = id !== 'liquid_mf' && id !== 'debt_mf' && id !== 'hybrid_mf' && id !== 'index_mf' && id !== 'elss' && id !== 'midcap_mf' && id !== 'smallcap_mf';
-    const fundFocus = isSpecificFund ? `direct plans of ${name}` : `${name} direct plans`;
-    
+    const expRatioStr = inv.expenseRatio ? `Expense ratio: ${(inv.expenseRatio * 100).toFixed(2)}% (Direct)` : 'Low expense ratio (Direct plan)';
+    const descText = inv.description || inv.desc || inv.cardSubtitle || `Invests in ${name} portfolio.`;
+    const returnInfo = rateStr !== 'Market-linked' ? `historical 5Y return around ${rateStr}` : 'market-linked returns';
+
+    // Construct 5 distinct, instrument-tailored AMC / platform execution cards
     return [
-      makeProduct('Zerodha Coin', 'Zerodha', 'Zerodha Kite / Coin App', 
-        `Invest in ${fundFocus} with zero commission fees. Coin is a Demat platform, holding your mutual fund units securely alongside your stock portfolio for a single consolidated view. Saves you up to 1% annual regular commission.`, 'Most Popular'),
-      makeProduct('Groww', 'Groww', 'Groww App', 
-        `Start a direct SIP in ${fundFocus} with an extremely simple, user-friendly interface. Set up monthly auto-debit in under 2 minutes directly linked to your bank account. Groww offers 100% direct plans with zero commissions.`, 'Best for Beginners'),
-      makeProduct('MF Central Portal', 'CAMS & KFintech', 'mfcentral.com', 
-        `The official regulatory service portal. It lets you monitor and invest in ${fundFocus} directly, change nominations, and check tax statements across all your mutual funds in one unified, zero-fee dashboard.`, 'Official Service'),
-      makeProduct('Kuvera', 'Kuvera', 'Kuvera App / Web', 
-        `An advanced, zero-commission direct mutual fund portal. It provides smart planning features like tax-loss harvesting alerts for ${name} and lets you track family-wide goals without requiring a Demat account.`, 'Direct Plans Only')
+      {
+        name: `SBI ${name} (Direct Plan)`,
+        provider: 'SBI Mutual Fund',
+        rate: rateStr,
+        highlight: `Backed by India's largest AMC by AUM. ${descText} Offers ${expRatioStr} with ${returnInfo}. Instant SIP setup via YONO or SBI MF portal with zero distributor commission.`,
+        platform: 'SBI MF Portal / Groww / Zerodha Coin',
+        minInvestment: minInv,
+        tenure,
+        badge: 'Largest AMC'
+      },
+      {
+        name: `HDFC ${name} (Direct Plan)`,
+        provider: 'HDFC Mutual Fund',
+        rate: rateStr,
+        highlight: `Managed by HDFC AMC's experienced equity team. Process-driven investment approach focused on portfolio quality. ${expRatioStr}. Ideal for long-term goal compounding.`,
+        platform: 'HDFC MF Portal / Groww / Coin',
+        minInvestment: minInv,
+        tenure,
+        badge: 'Top Track Record'
+      },
+      {
+        name: `ICICI Prudential ${name} (Direct Plan)`,
+        provider: 'ICICI Prudential AMC',
+        rate: rateStr,
+        highlight: `Consistently high active risk management. ${descText} Zero entry load with direct digital execution via iMobile Pay and CAMS MF Central.`,
+        platform: 'ICICI Direct / Groww / Coin',
+        minInvestment: minInv,
+        tenure,
+        badge: 'Low Volatility'
+      },
+      {
+        name: `Nippon India ${name} (Direct Plan)`,
+        provider: 'Nippon India Mutual Fund',
+        rate: rateStr,
+        highlight: `Highly liquid fund management with deep institutional research across ${name}. Direct-growth plan saves up to 1% annual distributor commission.`,
+        platform: 'Nippon MF Portal / Groww',
+        minInvestment: minInv,
+        tenure
+      },
+      {
+        name: `MF Central Unified Portal (${name})`,
+        provider: 'CAMS & KFintech (SEBI Official)',
+        rate: rateStr,
+        highlight: `Official SEBI-regulated mutual fund servicing platform. Transact in direct plans of ${name} across all AMCs with zero commission and unified tax statements.`,
+        platform: 'mfcentral.com (Official)',
+        minInvestment: minInv,
+        tenure,
+        badge: 'Official Service'
+      }
     ];
   }
 
   // 16. ETFs
   if (platformCat === 'etf') {
+    const descText = inv.description || inv.desc || `Passively tracks ${name}.`;
     return [
-      makeProduct('Zerodha Kite', 'Zerodha (NSE/BSE)', 'Zerodha Kite App', 
-        `Buy or sell ${name} units like regular shares during market hours with zero brokerage on delivery trades. Features robust price tracking charts and an auto-SIP feature to buy fixed amounts of this asset every month.`, 'Most Popular'),
-      makeProduct('Groww', 'Groww (NSE/BSE)', 'Groww App', 
-        `Buy ${name} with a highly simplified, one-tap purchase interface. Excellent for beginners who want to buy index ETFs like regular online shopping. Zero account maintenance fees and clear charges.`, 'Best for Beginners'),
-      makeProduct('Angel One', 'Angel One (NSE/BSE)', 'Angel One App', 
-        `Trade ${name} with the benefit of free expert research advice, daily technical reports, and premium customer service. Great for investors who want discount brokerage rates plus professional market insights.`)
+      makeProduct('Nippon India ETF', 'Nippon India AMC', 'Zerodha Kite / Groww', 
+        `Ticker: ${inv.abbr || inv.name}. ${descText} Trade live during exchange hours with ultra-low expense ratio and high daily liquidity.`, 'Most Liquid'),
+      makeProduct('ICICI Prudential ETF', 'ICICI Prudential AMC', 'Zerodha Kite / Groww', 
+        `Institutional-grade passive tracking for ${name}. Lowest expense ratio structure on NSE/BSE.`, 'Lowest Cost'),
+      makeProduct('SBI ETF', 'SBI Mutual Fund', 'Stock Broker App', 
+        `Massive institutional liquidity backed by SBI MF. Buy single units like regular equity shares during market hours.`, 'Institutional Liquidity'),
+      makeProduct('HDFC ETF', 'HDFC Mutual Fund', 'Stock Broker App', 
+        `Efficient index replication with tight bid-ask spreads on exchange. Zero demat entry lock-in.`),
+      makeProduct('Mirae Asset / DSP ETF', 'Mirae Asset / DSP AMC', 'Stock Broker App', 
+        `Global best-practice passive portfolio management for ${name} with real-time NAV tracking.`)
     ];
   }
 
   // 17. Direct Stocks / Equity
   if (platformCat === 'equity') {
+    const descText = inv.description || inv.desc || `Direct equity stock selection for ${name}.`;
     return [
-      makeProduct('Zerodha Kite', 'Zerodha (NSE/BSE)', 'Zerodha Kite App', 
-        `Flat ₹20 discount brokerage per trade. Direct integration with Kite app. Clean, fast execution for holding blue-chip or dividend-paying stocks.`, 'Lowest Brokerage'),
-      makeProduct('Groww', 'Groww (NSE/BSE)', 'Groww App', 
-        `Extremely simplified buying process. Learn about companies with clean financial charts and start with small stock SIPs easily. Zero account opening fees.`, 'Best for Beginners'),
-      makeProduct('Angel One', 'Angel One (NSE/BSE)', 'Angel One App', 
-        `Provides premium daily research ideas, stock advice, and margin facilities with low broker fees. Excellent for investors who want expert guidance.`, 'Research Advisory')
+      makeProduct('Zerodha Kite (Stock SIP)', 'Zerodha (NSE/BSE)', 'Zerodha Kite App', 
+        `Flat ₹20 discount brokerage per trade. Set up automated monthly stock SIPs for ${name} with clean charting and zero delivery brokerage.`, 'Lowest Brokerage'),
+      makeProduct('Groww Stock Desk', 'Groww (NSE/BSE)', 'Groww App', 
+        `1-tap stock purchase interface with clear financial statements and balance sheet metrics for ${name}. Best for beginner investors.`, 'Best for Beginners'),
+      makeProduct('Angel One Advisory', 'Angel One (NSE/BSE)', 'Angel One App', 
+        `Provides daily technical charts, margin trading facilities, and expert research reports for ${name}.`, 'Research Advisory'),
+      makeProduct('ICICI Direct Prime', 'ICICI Securities', 'ICICI Direct App', 
+        `3-in-1 account integrating savings, demat, and trading for instant fund transfer and stock delivery.`),
+      makeProduct('HDFC Sky Platform', 'HDFC Securities', 'HDFC Sky App', 
+        `Modern discount brokerage platform by HDFC with advanced stock screeners and research insights.`)
     ];
   }
 
   // 18. Insurance
   if (platformCat === 'insurance') {
     return [
-      makeProduct('PolicyBazaar', 'PolicyBazaar', 'PolicyBazaar App / Web', 
-        `Compare premium rates, claim settlement ratios, and benefits of ${name} across different insurance providers to get the best cover at the lowest cost.`, 'Compare Plans'),
-      makeProduct('LIC Portal', 'Life Insurance Corporation', 'licindia.in', 
-        `The trusted public sector life insurer. Invest in ${name} with high security, excellent offline claim support, and guaranteed loyalty additions.`, 'Most Trusted'),
-      makeProduct('HDFC Life / SBI Life', 'Private Insurer', 'Insurer Web Portal', 
-        `Invest in modern insurance-linked wealth builders (${name}) with zero premium allocation charges and simple online claim tracking.`)
+      makeProduct('PolicyBazaar Comparison', 'PolicyBazaar Portal', 'PolicyBazaar App / Web', 
+        `Compare premium rates, claim settlement ratios, and benefits of ${name} across 20+ insurance providers.`, 'Compare Plans'),
+      makeProduct('LIC of India Direct', 'Life Insurance Corp', 'licindia.in / Branch', 
+        `The trusted public sector life insurer. Invest in ${name} with high sovereign-backed security and offline support.`, 'Most Trusted'),
+      makeProduct('HDFC Life Direct', 'HDFC Life Insurance', 'hdfclife.com', 
+        `Invest in modern wealth-builder plans for ${name} with zero premium allocation charges and online claim tracking.`),
+      makeProduct('ICICI Pru Life Portal', 'ICICI Prudential Life', 'iciciprulife.com', 
+        `Digital-first insurance policy management with flexible payout options and tax receipt downloads.`)
     ];
   }
 
   // Generic fallback if no specific rule matched
   return [
-    makeProduct('SBI / HDFC Bank', 'Scheduled Banks', 'NetBanking / Branch', 
+    makeProduct('SBI / HDFC Bank Route', 'Scheduled Commercial Banks', 'NetBanking / Branch', 
       `Open and manage ${name} directly with your primary savings bank. Safe, simple, and convenient auto-debit options.`, 'Bank Route'),
-    makeProduct('Zerodha / Groww', 'Discount Broker', 'Broker App', 
-      `Invest in ${name} through your primary investment app. Direct commission-free tracking and simple setup.`, 'Broker Route')
+    makeProduct('Zerodha / Groww Direct', 'Discount Investment Broker', 'Broker App', 
+      `Invest in ${name} through your primary investment app. Direct commission-free tracking and simple setup.`, 'Broker Route'),
+    makeProduct('MF Central Portal', 'CAMS & KFintech', 'mfcentral.com', 
+      `Official SEBI servicing portal for managing and tracking ${name} transactions.`, 'Official Channel')
   ];
 }
 

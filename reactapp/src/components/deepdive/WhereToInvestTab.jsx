@@ -13,8 +13,8 @@ const RISK_LEVELS = [
   { label: 'Very High', color: '#dc2626', desc: 'Maximum volatility. 40%+ drawdowns possible. Only for 10+ year aggressive investors.' },
 ];
 
-const WhereToInvestTab = ({ inv }) => {
-  const wtiData = WHERE_TO_INVEST[inv.id] || generateWTI(inv);
+const WhereToInvestTab = ({ inv, userProfile }) => {
+  const wtiData = WHERE_TO_INVEST[inv?.id] || generateWTI(inv);
   const subCategoryMap = wtiData?.sectors || wtiData?.subCategories || null;
   const subKeys = subCategoryMap ? Object.keys(subCategoryMap) : [];
 
@@ -36,11 +36,16 @@ const WhereToInvestTab = ({ inv }) => {
   const totalAngle = Math.PI;
   const segGap = 0.025;
 
-  const showEtfSuggestion = inv.id === 'mid_cap_stocks' && shouldRecommendETF('Moderate', 0.25);
+  const userRisk = userProfile?.risk_tolerance || userProfile?.riskCategory || inv?.riskLabel || 'Moderate';
+  const sectorVol = inv?.volatility || 0.25;
+  const showEtfSuggestion = (inv?.id === 'mid_cap_stocks' || inv?.id === 'direct_equity') && shouldRecommendETF(userRisk, sectorVol);
+
+  const isTop5 = products.length >= 5;
+  const headerLabel = isTop5 ? 'Execution Pathway & Top 5 Recommendations' : `Execution Pathway (${products.length} Recommended Option${products.length > 1 ? 's' : ''})`;
 
   return (
     <div className="tab-fade-in">
-      <div className="ddm-section-header">Execution Pathway & Top 5 Recommendations</div>
+      <div className="ddm-section-header">{headerLabel}</div>
 
       {wtiData.note && (
         <div className="wti-note-banner">

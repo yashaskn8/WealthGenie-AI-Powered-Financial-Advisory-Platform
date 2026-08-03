@@ -371,6 +371,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
           onSelectInvestment={setDeepDiveInvestment}
           allRecommendations={recommendations}
           horizon={userProfile.investment_horizon}
+          userProfile={userProfile}
         />
       </Suspense>
 
