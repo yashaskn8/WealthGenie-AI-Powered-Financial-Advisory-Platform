@@ -21,6 +21,7 @@ import marketRoutes from './routes/market.js';
 import taxRoutes from './routes/tax.js';
 import chatRoutes from './routes/chatRoutes.js';
 import portfolioRoutes from './routes/portfolio.js';
+import regimeRoutes from './routes/regime.js';
 import { enforceJsonContentType } from './middleware/contentType.js';
 import { correlationIdMiddleware } from './middleware/correlation.js';
 import healthRoutes from './routes/health.js';
@@ -118,6 +119,7 @@ app.use('/api/market', marketRoutes);
 app.use('/api/tax', taxRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/regime', regimeRoutes);
 
 // ── Health Check (Detailed) ──────────────────────────────────────
 app.get('/api/health', (req, res) => {

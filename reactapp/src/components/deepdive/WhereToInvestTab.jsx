@@ -1,11 +1,8 @@
-/**
- * DeepDiveModal — Where to Invest Tab
- * Extracted from DeepDiveModal.jsx for maintainability.
- */
-import React from 'react';
-import { Building2, Shield, Star, Info, Wallet, Zap, History as HistoryIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Building2, Shield, Star, Info, Wallet, Zap, History as HistoryIcon, TrendingUp, AlertTriangle } from 'lucide-react';
 import WHERE_TO_INVEST from '../../whereToInvest';
-import { generateWTI } from '../../utils/wtiGenerator';
+import { generateWTI, rankWhereToInvest, shouldRecommendETF } from '../../utils/wtiGenerator';
+import SebiDisclaimer from '../SebiDisclaimer';
 
 const RISK_LEVELS = [
   { label: 'Low', color: '#22c55e', desc: 'Capital is safe. Government-guaranteed or DICGC-insured. Virtually zero chance of loss.' },
@@ -17,8 +14,12 @@ const RISK_LEVELS = [
 ];
 
 const WhereToInvestTab = ({ inv }) => {
-  // Try curated data first, then fall back to dynamic generation
   const wtiData = WHERE_TO_INVEST[inv.id] || generateWTI(inv);
+  const subCategoryMap = wtiData?.sectors || wtiData?.subCategories || null;
+  const subKeys = subCategoryMap ? Object.keys(subCategoryMap) : [];
+
+  const [activeSubTab, setActiveSubTab] = useState(subKeys[0] || null);
+
   if (!wtiData) return (
     <div style={{ textAlign: 'center', padding: '80px 0' }}>
       <Building2 size={48} color="var(--ddm-text-muted)" />
@@ -26,20 +27,70 @@ const WhereToInvestTab = ({ inv }) => {
     </div>
   );
 
+  const rawProducts = (subCategoryMap && activeSubTab) ? subCategoryMap[activeSubTab] : wtiData.products;
+  const products = rankWhereToInvest(rawProducts || []);
+
   const level = Math.max(0, Math.min(5, (wtiData.riskLevel || 1) - 1));
   const risk = RISK_LEVELS[level];
   const CX = 140, CY = 125, R = 90, r2 = 62;
   const totalAngle = Math.PI;
   const segGap = 0.025;
 
+  const showEtfSuggestion = inv.id === 'mid_cap_stocks' && shouldRecommendETF('Moderate', 0.25);
+
   return (
     <div className="tab-fade-in">
-      <div className="ddm-section-header">Execution Pathway</div>
+      <div className="ddm-section-header">Execution Pathway & Top 5 Recommendations</div>
 
       {wtiData.note && (
         <div className="wti-note-banner">
           <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
           <p>{wtiData.note}</p>
+        </div>
+      )}
+
+      {/* Sub-Category Sector/Theme Drill-Down Tabs */}
+      {subKeys.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          {subKeys.map(key => (
+            <button
+              key={key}
+              onClick={() => setActiveSubTab(key)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: activeSubTab === key ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
+                background: activeSubTab === key ? 'rgba(56, 189, 248, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                color: activeSubTab === key ? '#38bdf8' : '#94a3b8',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                textTransform: 'capitalize'
+              }}
+            >
+              {key.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Stock vs ETF Decision Rule Warning Banner */}
+      {showEtfSuggestion && (
+        <div style={{
+          background: 'rgba(234, 179, 8, 0.1)',
+          border: '1px solid rgba(234, 179, 8, 0.3)',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          marginBottom: '1rem',
+          display: 'flex',
+          gap: '10px',
+          fontSize: '0.8rem',
+          color: '#fef08a'
+        }}>
+          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#eab308' }} />
+          <div>
+            <strong>Risk Decision Rule Active:</strong> For moderate-risk investors or high sector volatility, low-cost Sector ETFs/Mutual Funds (e.g. MidCap ETF, Nifty Bank ETF) are recommended over direct stock picking to avoid single-stock drawdown risk.
+          </div>
         </div>
       )}
 
@@ -70,13 +121,11 @@ const WhereToInvestTab = ({ inv }) => {
               </radialGradient>
             </defs>
 
-            {/* Outer decorative ring */}
             <path
               d={`M ${CX + (R + 8) * Math.cos(Math.PI)} ${CY - (R + 8) * Math.sin(Math.PI)} A ${R + 8} ${R + 8} 0 0 1 ${CX + (R + 8) * Math.cos(0)} ${CY - (R + 8) * Math.sin(0)}`}
               fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1"
             />
 
-            {/* Arc segments */}
             {RISK_LEVELS.map((r, i) => {
               const a1 = Math.PI - (i / 6) * totalAngle + segGap;
               const a2 = Math.PI - ((i + 1) / 6) * totalAngle - segGap;
@@ -97,7 +146,6 @@ const WhereToInvestTab = ({ inv }) => {
               );
             })}
 
-            {/* Labels outside arc */}
             {RISK_LEVELS.map((r, i) => {
               const midAngle = Math.PI - ((i + 0.5) / 6) * totalAngle;
               const labelR = R + 16;
@@ -125,7 +173,6 @@ const WhereToInvestTab = ({ inv }) => {
               );
             })}
 
-            {/* Tick marks */}
             {[0, 1, 2, 3, 4, 5, 6].map(i => {
               const a = Math.PI - (i / 6) * totalAngle;
               const t1 = CX + (R + 1) * Math.cos(a), u1 = CY - (R + 1) * Math.sin(a);
@@ -133,7 +180,6 @@ const WhereToInvestTab = ({ inv }) => {
               return <line key={i} x1={t1} y1={u1} x2={t2} y2={u2} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />;
             })}
 
-            {/* Needle */}
             {(() => {
               const needleAngle = Math.PI - ((level + 0.5) / 6) * totalAngle;
               const needleLen = r2 - 6;
@@ -155,12 +201,9 @@ const WhereToInvestTab = ({ inv }) => {
               );
             })()}
 
-            {/* Center hub */}
             <circle cx={CX} cy={CY} r="12" fill="url(#rmHubGrad)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
             <circle cx={CX} cy={CY} r="5" fill={risk.color} opacity="0.9" />
             <circle cx={CX} cy={CY} r="2.5" fill="#020617" />
-
-            {/* Base line */}
             <line x1={CX - R - 4} y1={CY + 1} x2={CX + R + 4} y2={CY + 1} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
           </svg>
         </div>
@@ -173,7 +216,7 @@ const WhereToInvestTab = ({ inv }) => {
       </div>
 
       <div className="wti-grid">
-        {wtiData.products.map((product, idx) => (
+        {products.map((product, idx) => (
           <div key={idx} className={`wti-item ${idx === 0 ? 'wti-item--featured' : ''}`}>
             <div className="wti-rank">{idx + 1}</div>
             <div className="wti-card-body">
@@ -208,6 +251,9 @@ const WhereToInvestTab = ({ inv }) => {
           </div>
         </div>
       )}
+
+      {/* Mandatory SEBI Disclaimer Component */}
+      <SebiDisclaimer />
     </div>
   );
 };

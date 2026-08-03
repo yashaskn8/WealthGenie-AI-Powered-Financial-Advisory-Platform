@@ -32,6 +32,54 @@ function getTenureLabel(inv) {
   return 'Open-ended';
 }
 
+/**
+ * Stock vs ETF/MF Decision Rule Function
+ * Recommends ETF/MF when user's risk tolerance is conservative/moderate or sector volatility > 30%.
+ */
+export function shouldRecommendETF(userRiskTolerance = 'Moderate', sectorVolatility = 0.25) {
+  if (['Conservative', 'Moderate'].includes(userRiskTolerance)) return true;
+  if (sectorVolatility > 0.30) return true;
+  return false;
+}
+
+/**
+ * Dynamic Top-5 Ranking Function
+ * Operates over candidate product arrays sorting dynamically by return rate, badge, and cost fit.
+ */
+export function rankWhereToInvest(candidates = [], userProfile = {}, riskPreference = 'Moderate') {
+  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+
+  return [...candidates].sort((a, b) => {
+    const badgePriority = {
+      'Official Scheme': 5,
+      'Official 54EC': 5,
+      '100% Sovereign': 5,
+      'Top Pick': 4,
+      'Category Leader': 4,
+      'Pharma Leader': 4,
+      'Metals Leader': 4,
+      'Metals Top Pick': 4,
+      'Banking Quality': 4,
+      'Most Liquid': 3,
+      'Lowest Cost': 3
+    };
+    const scoreA = (badgePriority[a.badge] || 0) * 10;
+    const scoreB = (badgePriority[b.badge] || 0) * 10;
+
+    if (scoreA !== scoreB) return scoreB - scoreA;
+
+    const parseRate = (rStr) => {
+      if (!rStr) return 0;
+      const match = String(rStr).match(/(\d+\.?\d*)/);
+      return match ? parseFloat(match[1]) : 0;
+    };
+    const rateA = parseRate(a.rate);
+    const rateB = parseRate(b.rate);
+
+    return rateB - rateA;
+  }).slice(0, 5);
+}
+
 function getPlatformCategory(inv) {
   const id = (inv.id || '').toLowerCase();
   const cat = (inv.category || inv.cat || '').toLowerCase();

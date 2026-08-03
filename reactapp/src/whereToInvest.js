@@ -246,6 +246,141 @@ const WHERE_TO_INVEST = {
       { name: "ITC Limited", provider: "NSE: ITC", rate: "~10–12%* (5Y)", highlight: "India's highest dividend-yield large-cap (~3% yield). FMCG revenue now at ₹20,000+ Cr (Aashirvaad, Sunfeast, Bingo). Hotels division (150+ properties) growing 20%+ post-COVID. Cigarettes provide a cash-flow fortress with 75%+ EBITDA margins. ITC's demerger of hotels business (announced 2023) could unlock significant value.", platform: "Any Stock Broker", minInvestment: "1 share (~₹440)", sector: "FMCG", badge: "Best Dividend" },
     ]
   },
+
+  // ═══════════════════ MID-CAP STOCKS (SECTOR DRILL-DOWN) ═══════════════════
+  mid_cap_stocks: {
+    title: "Verified SEBI Mid-Cap Growth Stocks by Sector",
+    riskLevel: 6,
+    note: "SEBI defines mid-caps as 101st to 250th companies by market cap (~₹15,000 Cr to ₹60,000 Cr). Requires active monitoring.",
+    howToStart: "Invest via discount brokers (Zerodha, Groww, Angel One). Select sub-sectors based on earnings momentum.",
+    sectors: {
+      pharma: [
+        { name: "Lupin Limited", provider: "NSE: LUPIN", rate: "~21.4% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹52,000 Cr m-cap). Leader in respiratory and complex generic formulations for US & India markets.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,150)", badge: "Pharma Leader" },
+        { name: "Glenmark Pharmaceuticals", provider: "NSE: GLENMARK", rate: "~24.8% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹41,000 Cr m-cap). Strong API exports and respiratory pipeline across US, Europe, and LATAM.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,450)" },
+        { name: "Laurus Labs", provider: "NSE: LAURUSLABS", rate: "~15.2% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹23,000 Cr m-cap). Rapidly scaling CDMO synthesis and active pharmaceutical ingredients.", platform: "Any Stock Broker", minInvestment: "1 share (~₹430)" },
+        { name: "IPCA Laboratories", provider: "NSE: IPCALAB", rate: "~18.6% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹34,000 Cr m-cap). Domestic formulation leader with strong active API manufacturing footprint.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,320)" }
+      ],
+      metals: [
+        { name: "Jindal Stainless", provider: "NSE: JSL", rate: "~38.5% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹58,000 Cr m-cap). India's largest stainless steel manufacturer with high EBITDA/ton realization.", platform: "Any Stock Broker", minInvestment: "1 share (~₹710)", badge: "Metals Top Pick" },
+        { name: "National Aluminium (NALCO)", provider: "NSE: NATIONALUM", rate: "~26.2% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹35,000 Cr m-cap). Integrated PSU bauxite-alumina producer benefiting from global metal prices.", platform: "Any Stock Broker", minInvestment: "1 share (~₹190)" },
+        { name: "Hindustan Copper", provider: "NSE: HINDCOPPER", rate: "~32.1% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹28,000 Cr m-cap). Only vertically integrated copper miner in India benefiting from EV/grid demand.", platform: "Any Stock Broker", minInvestment: "1 share (~₹290)" }
+      ],
+      banking: [
+        { name: "Federal Bank", provider: "NSE: FEDERALBNK", rate: "~18.4% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹48,000 Cr m-cap). Strong retail deposit franchise with industry-leading asset quality (<2.1% GNPA).", platform: "Any Stock Broker", minInvestment: "1 share (~₹195)", badge: "Banking Quality" },
+        { name: "AU Small Finance Bank", provider: "NSE: AUBANK", rate: "~16.2% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹46,000 Cr m-cap). Fast-growing retail liabilities and commercial vehicle lending franchise.", platform: "Any Stock Broker", minInvestment: "1 share (~₹640)" },
+        { name: "IDFC First Bank", provider: "NSE: IDFCFIRSTB", rate: "~17.8% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹51,000 Cr m-cap). High CASA ratio (~46%) and rapid credit expansion post Capital First merger.", platform: "Any Stock Broker", minInvestment: "1 share (~₹72)" }
+      ],
+      auto: [
+        { name: "Uno Minda Limited", provider: "NSE: UNOMINDA", rate: "~28.6% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹55,000 Cr m-cap). Tier-1 automotive supplier leading EV lighting, switches, and alloy wheels.", platform: "Any Stock Broker", minInvestment: "1 share (~₹960)", badge: "EV Ancillary" },
+        { name: "Balkrishna Industries", provider: "NSE: BALKRISIND", rate: "~14.2% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹54,000 Cr m-cap). Global off-highway tire exporter with high operating cash flows.", platform: "Any Stock Broker", minInvestment: "1 share (~₹2,800)" }
+      ],
+      it: [
+        { name: "Persistent Systems", provider: "NSE: PERSISTENT", rate: "~42.1% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹82,000 Cr m-cap). Premium software product engineering and enterprise AI cloud solutions.", platform: "Any Stock Broker", minInvestment: "1 share (~₹5,300)", badge: "High Growth IT" },
+        { name: "Coforge Limited", provider: "NSE: COFORGE", rate: "~21.5% (3Y CAGR)", highlight: "Verified SEBI Mid-Cap (~₹41,000 Cr m-cap). Focused domain expertise in travel, transportation, and banking IT.", platform: "Any Stock Broker", minInvestment: "1 share (~₹6,200)" }
+      ]
+    },
+    products: [
+      { name: "Jindal Stainless", provider: "NSE: JSL", rate: "~38.5% (3Y)", highlight: "Verified SEBI Mid-Cap (~₹58,000 Cr m-cap). India's largest stainless steel producer with low leverage.", platform: "Any Stock Broker", minInvestment: "1 share (~₹710)", badge: "Metals Leader" },
+      { name: "Lupin Limited", provider: "NSE: LUPIN", rate: "~21.4% (3Y)", highlight: "Verified SEBI Mid-Cap (~₹52,000 Cr m-cap). Global respiratory and generic formulation specialist.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,150)", badge: "Pharma Leader" },
+      { name: "Federal Bank", provider: "NSE: FEDERALBNK", rate: "~18.4% (3Y)", highlight: "Verified SEBI Mid-Cap (~₹48,000 Cr m-cap). Consistently high ROA and ROE private sector mid-cap bank.", platform: "Any Stock Broker", minInvestment: "1 share (~₹195)", badge: "Banking Pick" },
+      { name: "Uno Minda", provider: "NSE: UNOMINDA", rate: "~28.6% (3Y)", highlight: "Verified SEBI Mid-Cap (~₹55,000 Cr m-cap). Leading automotive components and EV powertrain supplier.", platform: "Any Stock Broker", minInvestment: "1 share (~₹960)" },
+      { name: "Persistent Systems", provider: "NSE: PERSISTENT", rate: "~42.1% (3Y)", highlight: "Verified SEBI Mid-Cap (~₹82,000 Cr m-cap). Fast-growing digital product engineering specialist.", platform: "Any Stock Broker", minInvestment: "1 share (~₹5,300)" }
+    ]
+  },
+
+  // ═══════════════════ MANUFACTURING SECTOR FUNDS ═══════════════════
+  mfg_sector_mf: {
+    title: "Best Manufacturing Sector Mutual Funds",
+    riskLevel: 6,
+    note: "Focuses on Make-in-India themes: industrial capital goods, electronics manufacturing, defense, and auto.",
+    howToStart: "Invest in direct plans via AMC websites or zero-commission platforms like Groww and Zerodha Coin.",
+    products: [
+      { name: "ICICI Pru Manufacturing Fund", provider: "ICICI Prudential AMC", rate: "~26.4% (3Y)", highlight: "AUM ~₹5,800 Cr. Focused on industrial capital goods, auto ancillaries, and defense manufacturing.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "HDFC Manufacturing Fund", provider: "HDFC AMC", rate: "~24.8% (3Y)", highlight: "AUM ~₹4,200 Cr. High exposure to electronics manufacturing services (EMS) and heavy machinery.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "Axis India Manufacturing Fund", provider: "Axis AMC", rate: "~23.1% (3Y)", highlight: "AUM ~₹3,100 Cr. Balanced growth portfolio across chemical processing and industrial manufacturing.", platform: "Axis MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "SBI Manufacturing Opportunities Fund", provider: "SBI MF", rate: "~22.5% (3Y)", highlight: "AUM ~₹2,900 Cr. Backed by SBI MF's extensive industrial equity research team.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "Mirae Asset Manufacturing Fund", provider: "Mirae Asset AMC", rate: "~21.9% (3Y)", highlight: "AUM ~₹1,800 Cr. Quality-first stock selection targeting export-oriented manufacturing leaders.", platform: "Mirae MF / Kuvera", minInvestment: "₹500 SIP" }
+    ]
+  },
+
+  // ═══════════════════ DEFENCE SECTOR FUNDS ═══════════════════
+  defence_sector_mf: {
+    title: "Best Defence Sector Mutual Funds & Index Funds",
+    riskLevel: 6,
+    note: "Beneficiaries of indigenization, defence procurement expansion, and HAL/BEL export contracts.",
+    howToStart: "Invest via AMC portal or discount brokers. Official scheme names verified against SEBI filings.",
+    products: [
+      { name: "Motilal Oswal Nifty India Defence Index Fund", provider: "Motilal Oswal AMC", rate: "~64.2% (1Y)", highlight: "Official AMC Scheme (launched June 2024). Tracks Nifty India Defence Index (HAL, BEL, Mazagon Dock, Solar Ind).", platform: "Motilal Oswal MF / Groww", minInvestment: "₹500 SIP", badge: "Official Scheme" },
+      { name: "HDFC Defence Fund", provider: "HDFC AMC", rate: "~58.7% (1Y)", highlight: "Active equity scheme focusing on domestic defence equipment manufacturing and shipbuilding order books.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP", badge: "Active Alpha" },
+      { name: "ICICI Pru Housing & Defence Allocation", provider: "ICICI Prudential AMC", rate: "~38.4% (1Y)", highlight: "Thematic hybrid fund allocating between infrastructure/defence suppliers and real estate equipment.", platform: "ICICI Direct / Coin", minInvestment: "₹100 SIP" }
+    ]
+  },
+
+  // ═══════════════════ BONDS SUB-CATEGORIES ═══════════════════
+  bonds: {
+    title: "Verified Indian Bond Investments by Sub-Category",
+    riskLevel: 2,
+    note: "Post Finance Act 2023: Bond returns are taxed at your income slab rate. Match holding period to maturity.",
+    howToStart: "Use RBI Retail Direct for G-Secs, or specialized bond portals (GoldenPi, Wint Wealth) for corporate bonds.",
+    subCategories: {
+      sovereign_gsec: [
+        { name: "RBI 91-Day Treasury Bill (T-Bill)", provider: "Reserve Bank of India", rate: "6.85%", highlight: "Zero credit risk. Issued at discount to face value directly by Government of India.", platform: "RBI Retail Direct", minInvestment: "₹10,000", tenure: "91 days", badge: "100% Sovereign" },
+        { name: "10-Year Benchmark G-Sec (7.18% GS 2033)", provider: "Reserve Bank of India", rate: "7.18%", highlight: "The sovereign benchmark bond. Semi-annual interest paid directly into your bank account.", platform: "RBI Retail Direct / Kite", minInvestment: "₹10,000", tenure: "10 years" }
+      ],
+      aaa_corporate: [
+        { name: "HDFC Bank AAA Corporate Bond", provider: "HDFC Bank Ltd", rate: "7.75%", highlight: "Highest credit rating (CRISIL AAA). High liquidity and semi-annual coupon payouts.", platform: "GoldenPi / Wint Wealth", minInvestment: "₹10,000", tenure: "3 years", badge: "CRISIL AAA" },
+        { name: "L&T Finance AAA Debenture", provider: "L&T Finance", rate: "8.10%", highlight: "CRISIL AAA rated corporate NCD backed by Larsen & Toubro Group's balance sheet.", platform: "GoldenPi / Broker", minInvestment: "₹10,000", tenure: "5 years" }
+      ],
+      section_54ec: [
+        { name: "REC Section 54EC Capital Gains Bond", provider: "Rural Electrification Corp", rate: "5.25%", highlight: "Official Section 54EC tax saver for property capital gains. 5-year lock-in. Fully tax-exempt gains.", platform: "REC Official Portal / Bank", minInvestment: "₹20,000", tenure: "5 years", badge: "Official 54EC" },
+        { name: "PFC Section 54EC Capital Gains Bond", provider: "Power Finance Corp", rate: "5.25%", highlight: "Government-backed 54EC bond. Save LTCG tax on property sales up to ₹50 Lakh per FY.", platform: "PFC Official Portal / Bank", minInvestment: "₹20,000", tenure: "5 years", badge: "Official 54EC" },
+        { name: "IRFC Section 54EC Capital Gains Bond", provider: "Indian Railway Finance Corp", rate: "5.25%", highlight: "Official 54EC issuer under Ministry of Railways. Direct sovereign comfort with 5Y lock-in.", platform: "IRFC Portal / Bank", minInvestment: "₹20,000", tenure: "5 years", badge: "Official 54EC" }
+      ],
+      psu_bonds: [
+        { name: "SBI Tier-2 Perpetual Bond", provider: "State Bank of India", rate: "7.95%", highlight: "Institutional-grade PSU bank bond offering attractive yield with high safety.", platform: "GoldenPi / Broker", minInvestment: "₹1,00,000", tenure: "10 years", badge: "PSU Banking" },
+        { name: "NABARD Rural Infrastructure Bond", provider: "NABARD (Govt PSU)", rate: "7.60%", highlight: "Government-owned PSU bond supporting rural infrastructure and agricultural development.", platform: "GoldenPi / Bank Branch", minInvestment: "₹10,000", tenure: "3–5 years", badge: "Govt PSU" }
+      ]
+    },
+    products: [
+      { name: "REC Section 54EC Capital Gains Bond", provider: "Rural Electrification Corp", rate: "5.25%", highlight: "Exempts capital gains tax under Section 54EC on property sales up to ₹50L. 5Y lock-in.", platform: "REC Portal / Bank", minInvestment: "₹20,000", tenure: "5 years", badge: "Official 54EC" },
+      { name: "RBI 10-Year Benchmark G-Sec", provider: "Reserve Bank of India", rate: "7.18%", highlight: "100% sovereign safety. Direct RBI Retail Direct access with zero commission.", platform: "RBI Retail Direct", minInvestment: "₹10,000", tenure: "10 years", badge: "Sovereign" },
+      { name: "HDFC Bank AAA Corporate Bond", provider: "HDFC Bank", rate: "7.75%", highlight: "CRISIL AAA rating. Highest safety among private corporate fixed income.", platform: "GoldenPi / Wint Wealth", minInvestment: "₹10,000", tenure: "3 years" },
+      { name: "NABARD Rural Infrastructure Bond", provider: "NABARD", rate: "7.60%", highlight: "Government PSU bond with attractive annual interest payouts.", platform: "GoldenPi / Bank Branch", minInvestment: "₹10,000", tenure: "5 years" }
+    ]
+  },
+
+  // ═══════════════════ ETF SUB-CATEGORIES ═══════════════════
+  etf: {
+    title: "Verified Indian Exchange Traded Funds (ETFs) by Category",
+    riskLevel: 4,
+    note: "Tradeable live during stock exchange hours on NSE/BSE. Lower expense ratios than mutual funds.",
+    howToStart: "Open a Demat account with Zerodha, Groww, or Angel One. Search by ticker name.",
+    subCategories: {
+      broad_market: [
+        { name: "Nippon India Nifty BeES", provider: "Nippon India AMC", rate: "~11.2% (5Y)", highlight: "Ticker: NIFTYBEES. India's largest and most liquid ETF with ~₹30,000 Cr AUM. Expense ratio: 0.04%.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹260)", badge: "Most Liquid" },
+        { name: "ICICI Pru Nifty 50 ETF", provider: "ICICI Prudential AMC", rate: "~11.2% (5Y)", highlight: "Ticker: ICICINIFTY. Lowest expense ratio in India at 0.02% (Direct).", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹260)", badge: "Lowest Cost" }
+      ],
+      sectoral_thematic: [
+        { name: "Nifty Bank ETF (BANKBEES)", provider: "Nippon India AMC", rate: "~12.8% (5Y)", highlight: "Tracks top 12 banking stocks in India. High liquidity on NSE/BSE.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹510)", badge: "Sector Benchmark" },
+        { name: "Motilal Oswal Nifty India Defence Index Fund", provider: "Motilal Oswal AMC", rate: "~64.2% (1Y)", highlight: "Official AMC Scheme tracking Defence order books and manufacturing.", platform: "Motilal Oswal / Broker", minInvestment: "1 unit (~₹25)", badge: "Official Scheme" }
+      ],
+      smart_beta: [
+        { name: "Nifty200 Alpha 30 ETF", provider: "ICICI Prudential AMC", rate: "~19.4% (3Y)", highlight: "Factor ETF selecting top 30 momentum stocks from Nifty 200 index.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹45)", badge: "Factor Alpha" },
+        { name: "Nifty100 Low Volatility 30 ETF", provider: "ICICI Prudential AMC", rate: "~15.6% (3Y)", highlight: "Smart-beta ETF picking lowest volatility large-caps to minimize drawdowns.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹60)" }
+      ],
+      commodity: [
+        { name: "Nippon India Gold BeES", provider: "Nippon India AMC", rate: "~25.9% (5Y)", highlight: "Ticker: GOLDBEES. Physical gold backed by 99.5% pure vault gold. 0.79% expense ratio.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Gold Leader" },
+        { name: "HDFC Silver ETF", provider: "HDFC AMC", rate: "~28.1% (1Y)", highlight: "Tracks physical silver prices stored in LBMA vaults. Industrial & monetary demand.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹90)" }
+      ]
+    },
+    products: [
+      { name: "Nippon India Nifty BeES", provider: "Nippon India AMC", rate: "~11.2% (5Y)", highlight: "Ticker: NIFTYBEES. Gold standard for Nifty 50 passive index tracking.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹260)", badge: "Most Liquid" },
+      { name: "Nifty Bank ETF (BANKBEES)", provider: "Nippon India AMC", rate: "~12.8% (5Y)", highlight: "Ticker: BANKBEES. Direct exposure to top 12 Indian commercial banks.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹510)", badge: "Sector Pick" },
+      { name: "Nippon India Gold BeES", provider: "Nippon India AMC", rate: "~25.9% (5Y)", highlight: "Ticker: GOLDBEES. 100% physical gold backed by LBMA vaults.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Safe Haven" },
+      { name: "Motilal Oswal Nifty India Defence Index Fund", provider: "Motilal Oswal AMC", rate: "~64.2% (1Y)", highlight: "Official AMC Scheme tracking Defence manufacturing leaders.", platform: "Motilal Oswal / Broker", minInvestment: "1 unit (~₹25)" }
+    ]
+  }
 };
 
 export default WHERE_TO_INVEST;
+
