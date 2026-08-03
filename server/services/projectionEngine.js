@@ -177,7 +177,8 @@ export function generateProjections(
   postTaxRates,
   years = [5, 10, 15, 20],
   inflationRate = 0.05,
-  annualStepUpRate = 0.10
+  annualStepUpRate = 0.10,
+  initialLumpSum = 0
 ) {
   // Input guards
   if (!Number.isFinite(monthlyInvestment) || monthlyInvestment <= 0) {
@@ -188,19 +189,20 @@ export function generateProjections(
   }
   if (!Number.isFinite(inflationRate) || inflationRate < 0) inflationRate = 0.05;
   if (!Number.isFinite(annualStepUpRate) || annualStepUpRate < 0) annualStepUpRate = 0.10;
+  const safeLumpSum = Math.max(0, Number(initialLumpSum) || 0);
 
   const labels = [...years].filter(y => Number.isFinite(y) && y > 0);
 
-  // Total invested at each year mark (nominal, flat SIP)
+  // Total invested at each year mark (nominal, flat SIP + initial lump sum)
   const totalInvested = {};
   labels.forEach(y => {
-    totalInvested[y] = monthlyInvestment * 12 * y;
+    totalInvested[y] = (monthlyInvestment * 12 * y) + safeLumpSum;
   });
 
-  // Total invested at each year mark (nominal, step-up SIP)
+  // Total invested at each year mark (nominal, step-up SIP + initial lump sum)
   const totalInvestedStepUp = {};
   labels.forEach(y => {
-    let sumInvested = 0;
+    let sumInvested = safeLumpSum;
     let currentSIP = monthlyInvestment;
     for (let yr = 1; yr <= y; yr++) {
       sumInvested += currentSIP * 12;
@@ -227,17 +229,17 @@ export function generateProjections(
       console.warn(`[Projection] Zero effective rate for ${inst.name}. Chart will show flat-line (no growth).`);
     }
 
-    // Nominal projections (flat SIP)
-    const data = labels.map(y => Math.round(sipFV(monthlyInvestment, decimalRate, y)));
+    // Nominal projections (flat SIP + initial lump sum)
+    const data = labels.map(y => Math.round(sipFV(monthlyInvestment, decimalRate, y) + lumpSumFV(safeLumpSum, decimalRate, y)));
 
-    // Inflation-adjusted (real) projections (flat SIP)
+    // Inflation-adjusted (real) projections (flat SIP + initial lump sum)
     const realRate = ((1 + decimalRate) / (1 + inflationRate)) - 1;
-    const realData = labels.map(y => Math.round(sipFV(monthlyInvestment, realRate, y)));
+    const realData = labels.map(y => Math.round(sipFV(monthlyInvestment, realRate, y) + lumpSumFV(safeLumpSum, realRate, y)));
 
-    // Step-up projections (nominal & real)
-    const stepUpData = labels.map(y => Math.round(stepUpSipFV(monthlyInvestment, decimalRate, y, annualStepUpRate)));
+    // Step-up projections (nominal & real + initial lump sum)
+    const stepUpData = labels.map(y => Math.round(stepUpSipFV(monthlyInvestment, decimalRate, y, annualStepUpRate) + lumpSumFV(safeLumpSum, decimalRate, y)));
     const stepUpRealRate = ((1 + decimalRate) / (1 + inflationRate)) - 1;
-    const stepUpRealData = labels.map(y => Math.round(stepUpSipFV(monthlyInvestment, stepUpRealRate, y, annualStepUpRate)));
+    const stepUpRealData = labels.map(y => Math.round(stepUpSipFV(monthlyInvestment, stepUpRealRate, y, annualStepUpRate) + lumpSumFV(safeLumpSum, stepUpRealRate, y)));
 
     // Wealth multiplier: how many times your invested amount grows
     const finalNominal = data[data.length - 1] || 0;

@@ -24,6 +24,12 @@ const financialProfileSchema = new mongoose.Schema({
   emergency_fund_months: { type: Number, default: 0 },
   risk_tolerance: { type: String, enum: ['Conservative', 'Moderate', 'Aggressive'], default: 'Moderate' },
   goal_type: { type: String, enum: ['retirement', 'house purchase', 'education', 'wealth-building'], default: 'wealth-building' },
+  totalCTC: { type: Number, default: function() { return this.annualIncome || (this.income ? this.income * 12 : 600000); } },
+  basicComponent: { type: Number, default: function() { return (this.totalCTC || (this.annualIncome || (this.income ? this.income * 12 : 600000))) * 0.5; } },
+  monthlyTakeHome: { type: Number, default: function() { return this.income || 50000; } },
+  soldPropertyAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
+  hasLumpSum: { type: Boolean, default: false },
+  lumpSumAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
   lastGoalCreatedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
 }, {

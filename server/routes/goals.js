@@ -173,8 +173,12 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
   const inflationRate = 0.05;
   const inflationAdjustedTarget = Math.round(target_amount * Math.pow(1 + inflationRate, yearsRemaining));
 
+  // Factor in user's lump sum capital if available
+  const lumpSumCapital = (profile && profile.hasLumpSum) ? (profile.lumpSumAmount || 0) : 0;
+  const totalUpfrontSavings = (current_savings || 0) + lumpSumCapital;
+
   // Compute required monthly SIP using reverse formula with POST-TAX rate against inflation-adjusted target
-  const rawSIP = reverseSIP(inflationAdjustedTarget, postTaxRate, yearsRemaining, current_savings || 0);
+  const rawSIP = reverseSIP(inflationAdjustedTarget, postTaxRate, yearsRemaining, totalUpfrontSavings);
   const requiredSIP = Math.max(500, Math.round(Number.isFinite(rawSIP) ? rawSIP : 5000));
 
   // Run Monte Carlo with the required SIP and POST-TAX rate against inflation-adjusted target
@@ -185,7 +189,7 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
     years: yearsRemaining,
     simulations: 5000,
     targetAmount: inflationAdjustedTarget,
-    currentSavings: current_savings || 0,
+    currentSavings: totalUpfrontSavings,
   });
 
   // Self-check invariants on Monte Carlo output

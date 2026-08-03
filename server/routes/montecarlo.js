@@ -50,6 +50,11 @@ router.post('/montecarlo', verifyJWT, validate(monteCarloSchema), asyncHandler(a
     const annualIncome = profile.annualIncome || (profile.income * 12);
     const regime = profile.taxRegime || 'new';
 
+    // If caller did not provide explicit current_savings, pull lump sum capital from user profile
+    if ((current_savings === undefined || current_savings === null || current_savings === 0) && profile.hasLumpSum && profile.lumpSumAmount > 0) {
+      req.body.current_savings = profile.lumpSumAmount;
+    }
+
     try {
       const postTaxResult = calculatePostTaxReturn(
         instrument,

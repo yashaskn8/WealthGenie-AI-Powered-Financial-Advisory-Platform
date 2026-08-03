@@ -129,9 +129,21 @@ function parseProfile(profile) {
   const horizon = Number(profile.investmentHorizon) || 10;
   const goals = profile.goal_type ? [profile.goal_type] : [];
   const taxRegime = profile.taxRegime || 'new';
-  const mr = getTaxSlab(annualIncome, taxRegime);
 
-  return { age, annualIncome, savings, risk, horizon, goals, taxRegime, mr };
+  const hasLumpSum = Boolean(profile.hasLumpSum);
+  const lumpSumAmount = hasLumpSum ? (Number(profile.lumpSumAmount) || 0) : 0;
+  const soldPropertyAmount = Number(profile.soldPropertyAmount) || 0;
+  const totalCTC = Number(profile.totalCTC) || annualIncome;
+  const basicComponent = Number(profile.basicComponent) || (totalCTC * 0.5);
+  const monthlyTakeHome = Number(profile.monthlyTakeHome) || (annualIncome / 12);
+
+  // Re-use backend tax slab calculator passing basicComponent for 80CCD(2) employer NPS accuracy
+  const mr = getTaxSlab(annualIncome, taxRegime, { basicSalary: basicComponent });
+
+  return {
+    age, annualIncome, savings, risk, horizon, goals, taxRegime, mr,
+    hasLumpSum, lumpSumAmount, soldPropertyAmount, totalCTC, basicComponent, monthlyTakeHome
+  };
 }
 
 /**
@@ -141,12 +153,13 @@ function parseProfile(profile) {
 function deriveWeights(p) {
   const clamp = (v) => Math.max(PIPELINE_CONFIG.WEIGHT_FLOOR, Math.min(PIPELINE_CONFIG.WEIGHT_CEIL, v));
 
-  // α — Return: long horizon + high risk → prioritize growth
+  // α — Return: long horizon + high risk + available lump sum → prioritize growth
   let alpha = 1.0;
   if (p.horizon >= 15) alpha += 0.5;
   if (p.horizon >= 20) alpha += 0.3;
   if (p.risk === 'aggressive' || p.risk === 'moderate-aggressive') alpha += 0.5;
   else if (p.risk === 'conservative') alpha -= 0.3;
+  if (p.hasLumpSum && p.lumpSumAmount > 0) alpha += 0.3;
 
   // β — Risk: older age + low risk → penalize risky instruments
   let beta = 1.0;
@@ -158,10 +171,11 @@ function deriveWeights(p) {
   // γ — Tax: high slab → penalize slab-taxed instruments
   let gamma = p.mr > 0 ? (p.mr / 0.312) * 1.5 : 0;
 
-  // δ — Liquidity
+  // δ — Liquidity: reduced liquidity stress if user has lump sum capital or property proceeds
   let delta = 0.8;
   const emergencyCover = p.annualIncome > 0 ? (p.savings * 12 / p.annualIncome) : 0;
   if (emergencyCover < 0.2) delta += 0.6;
+  if (p.hasLumpSum && p.lumpSumAmount > 0) delta = Math.max(0.5, delta - 0.2);
 
   // ε — Goal alignment
   let epsilon = p.goals.length > 0 ? 1.2 : 0.5;
@@ -307,6 +321,14 @@ function computeInstrumentScore(inv, p, w, confScores) {
   score += w.epsilon * goalBonus;
   score += w.zeta * horizonMatch;
   score -= w.eta * costPenalty;
+
+  // One-time lump sum suitability boost for instruments suited for lump-sum deployment
+  if (p.hasLumpSum && p.lumpSumAmount > 0) {
+    const LUMP_SUITABLE_TYPES = ['SGB', 'RBI_Bond', 'Gold', 'Index_MF', 'ELSS', 'Debt_MF', 'Equity_MF'];
+    if (LUMP_SUITABLE_TYPES.includes(backendType)) {
+      score += 8.0;
+    }
+  }
 
   // ML confidence boost: dynamically boost instruments whose backend type
   // was predicted with high confidence by the ML model

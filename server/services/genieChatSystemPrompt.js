@@ -11,7 +11,14 @@ export function buildSystemPrompt(user, profile, recommendation, marketData, goa
   const annualIncome = profile.annualIncome || (monthlyIncome * 12) || 0;
   const monthlySavings = profile.savings || 0;
   const investmentHorizon = profile.investmentHorizon || 15;
-  const taxResult = computeTax(annualIncome, profile.taxRegime || 'new');
+  const totalCTC = profile.totalCTC || annualIncome;
+  const basicComponent = profile.basicComponent || (totalCTC * 0.5);
+  const monthlyTakeHome = profile.monthlyTakeHome || monthlyIncome;
+  const soldPropertyAmount = profile.soldPropertyAmount || 0;
+  const hasLumpSum = Boolean(profile.hasLumpSum);
+  const lumpSumAmount = hasLumpSum ? (profile.lumpSumAmount || 0) : 0;
+
+  const taxResult = computeTax(annualIncome, profile.taxRegime || 'new', { basicSalary: basicComponent });
   
   // Dynamic FY calculation
   const now = new Date();
@@ -37,9 +44,14 @@ Today's date is ${new Date().toLocaleDateString('en-IN')}.
 # User Profile
 Name: ${user.name}
 Age: ${profile.age}
+Total CTC: ₹${totalCTC?.toLocaleString('en-IN')}/year
+Basic Salary Component: ₹${basicComponent?.toLocaleString('en-IN')}/year
+Monthly Take-Home: ₹${monthlyTakeHome?.toLocaleString('en-IN')}/month
 Monthly Income: ₹${monthlyIncome?.toLocaleString('en-IN')}/month (₹${annualIncome?.toLocaleString('en-IN')}/year)
 Monthly Savings: ₹${monthlySavings?.toLocaleString('en-IN')}/month
 Savings Rate: ${monthlyIncome > 0 ? ((monthlySavings / monthlyIncome) * 100).toFixed(1) : 0}%
+Sold Property Proceeds: ₹${soldPropertyAmount?.toLocaleString('en-IN')}
+Has Lump Sum to Invest: ${hasLumpSum ? `Yes (₹${lumpSumAmount?.toLocaleString('en-IN')})` : 'No'}
 Risk Category: ${profile.riskCategory} (Recommended Equity: ${profile.recommendedEquityAllocation || 'N/A'}%)
 Investment Horizon: ${investmentHorizon} years
 Tax Regime: ${profile.taxRegime}

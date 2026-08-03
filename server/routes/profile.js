@@ -44,26 +44,38 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
   const {
     monthly_income, age, monthly_savings, regime, investment_horizon,
     liquid_savings, existing_debt, dependents, emergency_fund_months,
-    risk_tolerance, goal_type
+    risk_tolerance, goal_type,
+    total_ctc, basic_component, monthly_take_home, sold_property_amount,
+    has_lump_sum, lump_sum_amount
   } = req.body;
 
   const annualIncome = monthly_income * 12;
   const taxRegime = regime || 'new';
 
-  // Compute tax
-  const taxResult = computeTax(annualIncome, taxRegime);
-  const marginalRate = getTaxSlab(annualIncome, taxRegime);
-  const taxComparison = compareTaxRegimes(annualIncome);
+  const safeTotalCTC = Number(total_ctc) || annualIncome;
+  const safeBasicComponent = Number(basic_component) || (safeTotalCTC * 0.5);
+  const safeMonthlyTakeHome = Number(monthly_take_home) || monthly_income;
+  const safeSoldPropertyAmount = Number(sold_property_amount) || 0;
+  const safeHasLumpSum = Boolean(has_lump_sum);
+  // Defensive zeroing: force lump sum to 0 if has_lump_sum flag is false
+  const safeLumpSumAmount = safeHasLumpSum ? (Number(lump_sum_amount) || 0) : 0;
 
-  // Compute risk profile (now uses 3-factor model: age + income + horizon, with savings penalty)
-  const riskProfile = getRiskProfile(age, annualIncome, investment_horizon, 0, dependents || 0, monthly_savings, existing_debt || 0);
+  // Compute tax with basicSalary passed to calculate 80CCD(2) employer-NPS deduction cap
+  const taxDeductions = { basicSalary: safeBasicComponent };
+  const taxResult = computeTax(annualIncome, taxRegime, taxDeductions);
+  const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions);
+  const taxComparison = compareTaxRegimes(annualIncome, taxDeductions);
 
-  // Investable amount = monthly savings (pre-validated to be < income)
+  // Compute risk profile incorporating available lump sum & property sale liquidity
+  const riskProfile = getRiskProfile(
+    age, annualIncome, investment_horizon, 0, dependents || 0,
+    monthly_savings, existing_debt || 0, safeLumpSumAmount, safeSoldPropertyAmount
+  );
+
+  // Investable amount separation: monthly vs one-time lump sum
   const investableAmount = monthly_savings;
 
   // Self-check invariant: riskScore must align with riskCategory
-  // These ranges MUST match the thresholds in riskProfiler.js getRiskProfile()
-  //   >=80 → Aggressive, >=60 → Mod-Agg, >=40 → Moderate, >=20 → Con-Mod, <20 → Conservative
   const SCORE_RANGES = {
     'Aggressive': [80, 100], 'Moderate-Aggressive': [60, 79],
     'Moderate': [40, 59], 'Conservative-Moderate': [20, 39], 'Conservative': [0, 19],
@@ -72,9 +84,7 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
   if (expectedRange && (riskProfile.riskScore < expectedRange[0] || riskProfile.riskScore > expectedRange[1])) {
     console.error(
       `[Profile INVARIANT VIOLATION] riskScore ${riskProfile.riskScore} does not match `
-      + `category '${riskProfile.category}' (expected ${expectedRange[0]}-${expectedRange[1]}). `
-      + `This indicates a drift between riskProfiler.js thresholds and profile.js SCORE_RANGES. `
-      + `Profile will still be saved, but risk alignment may be inconsistent.`
+      + `category '${riskProfile.category}' (expected ${expectedRange[0]}-${expectedRange[1]}).`
     );
   }
 
@@ -99,15 +109,19 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     dependents: dependents || 0,
     emergency_fund_months: emergency_fund_months || 0,
     risk_tolerance: risk_tolerance || 'Moderate',
-    goal_type: goal_type || 'wealth-building'
+    goal_type: goal_type || 'wealth-building',
+    totalCTC: safeTotalCTC,
+    basicComponent: safeBasicComponent,
+    monthlyTakeHome: safeMonthlyTakeHome,
+    soldPropertyAmount: safeSoldPropertyAmount,
+    hasLumpSum: safeHasLumpSum,
+    lumpSumAmount: safeLumpSumAmount,
   });
 
   // Invalidate ALL chatbot system prompt caches for this user
-  // so the AI picks up the latest financial numbers immediately
   try {
     const prefix = `chat:sysprompt_v3:${req.user.userId}:`;
     await delCache(prefix + profile._id);
-    // Also try to invalidate any previous profile's cached prompt
     const prevProfile = await FinancialProfile.findOne({
       userId: req.user.userId,
       _id: { $ne: profile._id },
@@ -129,6 +143,14 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
     annual_income: annualIncome,
     investable_amount: investableAmount,
+    investable_amount_monthly: monthly_savings,
+    investable_amount_onetime: safeLumpSumAmount,
+    total_ctc: safeTotalCTC,
+    basic_component: safeBasicComponent,
+    monthly_take_home: safeMonthlyTakeHome,
+    sold_property_amount: safeSoldPropertyAmount,
+    has_lump_sum: safeHasLumpSum,
+    lump_sum_amount: safeLumpSumAmount,
   });
 }));
 
@@ -156,8 +178,17 @@ router.put('/:profileId', verifyJWT, validate(profileSchema), asyncHandler(async
   const {
     monthly_income, age, monthly_savings, regime, investment_horizon,
     liquid_savings, existing_debt, dependents, emergency_fund_months,
-    risk_tolerance, goal_type
+    risk_tolerance, goal_type,
+    total_ctc, basic_component, monthly_take_home, sold_property_amount,
+    has_lump_sum, lump_sum_amount
   } = req.body;
+
+  const safeTotalCTC = Number(total_ctc) || (monthly_income * 12);
+  const safeBasicComponent = Number(basic_component) || (safeTotalCTC * 0.5);
+  const safeMonthlyTakeHome = Number(monthly_take_home) || monthly_income;
+  const safeSoldPropertyAmount = Number(sold_property_amount) || 0;
+  const safeHasLumpSum = Boolean(has_lump_sum);
+  const safeLumpSumAmount = safeHasLumpSum ? (Number(lump_sum_amount) || 0) : 0;
 
   // Apply edits
   profile.income = monthly_income;
@@ -172,11 +203,21 @@ router.put('/:profileId', verifyJWT, validate(profileSchema), asyncHandler(async
   profile.emergency_fund_months = emergency_fund_months || 0;
   profile.risk_tolerance = risk_tolerance || 'Moderate';
   profile.goal_type = goal_type || 'wealth-building';
+  profile.totalCTC = safeTotalCTC;
+  profile.basicComponent = safeBasicComponent;
+  profile.monthlyTakeHome = safeMonthlyTakeHome;
+  profile.soldPropertyAmount = safeSoldPropertyAmount;
+  profile.hasLumpSum = safeHasLumpSum;
+  profile.lumpSumAmount = safeLumpSumAmount;
 
   // Recompute tax & risk profile
-  const taxResult = computeTax(profile.annualIncome, profile.taxRegime);
-  const marginalRate = getTaxSlab(profile.annualIncome, profile.taxRegime);
-  const riskProfile = getRiskProfile(age, profile.annualIncome, investment_horizon, 0, profile.dependents || 0, monthly_savings, profile.existing_debt || 0);
+  const taxDeductions = { basicSalary: safeBasicComponent };
+  const taxResult = computeTax(profile.annualIncome, profile.taxRegime, taxDeductions);
+  const marginalRate = getTaxSlab(profile.annualIncome, profile.taxRegime, taxDeductions);
+  const riskProfile = getRiskProfile(
+    age, profile.annualIncome, investment_horizon, 0, profile.dependents || 0,
+    monthly_savings, profile.existing_debt || 0, safeLumpSumAmount, safeSoldPropertyAmount
+  );
 
   profile.taxSlab = marginalRate;
   profile.effectiveTaxRate = taxResult.effectiveRate;

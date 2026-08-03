@@ -72,7 +72,8 @@ router.post('/', verifyJWT, validate(projectionSchema), asyncHandler(async (req,
   const postTaxRates = {};
   instList.forEach(i => { postTaxRates[i.name] = i.postTaxRate; });
 
-  const projections = generateProjections(investAmount, instList, postTaxRates, projYears);
+  const initialLumpSum = (profile.hasLumpSum && profile.lumpSumAmount > 0) ? profile.lumpSumAmount : 0;
+  const projections = generateProjections(investAmount, instList, postTaxRates, projYears, 0.05, 0.10, initialLumpSum);
 
   res.json(projections);
 }));

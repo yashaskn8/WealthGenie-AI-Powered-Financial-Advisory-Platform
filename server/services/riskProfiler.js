@@ -126,7 +126,9 @@ export function getRiskProfile(
   experienceYears = 0,
   dependents = 0,
   monthlySavings = null,
-  monthlyDebtPayment = 0
+  monthlyDebtPayment = 0,
+  lumpSumAmount = 0,
+  soldPropertyAmount = 0
 ) {
   // Input guards
   const safeAge = Math.max(18, Math.min(80, Number(age) || 30));
@@ -162,7 +164,15 @@ export function getRiskProfile(
     }
   }
 
-  const rawScore = scoreAge + scoreIncome + scoreHorizon + scoreExperience - penaltyDependents - penaltySavings - penaltyDebt;
+  // Liquidity capacity bonus from lump sum or property sale proceeds (capped at 8 points max)
+  const totalLumpLiquidity = Math.max(0, Number(lumpSumAmount) || 0) + Math.max(0, Number(soldPropertyAmount) || 0);
+  let bonusLiquidity = 0;
+  if (totalLumpLiquidity > 0) {
+    const liquidityRatio = safeIncome > 0 ? totalLumpLiquidity / safeIncome : 1.0;
+    bonusLiquidity = Math.min(8, Math.round(Math.log10(1 + liquidityRatio * 3) * 5));
+  }
+
+  const rawScore = scoreAge + scoreIncome + scoreHorizon + scoreExperience + bonusLiquidity - penaltyDependents - penaltySavings - penaltyDebt;
   const score = Math.max(0, Math.min(100, rawScore));
 
   let profileKey;

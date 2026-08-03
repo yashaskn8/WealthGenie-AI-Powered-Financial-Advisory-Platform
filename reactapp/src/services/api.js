@@ -98,7 +98,9 @@ export async function login(email, password) {
 export async function buildProfile(
   monthlyIncome, age, monthlySavings, regime = 'new', investmentHorizon = 15,
   liquidSavings = 0, existingDebt = 0, dependents = 0, emergencyFundMonths = 0,
-  riskTolerance = 'Moderate', goalType = 'wealth-building'
+  riskTolerance = 'Moderate', goalType = 'wealth-building',
+  totalCTC = 0, basicComponent = 0, monthlyTakeHome = 0,
+  soldPropertyAmount = 0, hasLumpSum = false, lumpSumAmount = 0
 ) {
   return request('POST', '/profile/build', {
     monthly_income: monthlyIncome,
@@ -111,7 +113,13 @@ export async function buildProfile(
     dependents,
     emergency_fund_months: emergencyFundMonths,
     risk_tolerance: riskTolerance,
-    goal_type: goalType
+    goal_type: goalType,
+    total_ctc: totalCTC || (monthlyIncome * 12),
+    basic_component: basicComponent || ((totalCTC || (monthlyIncome * 12)) * 0.5),
+    monthly_take_home: monthlyTakeHome || monthlyIncome,
+    sold_property_amount: soldPropertyAmount,
+    has_lump_sum: hasLumpSum,
+    lump_sum_amount: hasLumpSum ? lumpSumAmount : 0
   });
 }
 

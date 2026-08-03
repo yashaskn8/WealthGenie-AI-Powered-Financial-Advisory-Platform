@@ -170,21 +170,16 @@ class ToolRegistry {
       version: '2.0.0',
       schema: Joi.object({
         income: Joi.number().min(0).max(1000000000).required(),
+        basicSalary: Joi.number().min(0).max(1000000000).optional(),
         regime: Joi.string().valid('new', 'old').default('new'),
         section80C: Joi.number().min(0).max(150000).default(0),
         nps80CCD1B: Joi.number().min(0).max(50000).default(0),
         section80D: Joi.number().min(0).max(100000).default(0),
         hra: Joi.number().min(0).max(100000000).default(0),
       }),
-      executor: async ({ income, regime, section80C, nps80CCD1B, section80D, hra }) => {
-        const taxResult = computeTax({
-          income,
-          regime,
-          section80C,
-          nps80CCD1B,
-          section80D,
-          hra,
-        });
+      executor: async ({ income, basicSalary, regime, section80C, nps80CCD1B, section80D, hra }) => {
+        const deductions = { basicSalary, section80C, nps80CCD1B, section80D, hra };
+        const taxResult = computeTax(income, regime, deductions);
         return taxResult;
       },
     });

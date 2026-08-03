@@ -20,6 +20,11 @@ export class ExplainabilityEngine {
     if (profile.age) affectedAttributes.push(`Investor Age (${profile.age} yrs)`);
     if (profile.riskCategory) affectedAttributes.push(`Risk Profile (${profile.riskCategory})`);
     if (profile.taxRegime) affectedAttributes.push(`Tax Regime (${profile.taxRegime})`);
+    if (profile.totalCTC) affectedAttributes.push(`Total CTC (₹${profile.totalCTC.toLocaleString('en-IN')})`);
+    if (profile.basicComponent) affectedAttributes.push(`Basic Component (₹${profile.basicComponent.toLocaleString('en-IN')})`);
+    if (profile.monthlyTakeHome) affectedAttributes.push(`Monthly Take-Home (₹${profile.monthlyTakeHome.toLocaleString('en-IN')})`);
+    if (profile.soldPropertyAmount) affectedAttributes.push(`Property Sale Proceeds (₹${profile.soldPropertyAmount.toLocaleString('en-IN')})`);
+    if (profile.hasLumpSum && profile.lumpSumAmount) affectedAttributes.push(`Lump Sum Deployment (₹${profile.lumpSumAmount.toLocaleString('en-IN')})`);
 
     toolResults.forEach(res => {
       if (res.tool === 'sip_projection') {

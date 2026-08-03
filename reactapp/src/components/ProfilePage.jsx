@@ -33,7 +33,15 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
   const [taxRegime, setTaxRegime] = useState(savedProfile?.taxRegime || 'new');
   const [profileId, setProfileId] = useState(savedProfile?.profileId || null);
 
-  // New fields (hidden/safe default values for backward compatibility):
+  // New fields (CTC, Basic, Take-Home, Property Sale, Lump Sum):
+  const [totalCTC, setTotalCTC] = useState(savedProfile?.total_ctc !== undefined ? savedProfile.total_ctc : (savedProfile?.monthly_income ? savedProfile.monthly_income * 12 : 780000));
+  const [basicComponent, setBasicComponent] = useState(savedProfile?.basic_component !== undefined ? savedProfile.basic_component : (savedProfile?.total_ctc ? savedProfile.total_ctc * 0.5 : 390000));
+  const [monthlyTakeHome, setMonthlyTakeHome] = useState(savedProfile?.monthly_take_home !== undefined ? savedProfile.monthly_take_home : (savedProfile?.monthly_income || 65000));
+  const [soldPropertyAmount, setSoldPropertyAmount] = useState(savedProfile?.sold_property_amount !== undefined ? savedProfile.sold_property_amount : 0);
+  const [hasLumpSum, setHasLumpSum] = useState(savedProfile?.has_lump_sum !== undefined ? savedProfile.has_lump_sum : false);
+  const [lumpSumAmount, setLumpSumAmount] = useState(savedProfile?.lump_sum_amount !== undefined ? savedProfile.lump_sum_amount : 0);
+
+  // New fields (risk/goal metadata):
   const [liquidSavings, setLiquidSavings] = useState(savedProfile?.liquid_savings !== undefined ? savedProfile.liquid_savings : 0);
   const [existingDebt, setExistingDebt] = useState(savedProfile?.existing_debt !== undefined ? savedProfile.existing_debt : 0);
   const [dependents, setDependents] = useState(savedProfile?.dependents !== undefined ? savedProfile.dependents : 0);
@@ -61,10 +69,17 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
     dependents: Number(dependents),
     emergency_fund_months: Number(emergencyFundMonths),
     risk_tolerance: riskTolerance,
-    goal_type: goalType
+    goal_type: goalType,
+    total_ctc: Number(totalCTC),
+    basic_component: Number(basicComponent),
+    monthly_take_home: Number(monthlyTakeHome),
+    sold_property_amount: Number(soldPropertyAmount),
+    has_lump_sum: Boolean(hasLumpSum),
+    lump_sum_amount: hasLumpSum ? Number(lumpSumAmount) : 0,
   }), [
     age, monthlyIncome, monthlySavings, riskAppetite, investmentGoals, horizon, taxRegime, profileId,
-    liquidSavings, existingDebt, dependents, emergencyFundMonths, riskTolerance, goalType
+    liquidSavings, existingDebt, dependents, emergencyFundMonths, riskTolerance, goalType,
+    totalCTC, basicComponent, monthlyTakeHome, soldPropertyAmount, hasLumpSum, lumpSumAmount
   ]);
 
   const handleSaveProfile = async (e) => {
@@ -78,6 +93,11 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
     const numDebt = Number(existingDebt);
     const numDeps = Number(dependents);
     const numEf = Number(emergencyFundMonths);
+    const numCTC = Number(totalCTC);
+    const numBasic = Number(basicComponent);
+    const numTakeHome = Number(monthlyTakeHome);
+    const numPropSale = Number(soldPropertyAmount);
+    const numLumpSum = Number(lumpSumAmount);
 
     if (!numAge || isNaN(numAge) || numAge < 18 || numAge > 80) {
       alert('Please enter a valid age between 18 and 80.');
@@ -95,31 +115,36 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
       alert('Monthly savings must be less than monthly income.');
       return;
     }
-    if (isNaN(numLiquid) || numLiquid < 0) {
-      alert('Liquid savings must be at least 0.');
+    if (!numCTC || isNaN(numCTC) || numCTC < 100000 || numCTC > 1000000000) {
+      alert('Total CTC must be between ₹1,00,000 and ₹100 Crores.');
       return;
     }
-    if (isNaN(numDebt) || numDebt < 0 || numDebt > 100) {
-      alert('Debt EMI burden percentage must be between 0 and 100.');
+    if (!numBasic || isNaN(numBasic) || numBasic < 20000 || numBasic > numCTC * 0.6) {
+      alert('Basic salary component must be between ₹20,000 and 60% of Total CTC.');
       return;
     }
-    if (isNaN(numDeps) || numDeps < 0) {
-      alert('Dependents count must be at least 0.');
+    if (numBasic < numCTC * 0.2) {
+      alert('Basic salary component must be at least 20% of Total CTC.');
       return;
     }
-    if (isNaN(numEf) || numEf < 0) {
-      alert('Emergency fund months must be at least 0.');
+    if (!numTakeHome || isNaN(numTakeHome) || (numTakeHome * 12 > numCTC)) {
+      alert('Annualized monthly take-home salary cannot exceed Total CTC.');
       return;
     }
-    if (investmentGoals.length === 0) {
-      alert('Please select at least one investment goal.');
+    if (isNaN(numPropSale) || numPropSale < 0) {
+      alert('Sold property proceeds must be a positive number.');
+      return;
+    }
+    if (hasLumpSum && (!numLumpSum || numLumpSum <= 0)) {
+      alert('Please enter a lump sum investment amount greater than 0 when "Has Lump Sum" is enabled.');
       return;
     }
 
     try {
       const response = await api.buildProfile(
         numIncome, numAge, numSavings, taxRegime, horizon,
-        numLiquid, numDebt, numDeps, numEf, riskTolerance, goalType
+        numLiquid, numDebt, numDeps, numEf, riskTolerance, goalType,
+        numCTC, numBasic, numTakeHome, numPropSale, hasLumpSum, hasLumpSum ? numLumpSum : 0
       );
       // Persist profile to localStorage, scoped to the current user
       const currentUser = api.getUserInfo();
@@ -150,6 +175,12 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
     if (updatedProfile.emergency_fund_months !== undefined) setEmergencyFundMonths(updatedProfile.emergency_fund_months);
     if (updatedProfile.risk_tolerance !== undefined) setRiskTolerance(updatedProfile.risk_tolerance);
     if (updatedProfile.goal_type !== undefined) setGoalType(updatedProfile.goal_type);
+    if (updatedProfile.total_ctc !== undefined) setTotalCTC(updatedProfile.total_ctc);
+    if (updatedProfile.basic_component !== undefined) setBasicComponent(updatedProfile.basic_component);
+    if (updatedProfile.monthly_take_home !== undefined) setMonthlyTakeHome(updatedProfile.monthly_take_home);
+    if (updatedProfile.sold_property_amount !== undefined) setSoldPropertyAmount(updatedProfile.sold_property_amount);
+    if (updatedProfile.has_lump_sum !== undefined) setHasLumpSum(updatedProfile.has_lump_sum);
+    if (updatedProfile.lump_sum_amount !== undefined) setLumpSumAmount(updatedProfile.lump_sum_amount);
 
     const nextProfileId = updatedProfile.profileId || profileId || null;
     setProfileId(nextProfileId);
@@ -174,48 +205,95 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
         </h1>
 
         <div className="profile-form-card">
+          {/* Profile Summary Quick Badge */}
+          <div style={{
+            background: 'rgba(30, 41, 59, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '10px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+            gap: '0.75rem',
+            fontSize: '0.85rem'
+          }}>
+            <div>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Total CTC</span>
+              <strong style={{ color: '#38bdf8' }}>₹{Number(totalCTC || 0).toLocaleString('en-IN')}/yr</strong>
+            </div>
+            <div>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Basic Salary</span>
+              <strong style={{ color: '#f1f5f9' }}>₹{Number(basicComponent || 0).toLocaleString('en-IN')}/yr</strong>
+            </div>
+            <div>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Take-Home</span>
+              <strong style={{ color: '#4ade80' }}>₹{Number(monthlyTakeHome || 0).toLocaleString('en-IN')}/mo</strong>
+            </div>
+            <div>
+              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Lump Sum Deployment</span>
+              <strong style={{ color: hasLumpSum ? '#fbbf24' : '#94a3b8' }}>
+                {hasLumpSum ? `₹${Number(lumpSumAmount || 0).toLocaleString('en-IN')}` : 'None'}
+              </strong>
+            </div>
+          </div>
+
           <form onSubmit={handleSaveProfile}>
-            {/* Row 1: Age & Monthly Income */}
+            {/* CTC & Salary Structure */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label>Age</label>
-                <input 
-                  type="number" 
-                  placeholder="32" 
-                  value={age || ''} 
-                  onChange={e => {
-                    let val = e.target.value.replace(/^0+/, '');
-                    setAge(val === '' ? '' : Number(val));
-                  }} 
-                  min="18" 
-                  max="80" 
-                />
-              </div>
-              <div className="pf-field">
-                <label>Monthly Income (₹)</label>
+                <label>Total CTC (Annual ₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
                     type="number" 
-                    placeholder="65000" 
-                    value={monthlyIncome || ''} 
+                    placeholder="780000" 
+                    value={totalCTC || ''} 
                     onChange={e => {
                       let val = e.target.value.replace(/^0+/, '');
-                      if (val === '') {
-                        setMonthlyIncome('');
-                      } else {
-                        let num = Number(val);
-                        if (num > 100000000) num = 100000000;
-                        setMonthlyIncome(num);
-                      }
+                      let num = val === '' ? '' : Number(val);
+                      setTotalCTC(num);
+                      if (num && !basicComponent) setBasicComponent(Math.round(num * 0.5));
+                      if (num && !monthlyTakeHome) setMonthlyTakeHome(Math.round(num / 12));
+                    }} 
+                  />
+                </div>
+              </div>
+              <div className="pf-field">
+                <label>Basic Salary Component (Annual ₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input 
+                    type="number" 
+                    placeholder="390000" 
+                    value={basicComponent || ''} 
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      setBasicComponent(val === '' ? '' : Number(val));
                     }} 
                   />
                 </div>
               </div>
             </div>
 
-            {/* Row 2: Monthly Savings & Risk Appetite */}
+            {/* Income & Take Home */}
             <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Monthly Take-Home (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input 
+                    type="number" 
+                    placeholder="65000" 
+                    value={monthlyTakeHome || ''} 
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      let num = val === '' ? '' : Number(val);
+                      setMonthlyTakeHome(num);
+                      if (num) setMonthlyIncome(num);
+                    }} 
+                  />
+                </div>
+              </div>
               <div className="pf-field">
                 <label>Monthly Savings Capacity (₹)</label>
                 <div className="pf-input-prefix">
@@ -237,6 +315,24 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Age & Risk Appetite */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Age</label>
+                <input 
+                  type="number" 
+                  placeholder="32" 
+                  value={age || ''} 
+                  onChange={e => {
+                    let val = e.target.value.replace(/^0+/, '');
+                    setAge(val === '' ? '' : Number(val));
+                  }} 
+                  min="18" 
+                  max="80" 
+                />
+              </div>
               <div className="pf-field">
                 <label>Risk Appetite</label>
                 <div className="risk-toggle-group">
@@ -253,6 +349,85 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
                 </div>
               </div>
             </div>
+
+            {/* One-Time Capital & Liquidity */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Sold Property Proceeds (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input 
+                    type="number" 
+                    placeholder="2000000" 
+                    value={soldPropertyAmount || ''} 
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      setSoldPropertyAmount(val === '' ? 0 : Number(val));
+                    }} 
+                  />
+                </div>
+              </div>
+              <div className="pf-field">
+                <label>Has Lump Sum to Invest?</label>
+                <div className="risk-toggle-group">
+                  <button
+                    type="button"
+                    className={`risk-toggle-btn ${!hasLumpSum ? 'active' : ''}`}
+                    onClick={() => {
+                      setHasLumpSum(false);
+                      setLumpSumAmount(0);
+                    }}
+                  >
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    className={`risk-toggle-btn ${hasLumpSum ? 'active' : ''}`}
+                    onClick={() => setHasLumpSum(true)}
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Conditional Lump Sum Amount & Action button */}
+            {hasLumpSum && (
+              <div className="pf-field pf-field-full" style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <label>Lump Sum Investment Amount (₹)</label>
+                  {Number(soldPropertyAmount) > 0 && (
+                    <button
+                      type="button"
+                      style={{
+                        background: 'rgba(59, 130, 246, 0.15)',
+                        border: '1px solid rgba(59, 130, 246, 0.4)',
+                        color: '#60a5fa',
+                        padding: '0.25rem 0.6rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setLumpSumAmount(Number(soldPropertyAmount))}
+                    >
+                      Use my property sale amount (₹{Number(soldPropertyAmount).toLocaleString('en-IN')})
+                    </button>
+                  )}
+                </div>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input 
+                    type="number" 
+                    placeholder="2000000" 
+                    value={lumpSumAmount || ''} 
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      setLumpSumAmount(val === '' ? '' : Number(val));
+                    }} 
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Row 3: Goal Checkboxes */}
             <div className="pf-field pf-field-full">

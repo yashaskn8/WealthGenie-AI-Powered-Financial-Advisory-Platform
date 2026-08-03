@@ -470,7 +470,7 @@ components:
   schemas:
     ProfileRequest:
       type: object
-      required: [age, monthly_income, monthly_savings, risk_tolerance]
+      required: [age, monthly_income, monthly_savings, risk_tolerance, total_ctc, basic_component, monthly_take_home]
       properties:
         age:
           type: integer
@@ -479,13 +479,41 @@ components:
           example: 30
         monthly_income:
           type: number
-          minimum: 10000
+          minimum: 1000
           maximum: 100000000
           example: 150000
         monthly_savings:
           type: number
-          minimum: 0
+          minimum: 500
           example: 50000
+        total_ctc:
+          type: number
+          minimum: 100000
+          maximum: 1000000000
+          example: 2400000
+        basic_component:
+          type: number
+          minimum: 20000
+          maximum: 1000000000
+          example: 1200000
+        monthly_take_home:
+          type: number
+          minimum: 1000
+          example: 140000
+        sold_property_amount:
+          type: number
+          minimum: 0
+          maximum: 10000000000
+          example: 2000000
+        has_lump_sum:
+          type: boolean
+          default: false
+          example: true
+        lump_sum_amount:
+          type: number
+          minimum: 0
+          maximum: 10000000000
+          example: 2000000
         risk_tolerance:
           type: string
           enum: [Conservative, Moderate, Aggressive]

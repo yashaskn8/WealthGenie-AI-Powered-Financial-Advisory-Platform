@@ -74,10 +74,32 @@ export const profileSchema = Joi.object({
     .messages({ 'number.min': 'Emergency fund months must be at least 0' }),
   risk_tolerance: Joi.string().valid('Conservative', 'Moderate', 'Aggressive').required(),
   goal_type: Joi.string().valid('retirement', 'house purchase', 'education', 'wealth-building').required(),
+  total_ctc: Joi.number().min(100000).max(1000000000).optional()
+    .messages({ 'number.min': 'Total CTC must be at least ₹1,00,000', 'number.max': 'Total CTC cannot exceed ₹100 Crores' }),
+  basic_component: Joi.number().min(20000).max(1000000000).optional()
+    .messages({ 'number.min': 'Basic salary component must be at least ₹20,000' }),
+  monthly_take_home: Joi.number().min(1000).optional()
+    .messages({ 'number.min': 'Monthly take-home salary must be at least ₹1,000' }),
+  sold_property_amount: Joi.number().min(0).max(10000000000).default(0),
+  has_lump_sum: Joi.boolean().default(false).optional(),
+  lump_sum_amount: Joi.when('has_lump_sum', {
+    is: true,
+    then: Joi.number().min(1).required().messages({ 'number.min': 'Lump sum amount must be greater than 0 when has_lump_sum is true' }),
+    otherwise: Joi.number().min(0).optional().default(0)
+  }),
   version: Joi.number().integer().min(0).optional(),
 }).custom((value, helpers) => {
   if (value.monthly_savings >= value.monthly_income) {
     return helpers.error('any.custom', { message: 'Monthly savings (₹' + value.monthly_savings.toLocaleString('en-IN') + ') must be less than monthly income (₹' + value.monthly_income.toLocaleString('en-IN') + ')' });
+  }
+  if (value.monthly_take_home && value.total_ctc && (value.monthly_take_home * 12 > value.total_ctc)) {
+    return helpers.error('any.custom', { message: 'Annualized monthly take-home salary (₹' + (value.monthly_take_home * 12).toLocaleString('en-IN') + ') cannot exceed Total CTC (₹' + value.total_ctc.toLocaleString('en-IN') + ')' });
+  }
+  if (value.basic_component && value.total_ctc && (value.basic_component > value.total_ctc * 0.6)) {
+    return helpers.error('any.custom', { message: 'Basic salary component (₹' + value.basic_component.toLocaleString('en-IN') + ') cannot exceed 60% of Total CTC (₹' + value.total_ctc.toLocaleString('en-IN') + ')' });
+  }
+  if (value.basic_component && value.total_ctc && (value.basic_component < value.total_ctc * 0.2)) {
+    return helpers.error('any.custom', { message: 'Basic salary component (₹' + value.basic_component.toLocaleString('en-IN') + ') must be at least 20% of Total CTC (₹' + value.total_ctc.toLocaleString('en-IN') + ')' });
   }
   return value;
 });
