@@ -560,37 +560,49 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                 </div>
               </div>
 
-              {/* Middle Group: Sleek Horizontal Micro Metric Pills */}
+              {/* Middle Group: Sleek Micro Metric Chips with Lucide Icons */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, justifyContent: 'center', zIndex: 1 }}>
+                {/* Age */}
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                  background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.09)',
+                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                 }}>
+                  <Calendar size={13} color="#94a3b8" />
                   <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Age</span>
                   <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f1f5f9' }}>{userProfile?.age || 35}</span>
                 </div>
 
+                {/* Income */}
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                  background: 'rgba(56, 189, 248, 0.06)', border: '1px solid rgba(56, 189, 248, 0.18)',
+                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: '0 2px 8px rgba(56, 189, 248, 0.08)'
                 }}>
-                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Income</span>
+                  <Wallet size={13} color="#38bdf8" />
+                  <span style={{ fontSize: '0.6rem', color: '#38bdf8', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Income</span>
                   <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8' }}>₹{annualIncomeLakhs}L/yr</span>
                 </div>
 
+                {/* Savings */}
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                  background: 'rgba(34, 197, 94, 0.06)', border: '1px solid rgba(34, 197, 94, 0.18)',
+                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.08)'
                 }}>
-                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Savings</span>
+                  <PiggyBank size={13} color="#4ade80" />
+                  <span style={{ fontSize: '0.6rem', color: '#4ade80', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Savings</span>
                   <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#4ade80' }}>₹{monthlySavings.toLocaleString()} <span style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 700 }}>({savingsRate}%)</span></span>
                 </div>
 
+                {/* Horizon */}
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                  background: 'rgba(139, 92, 246, 0.06)', border: '1px solid rgba(139, 92, 246, 0.18)',
+                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: '0 2px 8px rgba(139, 92, 246, 0.08)'
                 }}>
-                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Horizon</span>
+                  <Clock size={13} color="#818cf8" />
+                  <span style={{ fontSize: '0.6rem', color: '#818cf8', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Horizon</span>
                   <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#818cf8' }}>{horizon} Yrs</span>
                 </div>
               </div>
