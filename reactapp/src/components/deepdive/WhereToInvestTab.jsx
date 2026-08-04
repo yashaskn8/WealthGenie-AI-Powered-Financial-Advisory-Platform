@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Shield, Star, Info, Wallet, Zap, History as HistoryIcon, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Building2, Shield, Star, Info, Wallet, Zap, History as HistoryIcon, TrendingUp, AlertTriangle, Globe, Activity } from 'lucide-react';
 import WHERE_TO_INVEST from '../../whereToInvest';
 import { generateWTI, rankWhereToInvest, shouldRecommendETF } from '../../utils/wtiGenerator';
 import SebiDisclaimer from '../SebiDisclaimer';
@@ -13,12 +13,41 @@ const RISK_LEVELS = [
   { label: 'Very High', color: '#dc2626', desc: 'Maximum volatility. 40%+ drawdowns possible. Only for 10+ year aggressive investors.' },
 ];
 
+// Macro Regime Mapping for Active Market Events (War, Covid, Crash, Inflation, Rate Cut)
+const MACRO_REGIME_CONFIGS = {
+  geopolitical_conflict: {
+    title: "Active Macro Regime: Geopolitical Conflict & Supply Shock (War Status)",
+    badge: "Tactical Shift: Overweight Defence, Energy & Gold (+15%)",
+    color: "#eab308",
+    matchingIds: ['defence_sector_mf', 'mfg_sector_mf', 'gold_etf', 'sgb', 'rbi_bonds'],
+    description: "During geopolitical conflicts and supply chain shocks (e.g. Russia-Ukraine / Middle East conflicts), domestic defence equipment manufacturers (HAL, BEL), upstream oil/energy producers, and physical Gold/SGB historically outperform while trade-dependent sectors experience margin pressure.",
+    disclaimer: "Historical pattern: Tactical +15% tilt to Defence/Gold hedges safe-haven volatility. (Non-executing advisory simulation)."
+  },
+  pandemic_health_crisis: {
+    title: "Active Macro Regime: Health Emergency & Mobility Restriction (Pandemic Status)",
+    badge: "Defensive Shift: Overweight Pharma & Digital IT (+20%)",
+    color: "#a855f7",
+    matchingIds: ['pharma_sector_mf', 'it_sector_mf', 'elss'],
+    description: "During global health emergencies and lockdown disruptions (e.g. COVID-19 pandemic), active pharmaceutical ingredient (API) exporters, diagnostic chains, and enterprise digital IT services experience surge demand while physical mobility sectors dip.",
+    disclaimer: "Historical pattern: Healthcare/Pharma and Digital IT generate resilient cash flows during mobility shocks."
+  },
+  broad_market_crash: {
+    title: "Active Macro Regime: Broad Market Drawdown (>15% Drop)",
+    badge: "Crash Defense: Overweight Blue-Chips & Liquid Funds (+25%)",
+    color: "#ef4444",
+    matchingIds: ['liquid_mf', 'bluechip_stocks', 'large_cap_stocks', 'fd'],
+    description: "During systemic market crashes and liquidity contractions, zero-debt blue-chips with high cash reserves preserve capital while Liquid Funds park dry powder to rebalance at generational bottom valuations.",
+    disclaimer: "Historical pattern: Blue-chip capital preservation allows dry powder deployment during market crashes."
+  }
+};
+
 const WhereToInvestTab = ({ inv, userProfile }) => {
   const wtiData = WHERE_TO_INVEST[inv?.id] || generateWTI(inv);
   const subCategoryMap = wtiData?.sectors || wtiData?.subCategories || null;
   const subKeys = subCategoryMap ? Object.keys(subCategoryMap) : [];
 
   const [activeSubTab, setActiveSubTab] = useState(subKeys[0] || null);
+  const [regimeApplied, setRegimeApplied] = useState(false);
 
   if (!wtiData) return (
     <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -43,9 +72,73 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
   const isTop5 = products.length >= 5;
   const headerLabel = isTop5 ? 'Execution Pathway & Top 5 Recommendations' : `Execution Pathway (${products.length} Recommended Option${products.length > 1 ? 's' : ''})`;
 
+  // Identify active macro regime banner for current instrument
+  const activeRegimeKey = Object.keys(MACRO_REGIME_CONFIGS).find(key => 
+    MACRO_REGIME_CONFIGS[key].matchingIds.includes(inv?.id)
+  );
+  const activeRegime = activeRegimeKey ? MACRO_REGIME_CONFIGS[activeRegimeKey] : null;
+
   return (
     <div className="tab-fade-in">
       <div className="ddm-section-header">{headerLabel}</div>
+
+      {/* Macro Market Regime & Crash Rotation Banner */}
+      {activeRegime && (
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: `1px solid ${activeRegime.color}`,
+          borderRadius: '12px',
+          padding: '14px 18px',
+          marginBottom: '1.25rem',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Globe size={18} style={{ color: activeRegime.color }} />
+              <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f8fafc' }}>{activeRegime.title}</span>
+            </div>
+            <span style={{
+              fontSize: '0.72rem',
+              fontWeight: '700',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.08)',
+              color: activeRegime.color,
+              border: `1px solid ${activeRegime.color}`
+            }}>
+              {activeRegime.badge}
+            </span>
+          </div>
+          <p style={{ fontSize: '0.82rem', lineHeight: '1.5', color: '#cbd5e1', margin: '0 0 10px 0' }}>
+            {activeRegime.description}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: '#94a3b8' }}>
+              {activeRegime.disclaimer}
+            </span>
+            <button
+              onClick={() => setRegimeApplied(!regimeApplied)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '6px',
+                border: 'none',
+                background: regimeApplied ? '#22c55e' : activeRegime.color,
+                color: '#020617',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <Activity size={14} />
+              {regimeApplied ? 'Regime Tilt Applied ✓' : 'Simulate Portfolio Auto-Adjustment'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {wtiData.note && (
         <div className="wti-note-banner">

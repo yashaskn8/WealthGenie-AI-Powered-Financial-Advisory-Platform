@@ -375,12 +375,202 @@ const WHERE_TO_INVEST = {
     },
     products: [
       { name: "Nippon India Nifty BeES", provider: "Nippon India AMC", rate: "~11.2% (5Y)", highlight: "Ticker: NIFTYBEES. Gold standard for Nifty 50 passive index tracking.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹260)", badge: "Most Liquid" },
-      { name: "Nifty Bank ETF (BANKBEES)", provider: "Nippon India AMC", rate: "~12.8% (5Y)", highlight: "Ticker: BANKBEES. Direct exposure to top 12 Indian commercial banks.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹510)", badge: "Sector Pick" },
       { name: "Nippon India Gold BeES", provider: "Nippon India AMC", rate: "~25.9% (5Y)", highlight: "Ticker: GOLDBEES. 100% physical gold backed by LBMA vaults.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Safe Haven" },
       { name: "Motilal Oswal Nifty India Defence Index Fund", provider: "Motilal Oswal AMC", rate: "~64.2% (1Y)", highlight: "Official AMC Scheme tracking Defence manufacturing leaders.", platform: "Motilal Oswal / Broker", minInvestment: "1 unit (~₹25)" }
+    ]
+  },
+
+  // ═══════════════════ REITS & INVITS ═══════════════════
+  reit: {
+    title: "Best Indian Real Estate Investment Trusts (REITs) & InvITs",
+    riskLevel: 3,
+    note: "SEBI mandated: REITs & InvITs must distribute 90%+ of net cash flows as quarterly dividends/interest. Taxed based on dividend vs interest vs capital repayment split.",
+    howToStart: "Buy units on NSE/BSE via Zerodha, Groww, or Angel One during market hours.",
+    subCategories: {
+      office_reits: [
+        { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Distribution Yield)", highlight: "India's largest office REIT with 45M+ sq ft grade-A office space in Bengaluru, Mumbai, Pune, and NCR.", platform: "Zerodha / Groww / Angel One", minInvestment: "1 unit (~₹360)", badge: "Largest REIT" },
+        { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Distribution Yield)", highlight: "Prime commercial office portfolio across Mumbai Region, Hyderabad, Pune, and Chennai.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹350)", badge: "High Occupancy" },
+        { name: "Brookfield India Real Estate Trust", provider: "NSE: BIRET", rate: "~8.8% (Distribution Yield)", highlight: "Institutional office park portfolio across Gurugram, Noida, Mumbai, and Bengaluru.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹280)", badge: "Highest Yield" }
+      ],
+      retail_reits: [
+        { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Distribution Yield)", highlight: "India's 1st retail mall REIT owning 17 premium shopping malls across 14 major cities.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹135)", badge: "Retail Leader" }
+      ],
+      infrastructure_invits: [
+        { name: "India Grid Trust (IndiGrid)", provider: "NSE: INDIGRID", rate: "~10.5% (Distribution Yield)", highlight: "Power transmission & solar assets providing highly predictable AAA-backed quarterly cash distributions.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹140)", badge: "Top InvIT Yield" },
+        { name: "PowerGrid Infrastructure Investment Trust", provider: "NSE: PGINVIT", rate: "~9.8% (Distribution Yield)", highlight: "Sovereign-backed power transmission InvIT sponsored by Power Grid Corporation of India.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹98)", badge: "Govt Sponsored" }
+      ]
+    },
+    products: [
+      { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "India's largest commercial REIT (~45M sq ft). High quarterly dividend payouts.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹360)", badge: "Largest REIT" },
+      { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "Grade-A tech parks in Hyderabad, Mumbai & Pune with high multinational tenant retention.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹350)" },
+      { name: "Brookfield India REIT", provider: "NSE: BIRET", rate: "~8.8% (Yield)", highlight: "Institutional grade office parks with attractive quarterly distribution yield.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹280)", badge: "Highest Yield" },
+      { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "India's premier retail mall REIT with strong footfall and rental growth.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹135)" },
+      { name: "India Grid Trust (IndiGrid InvIT)", provider: "NSE: INDIGRID", rate: "~10.5% (Yield)", highlight: "Power transmission grid asset yielding ~10.5% annual cash distributions.", platform: "Zerodha / Groww", minInvestment: "1 unit (~₹140)", badge: "Top InvIT Yield" }
+    ]
+  },
+  embassy_reit: {
+    title: "Embassy Office Parks REIT — Investment Pathway",
+    riskLevel: 3,
+    note: "India's pioneer listed REIT holding ~45M sq ft of Grade-A commercial office space. Quarterly tax-efficient payouts.",
+    howToStart: "Buy units directly on NSE/BSE via discount or full-service brokers.",
+    products: [
+      { name: "Embassy Office Parks REIT (Direct Purchase)", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "Direct stock exchange purchase. Quarterly rental distribution credited straight to your bank account.", platform: "Zerodha / Groww / Broker", minInvestment: "1 unit (~₹360)", badge: "Top Pick" },
+      { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "Alternative Grade-A office REIT focused on Mumbai and Hyderabad tech hubs.", platform: "Stock Broker App", minInvestment: "1 unit (~₹350)" },
+      { name: "Brookfield India Real Estate Trust", provider: "NSE: BIRET", rate: "~8.8% (Yield)", highlight: "Alternative office REIT with assets in NCR and Mumbai.", platform: "Stock Broker App", minInvestment: "1 unit (~₹280)" },
+      { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "Retail mall REIT diversification option.", platform: "Stock Broker App", minInvestment: "1 unit (~₹135)" },
+      { name: "India Grid Trust InvIT", provider: "NSE: INDIGRID", rate: "~10.5% (Yield)", highlight: "High-yield power transmission infrastructure alternative.", platform: "Stock Broker App", minInvestment: "1 unit (~₹140)" }
+    ]
+  },
+
+  // ═══════════════════ LARGE CAP / BLUECHIP STOCKS ═══════════════════
+  bluechip_stocks: {
+    title: "Verified Nifty 50 Blue-Chip Stocks by Sector",
+    riskLevel: 5,
+    note: "Top 100 Indian companies by market capitalization. Stable balance sheets with long-term compound growth.",
+    howToStart: "Invest via discount brokers (Zerodha, Groww, Angel One). Select sub-sectors based on preference.",
+    sectors: {
+      banking: [
+        { name: "HDFC Bank", provider: "NSE: HDFCBANK", rate: "~15.2% (5Y)", highlight: "India's largest private bank with ~₹35L Cr balance sheet and GNPA <1.4%.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,900)", badge: "Banking Leader" },
+        { name: "ICICI Bank", provider: "NSE: ICICIBANK", rate: "~22.4% (5Y)", highlight: "Top performer among large-cap banks with robust ROA (>2.2%) and digital credit growth.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,250)", badge: "Top Growth" },
+        { name: "State Bank of India", provider: "NSE: SBIN", rate: "~21.8% (5Y)", highlight: "India's largest PSU bank backed by sovereign trust and 22,000+ branch footprint.", platform: "Any Stock Broker", minInvestment: "1 share (~₹840)" }
+      ],
+      it_services: [
+        { name: "TCS (Tata Consultancy Services)", provider: "NSE: TCS", rate: "~12.6% (5Y)", highlight: "World's 2nd largest IT exporter with zero debt and ₹60,000 Cr cash reserves.", platform: "Any Stock Broker", minInvestment: "1 share (~₹3,800)", badge: "Zero Debt" },
+        { name: "Infosys", provider: "NSE: INFY", rate: "~13.1% (5Y)", highlight: "Enterprise digital transformation leader with strong cloud & generative AI pipeline.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,500)" }
+      ],
+      conglomerate_energy: [
+        { name: "Reliance Industries", provider: "NSE: RELIANCE", rate: "~16.5% (5Y)", highlight: "India's largest company (~₹20L Cr m-cap) spanning Telecom (Jio), Retail, and New Energy.", platform: "Any Stock Broker", minInvestment: "1 share (~₹1,300)", badge: "Largest M-Cap" },
+        { name: "Larsen & Toubro (L&T)", provider: "NSE: LT", rate: "~24.2% (5Y)", highlight: "India's premier engineering & infrastructure conglomerate with massive order backlog.", platform: "Any Stock Broker", minInvestment: "1 share (~₹3,600)" }
+      ]
+    },
+    products: [
+      { name: "Reliance Industries", provider: "NSE: RELIANCE", rate: "~16.5% (5Y)", highlight: "India's largest market-cap company across Telecom (Jio), Retail, and Green Energy.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,300)", badge: "Largest M-Cap" },
+      { name: "HDFC Bank", provider: "NSE: HDFCBANK", rate: "~15.2% (5Y)", highlight: "India's most trusted private bank with 20+ years of 15%+ compounding.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,900)", badge: "Banking Leader" },
+      { name: "TCS", provider: "NSE: TCS", rate: "~12.6% (5Y)", highlight: "Zero-debt IT titan from Tata Group paying consistent quarterly dividends.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹3,800)", badge: "Zero Debt" },
+      { name: "ICICI Bank", provider: "NSE: ICICIBANK", rate: "~22.4% (5Y)", highlight: "Industry-leading digital banking ROE and retail credit growth.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,250)" },
+      { name: "Larsen & Toubro (L&T)", provider: "NSE: LT", rate: "~24.2% (5Y)", highlight: "India's mega infrastructure builder capturing domestic capital expenditure boom.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹3,600)" }
+    ]
+  },
+  large_cap_stocks: {
+    title: "Verified Nifty 50 Blue-Chip Stocks",
+    riskLevel: 5,
+    note: "Top 100 Indian market leaders. High liquidity and lower drawdown risk compared to mid/small caps.",
+    howToStart: "Buy shares on NSE/BSE via Zerodha, Groww, or Angel One.",
+    products: [
+      { name: "Reliance Industries", provider: "NSE: RELIANCE", rate: "~16.5% (5Y)", highlight: "India's largest company across Telecom, Retail, and Oil-to-Chemicals.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,300)", badge: "Top Pick" },
+      { name: "HDFC Bank", provider: "NSE: HDFCBANK", rate: "~15.2% (5Y)", highlight: "Private banking gold standard with robust asset quality.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,900)" },
+      { name: "ICICI Bank", provider: "NSE: ICICIBANK", rate: "~22.4% (5Y)", highlight: "Top ROA growth in Indian banking sector.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,250)" },
+      { name: "TCS", provider: "NSE: TCS", rate: "~12.6% (5Y)", highlight: "Zero-debt IT giant with 70%+ dividend payout ratio.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹3,800)" },
+      { name: "Infosys", provider: "NSE: INFY", rate: "~13.1% (5Y)", highlight: "Global IT leader with strong AI transformation contracts.", platform: "Zerodha / Groww", minInvestment: "1 share (~₹1,500)" }
+    ]
+  },
+
+  // ═══════════════════ FOCUSED EQUITY MUTUAL FUNDS ═══════════════════
+  focused_mf: {
+    title: "Best Focused Equity Mutual Funds (Max 30 Stocks)",
+    riskLevel: 6,
+    note: "Concentrated stock selection (max 25-30 stocks). Higher return potential through high-conviction portfolio bets.",
+    howToStart: "Invest in direct-growth plans via AMC portal or platforms like Groww and Zerodha Coin.",
+    products: [
+      { name: "360 ONE Focused Equity Fund", provider: "360 ONE AMC", rate: "~21.4% (5Y)", highlight: "AUM ~₹7,200 Cr. High-conviction 25-stock portfolio focused on market leaders with pricing power.", platform: "360 ONE / Groww / Coin", minInvestment: "₹500 SIP", badge: "Category Leader" },
+      { name: "HDFC Focused 30 Fund", provider: "HDFC AMC", rate: "~22.8% (5Y)", highlight: "AUM ~₹11,500 Cr. Value-oriented concentrated bets managed by Roshi Jain. Strong alpha generation.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP", badge: "Top Track Record" },
+      { name: "ICICI Pru Focused Equity Fund", provider: "ICICI Prudential AMC", rate: "~19.6% (5Y)", highlight: "AUM ~₹8,400 Cr. Dynamic multi-cap allocation constrained to 30 top conviction stocks.", platform: "ICICI Direct / Coin", minInvestment: "₹100 SIP" },
+      { name: "Quant Focused Fund", provider: "Quant AMC", rate: "~23.1% (5Y)", highlight: "AUM ~₹1,200 Cr. Quant-driven momentum rotation across top liquid equities.", platform: "Quant MF / Groww", minInvestment: "₹100 SIP", badge: "Highest Return" },
+      { name: "SBI Focused Equity Fund", provider: "SBI MF", rate: "~18.2% (5Y)", highlight: "AUM ~₹33,000 Cr. Conservative large-cap biased concentrated portfolio backed by SBI research.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" }
+    ]
+  },
+
+  // ═══════════════════ FLEXI CAP MUTUAL FUNDS ═══════════════════
+  flexi_cap_mf: {
+    title: "Best Flexi Cap Mutual Funds",
+    riskLevel: 5,
+    note: "Fund manager has complete freedom to dynamically shift between large, mid, and small cap stocks without regulatory caps.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "Parag Parikh Flexi Cap Fund", provider: "PPFAS AMC", rate: "~21.5% (5Y)", highlight: "AUM ~₹72,000 Cr. Includes 15-20% US equity allocation (Alphabet, Microsoft, Amazon). Value investing gold standard.", platform: "PPFAS Portal / Groww / Kuvera", minInvestment: "₹1,000 SIP", badge: "Category Leader" },
+      { name: "HDFC Flexi Cap Fund", provider: "HDFC AMC", rate: "~23.4% (5Y)", highlight: "AUM ~₹62,000 Cr. Managed by Roshi Jain. Strong outperformance in industrial, banking, and energy themes.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP", badge: "Top Track Record" },
+      { name: "JM Flexi Cap Fund", provider: "JM Financial AMC", rate: "~25.2% (5Y)", highlight: "AUM ~₹3,400 Cr. Aggressive momentum growth strategy with high turnover and high alpha.", platform: "JM MF / Groww", minInvestment: "₹100 SIP", badge: "Highest Return" },
+      { name: "Quant Flexi Cap Fund", provider: "Quant AMC", rate: "~24.1% (5Y)", highlight: "AUM ~₹7,800 Cr. Predictive analytics framework for agile market-cap rotation.", platform: "Quant MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "SBI Flexi Cap Fund", provider: "SBI MF", rate: "~17.8% (5Y)", highlight: "AUM ~₹21,000 Cr. Process-driven large and mid-cap blend for stable long-term compounding.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" }
+    ]
+  },
+
+  // ═══════════════════ LARGE CAP MUTUAL FUNDS ═══════════════════
+  large_cap_mf: {
+    title: "Best Large-Cap Mutual Funds",
+    riskLevel: 4,
+    note: "Mandated to invest 80%+ in Nifty 100 top companies. Low drawdown volatility for conservative equity investors.",
+    howToStart: "Invest via AMC portal or zero-commission mutual fund apps.",
+    products: [
+      { name: "ICICI Pru Bluechip Fund", provider: "ICICI Prudential AMC", rate: "~18.2% (5Y)", highlight: "AUM ~₹58,000 Cr. India's premier large-cap equity fund with ultra-stable large-cap portfolio.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "Nippon India Large Cap Fund", provider: "Nippon India AMC", rate: "~19.5% (5Y)", highlight: "AUM ~₹31,000 Cr. High active share over Nifty 50 with disciplined sector weights.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP", badge: "Top Return" },
+      { name: "HDFC Top 100 Fund", provider: "HDFC AMC", rate: "~18.6% (5Y)", highlight: "AUM ~₹35,000 Cr. Legacy blue-chip fund focused on market leaders with strong cash flows.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "Mirae Asset Large Cap Fund", provider: "Mirae Asset AMC", rate: "~16.4% (5Y)", highlight: "AUM ~₹41,000 Cr. Quality growth selection across banking, IT, and consumer giants.", platform: "Mirae MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "SBI Bluechip Fund", provider: "SBI MF", rate: "~16.8% (5Y)", highlight: "AUM ~₹48,000 Cr. Conservative blue-chip portfolio backed by SBI MF research.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" }
+    ]
+  },
+
+  // ═══════════════════ PHARMA SECTOR FUNDS ═══════════════════
+  pharma_sector_mf: {
+    title: "Best Pharma & Healthcare Sector Funds",
+    riskLevel: 6,
+    note: "Focuses on Indian pharmaceutical exporters, hospital chains, and active pharmaceutical ingredient (API) manufacturers.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "Nippon India Pharma Fund", provider: "Nippon India AMC", rate: "~22.8% (5Y)", highlight: "AUM ~₹7,500 Cr. Category benchmark leader with deep research in US FDA approved formulation facilities.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "ICICI Pru Healthcare Fund", provider: "ICICI Prudential AMC", rate: "~21.4% (5Y)", highlight: "AUM ~₹5,200 Cr. High exposure to domestic diagnostic networks and private hospital chains.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP" },
+      { name: "Tata India Pharma & Healthcare Fund", provider: "Tata AMC", rate: "~20.6% (5Y)", highlight: "AUM ~₹1,800 Cr. Balanced growth portfolio across API manufacturing and specialty biotech.", platform: "Tata MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "SBI Healthcare Opportunities Fund", provider: "SBI MF", rate: "~19.8% (5Y)", highlight: "AUM ~₹3,100 Cr. Conservative healthcare theme portfolio backed by SBI research.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "UTI Healthcare Fund", provider: "UTI AMC", rate: "~19.2% (5Y)", highlight: "AUM ~₹1,200 Cr. Long-standing pharmaceutical fund focused on high ROE pharma exporters.", platform: "UTI MF / Groww", minInvestment: "₹500 SIP" }
+    ]
+  },
+
+  // ═══════════════════ INFRASTRUCTURE SECTOR FUNDS ═══════════════════
+  infra_sector_mf: {
+    title: "Best Infrastructure Sector Mutual Funds",
+    riskLevel: 6,
+    note: "Focuses on power generation, capital goods, cement, ports, railways, and national highway construction.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "ICICI Pru Infrastructure Fund", provider: "ICICI Prudential AMC", rate: "~28.4% (5Y)", highlight: "AUM ~₹6,100 Cr. Top 5Y performer benefiting from India's national capital expenditure expansion.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "HDFC Infrastructure Fund", provider: "HDFC AMC", rate: "~26.8% (5Y)", highlight: "AUM ~₹3,500 Cr. Concentrated bets on power utilities, defense suppliers, and engineering giants.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP", badge: "Top Track Record" },
+      { name: "Kotak Infrastructure & Economic Reform", provider: "Kotak AMC", rate: "~25.2% (5Y)", highlight: "AUM ~₹2,800 Cr. Capitalizes on public sector spending and logistics corridor construction.", platform: "Kotak MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "Nippon India Power & Infra Fund", provider: "Nippon India AMC", rate: "~27.1% (5Y)", highlight: "AUM ~₹5,400 Cr. Specialized focus on renewable energy, transmission grids, and power equipment.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "SBI Infrastructure Fund", provider: "SBI MF", rate: "~23.5% (5Y)", highlight: "AUM ~₹4,200 Cr. Value-driven infrastructure fund capturing government capex mandates.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" }
+    ]
+  },
+
+  // ═══════════════════ BANKING SECTOR FUNDS ═══════════════════
+  banking_sector_mf: {
+    title: "Best Banking & Financial Services Mutual Funds",
+    riskLevel: 6,
+    note: "Focuses on private commercial banks, PSU banks, NBFCs, housing finance, and wealth management companies.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "Nippon India Banking & Financial Services", provider: "Nippon India AMC", rate: "~18.6% (5Y)", highlight: "AUM ~₹5,900 Cr. Deep research across Tier-1 private banks and high-growth retail NBFCs.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "ICICI Pru Banking & Financial Services", provider: "ICICI Prudential AMC", rate: "~17.8% (5Y)", highlight: "AUM ~₹7,400 Cr. Dynamic valuation-based allocation between private and public sector banks.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP" },
+      { name: "HDFC Banking & Financial Services Fund", provider: "HDFC AMC", rate: "~16.9% (5Y)", highlight: "AUM ~₹4,100 Cr. Concentrated quality bank bets with strong balance sheet underwriting.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "SBI Banking & Financial Services Fund", provider: "SBI MF", rate: "~16.2% (5Y)", highlight: "AUM ~₹5,100 Cr. Captures financial inclusion growth and credit penetration in Tier 2/3 India.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "Axis Banking & Financial Services Fund", provider: "Axis AMC", rate: "~15.4% (5Y)", highlight: "AUM ~₹2,600 Cr. Focuses on tech-first private banks and asset management companies.", platform: "Axis MF / Kuvera", minInvestment: "₹100 SIP" }
+    ]
+  },
+
+  // ═══════════════════ IT SECTOR FUNDS ═══════════════════
+  it_sector_mf: {
+    title: "Best Technology & IT Sector Mutual Funds",
+    riskLevel: 6,
+    note: "Focuses on global software services exporters, cloud engineering specialists, and digital product firms.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "ICICI Pru Technology Fund", provider: "ICICI Prudential AMC", rate: "~21.5% (5Y)", highlight: "AUM ~₹11,800 Cr. Category pioneer with top 5Y return tracking global tech transformation.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "Tata Digital India Fund", provider: "Tata AMC", rate: "~20.8% (5Y)", highlight: "AUM ~₹9,200 Cr. High allocation to mid-cap IT engineering firms with high margin growth.", platform: "Tata MF / Groww", minInvestment: "₹100 SIP", badge: "Top Track Record" },
+      { name: "SBI Technology Opportunities Fund", provider: "SBI MF", rate: "~19.4% (5Y)", highlight: "AUM ~₹3,800 Cr. Large-cap IT biased portfolio (TCS, Infosys, HCL Tech) providing lower drawdowns.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "Franklin India Technology Fund", provider: "Franklin Templeton AMC", rate: "~19.1% (5Y)", highlight: "AUM ~₹1,400 Cr. Global tech allocation including US software leaders alongside Indian IT.", platform: "Franklin MF / Kuvera", minInvestment: "₹500 SIP" },
+      { name: "Aditya Birla Sun Life Digital India Fund", provider: "Aditya Birla Sun Life AMC", rate: "~18.6% (5Y)", highlight: "AUM ~₹4,100 Cr. Concentrated IT services and telecom ecosystem portfolio.", platform: "ABSL MF / Groww", minInvestment: "₹100 SIP" }
     ]
   }
 };
 
 export default WHERE_TO_INVEST;
+
 
