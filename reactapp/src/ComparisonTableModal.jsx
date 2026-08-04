@@ -122,42 +122,51 @@ const getLiquidityLevel = (lockIn) => {
   return 'Low';
 };
 
-const computeSuitabilityMatch = (inv, profile) => {
-  if (!profile) return 75; 
-  let score = 70; // baseline
+export const computeSuitabilityMatch = (inv, profile) => {
+  if (!profile && !inv) return 85; 
+  let score = 65; // base score
 
-  const userRisk = profile.riskAppetite || 'Moderate';
-  const instRisk = inv.riskLabel || inv.risk_level || 'Medium';
+  const userRisk = profile?.risk_tolerance || profile?.riskCategory || profile?.risk_appetite || profile?.riskAppetite || 'Moderate';
+  const instRisk = inv?.riskLabel || inv?.risk_level || inv?.riskLevel || 'Medium';
 
-  // Congruence math
-  if (userRisk === 'Conservative') {
-    if (instRisk === 'Very Low' || instRisk === 'Low') score += 25;
-    else if (instRisk === 'Low-Medium' || instRisk === 'Medium-Low') score += 10;
-    else if (instRisk === 'High' || instRisk === 'Very High') score -= 35;
-  } else if (userRisk === 'Moderate') {
-    if (instRisk === 'Low-Medium' || instRisk === 'Medium-Low' || instRisk === 'Medium') score += 25;
-    else if (instRisk === 'Low' || instRisk === 'Very Low') score += 10;
-    else if (instRisk === 'Very High') score -= 20;
-  } else if (userRisk === 'Aggressive') {
-    if (instRisk === 'High' || instRisk === 'Very High') score += 25;
-    else if (instRisk === 'Medium') score += 15;
-    else if (instRisk === 'Very Low' || instRisk === 'Low') score -= 20;
+  // 1. Risk Congruence
+  if (['Conservative', 'Low', 'Very Low'].includes(userRisk)) {
+    if (['Very Low', 'Low'].includes(instRisk)) score += 25;
+    else if (['Low-Medium', 'Medium-Low'].includes(instRisk)) score += 12;
+    else if (['High', 'Very High'].includes(instRisk)) score -= 30;
+  } else if (['Moderate', 'Medium'].includes(userRisk)) {
+    if (['Low-Medium', 'Medium-Low', 'Medium', 'Moderately High'].includes(instRisk)) score += 22;
+    else if (['Low', 'Very Low'].includes(instRisk)) score += 10;
+    else if (['Very High'].includes(instRisk)) score -= 15;
+  } else if (['Aggressive', 'High', 'Very High'].includes(userRisk)) {
+    if (['High', 'Very High', 'Moderately High'].includes(instRisk)) score += 25;
+    else if (['Medium', 'Low-Medium'].includes(instRisk)) score += 12;
+    else if (['Very Low', 'Low'].includes(instRisk)) score -= 15;
   }
 
-  // Horizon constraints
-  const horizon = profile.investment_horizon || 15;
-  const lockIn = inv.lock_in_years !== undefined ? inv.lock_in_years : (inv.lockIn !== undefined ? inv.lockIn : 0);
+  // 2. Return Potential Quality Boost
+  const rate = Number(inv?.rate || inv?.expectedReturn || inv?.nominalReturn || inv?.expected_return_max || 0);
+  if (rate >= 20) score += 10;
+  else if (rate >= 14) score += 6;
+  else if (rate >= 9) score += 3;
+  else if (rate > 0 && rate <= 6) score -= 4;
+
+  // 3. Investment Horizon Constraints
+  const horizon = Number(profile?.investment_horizon || profile?.horizon || profile?.investmentHorizon || 10);
+  const lockIn = inv?.lock_in_years !== undefined ? inv.lock_in_years : (inv?.lockIn !== undefined ? inv.lockIn : 0);
   if (lockIn > horizon) {
-    score -= 40; 
-  } else if (horizon > 8 && lockIn > 0 && lockIn <= 5) {
-    score += 10; // compound intermediate bonus
+    score -= 35;
+  } else if (horizon >= 7 && rate >= 12) {
+    score += 8; // Compounder bonus
+  } else if (horizon <= 3 && lockIn === 0) {
+    score += 8; // Liquid parking bonus
   }
 
-  // Tax adjustments
-  const hasTax = inv.taxType === "eee" || inv.taxType === "elss" || inv.taxType === "nps" || inv.tax_benefit;
-  if (hasTax) score += 10;
+  // 4. Tax Efficiency
+  const hasTax = inv?.taxType === "eee" || inv?.taxType === "elss" || inv?.taxType === "nps" || inv?.tax_benefit || (inv?.badge && String(inv.badge).includes('EEE'));
+  if (hasTax) score += 8;
 
-  return Math.min(99, Math.max(5, score));
+  return Math.min(99, Math.max(45, score));
 };
 
 /* ── Deep Comparison Detail Panel ─────────────────────────── */

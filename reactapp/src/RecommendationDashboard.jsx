@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
-import { ChevronRight, ChevronDown, Filter, Info, Shield, TrendingUp, Zap, Trophy, BarChart3, AlertCircle, Calendar, Target, Activity, Wallet, PiggyBank, Clock, HelpCircle, Building2, MapPin, Star } from 'lucide-react';
+import { ChevronRight, ChevronDown, Filter, Info, Shield, TrendingUp, Zap, Trophy, BarChart3, AlertCircle, Calendar, Target, Activity, Wallet, PiggyBank, Clock, HelpCircle, Building2, MapPin, Star, User, Edit3 } from 'lucide-react';
 import { investmentDatabase, RISK_COLORS, CHART_COLORS } from './investmentDatabase';
 import { generateRecommendations, getEligibleInvestments, getWhy, GOAL_PROFILES } from './recommendationEngine';
 import { getConfidenceLabel } from './utils/confidenceLabels';
@@ -9,6 +9,7 @@ import ExplainabilityPanel from './components/ExplainabilityPanel';
 import SebiDisclaimer from './components/SebiDisclaimer';
 import { formatCompactINR } from './utils/indianNumberFormat';
 import JargonTooltip from './components/JargonTooltip';
+import { computeSuitabilityMatch } from './ComparisonTableModal';
 
 import './Dashboard.css';
 
@@ -497,8 +498,81 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
         </div>
 
 
-
         <BackendFallbackBanner notice={fallbackNotice} onDismiss={onDismissFallbackNotice} />
+
+        {/* ─── ELEVATED FINANCIAL PROFILE BANNER AT START AFTER LOGIN ─── */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85))',
+          border: '1px solid rgba(56, 189, 248, 0.25)',
+          borderTop: '2px solid #38bdf8',
+          borderRadius: 16,
+          padding: '16px 20px',
+          marginBottom: 16,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.15))',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#38bdf8', flexShrink: 0
+            }}>
+              <User size={22} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                  {userProfile?.name || 'Investor Financial Profile'}
+                </h3>
+                <span style={{
+                  fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8',
+                  background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)',
+                  padding: '2px 8px', borderRadius: 6
+                }}>
+                  {userProfile?.taxRegime || userProfile?.tax_regime ? `${(userProfile.taxRegime || userProfile.tax_regime).toUpperCase()} REGIME` : 'NEW REGIME'}
+                </span>
+              </div>
+              <p style={{ fontSize: '0.76rem', color: '#94a3b8', margin: '3px 0 0 0' }}>
+                Age {userProfile?.age || 35} · Income: ₹{userProfile?.annual_income ? (userProfile.annual_income / 100000).toFixed(1) + 'L/yr' : '10.0L/yr'} · Savings: ₹{(userProfile?.monthly_savings || 10000).toLocaleString()}/mo
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '6px 14px', borderRadius: 10, textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Risk Comfort</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69' }}>
+                {derivedRiskLabel}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onNavigate && onNavigate('profile')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 16px', borderRadius: 10,
+                background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
+                color: '#0f172a', fontWeight: 700, fontSize: '0.8rem',
+                border: 'none', cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(56, 189, 248, 0.25)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Edit3 size={14} />
+              Edit Profile
+            </button>
+          </div>
+        </div>
 
 
 
@@ -950,13 +1024,14 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
               <table className="dense-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '12%', paddingLeft: 32 }}>Tax Benefit</th>
-                    <th style={{ width: '25%' }}>Security Name</th>
-                    <th className="col-weight" style={{ width: '12%' }}>Weight %</th>
-                    <th className="col-exp-return" style={{ width: '14%' }}>Exp. Return</th>
-                    <th className="col-risk-level" style={{ width: '12%' }}>Risk Level</th>
-                    <th style={{ width: '13%' }}>Monthly SIP</th>
-                    <th style={{ width: '12%', whiteSpace: 'normal', paddingRight: 20, textAlign: 'right', lineHeight: 1.2 }}>Projected<br/>({horizon} Yrs)</th>
+                    <th style={{ width: '10%', paddingLeft: 32 }}>Tax Benefit</th>
+                    <th style={{ width: '22%' }}>Security Name</th>
+                    <th style={{ width: '9%' }}>Match</th>
+                    <th className="col-weight" style={{ width: '10%' }}>Weight %</th>
+                    <th className="col-exp-return" style={{ width: '13%' }}>Exp. Return</th>
+                    <th className="col-risk-level" style={{ width: '10%' }}>Risk Level</th>
+                    <th style={{ width: '12%' }}>Monthly SIP</th>
+                    <th style={{ width: '10%', whiteSpace: 'normal', paddingRight: 20, textAlign: 'right', lineHeight: 1.2 }}>Projected<br/>({horizon} Yrs)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -964,9 +1039,10 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                     /* FIX 6: Enhanced skeleton loader */
                     Array(8).fill(0).map((_, i) => (
                       <tr key={i}>
-                        <td colSpan="7" style={{ padding: '12px' }}>
+                        <td colSpan="8" style={{ padding: '12px' }}>
                           <div style={{ display: 'flex', gap: 16 }}>
                             <div className="skeleton-box" style={{ height: 16, flex: 2 }} />
+                            <div className="skeleton-box" style={{ height: 16, flex: 1 }} />
                             <div className="skeleton-box" style={{ height: 16, flex: 1 }} />
                             <div className="skeleton-box" style={{ height: 16, flex: 1 }} />
                             <div className="skeleton-box" style={{ height: 16, flex: 1 }} />
@@ -978,7 +1054,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                     ))
                   ) : tableData.length === 0 ? (
                     <tr>
-                       <td colSpan="7" style={{textAlign:'center', padding: 48}}>
+                       <td colSpan="8" style={{textAlign:'center', padding: 48}}>
                          <Info size={48} color="#94a3b8" style={{opacity: 0.5, margin: '0 auto 16px auto', display: 'block'}} />
                          <div style={{fontSize: '1rem', color: '#94a3b8'}}>No recommendations match your criteria.</div>
                        </td>
@@ -1013,7 +1089,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                           : 'rgba(255,255,255,0.015)',
                         borderTop: '1px solid rgba(255,255,255,0.04)'
                       }}>
-                        <td colSpan="7" style={{ padding: 0, borderBottom: 'none', borderLeft: `3px solid ${
+                        <td colSpan="8" style={{ padding: 0, borderBottom: 'none', borderLeft: `3px solid ${
                           (group.class || '').toLowerCase().includes('equity') ? '#38bdf8' 
                           : (group.class || '').toLowerCase().includes('government') ? '#4ade80' 
                           : (group.class || '').toLowerCase().includes('debt') || (group.class || '').toLowerCase().includes('hybrid') ? '#8b5cf6' 
@@ -1062,6 +1138,22 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                               )}
                               {(() => { const lw = getLockInWarning({id: child.instId}, horizon); return lw ? <div style={{fontSize: '0.62rem', color: '#f59e0b', marginTop: 2, padding: '2px 6px', background: 'rgba(245,158,11,0.06)', borderRadius: 4, display: 'inline-block'}}>&#x23f0; {lw}</div> : null; })()}
                             </td>
+                             <td>
+                               {(() => {
+                                 const recObj = (recommendations || []).find(r => r.id === child.instId);
+                                 const score = recObj ? computeSuitabilityMatch(recObj, userProfile) : null;
+                                 if (!score) return <span style={{color:'#475569', fontSize:'0.72rem'}}>--</span>;
+                                 const scoreColor = score >= 90 ? '#4ade80' : score >= 75 ? '#38bdf8' : score >= 60 ? '#dfbd69' : '#94a3b8';
+                                 return (
+                                   <span style={{
+                                     display: 'inline-block', padding: '3px 8px', borderRadius: 8,
+                                     fontSize: '0.7rem', fontWeight: 700, color: scoreColor,
+                                     background: `${scoreColor}12`, border: `1px solid ${scoreColor}25`,
+                                     fontVariantNumeric: 'tabular-nums'
+                                   }}>{score}%</span>
+                                 );
+                               })()}
+                             </td>
                             <td className="col-weight" style={{ color: '#94a3b8' }}>
                               {isUnfunded
                                 ? <span style={{display: 'inline-block', whiteSpace: 'nowrap', color: '#f59e0b', fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: 6, lineHeight: 1.2}}>Not Funded</span>
@@ -1362,6 +1454,19 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                       <div style={{flex: 1}}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f1f5f9', letterSpacing: '-0.3px' }}>{rec.abbr || rec.name}</span>
+                          {(() => {
+                             const score = computeSuitabilityMatch(rec, userProfile);
+                             const scoreColor = score >= 90 ? '#4ade80' : score >= 75 ? '#38bdf8' : score >= 60 ? '#dfbd69' : '#94a3b8';
+                             return (
+                               <span style={{
+                                 display: 'inline-flex', alignItems: 'center', gap: 3,
+                                 padding: '2px 8px', borderRadius: 8,
+                                 fontSize: '0.65rem', fontWeight: 700, color: scoreColor,
+                                 background: `${scoreColor}10`, border: `1px solid ${scoreColor}20`,
+                                 fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'
+                               }}>{score}% Match</span>
+                             );
+                           })()}
                           <RecommendationSourceBadge source={rec._source} />
 
                           {INSTRUMENT_EXPLAINERS[rec.id] && (
