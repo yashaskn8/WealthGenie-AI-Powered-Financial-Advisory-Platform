@@ -167,14 +167,28 @@ const WHERE_TO_INVEST = {
 
   // ═══════════════════ GOLD ETF ═══════════════════
   gold_etf: {
-    title: "Best Gold ETFs in India",
+    title: "Best Gold ETFs & Secondary SGB Options in India",
     riskLevel: 5,
-    note: "Requires demat account. Tracks domestic gold price. Tax: STCG (< 1 yr) at slab rate; LTCG (> 1 yr) at 12.5% without indexation. No lock-in. Gold has delivered ~26% 5Y CAGR (May 2026) due to central bank buying and geopolitical safe-haven demand.",
+    note: "Requires demat account. Tracks domestic gold price. Tax: STCG (< 1 yr) at slab rate; LTCG (> 1 yr) at 12.5% without indexation. No lock-in.",
     howToStart: "Open a demat + trading account on Zerodha, Groww, or Angel One. Buy units during market hours like stocks.",
+    subCategories: {
+      physical_gold_etf: [
+        { name: "Nippon India Gold BeES", provider: "Nippon India AMC", rate: "~25.9% (5Y)", highlight: "India's oldest and most liquid Gold ETF (launched 2007) with AUM ~₹12,000 Cr. Expense ratio: 0.79%. Highest daily trading volume.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Most Liquid" },
+        { name: "HDFC Gold ETF", provider: "HDFC AMC", rate: "~25.8% (5Y)", highlight: "Lowest expense ratio among Gold ETFs at 0.59% — saves ~₹200/lakh annually. AUM ~₹5,000 Cr with excellent tracking accuracy.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Lowest Cost" },
+        { name: "SBI Gold ETF", provider: "SBI MF", rate: "~25.5% (5Y)", highlight: "AUM ~₹4,500 Cr with strong institutional participation. Backed by SBI MF's trusted vault infrastructure.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)" }
+      ],
+      silver_etf: [
+        { name: "HDFC Silver ETF", provider: "HDFC AMC", rate: "~28.1% (1Y)", highlight: "Tracks physical silver prices stored in LBMA vaults. Benefits from industrial EV & solar demand.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹90)", badge: "Industrial Silver" },
+        { name: "ICICI Pru Silver ETF", provider: "ICICI Prudential AMC", rate: "~27.8% (1Y)", highlight: "High liquidity silver ETF on NSE/BSE with real-time silver spot price tracking.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹90)" }
+      ],
+      sgb_secondary: [
+        { name: "Sovereign Gold Bond (SGBAUG29)", provider: "RBI / Secondary Market", rate: "2.5% + Gold", highlight: "Buy existing SGB units on NSE/BSE secondary market. Tax-free LTCG if held to 8Y maturity.", platform: "Stock Broker App", minInvestment: "1 unit (~₹7,500)", badge: "Tax-Free Maturity" }
+      ]
+    },
     products: [
       { name: "Nippon India Gold BeES", provider: "Nippon India AMC", rate: "~25.9%* (5Y)", highlight: "India's oldest and most liquid Gold ETF (launched 2007) with AUM ~₹12,000 Cr. Expense ratio: 0.79%. Highest daily trading volume ensures tight bid-ask spread — you won't lose money to illiquidity. Each unit represents ~0.01 gram of 99.5% pure gold stored in LBMA-accredited vaults. 5Y CAGR driven by central bank buying and geopolitical demand.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Most Liquid" },
       { name: "HDFC Gold ETF", provider: "HDFC AMC", rate: "~25.8%* (5Y)", highlight: "Lowest expense ratio among Gold ETFs at 0.59% — saves ~₹200/lakh annually vs peers. AUM ~₹5,000 Cr with excellent tracking accuracy to domestic gold prices. HDFC AMC's operational efficiency minimizes cash drag. Best choice for long-term buy-and-hold gold allocation in your portfolio.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Lowest Cost" },
-      { name: "SBI Gold ETF", provider: "SBI MF", rate: "~25.5%* (5Y)", highlight: "AUM ~₹4,500 Cr with strong institutional participation (insurance companies, pension funds). Expense ratio: 0.65%. Backed by SBI MF's trusted brand and custody infrastructure. Good secondary market liquidity. Gold price has been driven by central bank buying, de-dollarization trends, and geopolitical uncertainty.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)" },
+      { name: "SBI Gold ETF", provider: "SBI MF", rate: "~25.5%* (5Y)", highlight: "AUM ~₹4,500 Cr with strong institutional participation (insurance companies, pension funds). Expense ratio: 0.65%. Backed by SBI MF's trusted brand and custody infrastructure. Good secondary market liquidity. Gold price has been driven by central bank buying, de-dollarization trends, and geopolitical uncertainty.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)" }
     ]
   },
 
@@ -188,7 +202,7 @@ const WHERE_TO_INVEST = {
       { name: "SBI Long Term Equity Fund", provider: "SBI MF", rate: "~18.5–18.7%* (5Y)", highlight: "One of India's oldest ELSS funds (since 1993) with AUM ~₹27,000 Cr. Expense ratio: 0.75% (Direct). Follows a disciplined value-oriented approach with focus on undervalued large and mid-cap stocks. Consistently in top quartile across 5Y, 10Y, and 15Y periods. Fund manager's contrarian bets have generated significant alpha over Nifty 500.", platform: "SBI MF / Groww / Kuvera", minInvestment: "₹500 SIP", badge: "Top Pick" },
       { name: "Quant ELSS Tax Saver Fund", provider: "Quant AMC", rate: "~17.8–18.2%* (5Y)", highlight: "Aggressive momentum-driven strategy — highest alpha potential but with higher volatility. AUM ~₹12,500 Cr. Expense ratio: 0.57% (Direct). Uses proprietary VLRT framework (Valuation, Liquidity, Risk, Timing) for stock selection. Can deliver exceptional returns in trending markets but may underperform in range-bound markets.", platform: "Quant MF / Groww", minInvestment: "₹500 SIP", badge: "High Alpha" },
       { name: "Parag Parikh ELSS Tax Saver", provider: "PPFAS AMC", rate: "~15.1–15.5%* (5Y)", highlight: "Unique international diversification — allocates 15–30% to US-listed stocks (Alphabet, Microsoft, Amazon) providing geographic hedging. AUM ~₹5,600 Cr. Expense ratio: 0.63% (Direct). Conservative, Buffett-style value investing approach. Lower drawdowns than peers in India-specific corrections. 3-year lock-in per SIP installment.", platform: "PPFAS MF / Kuvera", minInvestment: "₹500 SIP" },
-      { name: "Mirae Asset ELSS Tax Saver Fund", provider: "Mirae Asset AMC", rate: "~14.3–14.7%* (5Y)", highlight: "AUM ~₹26,000 Cr — one of the most popular ELSS choices. Expense ratio: 0.55% (Direct). Growth-oriented portfolio with overweight in financials, IT, and consumer sectors. Korean parent Mirae Asset Global brings world-class research. Consistent compounder with a focus on high-quality businesses with strong moats.", platform: "Mirae Asset MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "Mirae Asset ELSS Tax Saver Fund", provider: "Mirae Asset AMC", rate: "~14.3–14.7%* (5Y)", highlight: "AUM ~₹26,000 Cr — one of the most popular ELSS choices. Expense ratio: 0.55% (Direct). Growth-oriented portfolio with overweight in financials, IT, and consumer sectors. Korean parent Mirae Asset Global brings world-class research. Consistent compounder with a focus on high-quality businesses with strong moats.", platform: "Mirae Asset MF / Groww", minInvestment: "₹500 SIP" }
     ]
   },
 
@@ -198,10 +212,25 @@ const WHERE_TO_INVEST = {
     riskLevel: 6,
     note: "Requires demat account. Real-time trading on NSE/BSE. Expense ratio is even lower than index funds. Equity taxation: LTCG >₹1.25L at 12.5% after 1 yr, STCG at 20%.",
     howToStart: "Open a demat + trading account. Search for the ETF ticker (e.g., NIFTYBEES) and buy during market hours.",
+    subCategories: {
+      largecap_nifty: [
+        { name: "Nippon India Nifty BeES", provider: "Nippon India AMC", rate: "~11.2% (5Y)", highlight: "Ticker: NIFTYBEES. India's largest and most liquid ETF with ~₹30,000 Cr AUM. Expense ratio: 0.04%.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)", badge: "Most Liquid" },
+        { name: "ICICI Pru Nifty 50 ETF", provider: "ICICI Prudential AMC", rate: "~11.2% (5Y)", highlight: "Lowest expense ratio at 0.02% (Direct) — effectively free index tracking.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)", badge: "Lowest Cost" },
+        { name: "SBI Nifty 50 ETF", provider: "SBI MF", rate: "~11.2% (5Y)", highlight: "Largest AUM (~₹1,60,000 Cr) preferred by institutional pension funds.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)" }
+      ],
+      nifty_next_50: [
+        { name: "Nippon India Nifty Next 50 ETF (Junior BeES)", provider: "Nippon India AMC", rate: "~14.5% (5Y)", highlight: "Tracks Nifty Next 50 (stocks ranked 51-100). Higher growth potential than Nifty 50.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹650)", badge: "Junior BeES" },
+        { name: "ICICI Pru Nifty Next 50 ETF", provider: "ICICI Prudential AMC", rate: "~14.3% (5Y)", highlight: "Low expense ratio passive exposure to emerging blue-chip market leaders.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹650)" }
+      ],
+      smart_beta_nifty: [
+        { name: "Nifty200 Alpha 30 ETF", provider: "ICICI Prudential AMC", rate: "~19.4% (3Y)", highlight: "Factor ETF selecting top 30 momentum stocks from Nifty 200 index.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹45)", badge: "Factor Alpha" },
+        { name: "Nifty100 Low Volatility 30 ETF", provider: "ICICI Prudential AMC", rate: "~15.6% (3Y)", highlight: "Smart-beta ETF picking lowest volatility large-caps to minimize drawdowns.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹60)" }
+      ]
+    },
     products: [
       { name: "Nippon India Nifty BeES", provider: "Nippon India AMC", rate: "~10.7–11.3%* (5Y)", highlight: "India's oldest Nifty ETF (ticker: NIFTYBEES) with AUM ~₹30,000 Cr and daily volume of ~₹500 Cr. Expense ratio: 0.04% — the absolute cheapest way to own the Nifty 50. Real-time NAV tracking during market hours. No demat minimum quantity — buy even 1 unit. The gold standard for passive Nifty 50 exposure.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)", badge: "Most Liquid" },
       { name: "ICICI Pru Nifty 50 ETF", provider: "ICICI Prudential AMC", rate: "~10.7–11.3%* (5Y)", highlight: "Lowest expense ratio at 0.02% (Direct) — effectively free index tracking. AUM ~₹12,000 Cr. ICICI Prudential's institutional-grade fund management ensures minimal tracking error. Growing liquidity with increasing retail adoption. Best for large lump-sum investors and institutions seeking exact Nifty replication.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)", badge: "Lowest Cost" },
-      { name: "SBI Nifty 50 ETF", provider: "SBI MF", rate: "~10.7–11.3%* (5Y)", highlight: "AUM ~₹1,60,000 Cr (largest by far) — massive institutional holding including EPFO. Expense ratio: 0.07%. SBI MF's scale ensures excellent tracking accuracy and deep liquidity. Preferred ETF for government mandates and CPSE allocations. Retail investors benefit from institutional-grade pricing.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)" },
+      { name: "SBI Nifty 50 ETF", provider: "SBI MF", rate: "~10.7–11.3%* (5Y)", highlight: "AUM ~₹1,60,000 Cr (largest by far) — massive institutional holding including EPFO. Expense ratio: 0.07%. SBI MF's scale ensures excellent tracking accuracy and deep liquidity. Preferred ETF for government mandates and CPSE allocations. Retail investors benefit from institutional-grade pricing.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹260)" }
     ]
   },
 
@@ -336,6 +365,11 @@ const WHERE_TO_INVEST = {
         { name: "PFC Section 54EC Capital Gains Bond", provider: "Power Finance Corp", rate: "5.25%", highlight: "Government-backed 54EC bond. Save LTCG tax on property sales up to ₹50 Lakh per FY.", platform: "PFC Official Portal / Bank", minInvestment: "₹20,000", tenure: "5 years", badge: "Official 54EC" },
         { name: "IRFC Section 54EC Capital Gains Bond", provider: "Indian Railway Finance Corp", rate: "5.25%", highlight: "Official 54EC issuer under Ministry of Railways. Direct sovereign comfort with 5Y lock-in.", platform: "IRFC Portal / Bank", minInvestment: "₹20,000", tenure: "5 years", badge: "Official 54EC" }
       ],
+      tax_free_bonds: [
+        { name: "NHAI 8.20% Tax-Free Bond", provider: "National Highways Authority", rate: "8.20% (Tax-Free)", highlight: "100% Tax-Free annual interest Payout. Listed on NSE/BSE secondary market.", platform: "GoldenPi / Broker", minInvestment: "₹10,000", tenure: "10–15 years", badge: "100% Tax-Free" },
+        { name: "REC 8.30% Tax-Free Bond", provider: "Rural Electrification Corp", rate: "8.30% (Tax-Free)", highlight: "Sovereign PSU tax-free interest bond with zero TDS and zero income tax liability.", platform: "GoldenPi / Broker", minInvestment: "₹10,000", tenure: "15 years", badge: "100% Tax-Free" },
+        { name: "PFC 8.20% Tax-Free Bond", provider: "Power Finance Corp", rate: "8.20% (Tax-Free)", highlight: "High coupon tax-free bond backed by Power Finance Corporation.", platform: "GoldenPi / Broker", minInvestment: "₹10,000", tenure: "10 years" }
+      ],
       psu_bonds: [
         { name: "SBI Tier-2 Perpetual Bond", provider: "State Bank of India", rate: "7.95%", highlight: "Institutional-grade PSU bank bond offering attractive yield with high safety.", platform: "GoldenPi / Broker", minInvestment: "₹1,00,000", tenure: "10 years", badge: "PSU Banking" },
         { name: "NABARD Rural Infrastructure Bond", provider: "NABARD (Govt PSU)", rate: "7.60%", highlight: "Government-owned PSU bond supporting rural infrastructure and agricultural development.", platform: "GoldenPi / Bank Branch", minInvestment: "₹10,000", tenure: "3–5 years", badge: "Govt PSU" }
@@ -371,6 +405,10 @@ const WHERE_TO_INVEST = {
       commodity: [
         { name: "Nippon India Gold BeES", provider: "Nippon India AMC", rate: "~25.9% (5Y)", highlight: "Ticker: GOLDBEES. Physical gold backed by 99.5% pure vault gold. 0.79% expense ratio.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹75)", badge: "Gold Leader" },
         { name: "HDFC Silver ETF", provider: "HDFC AMC", rate: "~28.1% (1Y)", highlight: "Tracks physical silver prices stored in LBMA vaults. Industrial & monetary demand.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹90)" }
+      ],
+      international: [
+        { name: "Motilal Oswal Nasdaq 100 ETF", provider: "Motilal Oswal AMC", rate: "~22.4% (5Y)", highlight: "Ticker: N100. Direct INR exposure to Apple, Microsoft, Nvidia, and Meta.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹175)", badge: "US Tech" },
+        { name: "Mirae Asset S&P 500 Top 50 ETF", provider: "Mirae Asset AMC", rate: "~18.2% (5Y)", highlight: "Tracks the 50 largest blue-chip companies in the US S&P 500 index.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹65)" }
       ]
     },
     products: [
