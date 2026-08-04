@@ -43,41 +43,177 @@ export function shouldRecommendETF(userRiskTolerance = 'Moderate', sectorVolatil
 }
 
 /**
- * Dynamic Top-5 Ranking Function
- * Operates over candidate product arrays sorting dynamically by return rate, badge, and cost fit.
+ * Dynamic Profile-Aware Top-5 Ranking Engine
+ * Evaluates candidate products against user's specific financial profile:
+ * - Risk tolerance (Conservative vs Moderate vs Aggressive)
+ * - Age / Senior Citizen status (>= 60)
+ * - Income / Tax Slab (High tax slab 30%+ favors tax-exempt or growth)
+ * - Investment Horizon (Short <2Y vs Long 5Y+)
+ * - Budget / Minimum Investment Fit
  */
 export function rankWhereToInvest(candidates = [], userProfile = {}, riskPreference = 'Moderate') {
   if (!Array.isArray(candidates) || candidates.length === 0) return [];
 
-  return [...candidates].sort((a, b) => {
+  const risk = userProfile?.risk_tolerance || userProfile?.riskCategory || riskPreference || 'Moderate';
+  const age = Number(userProfile?.age || 35);
+  const income = Number(userProfile?.annual_income || userProfile?.income || userProfile?.annualIncome || 1000000);
+  const taxSlab = Number(userProfile?.tax_slab || (income > 1500000 ? 30 : income > 1000000 ? 20 : income > 700000 ? 15 : 5));
+  const horizon = Number(userProfile?.investment_horizon || userProfile?.horizon || 5);
+  const isSenior = age >= 60;
+
+  const scored = candidates.map(item => {
+    let score = 50; // base score
+    const nameLower = (item.name || '').toLowerCase();
+    const highlightLower = (item.highlight || '').toLowerCase();
+    const badge = item.badge || '';
+    
+    // Parse expected return rate from string (e.g. "~24.5% (5Y)" -> 24.5)
+    const rateMatch = String(item.rate || '').match(/(\d+\.?\d*)/);
+    const rateVal = rateMatch ? parseFloat(rateMatch[1]) : 0;
+
+    // Parse min investment number
+    const minInvMatch = String(item.minInvestment || '').replace(/,/g, '').match(/(\d+)/);
+    const minInvVal = minInvMatch ? parseInt(minInvMatch[1], 10) : 0;
+
+    // Parse tenure years if lock-in specified
+    const lockMatch = String(item.tenure || '').match(/(\d+)\s*year/i);
+    const lockYears = lockMatch ? parseInt(lockMatch[1], 10) : 0;
+
+    // 1. RISK ALIGNMENT
+    if (['Conservative', 'Low', 'Very Low'].includes(risk)) {
+      // Conservative: Boost sovereign, AAA, low vol, index, SCSS, senior, dividend, capital protection
+      if (badge.includes('Sovereign') || badge.includes('54EC') || nameLower.includes('sovereign') || nameLower.includes('g-sec') || nameLower.includes('t-bill') || nameLower.includes('scss') || nameLower.includes('rbi')) {
+        score += 25;
+      }
+      if (badge.includes('Lowest Cost') || badge.includes('Lowest Expense') || nameLower.includes('index') || nameLower.includes('bluechip') || nameLower.includes('large cap') || nameLower.includes('liquid')) {
+        score += 15;
+      }
+      if (badge.includes('Least Volatile') || highlightLower.includes('low drawdown') || highlightLower.includes('zero debt') || highlightLower.includes('conservative')) {
+        score += 15;
+      }
+      // Penalize high volatility / small-cap / high risk / aggressive momentum
+      if (nameLower.includes('small cap') || nameLower.includes('quant') || badge.includes('Highest Returns') || badge.includes('High Alpha') || highlightLower.includes('high volatility') || highlightLower.includes('swing 30')) {
+        score -= 30;
+      }
+    } else if (['Aggressive', 'High', 'Very High'].includes(risk)) {
+      // Aggressive: Boost high alpha, momentum, mid/small cap, sectorial, tech, growth
+      if (badge.includes('Highest Returns') || badge.includes('High Alpha') || badge.includes('Top Pick') || badge.includes('Highest Yield')) {
+        score += 25;
+      }
+      if (nameLower.includes('small cap') || nameLower.includes('midcap') || nameLower.includes('mid cap') || nameLower.includes('tech') || nameLower.includes('momentum') || nameLower.includes('quant')) {
+        score += 20;
+      }
+      if (rateVal > 18) {
+        score += 10;
+      }
+      // Penalize ultra-conservative low return options for aggressive investors
+      if (rateVal > 0 && rateVal < 8 && !badge.includes('54EC')) {
+        score -= 15;
+      }
+    } else {
+      // Moderate: Boost flexi-cap, balanced advantage, large & mid blend, core index
+      if (badge.includes('Category Leader') || badge.includes('Top Track Record') || badge.includes('Most Popular') || nameLower.includes('flexi') || nameLower.includes('balanced') || nameLower.includes('multi cap') || nameLower.includes('nifty 50')) {
+        score += 20;
+      }
+      if (rateVal >= 10 && rateVal <= 20) {
+        score += 10;
+      }
+    }
+
+    // 2. AGE & SENIOR CITIZEN FIT
+    if (isSenior) {
+      if (nameLower.includes('scss') || nameLower.includes('senior') || badge.includes('Most Trusted') || nameLower.includes('rbi') || nameLower.includes('pension')) {
+        score += 30;
+      }
+      if (highlightLower.includes('quarterly interest') || highlightLower.includes('regular payout') || highlightLower.includes('payout')) {
+        score += 15;
+      }
+      if (nameLower.includes('small cap') || nameLower.includes('aggressive')) {
+        score -= 25;
+      }
+    }
+
+    // 3. TAX SLAB FIT
+    if (taxSlab >= 30) {
+      // High tax slab: Boost EEE, 80C, 54EC tax saver, equity index (12.5% LTCG), tax-free bonds, REITs with capital repayment
+      if (badge.includes('54EC') || badge.includes('EEE') || nameLower.includes('ppf') || nameLower.includes('sukanya') || nameLower.includes('elss') || nameLower.includes('tax saver')) {
+        score += 25;
+      }
+      if (highlightLower.includes('tax-free') || highlightLower.includes('80c') || highlightLower.includes('80ccd')) {
+        score += 15;
+      }
+      // Penalize 100% slab-taxed fixed income if yield is low
+      if (highlightLower.includes('taxed at slab rate') && rateVal < 8 && !badge.includes('Sovereign')) {
+        score -= 10;
+      }
+    }
+
+    // 4. HORIZON FIT
+    if (horizon <= 2) {
+      // Short horizon (<2 years): Reward liquid, T-bill, FD, short debt. Penalize 5Y+ lock-in.
+      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('t-bill') || nameLower.includes('short term') || nameLower.includes('fd')) {
+        score += 25;
+      }
+      if (lockYears > 3) {
+        score -= 35;
+      }
+    } else if (horizon >= 7) {
+      // Long horizon (7+ years): Reward compounding equity, mid/small caps, SGB (8Y), PPF (15Y), NPS
+      if (nameLower.includes('compounding') || nameLower.includes('equity') || nameLower.includes('sgb') || nameLower.includes('nps') || nameLower.includes('mid') || nameLower.includes('small')) {
+        score += 15;
+      }
+    }
+
+    // 5. BUDGET FIT
+    const monthlyBudget = Number(userProfile?.monthly_savings || 10000);
+    if (minInvVal > monthlyBudget && minInvVal > 50000) {
+      score -= 20; // Penalize if min investment exceeds user's monthly savings capacity
+    } else if (minInvVal <= 500 && minInvVal > 0) {
+      score += 5; // Reward accessible min investments
+    }
+
+    // 6. BADGE PRIORITY BONUS
     const badgePriority = {
-      'Official Scheme': 5,
-      'Official 54EC': 5,
-      '100% Sovereign': 5,
-      'Top Pick': 4,
-      'Category Leader': 4,
-      'Pharma Leader': 4,
-      'Metals Leader': 4,
-      'Metals Top Pick': 4,
-      'Banking Quality': 4,
-      'Most Liquid': 3,
-      'Lowest Cost': 3
+      'Official Scheme': 35,
+      'Official 54EC': 35,
+      '100% Sovereign': 35,
+      'Category Leader': 15,
+      'Top Pick': 15,
+      'Pharma Leader': 15,
+      'Metals Leader': 15,
+      'Banking Quality': 12,
+      'Most Liquid': 12,
+      'Lowest Cost': 12
     };
-    const scoreA = (badgePriority[a.badge] || 0) * 10;
-    const scoreB = (badgePriority[b.badge] || 0) * 10;
+    score += (badgePriority[badge] || 0);
 
-    if (scoreA !== scoreB) return scoreB - scoreA;
+    // 7. RATE TIE-BREAKER
+    score += Math.min(15, rateVal * 0.5);
 
-    const parseRate = (rStr) => {
-      if (!rStr) return 0;
-      const match = String(rStr).match(/(\d+\.?\d*)/);
-      return match ? parseFloat(match[1]) : 0;
+    // Construct profile match tag if high score
+    let matchTag = null;
+    if (score >= 85) {
+      if (['Conservative', 'Low'].includes(risk)) matchTag = 'Best for Conservative Profile';
+      else if (['Aggressive', 'High'].includes(risk)) matchTag = 'High Growth Match';
+      else matchTag = 'Top Profile Match';
+    } else if (isSenior && score >= 75) {
+      matchTag = 'Senior Citizen Fit';
+    } else if (taxSlab >= 30 && score >= 75) {
+      matchTag = 'High Tax Efficiency';
+    }
+
+    return {
+      ...item,
+      _score: score,
+      profileMatchTag: matchTag
     };
-    const rateA = parseRate(a.rate);
-    const rateB = parseRate(b.rate);
+  });
 
-    return rateB - rateA;
-  }).slice(0, 5);
+  // Sort descending by calculated profile score
+  scored.sort((a, b) => b._score - a._score);
+
+  // Return top 5 items with profile match tags attached
+  return scored.slice(0, 5);
 }
 
 function getPlatformCategory(inv) {

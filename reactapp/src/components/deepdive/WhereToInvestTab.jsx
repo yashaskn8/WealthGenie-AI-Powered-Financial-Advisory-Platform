@@ -56,8 +56,11 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
     </div>
   );
 
+  const userRisk = userProfile?.risk_tolerance || userProfile?.riskCategory || inv?.riskLabel || 'Moderate';
+  const sectorVol = inv?.volatility || 0.25;
+
   const rawProducts = (subCategoryMap && activeSubTab) ? subCategoryMap[activeSubTab] : wtiData.products;
-  const products = rankWhereToInvest(rawProducts || []);
+  const products = rankWhereToInvest(rawProducts || [], userProfile, userRisk);
 
   const level = Math.max(0, Math.min(5, (wtiData.riskLevel || 1) - 1));
   const risk = RISK_LEVELS[level];
@@ -65,8 +68,6 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
   const totalAngle = Math.PI;
   const segGap = 0.025;
 
-  const userRisk = userProfile?.risk_tolerance || userProfile?.riskCategory || inv?.riskLabel || 'Moderate';
-  const sectorVol = inv?.volatility || 0.25;
   const showEtfSuggestion = (inv?.id === 'mid_cap_stocks' || inv?.id === 'direct_equity') && shouldRecommendETF(userRisk, sectorVol);
 
   const isTop5 = products.length >= 5;
@@ -323,6 +324,11 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <h4 className="wti-name">{product.name}</h4>
                     {product.badge && <span className="wti-badge">{product.badge}</span>}
+                    {product.profileMatchTag && (
+                      <span className="wti-badge" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', borderColor: 'rgba(34, 197, 94, 0.4)' }}>
+                        ✓ {product.profileMatchTag}
+                      </span>
+                    )}
                   </div>
                   <span className="wti-provider">{product.provider}</span>
                 </div>
