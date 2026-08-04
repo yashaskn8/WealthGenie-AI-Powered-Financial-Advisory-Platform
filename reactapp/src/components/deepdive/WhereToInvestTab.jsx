@@ -332,7 +332,14 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                   </div>
                   <span className="wti-provider">{product.provider}</span>
                 </div>
-                <div className="wti-rate-chip">{product.rate}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <div className="wti-rate-chip">{product.rate}</div>
+                  {product.postTaxYieldStr && product.postTaxYieldStr !== product.rate && (
+                    <span style={{ fontSize: '0.7rem', color: '#38bdf8', fontWeight: 700 }}>
+                      {product.postTaxYieldStr}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="wti-highlights">{product.highlight}</p>
               <div className="wti-meta-footer">

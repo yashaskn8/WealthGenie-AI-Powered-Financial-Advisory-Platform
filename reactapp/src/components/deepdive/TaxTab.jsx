@@ -197,8 +197,99 @@ const TaxTab = ({ inv }) => {
           </div>
         </div>
       )}
+
+      {/* Interactive Post-Tax Net Yield Simulator */}
+      <InteractiveTaxSimulator inv={inv} />
     </div>
   );
 };
+
+const InteractiveTaxSimulator = ({ inv }) => {
+  const [selectedSlab, setSelectedSlab] = React.useState(30);
+  const nominalReturn = Number(inv?.expectedReturn || inv?.rate || 8);
+  const name = (inv?.name || '').toLowerCase();
+  const cat = (inv?.category || '').toLowerCase();
+
+  const isEEE = taxInfoIsEEE(name, cat, inv);
+  const isEquity = cat.includes('equity') || cat.includes('etf') || name.includes('etf') || name.includes('fund');
+
+  let effectiveTaxRate = isEEE ? 0 : isEquity ? 12.5 : selectedSlab;
+  let taxDeductedAmount = Math.round(100000 * (nominalReturn / 100) * (effectiveTaxRate / 100));
+  let netPostTaxReturnAmount = Math.round(100000 * (nominalReturn / 100)) - taxDeductedAmount;
+  let netPostTaxRate = (nominalReturn * (1 - effectiveTaxRate / 100)).toFixed(2);
+
+  return (
+    <div style={{
+      marginTop: '2rem',
+      padding: '20px',
+      background: 'rgba(15, 23, 42, 0.8)',
+      border: '1px solid rgba(139, 92, 246, 0.3)',
+      borderRadius: '16px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Zap size={20} color="#a855f7" />
+          <h4 style={{ margin: 0, color: '#f8fafc', fontSize: '1rem', fontWeight: 800 }}>
+            Interactive Post-Tax Net Yield Simulator (₹1,00,000 Invested)
+          </h4>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>Income Tax Slab:</span>
+          {[5, 15, 20, 30].map(slab => (
+            <button
+              key={slab}
+              onClick={() => setSelectedSlab(slab)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: selectedSlab === slab ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                background: selectedSlab === slab ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.04)',
+                color: selectedSlab === slab ? '#e9d5ff' : '#94a3b8',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {slab}%
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 16 }}>
+        <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Gross Annual Growth</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', marginTop: 4 }}>
+            ₹{Math.round(100000 * (nominalReturn / 100)).toLocaleString('en-IN')} ({nominalReturn}%)
+          </div>
+        </div>
+        <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 600 }}>Estimated Tax Liability</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f87171', marginTop: 4 }}>
+            - ₹{taxDeductedAmount.toLocaleString('en-IN')} ({effectiveTaxRate}%)
+          </div>
+        </div>
+        <div style={{ padding: '14px', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '10px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 700 }}>Net In-Hand Profit</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ade80', marginTop: 4 }}>
+            ₹{netPostTaxReturnAmount.toLocaleString('en-IN')} ({netPostTaxRate}% Net)
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function taxInfoIsEEE(name, cat, inv) {
+  return (
+    name.includes('ppf') ||
+    name.includes('sukanya') ||
+    name.includes('ssy') ||
+    (name.includes('sgb') && !name.includes('secondary')) ||
+    inv?.taxType === 'eee' ||
+    inv?.tax_free_interest
+  );
+}
 
 export default TaxTab;

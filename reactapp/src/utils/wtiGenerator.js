@@ -172,7 +172,47 @@ export function rankWhereToInvest(candidates = [], userProfile = {}, riskPrefere
       score += 5; // Reward accessible min investments
     }
 
-    // 6. BADGE PRIORITY BONUS
+    // 6. TARGET GOAL ALIGNMENT
+    const targetGoal = (userProfile?.activeGoal || userProfile?.goalType || userProfile?.goal || userProfile?.financialGoal || '').toLowerCase();
+    if (targetGoal.includes('tax') || targetGoal.includes('80c')) {
+      if (badge.includes('54EC') || badge.includes('EEE') || nameLower.includes('ppf') || nameLower.includes('sukanya') || nameLower.includes('elss')) {
+        score += 30;
+      }
+    } else if (targetGoal.includes('emergency') || targetGoal.includes('liquid')) {
+      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('t-bill')) {
+        score += 35;
+      }
+      if (lockYears > 1) score -= 30;
+    } else if (targetGoal.includes('retire') || targetGoal.includes('pension')) {
+      if (nameLower.includes('nps') || nameLower.includes('epf') || nameLower.includes('vpf') || nameLower.includes('index') || nameLower.includes('sgb')) {
+        score += 25;
+      }
+    } else if (targetGoal.includes('child') || targetGoal.includes('education')) {
+      if (nameLower.includes('sukanya') || nameLower.includes('ppf') || nameLower.includes('child') || nameLower.includes('flexi')) {
+        score += 25;
+      }
+    } else if (targetGoal.includes('wealth') || targetGoal.includes('growth')) {
+      if (rateVal >= 15 || nameLower.includes('flexi') || nameLower.includes('mid') || nameLower.includes('small') || nameLower.includes('tech')) {
+        score += 25;
+      }
+    }
+
+    // 7. POST-TAX REAL YIELD COMPUTATION
+    let taxEffectRate = 0.125; // default LTCG equity tax
+    const isEEE = badge.includes('EEE') || badge.includes('54EC') || nameLower.includes('ppf') || nameLower.includes('sukanya') || (nameLower.includes('sgb') && highlightLower.includes('maturity')) || highlightLower.includes('tax-free');
+    const isSlabTaxed = highlightLower.includes('taxed at slab rate') || nameLower.includes('fd') || nameLower.includes('scss') || nameLower.includes('rbi') || highlightLower.includes('slab rate');
+
+    if (isEEE) taxEffectRate = 0;
+    else if (isSlabTaxed) taxEffectRate = taxSlab / 100;
+    else taxEffectRate = 0.125; // 12.5% equity LTCG
+
+    const postTaxYieldVal = rateVal > 0 ? rateVal * (1 - taxEffectRate) : 0;
+    const postTaxYieldStr = postTaxYieldVal > 0 ? `~${postTaxYieldVal.toFixed(1)}% (Post-Tax)` : item.rate;
+
+    // Boost high post-tax yield
+    score += Math.min(20, postTaxYieldVal * 0.8);
+
+    // 8. BADGE PRIORITY BONUS
     const badgePriority = {
       'Official Scheme': 35,
       'Official 54EC': 35,
@@ -187,24 +227,23 @@ export function rankWhereToInvest(candidates = [], userProfile = {}, riskPrefere
     };
     score += (badgePriority[badge] || 0);
 
-    // 7. RATE TIE-BREAKER
-    score += Math.min(15, rateVal * 0.5);
-
     // Construct profile match tag if high score
     let matchTag = null;
-    if (score >= 85) {
+    if (score >= 95) {
       if (['Conservative', 'Low'].includes(risk)) matchTag = 'Best for Conservative Profile';
       else if (['Aggressive', 'High'].includes(risk)) matchTag = 'High Growth Match';
       else matchTag = 'Top Profile Match';
-    } else if (isSenior && score >= 75) {
+    } else if (isSenior && score >= 80) {
       matchTag = 'Senior Citizen Fit';
-    } else if (taxSlab >= 30 && score >= 75) {
+    } else if (taxSlab >= 30 && score >= 80) {
       matchTag = 'High Tax Efficiency';
     }
 
     return {
       ...item,
       _score: score,
+      postTaxYieldVal,
+      postTaxYieldStr,
       profileMatchTag: matchTag
     };
   });
