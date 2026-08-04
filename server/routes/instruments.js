@@ -60,4 +60,21 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+import { rankWhereToInvestBackend } from '../services/RecommendationPipeline.js';
+
+/**
+ * POST /api/instruments/rank-wti [Public/Advisory]
+ * Dynamically ranks Where To Invest product candidates against user profile & macro regimes.
+ */
+router.post('/rank-wti', asyncHandler(async (req, res) => {
+  const { candidates = [], userProfile = {}, options = {} } = req.body || {};
+  const ranked = rankWhereToInvestBackend(candidates, userProfile, options);
+  res.json({
+    success: true,
+    total: ranked.length,
+    products: ranked
+  });
+}));
+
 export default router;
+

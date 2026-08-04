@@ -20,6 +20,7 @@ import {
   rankInstruments,
   normaliseConfidenceScores,
   INSTRUMENT_KEY_MAP,
+  rankWhereToInvestBackend,
 } from '../services/RecommendationPipeline.js';
 
 test('RecommendationPipeline resolveBackendType mapping precision', () => {
@@ -609,6 +610,25 @@ test('rankInstruments sorts descending by score', () => {
   assert.equal(ranked[1].id, 'b');
   assert.equal(ranked[2].id, 'c');
 });
+
+test('rankWhereToInvestBackend evaluates candidates with backend taxEngine and macro regimes', () => {
+  const candidates = [
+    { name: 'Public Provident Fund (PPF)', rate: '7.1%', highlight: '80C EEE status', badge: '100% Sovereign' },
+    { name: 'Quant Small Cap Fund', rate: '22.5%', highlight: 'momentum small cap high volatility', badge: 'Highest Returns' },
+    { name: 'Motilal Oswal Nifty India Defence Index Fund', rate: '18.0%', highlight: 'defence manufacturing order books', badge: 'Official Scheme' }
+  ];
+
+  const profile = { age: 35, annualIncome: 2000000, taxRegime: 'new', riskCategory: 'Moderate', investmentHorizon: 10 };
+  const ranked = rankWhereToInvestBackend(candidates, profile, { regimeApplied: true, regimeKey: 'geopolitical_conflict' });
+
+  assert.equal(ranked.length, 3);
+  assert.ok(ranked[0].profileMatchTag || ranked[0].postTaxYieldStr);
+  
+  // Verify tax savings note computed for 30% slab profile
+  const ppf = ranked.find(c => c.name.includes('PPF'));
+  assert.ok(ppf.taxSavingsNote.includes('Sec 80C'));
+});
+
 
 
 

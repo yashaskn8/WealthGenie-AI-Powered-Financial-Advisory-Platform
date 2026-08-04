@@ -34,209 +34,613 @@ function getTenureLabel(inv) {
 
 /**
  * Stock vs ETF/MF Decision Rule Function
- * Recommends ETF/MF when user's risk tolerance is conservative/moderate or sector volatility > 30%.
+ * Recommends ETF/MF when user's risk tolerance is conservative/moderate,
+ * sector volatility exceeds 30%, or specific life-stage conditions apply.
  */
-export function shouldRecommendETF(userRiskTolerance = 'Moderate', sectorVolatility = 0.25) {
-  if (['Conservative', 'Moderate'].includes(userRiskTolerance)) return true;
+export function shouldRecommendETF(userRiskTolerance = 'Moderate', sectorVolatility = 0.25, userProfile = {}) {
+  if (['Conservative', 'Moderate', 'Low', 'Very Low'].includes(userRiskTolerance)) return true;
   if (sectorVolatility > 0.30) return true;
+  const age = Number(userProfile?.age || 35);
+  const budget = Number(userProfile?.monthly_savings || userProfile?.monthlySavings || 10000);
+  if (age >= 55) return true;                     // Pre-retirement/senior → ETF for safety
+  if (budget < 5000 && age < 30) return true;     // Small budget, young → diversified ETF
   return false;
 }
 
+// ─── Internal Helpers for Scoring Engine ─────────────────────────────
+
+/** Parse a return rate from a display string like "~24.5% (5Y)" → 24.5 */
+function _parseRate(rateStr) {
+  const m = String(rateStr || '').match(/(\d+\.?\d*)/);
+  return m ? parseFloat(m[1]) : 0;
+}
+
+/** Parse minimum investment from display string, stripping commas/symbols */
+function _parseMinInv(minStr) {
+  const s = String(minStr || '').replace(/,/g, '');
+  const m = s.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/** Parse lock-in tenure in years from tenure string */
+function _parseLockYears(tenureStr) {
+  const m = String(tenureStr || '').match(/(\d+)\s*year/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/** Parse AUM in ₹ Crore from highlight text */
+function _parseAUM(text) {
+  const m = String(text || '').match(/AUM\s*~?\s*₹?([\d,.]+)\s*(Cr|Lakh|L)/i);
+  if (!m) return 0;
+  let val = parseFloat(m[1].replace(/,/g, ''));
+  if (/L(akh)?$/i.test(m[2])) val *= 0.01;
+  return val;
+}
+
+/** Parse expense ratio from highlight text */
+function _parseExpenseRatio(text) {
+  const m = String(text || '').match(/(?:expense\s*ratio|ER)\s*:?\s*([\d.]+)%/i);
+  return m ? parseFloat(m[1]) : -1;
+}
+
 /**
- * Dynamic Profile-Aware Top-5 Ranking Engine
- * Evaluates candidate products against user's specific financial profile:
- * - Risk tolerance (Conservative vs Moderate vs Aggressive)
- * - Age / Senior Citizen status (>= 60)
- * - Income / Tax Slab (High tax slab 30%+ favors tax-exempt or growth)
- * - Investment Horizon (Short <2Y vs Long 5Y+)
- * - Budget / Minimum Investment Fit
+ * Infer a 1–9 risk score for a product based on its name, badge, and description.
+ * Used for graduated risk-alignment scoring instead of binary keyword matching.
  */
-export function rankWhereToInvest(candidates = [], userProfile = {}, riskPreference = 'Moderate') {
+function _inferProductRisk(nameLower, highlightLower, badge) {
+  // Risk level 1: Ultra-safe government instruments
+  if (nameLower.includes('t-bill') || nameLower.includes('overnight') || badge === '100% Sovereign') return 1;
+  // Risk level 2: Government-guaranteed / sovereign-backed
+  if (nameLower.includes('ppf') || nameLower.includes('scss') || nameLower.includes('rbi') || nameLower.includes('gilt') || badge.includes('Sovereign') || badge.includes('Govt Sponsored') || badge.includes('Official 54EC') || nameLower.includes('sovereign gold')) return 2;
+  if (nameLower.includes('fd') || nameLower.includes('liquid') || nameLower.includes('short term') || badge.includes('CRISIL AAA') || nameLower.includes('aaa')) return 2;
+  // Risk level 3: Low-risk income / bonds / REITs / gold
+  if (nameLower.includes('bond') || nameLower.includes('debt') || nameLower.includes('corporate bond') || badge.includes('Tax-Free')) return 3;
+  if (nameLower.includes('gold etf') || nameLower.includes('gold fund') || nameLower.includes('sgb') || (nameLower.includes('gold') && !nameLower.includes('small'))) return 3;
+  if (nameLower.includes('silver') || nameLower.includes('commodity')) return 4;
+  if (nameLower.includes('reit') || nameLower.includes('invit')) return 4;
+  if (nameLower.includes('dividend yield') || nameLower.includes('dividend') || badge.includes('Best Dividend')) return 5;
+  // Risk level 4: Moderate — balanced, hybrid, NPS
+  if (nameLower.includes('balanced') || nameLower.includes('hybrid') || nameLower.includes('nps') || nameLower.includes('pension') || nameLower.includes('arbitrage') || nameLower.includes('elss')) return 4;
+  // Risk level 5: Moderate-equity — large cap, index, nifty 50, bluechip
+  if (nameLower.includes('nifty 50') || nameLower.includes('index') || nameLower.includes('bluechip') || nameLower.includes('blue-chip') || nameLower.includes('large cap') || nameLower.includes('large-cap') || nameLower.includes('s&p 500')) return 5;
+  // Risk level 6: Growth — flexi, multi-cap, value, contra, large & mid
+  if (nameLower.includes('flexi') || nameLower.includes('multi cap') || nameLower.includes('value') || nameLower.includes('contra') || nameLower.includes('large & mid') || nameLower.includes('large and mid') || nameLower.includes('focused')) return 6;
+  // Risk level 7: High — mid cap, sectoral, thematic, defence, pharma, infra, banking, IT
+  if (nameLower.includes('mid cap') || nameLower.includes('midcap') || nameLower.includes('mid-cap') || nameLower.includes('sector') || nameLower.includes('pharma') || nameLower.includes('defence') || nameLower.includes('banking') || nameLower.includes('infra') || nameLower.includes('it ') || nameLower.includes('technology') || nameLower.includes('consumption') || nameLower.includes('nasdaq')) return 7;
+  // Risk level 8: Very high — small cap, quant, momentum
+  if (nameLower.includes('small cap') || nameLower.includes('smallcap') || nameLower.includes('small-cap') || nameLower.includes('quant') || highlightLower.includes('momentum') || highlightLower.includes('aggressive')) return 8;
+  return 5; // default moderate
+}
+
+/**
+ * Dynamic Profile-Aware Top-5 Ranking Engine (v2)
+ * ────────────────────────────────────────────────
+ * Evaluates candidate products against the user's full financial profile
+ * using 12 scoring dimensions:
+ *
+ *  1. Risk Alignment (graduated, not binary)
+ *  2. Age & Life-Stage Fit (young / mid-career / pre-retirement / senior)
+ *  3. Tax Efficiency (slab-aware EEE vs LTCG vs slab-taxed)
+ *  4. Investment Horizon (ultra-short to very-long with graduated penalties)
+ *  5. Affordability & Budget Fit
+ *  6. Goal Alignment (emergency, tax, retirement, child, housing, wedding, wealth)
+ *  7. AUM & Institutional Trust
+ *  8. Expense Ratio & Cost Efficiency
+ *  9. Geographic Diversification
+ * 10. Post-Tax Yield Computation
+ * 11. Badge Credibility Bonus
+ * 12. Profile Match Tag Construction
+ */
+/**
+ * Dynamic Profile-Aware Top-5 Ranking Engine (v3)
+ * ────────────────────────────────────────────────
+ * Evaluates candidate products against the user's full financial profile
+ * using 14 scoring & ranking dimensions:
+ *
+ *  1. Risk Alignment (graduated 1-9 scale comparison)
+ *  2. Age & Life-Stage Fit (young / mid-career / pre-retirement / senior)
+ *  3. Tax Efficiency (slab-aware EEE vs LTCG vs slab-taxed)
+ *  4. Investment Horizon (ultra-short to very-long with graduated penalties)
+ *  5. Affordability & Budget Fit
+ *  6. Goal Alignment (emergency, tax, retirement, child, housing, wedding, wealth)
+ *  7. AUM & Institutional Trust
+ *  8. Expense Ratio & Cost Efficiency
+ *  9. Geographic Diversification
+ * 10. Post-Tax Real Yield Computation
+ * 11. Macro Market Regime & Crash Rotation Tilt (when simulated)
+ * 12. Liquidity & Lock-In Fit
+ * 13. Badge Credibility Bonus
+ * 14. Profile Match & Regime Tag Construction
+ *
+ * @param {Array} candidates - Product candidates array
+ * @param {Object} userProfile - Full user profile (risk, age, income, slab, horizon, budget, goal)
+ * @param {String} riskPreference - Fallback risk preference
+ * @param {Object} options - { regimeApplied: boolean, activeRegime: Object, sortBy: 'score'|'postTaxYield'|'expense'|'aum' }
+ */
+export function rankWhereToInvest(candidates = [], userProfile = {}, riskPreference = 'Moderate', options = {}) {
   if (!Array.isArray(candidates) || candidates.length === 0) return [];
 
+  const { regimeApplied = false, activeRegime = null, sortBy = 'score' } = options;
+
+  // ── Extract & normalize profile dimensions ──────────────────────
   const risk = userProfile?.risk_tolerance || userProfile?.riskCategory || riskPreference || 'Moderate';
   const age = Number(userProfile?.age || 35);
   const income = Number(userProfile?.annual_income || userProfile?.income || userProfile?.annualIncome || 1000000);
   const taxSlab = Number(userProfile?.tax_slab || (income > 1500000 ? 30 : income > 1000000 ? 20 : income > 700000 ? 15 : 5));
   const horizon = Number(userProfile?.investment_horizon || userProfile?.horizon || 5);
   const isSenior = age >= 60;
+  const monthlyBudget = Number(userProfile?.monthly_savings || userProfile?.monthlySavings || 10000);
+  const dependents = Number(userProfile?.dependents || 0);
+  const existingEquityPct = Number(userProfile?.existingEquityPct || userProfile?.equity_allocation || 0);
+  const taxRegime = (userProfile?.taxRegime || userProfile?.tax_regime || 'new').toLowerCase();
+  const incomeSource = (userProfile?.incomeSource || userProfile?.income_source || 'salaried').toLowerCase();
+  const existingHoldings = Array.isArray(userProfile?.existingHoldings) ? userProfile.existingHoldings.map(h => (h || '').toLowerCase()) : [];
+  const ASSUMED_INFLATION = 6.0; // CPI inflation assumption for real return calc
+
+  // Map risk label → numeric 1–9 for graduated comparison
+  const RISK_MAP = {
+    'Very Low': 1, 'Conservative': 2, 'Low': 2,
+    'Low-Medium': 3, 'Medium-Low': 3,
+    'Moderate': 5, 'Medium': 5,
+    'Moderately High': 6, 'Medium-High': 6,
+    'High': 7, 'Aggressive': 8, 'Very High': 9
+  };
+  const userRiskNum = RISK_MAP[risk] || 5;
 
   const scored = candidates.map(item => {
     let score = 50; // base score
     const nameLower = (item.name || '').toLowerCase();
     const highlightLower = (item.highlight || '').toLowerCase();
     const badge = item.badge || '';
-    
-    // Parse expected return rate from string (e.g. "~24.5% (5Y)" -> 24.5)
-    const rateMatch = String(item.rate || '').match(/(\d+\.?\d*)/);
-    const rateVal = rateMatch ? parseFloat(rateMatch[1]) : 0;
 
-    // Parse min investment number
-    const minInvMatch = String(item.minInvestment || '').replace(/,/g, '').match(/(\d+)/);
-    const minInvVal = minInvMatch ? parseInt(minInvMatch[1], 10) : 0;
+    const rateVal = _parseRate(item.rate);
+    const minInvVal = _parseMinInv(item.minInvestment);
+    const lockYears = _parseLockYears(item.tenure);
+    const aumCr = _parseAUM(item.highlight);
+    const expRatio = _parseExpenseRatio(item.highlight);
+    const productRisk = _inferProductRisk(nameLower, highlightLower, badge);
 
-    // Parse tenure years if lock-in specified
-    const lockMatch = String(item.tenure || '').match(/(\d+)\s*year/i);
-    const lockYears = lockMatch ? parseInt(lockMatch[1], 10) : 0;
+    // ═══════════════════════════════════════════════════════════════
+    // 1. RISK ALIGNMENT (graduated: -30 to +25)
+    // ═══════════════════════════════════════════════════════════════
+    const riskDelta = Math.abs(productRisk - userRiskNum);
+    if (riskDelta === 0) score += 25;
+    else if (riskDelta === 1) score += 18;
+    else if (riskDelta === 2) score += 10;
+    else if (riskDelta === 3) score += 0;
+    else if (riskDelta === 4) score -= 10;
+    else score -= 20 + Math.min(10, (riskDelta - 5) * 5);
 
-    // 1. RISK ALIGNMENT
-    if (['Conservative', 'Low', 'Very Low'].includes(risk)) {
-      // Conservative: Boost sovereign, AAA, low vol, index, SCSS, senior, dividend, capital protection
-      if (badge.includes('Sovereign') || badge.includes('54EC') || nameLower.includes('sovereign') || nameLower.includes('g-sec') || nameLower.includes('t-bill') || nameLower.includes('scss') || nameLower.includes('rbi')) {
-        score += 25;
-      }
-      if (badge.includes('Lowest Cost') || badge.includes('Lowest Expense') || nameLower.includes('index') || nameLower.includes('bluechip') || nameLower.includes('large cap') || nameLower.includes('liquid')) {
-        score += 15;
-      }
-      if (badge.includes('Least Volatile') || highlightLower.includes('low drawdown') || highlightLower.includes('zero debt') || highlightLower.includes('conservative')) {
-        score += 15;
-      }
-      // Penalize high volatility / small-cap / high risk / aggressive momentum
-      if (nameLower.includes('small cap') || nameLower.includes('quant') || badge.includes('Highest Returns') || badge.includes('High Alpha') || highlightLower.includes('high volatility') || highlightLower.includes('swing 30')) {
-        score -= 30;
-      }
-    } else if (['Aggressive', 'High', 'Very High'].includes(risk)) {
-      // Aggressive: Boost high alpha, momentum, mid/small cap, sectorial, tech, growth
-      if (badge.includes('Highest Returns') || badge.includes('High Alpha') || badge.includes('Top Pick') || badge.includes('Highest Yield')) {
-        score += 25;
-      }
-      if (nameLower.includes('small cap') || nameLower.includes('midcap') || nameLower.includes('mid cap') || nameLower.includes('tech') || nameLower.includes('momentum') || nameLower.includes('quant')) {
-        score += 20;
-      }
-      if (rateVal > 18) {
-        score += 10;
-      }
-      // Penalize ultra-conservative low return options for aggressive investors
-      if (rateVal > 0 && rateVal < 8 && !badge.includes('54EC')) {
-        score -= 15;
-      }
-    } else {
-      // Moderate: Boost flexi-cap, balanced advantage, large & mid blend, core index
-      if (badge.includes('Category Leader') || badge.includes('Top Track Record') || badge.includes('Most Popular') || nameLower.includes('flexi') || nameLower.includes('balanced') || nameLower.includes('multi cap') || nameLower.includes('nifty 50')) {
-        score += 20;
-      }
-      if (rateVal >= 10 && rateVal <= 20) {
-        score += 10;
-      }
+    if (userRiskNum <= 2) {
+      if (badge.includes('Sovereign') || badge.includes('54EC') || badge.includes('Govt') || badge.includes('100% Tax-Free') || badge.includes('CRISIL AAA')) score += 15;
+      if (highlightLower.includes('zero credit risk') || highlightLower.includes('sovereign guarantee') || highlightLower.includes('dicgc')) score += 10;
+      if (nameLower.includes('small cap') || nameLower.includes('quant') || highlightLower.includes('high volatility')) score -= 20;
+    }
+    if (userRiskNum >= 7) {
+      if (rateVal > 20) score += 12;
+      else if (rateVal > 15) score += 6;
+      if (badge.includes('Highest Returns') || badge.includes('High Alpha') || badge.includes('High Growth')) score += 10;
+      if (rateVal > 0 && rateVal < 8 && !badge.includes('54EC') && !badge.includes('Tax-Free')) score -= 15;
+    }
+    if (userRiskNum >= 4 && userRiskNum <= 6) {
+      if (badge.includes('Category Leader') || badge.includes('Top Track Record') || badge.includes('Most Popular')) score += 12;
+      if (nameLower.includes('flexi') || nameLower.includes('balanced') || nameLower.includes('multi cap') || nameLower.includes('large & mid') || nameLower.includes('nifty 50')) score += 10;
+      if (rateVal >= 8 && rateVal <= 25) score += 8;
+      if (productRisk >= 8) score -= 8;
     }
 
-    // 2. AGE & SENIOR CITIZEN FIT
+    // ═══════════════════════════════════════════════════════════════
+    // 2. AGE & LIFE-STAGE FIT (-25 to +30)
+    // ═══════════════════════════════════════════════════════════════
     if (isSenior) {
-      if (nameLower.includes('scss') || nameLower.includes('senior') || badge.includes('Most Trusted') || nameLower.includes('rbi') || nameLower.includes('pension')) {
-        score += 30;
-      }
-      if (highlightLower.includes('quarterly interest') || highlightLower.includes('regular payout') || highlightLower.includes('payout')) {
-        score += 15;
-      }
-      if (nameLower.includes('small cap') || nameLower.includes('aggressive')) {
-        score -= 25;
-      }
+      if (nameLower.includes('scss') || nameLower.includes('senior') || badge.includes('Most Trusted') || nameLower.includes('rbi') || nameLower.includes('pension')) score += 30;
+      if (highlightLower.includes('quarterly interest') || highlightLower.includes('regular payout') || highlightLower.includes('semi-annual') || highlightLower.includes('payout')) score += 15;
+      if (badge.includes('Safest')) score += 8;
+      if (nameLower.includes('small cap') || nameLower.includes('aggressive') || highlightLower.includes('high volatility')) score -= 25;
+      if (lockYears > 5) score -= 10;
+    } else if (age <= 30) {
+      if (rateVal > 15) score += 8;
+      if (highlightLower.includes('compounding') || highlightLower.includes('long-term')) score += 5;
+      if (nameLower.includes('scss') || nameLower.includes('senior')) score -= 20;
+    } else if (age >= 45 && age < 60) {
+      if (nameLower.includes('balanced') || nameLower.includes('large cap') || nameLower.includes('nps') || nameLower.includes('index') || nameLower.includes('gilt')) score += 8;
+      if (productRisk >= 8) score -= 8;
+    }
+    if (dependents >= 2) {
+      if (nameLower.includes('ppf') || nameLower.includes('sukanya') || badge.includes('EEE') || highlightLower.includes('sovereign guarantee')) score += 8;
     }
 
-    // 3. TAX SLAB FIT
+    // ═══════════════════════════════════════════════════════════════
+    // 3. TAX EFFICIENCY — now regime-aware (-15 to +25)
+    //    Old regime: 80C/80CCD deductions are valuable
+    //    New regime: 80C/80CCD deductions DON'T apply, but lower slab rates
+    // ═══════════════════════════════════════════════════════════════
+    const isEEE = badge.includes('EEE') || badge.includes('54EC') || badge.includes('100% Tax-Free') ||
+      nameLower.includes('ppf') || nameLower.includes('sukanya') ||
+      (nameLower.includes('sgb') && highlightLower.includes('maturity')) ||
+      highlightLower.includes('tax-free');
+    const isSlabTaxed = highlightLower.includes('taxed at slab rate') || highlightLower.includes('slab rate') ||
+      nameLower.includes('fd') || nameLower.includes('scss') ||
+      (nameLower.includes('rbi') && nameLower.includes('bond'));
+    const has80CBenefit = nameLower.includes('ppf') || nameLower.includes('elss') || nameLower.includes('sukanya') || nameLower.includes('nps') || highlightLower.includes('80c') || highlightLower.includes('80ccd');
+    const isOldRegime = taxRegime === 'old';
+
     if (taxSlab >= 30) {
-      // High tax slab: Boost EEE, 80C, 54EC tax saver, equity index (12.5% LTCG), tax-free bonds, REITs with capital repayment
-      if (badge.includes('54EC') || badge.includes('EEE') || nameLower.includes('ppf') || nameLower.includes('sukanya') || nameLower.includes('elss') || nameLower.includes('tax saver')) {
-        score += 25;
-      }
-      if (highlightLower.includes('tax-free') || highlightLower.includes('80c') || highlightLower.includes('80ccd')) {
+      if (isEEE) score += 25;
+      // 80C deduction-based instruments: only valuable under old regime
+      if (has80CBenefit && isOldRegime) {
         score += 15;
+      } else if (has80CBenefit && !isOldRegime) {
+        // New regime: 80C doesn't save tax, but instrument itself may still be good
+        score += 3;
       }
-      // Penalize 100% slab-taxed fixed income if yield is low
-      if (highlightLower.includes('taxed at slab rate') && rateVal < 8 && !badge.includes('Sovereign')) {
-        score -= 10;
-      }
+      if (badge.includes('54EC') || nameLower.includes('tax saver')) score += 10;
+      if (isSlabTaxed && rateVal < 8 && !badge.includes('Sovereign')) score -= 15;
+    } else if (taxSlab >= 20) {
+      if (isEEE) score += 15;
+      if (has80CBenefit && isOldRegime) score += 8;
+      if (badge.includes('54EC') || nameLower.includes('elss')) score += 5;
+    } else {
+      if (isEEE) score += 5;
     }
 
-    // 4. HORIZON FIT
-    if (horizon <= 2) {
-      // Short horizon (<2 years): Reward liquid, T-bill, FD, short debt. Penalize 5Y+ lock-in.
-      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('t-bill') || nameLower.includes('short term') || nameLower.includes('fd')) {
-        score += 25;
-      }
-      if (lockYears > 3) {
-        score -= 35;
-      }
-    } else if (horizon >= 7) {
-      // Long horizon (7+ years): Reward compounding equity, mid/small caps, SGB (8Y), PPF (15Y), NPS
-      if (nameLower.includes('compounding') || nameLower.includes('equity') || nameLower.includes('sgb') || nameLower.includes('nps') || nameLower.includes('mid') || nameLower.includes('small')) {
-        score += 15;
-      }
+    // LTCG awareness: equity held > 1yr at 12.5%, debt at slab rate
+    const isEquityType = productRisk >= 5 && !isSlabTaxed && !isEEE;
+    const isLTCGEquity = isEquityType && horizon >= 1;
+    if (isLTCGEquity && rateVal > 0) {
+      // Equity LTCG at 12.5% above ₹1.25L threshold is relatively mild
+      if (taxSlab >= 30) score += 3; // net tax advantage vs slab-taxed alternatives
     }
 
-    // 5. BUDGET FIT
-    const monthlyBudget = Number(userProfile?.monthly_savings || 10000);
-    if (minInvVal > monthlyBudget && minInvVal > 50000) {
-      score -= 20; // Penalize if min investment exceeds user's monthly savings capacity
-    } else if (minInvVal <= 500 && minInvVal > 0) {
-      score += 5; // Reward accessible min investments
+    // ═══════════════════════════════════════════════════════════════
+    // 4. INVESTMENT HORIZON FIT (-35 to +25)
+    //    Now covers all 5 horizon buckets with no gaps
+    // ═══════════════════════════════════════════════════════════════
+    if (horizon <= 1) {
+      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('overnight') || nameLower.includes('t-bill')) score += 25;
+      if (nameLower.includes('fd') || nameLower.includes('short term')) score += 15;
+      if (lockYears > 1) score -= 35;
+      if (productRisk >= 5) score -= 15;
+    } else if (horizon <= 3) {
+      if (nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('short term') || nameLower.includes('arbitrage') || badge.includes('Most Liquid')) score += 20;
+      if (lockYears > 3) score -= 25;
+      if (productRisk >= 7) score -= 12;
+    } else if (horizon >= 4 && horizon <= 6) {
+      // ── Medium-term sweet spot: hybrid, balanced, large cap, ELSS, index ──
+      if (nameLower.includes('balanced') || nameLower.includes('hybrid') || nameLower.includes('elss') || nameLower.includes('large cap') || nameLower.includes('index') || nameLower.includes('flexi') || nameLower.includes('nifty 50') || nameLower.includes('sgb')) score += 15;
+      if (nameLower.includes('corporate bond') || nameLower.includes('debt') || nameLower.includes('reit') || nameLower.includes('gold')) score += 10;
+      if (rateVal >= 8 && rateVal <= 20) score += 6;
+      if (lockYears > 6) score -= 15;
+      if (productRisk >= 8) score -= 8;
+    } else if (horizon >= 7 && horizon < 15) {
+      if (nameLower.includes('equity') || nameLower.includes('sgb') || nameLower.includes('nps') || nameLower.includes('index') || nameLower.includes('mid') || nameLower.includes('small')) score += 12;
+      if (rateVal > 12) score += 8;
+    } else if (horizon >= 15) {
+      if (nameLower.includes('ppf') || nameLower.includes('nps') || nameLower.includes('equity') || nameLower.includes('small cap') || nameLower.includes('mid cap') || nameLower.includes('index')) score += 15;
+      if (rateVal > 15) score += 10;
     }
 
-    // 6. TARGET GOAL ALIGNMENT
+    // ═══════════════════════════════════════════════════════════════
+    // 5. AFFORDABILITY & BUDGET FIT (-20 to +8)
+    // ═══════════════════════════════════════════════════════════════
+    if (minInvVal > 0) {
+      if (minInvVal > monthlyBudget * 3 && minInvVal > 50000) score -= 20;
+      else if (minInvVal > monthlyBudget && minInvVal > 10000) score -= 8;
+      else if (minInvVal <= 500) score += 8;
+      else if (minInvVal <= monthlyBudget * 0.3) score += 5;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 6. GOAL ALIGNMENT (-30 to +35)
+    // ═══════════════════════════════════════════════════════════════
     const targetGoal = (userProfile?.activeGoal || userProfile?.goalType || userProfile?.goal || userProfile?.financialGoal || '').toLowerCase();
-    if (targetGoal.includes('tax') || targetGoal.includes('80c')) {
-      if (badge.includes('54EC') || badge.includes('EEE') || nameLower.includes('ppf') || nameLower.includes('sukanya') || nameLower.includes('elss')) {
-        score += 30;
-      }
-    } else if (targetGoal.includes('emergency') || targetGoal.includes('liquid')) {
-      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('t-bill')) {
-        score += 35;
-      }
-      if (lockYears > 1) score -= 30;
+    if (targetGoal.includes('emergency') || targetGoal.includes('liquid')) {
+      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('overnight')) score += 35;
+      if (nameLower.includes('fd') || nameLower.includes('t-bill')) score += 20;
+      if (lockYears > 0) score -= 30;
+    } else if (targetGoal.includes('tax') || targetGoal.includes('80c')) {
+      if (badge.includes('54EC') || badge.includes('EEE') || nameLower.includes('ppf') || nameLower.includes('elss') || nameLower.includes('sukanya')) score += 30;
+      if (nameLower.includes('nps') || highlightLower.includes('80ccd')) score += 20;
     } else if (targetGoal.includes('retire') || targetGoal.includes('pension')) {
-      if (nameLower.includes('nps') || nameLower.includes('epf') || nameLower.includes('vpf') || nameLower.includes('index') || nameLower.includes('sgb')) {
-        score += 25;
-      }
+      if (nameLower.includes('nps') || nameLower.includes('epf') || nameLower.includes('vpf')) score += 25;
+      if (nameLower.includes('index') || nameLower.includes('sgb') || nameLower.includes('ppf')) score += 15;
     } else if (targetGoal.includes('child') || targetGoal.includes('education')) {
-      if (nameLower.includes('sukanya') || nameLower.includes('ppf') || nameLower.includes('child') || nameLower.includes('flexi')) {
-        score += 25;
+      if (nameLower.includes('sukanya') || nameLower.includes('ppf') || nameLower.includes('child')) score += 25;
+      if (nameLower.includes('flexi') || nameLower.includes('balanced') || nameLower.includes('index')) score += 12;
+    } else if (targetGoal.includes('house') || targetGoal.includes('home') || targetGoal.includes('property')) {
+      if (horizon <= 5) {
+        if (nameLower.includes('fd') || nameLower.includes('short term') || nameLower.includes('debt') || nameLower.includes('arbitrage')) score += 20;
+      } else {
+        if (nameLower.includes('balanced') || nameLower.includes('flexi') || nameLower.includes('large cap') || nameLower.includes('index')) score += 18;
       }
-    } else if (targetGoal.includes('wealth') || targetGoal.includes('growth')) {
-      if (rateVal >= 15 || nameLower.includes('flexi') || nameLower.includes('mid') || nameLower.includes('small') || nameLower.includes('tech')) {
-        score += 25;
+    } else if (targetGoal.includes('wedding') || targetGoal.includes('marriage')) {
+      if (horizon <= 3) {
+        if (nameLower.includes('fd') || nameLower.includes('short term') || nameLower.includes('debt') || nameLower.includes('liquid')) score += 20;
+      } else {
+        if (nameLower.includes('balanced') || nameLower.includes('flexi') || nameLower.includes('large cap')) score += 15;
+      }
+    } else if (targetGoal.includes('wealth') || targetGoal.includes('growth') || targetGoal.includes('corpus')) {
+      if (rateVal >= 15) score += 20;
+      if (nameLower.includes('flexi') || nameLower.includes('mid') || nameLower.includes('small') || nameLower.includes('tech') || nameLower.includes('focused')) score += 12;
+    } else if (targetGoal.includes('vacation') || targetGoal.includes('travel') || targetGoal.includes('car')) {
+      if (horizon <= 2) {
+        if (nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('short term')) score += 22;
+      } else {
+        if (nameLower.includes('balanced') || nameLower.includes('flexi') || nameLower.includes('debt')) score += 12;
       }
     }
 
-    // 7. POST-TAX REAL YIELD COMPUTATION
-    let taxEffectRate = 0.125; // default LTCG equity tax
-    const isEEE = badge.includes('EEE') || badge.includes('54EC') || nameLower.includes('ppf') || nameLower.includes('sukanya') || (nameLower.includes('sgb') && highlightLower.includes('maturity')) || highlightLower.includes('tax-free');
-    const isSlabTaxed = highlightLower.includes('taxed at slab rate') || nameLower.includes('fd') || nameLower.includes('scss') || nameLower.includes('rbi') || highlightLower.includes('slab rate');
+    // ═══════════════════════════════════════════════════════════════
+    // 7. AUM & INSTITUTIONAL TRUST (0 to +12)
+    // ═══════════════════════════════════════════════════════════════
+    if (aumCr > 0) {
+      if (aumCr >= 50000) score += 12;
+      else if (aumCr >= 10000) score += 8;
+      else if (aumCr >= 5000) score += 5;
+      else if (aumCr >= 1000) score += 2;
+      if (aumCr < 500 && userRiskNum <= 3) score -= 3;
+    }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 8. EXPENSE RATIO & COST EFFICIENCY (0 to +12)
+    // ═══════════════════════════════════════════════════════════════
+    if (expRatio >= 0) {
+      if (expRatio <= 0.10) score += 10;
+      else if (expRatio <= 0.30) score += 7;
+      else if (expRatio <= 0.60) score += 4;
+      else if (expRatio > 1.0) score -= 3;
+      if (horizon >= 10 && expRatio <= 0.20) score += 5;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 9. GEOGRAPHIC DIVERSIFICATION (0 to +12)
+    // ═══════════════════════════════════════════════════════════════
+    const isInternational = nameLower.includes('nasdaq') || nameLower.includes('s&p 500') ||
+      nameLower.includes('us ') || highlightLower.includes('us equity') ||
+      highlightLower.includes('us-listed') || badge.includes('US Tech') ||
+      badge.includes('Broadest Coverage');
+    if (isInternational) {
+      score += 7;
+      if (existingEquityPct > 60) score += 5;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 10. POST-TAX REAL YIELD COMPUTATION
+    // ═══════════════════════════════════════════════════════════════
+    let taxEffectRate = 0.125; // default LTCG equity
     if (isEEE) taxEffectRate = 0;
     else if (isSlabTaxed) taxEffectRate = taxSlab / 100;
-    else taxEffectRate = 0.125; // 12.5% equity LTCG
 
     const postTaxYieldVal = rateVal > 0 ? rateVal * (1 - taxEffectRate) : 0;
     const postTaxYieldStr = postTaxYieldVal > 0 ? `~${postTaxYieldVal.toFixed(1)}% (Post-Tax)` : item.rate;
 
-    // Boost high post-tax yield
-    score += Math.min(20, postTaxYieldVal * 0.8);
+    if (postTaxYieldVal > 0) {
+      score += Math.min(15, postTaxYieldVal * 0.6);
+    }
 
-    // 8. BADGE PRIORITY BONUS
+    // ═══════════════════════════════════════════════════════════════
+    // 11. MACRO REGIME TILT — covers all 5 regimes from regimeRotationEngine
+    // ═══════════════════════════════════════════════════════════════
+    let regimeBoostTag = null;
+    if (regimeApplied && activeRegime) {
+      const titleLower = (activeRegime.title || '').toLowerCase();
+      let matchesRegime = false;
+      let regimeLabel = 'Regime Tilt';
+
+      if (titleLower.includes('war') || titleLower.includes('conflict') || titleLower.includes('geopolitical')) {
+        if (nameLower.includes('defence') || nameLower.includes('energy') || nameLower.includes('gold') || nameLower.includes('sgb') || badge.includes('Sovereign')) {
+          matchesRegime = true;
+          regimeLabel = 'Geopolitical Hedge';
+        }
+        // Penalize trade-dependent sectors during conflict
+        if (nameLower.includes('auto') || nameLower.includes('consumer') || nameLower.includes('fmcg')) score -= 10;
+      } else if (titleLower.includes('pandemic') || titleLower.includes('health') || titleLower.includes('lockdown')) {
+        if (nameLower.includes('pharma') || nameLower.includes('health') || nameLower.includes('it ') || nameLower.includes('technology') || nameLower.includes('fmcg')) {
+          matchesRegime = true;
+          regimeLabel = 'Pandemic Resilient';
+        }
+        if (nameLower.includes('travel') || nameLower.includes('hotel') || nameLower.includes('auto')) score -= 12;
+      } else if (titleLower.includes('crash') || titleLower.includes('drawdown')) {
+        if (nameLower.includes('liquid') || nameLower.includes('bluechip') || nameLower.includes('fd') || badge.includes('Sovereign') || nameLower.includes('overnight') || nameLower.includes('gilt')) {
+          matchesRegime = true;
+          regimeLabel = 'Crash Defense';
+        }
+        if (productRisk >= 7) score -= 15;
+      } else if (titleLower.includes('inflation') || titleLower.includes('commodity')) {
+        // Inflation spike: real assets, floating rate, commodities benefit
+        if (nameLower.includes('gold') || nameLower.includes('sgb') || nameLower.includes('silver') || nameLower.includes('commodity') || nameLower.includes('rbi') || nameLower.includes('floating') || nameLower.includes('metal')) {
+          matchesRegime = true;
+          regimeLabel = 'Inflation Hedge';
+        }
+        // Fixed-rate long-duration instruments lose value during inflation
+        if ((nameLower.includes('fd') || nameLower.includes('ppf') || nameLower.includes('gilt')) && rateVal < 8) score -= 8;
+      } else if (titleLower.includes('rate cut') || titleLower.includes('easing') || titleLower.includes('monetary')) {
+        // Rate cut cycle: long duration bonds gain, growth mid-caps benefit
+        if (nameLower.includes('gilt') || nameLower.includes('long duration') || nameLower.includes('dynamic bond') || nameLower.includes('mid cap') || nameLower.includes('growth')) {
+          matchesRegime = true;
+          regimeLabel = 'Rate Cut Beneficiary';
+        }
+      }
+
+      if (matchesRegime) {
+        score += 25;
+        regimeBoostTag = `⚡ ${regimeLabel}`;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 12. BADGE CREDIBILITY BONUS (0 to +35)
+    // ═══════════════════════════════════════════════════════════════
     const badgePriority = {
-      'Official Scheme': 35,
-      'Official 54EC': 35,
-      '100% Sovereign': 35,
-      'Category Leader': 15,
-      'Top Pick': 15,
-      'Pharma Leader': 15,
-      'Metals Leader': 15,
-      'Banking Quality': 12,
-      'Most Liquid': 12,
-      'Lowest Cost': 12
+      'Official Scheme': 35, 'Official 54EC': 35, '100% Sovereign': 35,
+      '100% Tax-Free': 25,
+      'Category Leader': 15, 'Top Pick': 15,
+      'Pharma Leader': 12, 'Metals Top Pick': 12, 'Banking Quality': 12,
+      'Most Liquid': 12, 'Lowest Cost': 12, 'Lowest Expense': 12,
+      'Top Track Record': 10, 'Most Popular': 10, 'Most Trusted': 10,
+      'Highest Yield': 8, 'Highest Return': 8, 'Highest Returns': 8,
+      'High Alpha': 8, 'High Growth': 8,
+      'Best Returns': 6, 'Best for Safety': 6,
+      'Govt Sponsored': 10, 'Govt PSU': 8,
+      'Tax-Free Maturity': 10,
+      'Largest REIT': 8, 'Largest M-Cap': 8,
+      'Zero Debt': 6, 'Best Dividend': 6,
+      'Industrial Silver': 4, 'Junior BeES': 4, 'Factor Alpha': 4,
+      'EV Ancillary': 4, 'High Growth IT': 4,
+      'Sector Benchmark': 6, 'Broad Theme': 4,
+      'Most Accessible': 4, 'Highest EEE Rate': 10, 'Widest Access': 4,
+      'Highest PSU Rate': 6, 'Highest Rate': 6,
+      'PSU Banking': 4, 'Retail Leader': 4, 'Top InvIT Yield': 6,
+      'No Demat Needed': 4, 'Most Liquid': 12,
+      'Largest AMC': 6, 'Official Service': 6,
+      'Bond Specialist': 4, 'Highly Curated': 4,
     };
     score += (badgePriority[badge] || 0);
 
-    // Construct profile match tag if high score
+    // ═══════════════════════════════════════════════════════════════
+    // 13. PROFILE MATCH TAG (descriptive label for UI display)
+    // ═══════════════════════════════════════════════════════════════
     let matchTag = null;
-    if (score >= 95) {
-      if (['Conservative', 'Low'].includes(risk)) matchTag = 'Best for Conservative Profile';
-      else if (['Aggressive', 'High'].includes(risk)) matchTag = 'High Growth Match';
+    const matchReasons = [];
+    if (riskDelta <= 1) matchReasons.push('risk');
+    if (isEEE && taxSlab >= 20) matchReasons.push('tax');
+    if (isSenior && (nameLower.includes('scss') || nameLower.includes('senior') || nameLower.includes('rbi') || highlightLower.includes('quarterly interest'))) matchReasons.push('senior');
+    if (horizon <= 2 && (nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('t-bill'))) matchReasons.push('short');
+    if (horizon >= 7 && rateVal > 12) matchReasons.push('compounder');
+    if (isInternational) matchReasons.push('diversified');
+
+    if (regimeBoostTag) {
+      matchTag = regimeBoostTag;
+    } else if (score >= 100) {
+      if (matchReasons.includes('senior')) matchTag = 'Senior Citizen Fit';
+      else if (matchReasons.includes('tax')) matchTag = 'High Tax Efficiency';
+      else if (matchReasons.includes('short')) matchTag = 'Short-Term Parking';
+      else if (matchReasons.includes('compounder')) matchTag = 'Long-Term Compounder';
+      else if (userRiskNum <= 3) matchTag = 'Best for Conservative Profile';
+      else if (userRiskNum >= 7) matchTag = 'High Growth Match';
       else matchTag = 'Top Profile Match';
-    } else if (isSenior && score >= 80) {
+    } else if (score >= 85 && matchReasons.length >= 2) {
+      if (matchReasons.includes('senior')) matchTag = 'Senior Citizen Fit';
+      else if (matchReasons.includes('diversified')) matchTag = 'Diversification Boost';
+      else matchTag = 'Strong Profile Fit';
+    } else if (isSenior && score >= 80 && matchReasons.includes('senior')) {
       matchTag = 'Senior Citizen Fit';
-    } else if (taxSlab >= 30 && score >= 80) {
+    } else if (taxSlab >= 30 && score >= 80 && matchReasons.includes('tax')) {
       matchTag = 'High Tax Efficiency';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 14. DYNAMIC TAX SAVINGS & INVESTMENT ROUTE COMPUTATION
+    //     Now regime-aware: 80C note only appears for old regime
+    // ═══════════════════════════════════════════════════════════════
+    let taxSavingsNote = null;
+    const effectiveTaxRate = (taxSlab * 1.04) / 100; // include 4% health & education cess
+
+    if (nameLower.includes('ppf') || nameLower.includes('elss') || nameLower.includes('sukanya') || highlightLower.includes('80c')) {
+      if (isOldRegime) {
+        const max80cSavings = Math.round(150000 * effectiveTaxRate);
+        if (max80cSavings > 0) {
+          taxSavingsNote = `Saves up to ₹${max80cSavings.toLocaleString('en-IN')} tax/yr under Sec 80C (Old Regime)`;
+        }
+      } else {
+        taxSavingsNote = '⚠ Sec 80C not applicable under New Regime — invest for returns, not tax saving';
+      }
+    } else if (nameLower.includes('nps') || highlightLower.includes('80ccd')) {
+      if (isOldRegime) {
+        const npsExtraSavings = Math.round(50000 * effectiveTaxRate);
+        if (npsExtraSavings > 0) {
+          taxSavingsNote = `Saves up to ₹${npsExtraSavings.toLocaleString('en-IN')} extra tax/yr under Sec 80CCD(1B) (Old Regime)`;
+        }
+      } else {
+        // NPS employer contribution (80CCD(2)) IS available in new regime
+        taxSavingsNote = 'Employer NPS (80CCD(2)) available in New Regime; self 80CCD(1B) is not';
+      }
+    } else if (badge.includes('54EC') || nameLower.includes('54ec')) {
+      taxSavingsNote = `Exempts up to 20% LTCG tax on real estate property sale`;
+    }
+
+    // Determine optimal investment execution route (SIP vs Lump-Sum)
+    let investmentRoute = 'SIP Recommended';
+    if (productRisk <= 3 || nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('sgb') || nameLower.includes('t-bill') || nameLower.includes('bond') || badge.includes('54EC')) {
+      investmentRoute = 'Lump-Sum Suitable';
+    } else if (highlightLower.includes('small cap') || highlightLower.includes('momentum') || productRisk >= 7) {
+      investmentRoute = 'Strict SIP Route';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 15. INCOME-SOURCE FIT (-8 to +12)
+    //     Salaried → EPF/NPS/PPF boost; Business → liquid/debt tilt
+    // ═══════════════════════════════════════════════════════════════
+    if (incomeSource === 'salaried' || incomeSource === 'salary') {
+      if (nameLower.includes('nps') || nameLower.includes('epf') || nameLower.includes('vpf')) score += 12;
+      if (nameLower.includes('ppf')) score += 5;
+    } else if (incomeSource === 'business' || incomeSource === 'self-employed' || incomeSource === 'freelance') {
+      if (nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('debt')) score += 8;
+      if (nameLower.includes('epf')) score -= 8; // EPF not available for non-salaried
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 16. CONCENTRATION / OVERLAP PENALTY (-15)
+    //     If user already holds a similar product, penalize duplicates
+    // ═══════════════════════════════════════════════════════════════
+    if (existingHoldings.length > 0) {
+      const nameWords = nameLower.split(/\s+/).filter(w => w.length > 3);
+      const hasOverlap = existingHoldings.some(holding =>
+        nameWords.some(word => holding.includes(word)) || nameLower.includes(holding) || holding.includes(nameLower)
+      );
+      if (hasOverlap) score -= 15;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 17. RISK-ADJUSTED EFFICENCY (SHARPE RATIO PROXY: -10 to +12)
+    //     Penalizes high volatility products if return doesn't compensate
+    // ═══════════════════════════════════════════════════════════════
+    const RISK_FREE_RATE = 7.1; // RBI / PPF sovereign benchmark
+    const estimatedVolatility = Math.max(2.0, productRisk * 3.2); // Volatility proxy in %
+    const excessReturn = Math.max(0, postTaxYieldVal - RISK_FREE_RATE);
+    const sharpeRatioEst = parseFloat((excessReturn / estimatedVolatility).toFixed(2));
+
+    if (productRisk >= 6) {
+      if (sharpeRatioEst >= 0.65) score += 12; // Excellent risk-adjusted compensation
+      else if (sharpeRatioEst >= 0.40) score += 6;
+      else if (sharpeRatioEst < 0.25) score -= 10; // High risk, poor risk-adjusted yield
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 18. EMERGENCY FUND LIQUIDITY URGENCY MATCH (-35 to +35)
+    // ═══════════════════════════════════════════════════════════════
+    const emergencyMonths = Number(userProfile?.emergency_fund_months || userProfile?.emergencyFundMonths || userProfile?.emergencyMonths || 6);
+    if (emergencyMonths < 3) {
+      if (badge.includes('Most Liquid') || nameLower.includes('liquid') || nameLower.includes('overnight')) {
+        score += 35; // Critical need for liquid capital
+      } else if (productRisk <= 2 || nameLower.includes('fd')) {
+        score += 15;
+      }
+      if (lockYears >= 3) {
+        score -= 35; // Severe penalty: long lock-in locks up emergency reserves
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 19. SECTION 112A LTCG EXEMPTION CALLOUT
+    // ═══════════════════════════════════════════════════════════════
+    const isEquityMF = (productRisk >= 5 && !isSlabTaxed && !isEEE) || nameLower.includes('elss') || nameLower.includes('index') || nameLower.includes('flexi');
+    if (isEquityMF && !taxSavingsNote && horizon >= 1) {
+      taxSavingsNote = 'First ₹1.25 Lakh LTCG profit per financial year is 100% tax-free under Sec 112A';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 20. INFLATION-ADJUSTED REAL RETURN WARNING
+    //     Flag products that lose to inflation after tax
+    // ═══════════════════════════════════════════════════════════════
+    const realReturnVal = postTaxYieldVal - ASSUMED_INFLATION;
+    let realReturnWarning = null;
+    if (realReturnVal < 0 && rateVal > 0) {
+      realReturnWarning = `⚠ Post-tax real return is negative (~${realReturnVal.toFixed(1)}% after ${ASSUMED_INFLATION}% inflation)`;
+      // Mild penalty for negative real returns, but don't over-penalize govt schemes
+      if (!badge.includes('Sovereign') && !badge.includes('Official')) score -= 5;
+    } else if (realReturnVal > 0 && realReturnVal < 1.5) {
+      realReturnWarning = `Barely beats inflation (~${realReturnVal.toFixed(1)}% real return)`;
     }
 
     return {
@@ -244,12 +648,28 @@ export function rankWhereToInvest(candidates = [], userProfile = {}, riskPrefere
       _score: score,
       postTaxYieldVal,
       postTaxYieldStr,
-      profileMatchTag: matchTag
+      profileMatchTag: matchTag,
+      taxSavingsNote,
+      investmentRoute,
+      realReturnWarning,
+      realReturnVal,
+      sharpeRatioEst,
+      expRatioVal: expRatio >= 0 ? expRatio : 99,
+      aumCrVal: aumCr
     };
   });
 
-  // Sort descending by calculated profile score
-  scored.sort((a, b) => b._score - a._score);
+  // ── Sort candidates based on requested mode ──────────────────────
+  if (sortBy === 'postTaxYield') {
+    scored.sort((a, b) => b.postTaxYieldVal - a.postTaxYieldVal || b._score - a._score);
+  } else if (sortBy === 'expense') {
+    scored.sort((a, b) => a.expRatioVal - b.expRatioVal || b._score - a._score);
+  } else if (sortBy === 'aum') {
+    scored.sort((a, b) => b.aumCrVal - a.aumCrVal || b._score - a._score);
+  } else {
+    // Default: Sort descending by calculated profile score
+    scored.sort((a, b) => b._score - a._score);
+  }
 
   // Return top 5 items with profile match tags attached
   return scored.slice(0, 5);

@@ -566,6 +566,147 @@ function normaliseConfidenceScores(rawScores) {
   return normalised;
 }
 
+// ── Backend Where To Invest (WTI) Dynamic Ranking Engine ───────────
+import { getRegimeTilts } from './regimeRotationEngine.js';
+
+export function rankWhereToInvestBackend(candidates = [], profile = {}, options = {}) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+
+  const { regimeApplied = false, regimeKey = 'geopolitical_conflict', sortBy = 'score' } = options;
+
+  const age = Number(profile.age || 35);
+  const annualIncome = Number(profile.annualIncome || profile.annual_income || 1000000);
+  const taxRegime = profile.taxRegime || 'new';
+  const riskCat = (profile.riskCategory || profile.risk_tolerance || 'Moderate').toLowerCase();
+  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || 5);
+
+  // 1. Compute marginal tax rate using backend taxEngine
+  const marginalRate = getTaxSlab(annualIncome, taxRegime);
+
+  // 2. Fetch macro regime tilts if regime simulation is requested
+  const regimeTilts = regimeApplied ? getRegimeTilts(regimeKey) : {};
+
+  // Risk mapping 1-9
+  const RISK_MAP = {
+    'very low': 1, 'conservative': 2, 'low': 2,
+    'low-medium': 3, 'moderate': 5, 'medium': 5,
+    'moderately high': 6, 'high': 7, 'aggressive': 8, 'very high': 9
+  };
+  const userRiskNum = RISK_MAP[riskCat] || 5;
+
+  const scored = candidates.map(item => {
+    let score = 50;
+    const nameLower = (item.name || '').toLowerCase();
+    const highlightLower = (item.highlight || '').toLowerCase();
+    const badge = item.badge || '';
+
+    // Extract return rate
+    const rateMatch = String(item.rate || '').match(/(\d+\.?\d*)/);
+    const nominalRate = rateMatch ? parseFloat(rateMatch[1]) : 0;
+
+    // Infer risk score
+    let productRisk = 5;
+    if (nameLower.includes('t-bill') || nameLower.includes('overnight') || badge === '100% Sovereign') productRisk = 1;
+    else if (nameLower.includes('ppf') || nameLower.includes('scss') || nameLower.includes('rbi') || nameLower.includes('gilt') || badge.includes('Sovereign') || nameLower.includes('fd') || nameLower.includes('liquid')) productRisk = 2;
+    else if (nameLower.includes('bond') || nameLower.includes('debt') || nameLower.includes('reit') || nameLower.includes('invit')) productRisk = 3;
+    else if (nameLower.includes('balanced') || nameLower.includes('nps') || nameLower.includes('elss')) productRisk = 4;
+    else if (nameLower.includes('nifty 50') || nameLower.includes('index') || nameLower.includes('bluechip') || nameLower.includes('large cap')) productRisk = 5;
+    else if (nameLower.includes('flexi') || nameLower.includes('multi cap') || nameLower.includes('value') || nameLower.includes('contra')) productRisk = 6;
+    else if (nameLower.includes('mid cap') || nameLower.includes('sector') || nameLower.includes('pharma') || nameLower.includes('defence') || nameLower.includes('banking') || nameLower.includes('it ')) productRisk = 7;
+    else if (nameLower.includes('small cap') || nameLower.includes('quant') || highlightLower.includes('momentum')) productRisk = 8;
+
+    // Risk delta penalty/bonus
+    const riskDelta = Math.abs(productRisk - userRiskNum);
+    if (riskDelta === 0) score += 25;
+    else if (riskDelta === 1) score += 18;
+    else if (riskDelta === 2) score += 10;
+    else if (riskDelta >= 4) score -= 20;
+
+    // Age / Senior Citizen check
+    const isSenior = age >= 60;
+    if (isSenior) {
+      if (nameLower.includes('scss') || nameLower.includes('senior') || nameLower.includes('rbi')) score += 30;
+      if (productRisk >= 7) score -= 25;
+    } else if (age <= 30 && nominalRate > 15) {
+      score += 10;
+    }
+
+    // Backend post-tax yield calculation
+    const isEEE = badge.includes('EEE') || badge.includes('54EC') || badge.includes('100% Tax-Free') || nameLower.includes('ppf') || nameLower.includes('sukanya');
+    const isSlabTaxed = highlightLower.includes('slab rate') || nameLower.includes('fd') || nameLower.includes('scss') || nameLower.includes('rbi');
+    
+    let taxEffectRate = 0.125;
+    if (isEEE) taxEffectRate = 0;
+    else if (isSlabTaxed) taxEffectRate = marginalRate;
+
+    const postTaxYieldVal = nominalRate > 0 ? nominalRate * (1 - taxEffectRate) : 0;
+    const postTaxYieldStr = postTaxYieldVal > 0 ? `~${postTaxYieldVal.toFixed(1)}% (Post-Tax)` : item.rate;
+
+    if (postTaxYieldVal > 0) score += Math.min(15, postTaxYieldVal * 0.6);
+
+    // Apply macro regime tilts from regimeRotationEngine
+    let regimeBoostTag = null;
+    if (regimeApplied && regimeTilts) {
+      for (const [tiltKey, tiltInfo] of Object.entries(regimeTilts)) {
+        if (nameLower.includes(tiltKey) || highlightLower.includes(tiltKey) || (tiltKey === 'defence' && nameLower.includes('defence')) || (tiltKey === 'gold' && (nameLower.includes('gold') || nameLower.includes('sgb')))) {
+          score += (tiltInfo.weightDelta || 0.15) * 100;
+          regimeBoostTag = `⚡ ${tiltInfo.label || 'Macro Regime Tilt'}`;
+          break;
+        }
+      }
+    }
+
+    // Tax savings note
+    let taxSavingsNote = null;
+    const effTaxWithCess = marginalRate * 1.04;
+    if (nameLower.includes('ppf') || nameLower.includes('elss') || highlightLower.includes('80c')) {
+      const max80cSavings = Math.round(150000 * effTaxWithCess);
+      if (max80cSavings > 0) taxSavingsNote = `Saves up to ₹${max80cSavings.toLocaleString('en-IN')} tax/yr under Sec 80C`;
+    } else if (nameLower.includes('nps') || highlightLower.includes('80ccd')) {
+      const npsExtraSavings = Math.round(50000 * effTaxWithCess);
+      if (npsExtraSavings > 0) taxSavingsNote = `Saves up to ₹${npsExtraSavings.toLocaleString('en-IN')} extra tax/yr under Sec 80CCD(1B)`;
+    }
+
+    // Execution route
+    let investmentRoute = 'SIP Recommended';
+    if (productRisk <= 3 || nameLower.includes('liquid') || nameLower.includes('fd') || nameLower.includes('sgb') || badge.includes('54EC')) {
+      investmentRoute = 'Lump-Sum Suitable';
+    } else if (productRisk >= 7) {
+      investmentRoute = 'Strict SIP Route';
+    }
+
+    // Profile match tag
+    let matchTag = regimeBoostTag;
+    if (!matchTag) {
+      if (isSenior && (nameLower.includes('scss') || nameLower.includes('senior') || nameLower.includes('rbi'))) matchTag = 'Senior Citizen Fit';
+      else if (marginalRate >= 0.30 && isEEE) matchTag = 'High Tax Efficiency';
+      else if (horizon <= 2 && productRisk <= 2) matchTag = 'Short-Term Parking';
+      else if (horizon >= 7 && nominalRate > 12) matchTag = 'Long-Term Compounder';
+      else if (score >= 90) matchTag = 'Top Profile Match';
+    }
+
+    return {
+      ...item,
+      _score: score,
+      postTaxYieldVal,
+      postTaxYieldStr,
+      profileMatchTag: matchTag,
+      taxSavingsNote,
+      investmentRoute
+    };
+  });
+
+  if (sortBy === 'postTaxYield') {
+    scored.sort((a, b) => b.postTaxYieldVal - a.postTaxYieldVal || b._score - a._score);
+  } else if (sortBy === 'expense') {
+    scored.sort((a, b) => (a.expRatioVal || 99) - (b.expRatioVal || 99) || b._score - a._score);
+  } else {
+    scored.sort((a, b) => b._score - a._score);
+  }
+
+  return scored.slice(0, 5);
+}
+
 // ── Exports for testing ─────────────────────────────────────────
 export {
   PIPELINE_CONFIG,
@@ -585,4 +726,5 @@ export {
   normaliseConfidenceScores,
   INSTRUMENT_KEY_MAP,
 };
+
 

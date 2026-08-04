@@ -41,6 +41,56 @@ const MACRO_REGIME_CONFIGS = {
   }
 };
 
+// Human-readable labels for sub-category tabs (with visual icons)
+const SUB_TAB_LABELS = {
+  sovereign_gsec: '🇮🇳 Sovereign G-Sec',
+  aaa_corporate: '🏆 AAA Corporate',
+  section_54ec: '🏛️ Section 54EC',
+  tax_free_bonds: '💎 Tax-Free Bonds',
+  psu_bonds: '🏢 PSU Bonds',
+  broad_market: '📊 Broad Market',
+  sectoral_thematic: '🎯 Sectoral & Thematic',
+  smart_beta: '⚡ Smart Beta & Factor',
+  commodity: '🪙 Commodity ETFs',
+  international: '🌐 International ETFs',
+  physical_gold_etf: '🥇 Physical Gold ETF',
+  silver_etf: '🥈 Silver ETF',
+  sgb_secondary: '📜 SGB Secondary',
+  largecap_index: '🏢 LargeCap Index',
+  next50_midcap: '🚀 Next50 & MidCap',
+  smart_beta_factor: '⚡ Smart Beta Factor',
+  large_cap: '🏢 Large Cap',
+  mid_cap: '🚀 Mid Cap',
+  small_cap: '🔥 Small Cap',
+  flexi_multi: '🔄 Flexi & Multi Cap',
+  sector_thematic: '🎯 Sector & Thematic',
+  value_contra: '💎 Value & Contra',
+  growth_bluechip: '🌟 Growth & Bluechip',
+  momentum_quant: '⚡ Momentum & Quant',
+  dividend_yield: '💰 Dividend Yield',
+  pharma_healthcare: '💊 Pharma & Healthcare',
+  banking_financial: '🏦 Banking & Financial',
+  it_technology: '💻 IT & Technology',
+  infrastructure: '🏗️ Infrastructure',
+  defence_manufacturing: '🛡️ Defence & Mfg',
+  energy_metals: '⚡ Energy & Metals',
+  consumption_fmcg: '🛒 Consumption & FMCG',
+  // midcap/smallcap MF strategy sub-tabs
+  growth_momentum: '🚀 Growth & Momentum',
+  diversified_core: '🛡️ Diversified Core',
+  value_quality: '💎 Value & Quality',
+  aggressive_alpha: '🔥 Aggressive Alpha',
+  diversified_broad: '📊 Diversified Broad',
+  quality_defensive: '🏰 Quality Defensive',
+  // direct equity sector sub-tabs
+  energy_industrial: '⚡ Energy & Industrial',
+  fmcg_consumer: '🛒 FMCG & Consumer',
+  // REIT sub-tabs
+  office_reits: '🏢 Office REITs',
+  retail_reits: '🛍️ Retail REITs',
+  infrastructure_invits: '🏗️ Infrastructure InvITs',
+};
+
 const WhereToInvestTab = ({ inv, userProfile }) => {
   const wtiData = WHERE_TO_INVEST[inv?.id] || generateWTI(inv);
   const subCategoryMap = wtiData?.sectors || wtiData?.subCategories || null;
@@ -48,6 +98,7 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
 
   const [activeSubTab, setActiveSubTab] = useState(subKeys[0] || null);
   const [regimeApplied, setRegimeApplied] = useState(false);
+  const [sortBy, setSortBy] = useState('score');
 
   if (!wtiData) return (
     <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -59,8 +110,14 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
   const userRisk = userProfile?.risk_tolerance || userProfile?.riskCategory || inv?.riskLabel || 'Moderate';
   const sectorVol = inv?.volatility || 0.25;
 
+  // Identify active macro regime banner for current instrument
+  const activeRegimeKey = Object.keys(MACRO_REGIME_CONFIGS).find(key => 
+    MACRO_REGIME_CONFIGS[key].matchingIds.includes(inv?.id)
+  );
+  const activeRegime = activeRegimeKey ? MACRO_REGIME_CONFIGS[activeRegimeKey] : null;
+
   const rawProducts = (subCategoryMap && activeSubTab) ? subCategoryMap[activeSubTab] : wtiData.products;
-  const products = rankWhereToInvest(rawProducts || [], userProfile, userRisk);
+  const products = rankWhereToInvest(rawProducts || [], userProfile, userRisk, { regimeApplied, activeRegime, sortBy });
 
   const level = Math.max(0, Math.min(5, (wtiData.riskLevel || 1) - 1));
   const risk = RISK_LEVELS[level];
@@ -68,20 +125,44 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
   const totalAngle = Math.PI;
   const segGap = 0.025;
 
-  const showEtfSuggestion = (inv?.id === 'mid_cap_stocks' || inv?.id === 'direct_equity') && shouldRecommendETF(userRisk, sectorVol);
+  const showEtfSuggestion = (inv?.id === 'mid_cap_stocks' || inv?.id === 'direct_equity') && shouldRecommendETF(userRisk, sectorVol, userProfile);
 
   const isTop5 = products.length >= 5;
   const headerLabel = isTop5 ? 'Execution Pathway & Top 5 Recommendations' : `Execution Pathway (${products.length} Recommended Option${products.length > 1 ? 's' : ''})`;
 
-  // Identify active macro regime banner for current instrument
-  const activeRegimeKey = Object.keys(MACRO_REGIME_CONFIGS).find(key => 
-    MACRO_REGIME_CONFIGS[key].matchingIds.includes(inv?.id)
-  );
-  const activeRegime = activeRegimeKey ? MACRO_REGIME_CONFIGS[activeRegimeKey] : null;
-
   return (
     <div className="tab-fade-in">
-      <div className="ddm-section-header">{headerLabel}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: '1rem' }}>
+        <div className="ddm-section-header" style={{ marginBottom: 0 }}>{headerLabel}</div>
+        
+        {/* Interactive Sorting Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(15, 23, 42, 0.7)', padding: '4px 8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600, marginRight: 2 }}>Sort:</span>
+          {[
+            { id: 'score', label: '🎯 Profile Match' },
+            { id: 'postTaxYield', label: '💰 Post-Tax Yield' },
+            { id: 'expense', label: '⚡ Low Cost' }
+          ].map(mode => (
+            <button
+              key={mode.id}
+              onClick={() => setSortBy(mode.id)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: sortBy === mode.id ? '1px solid #38bdf8' : '1px solid transparent',
+                background: sortBy === mode.id ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                color: sortBy === mode.id ? '#38bdf8' : '#94a3b8',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Macro Market Regime & Crash Rotation Banner */}
       {activeRegime && (
@@ -167,7 +248,7 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                 textTransform: 'capitalize'
               }}
             >
-              {key.replace(/_/g, ' ')}
+              {SUB_TAB_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
             </button>
           ))}
         </div>
@@ -324,9 +405,19 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <h4 className="wti-name">{product.name}</h4>
                     {product.badge && <span className="wti-badge">{product.badge}</span>}
+                    {product.sharpeRatioEst !== undefined && product.sharpeRatioEst > 0 && (
+                      <span className="wti-badge" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', borderColor: 'rgba(168, 85, 247, 0.35)' }} title="Sharpe Ratio Risk-Adjusted Efficiency">
+                        ⚡ Sharpe {product.sharpeRatioEst}
+                      </span>
+                    )}
                     {product.profileMatchTag && (
                       <span className="wti-badge" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', borderColor: 'rgba(34, 197, 94, 0.4)' }}>
                         ✓ {product.profileMatchTag}
+                      </span>
+                    )}
+                    {product.investmentRoute && (
+                      <span className="wti-badge" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
+                        📍 {product.investmentRoute}
                       </span>
                     )}
                   </div>
@@ -335,13 +426,28 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <div className="wti-rate-chip">{product.rate}</div>
                   {product.postTaxYieldStr && product.postTaxYieldStr !== product.rate && (
-                    <span style={{ fontSize: '0.7rem', color: '#38bdf8', fontWeight: 700 }}>
+                    <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
                       {product.postTaxYieldStr}
                     </span>
                   )}
                 </div>
               </div>
               <p className="wti-highlights">{product.highlight}</p>
+
+              {product.taxSavingsNote && (
+                <div style={{ fontSize: '0.75rem', color: product.taxSavingsNote.startsWith('⚠') ? '#f59e0b' : '#4ade80', fontWeight: 600, margin: '6px 0 4px 0', display: 'flex', alignItems: 'center', gap: 6, background: product.taxSavingsNote.startsWith('⚠') ? 'rgba(245, 158, 11, 0.08)' : 'rgba(34, 197, 94, 0.08)', padding: '4px 8px', borderRadius: '6px', border: `1px solid ${product.taxSavingsNote.startsWith('⚠') ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)'}` }}>
+                  <Zap size={12} style={{ color: product.taxSavingsNote.startsWith('⚠') ? '#f59e0b' : '#4ade80', flexShrink: 0 }} />
+                  <span>{product.taxSavingsNote}</span>
+                </div>
+              )}
+
+              {product.realReturnWarning && (
+                <div style={{ fontSize: '0.72rem', color: product.realReturnVal < 0 ? '#ef4444' : '#f59e0b', fontWeight: 600, margin: '4px 0 8px 0', display: 'flex', alignItems: 'center', gap: 6, background: product.realReturnVal < 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)', padding: '4px 8px', borderRadius: '6px', border: `1px solid ${product.realReturnVal < 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)'}` }}>
+                  <AlertTriangle size={11} style={{ color: product.realReturnVal < 0 ? '#ef4444' : '#f59e0b', flexShrink: 0 }} />
+                  <span>{product.realReturnWarning}</span>
+                </div>
+              )}
+
               <div className="wti-meta-footer">
                 <div className="meta-box"><Building2 size={12} /> {product.platform}</div>
                 <div className="meta-box"><Wallet size={12} /> Min: {product.minInvestment}</div>
