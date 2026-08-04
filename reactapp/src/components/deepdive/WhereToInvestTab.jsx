@@ -41,54 +41,54 @@ const MACRO_REGIME_CONFIGS = {
   }
 };
 
-// Human-readable labels for sub-category tabs (with visual icons)
+// Human-readable labels for sub-category tabs (professional typography)
 const SUB_TAB_LABELS = {
-  sovereign_gsec: '🇮🇳 Sovereign G-Sec',
-  aaa_corporate: '🏆 AAA Corporate',
-  section_54ec: '🏛️ Section 54EC',
-  tax_free_bonds: '💎 Tax-Free Bonds',
-  psu_bonds: '🏢 PSU Bonds',
-  broad_market: '📊 Broad Market',
-  sectoral_thematic: '🎯 Sectoral & Thematic',
-  smart_beta: '⚡ Smart Beta & Factor',
-  commodity: '🪙 Commodity ETFs',
-  international: '🌐 International ETFs',
-  physical_gold_etf: '🥇 Physical Gold ETF',
-  silver_etf: '🥈 Silver ETF',
-  sgb_secondary: '📜 SGB Secondary',
-  largecap_index: '🏢 LargeCap Index',
-  next50_midcap: '🚀 Next50 & MidCap',
-  smart_beta_factor: '⚡ Smart Beta Factor',
-  large_cap: '🏢 Large Cap',
-  mid_cap: '🚀 Mid Cap',
-  small_cap: '🔥 Small Cap',
-  flexi_multi: '🔄 Flexi & Multi Cap',
-  sector_thematic: '🎯 Sector & Thematic',
-  value_contra: '💎 Value & Contra',
-  growth_bluechip: '🌟 Growth & Bluechip',
-  momentum_quant: '⚡ Momentum & Quant',
-  dividend_yield: '💰 Dividend Yield',
-  pharma_healthcare: '💊 Pharma & Healthcare',
-  banking_financial: '🏦 Banking & Financial',
-  it_technology: '💻 IT & Technology',
-  infrastructure: '🏗️ Infrastructure',
-  defence_manufacturing: '🛡️ Defence & Mfg',
-  energy_metals: '⚡ Energy & Metals',
-  consumption_fmcg: '🛒 Consumption & FMCG',
+  sovereign_gsec: 'Sovereign G-Sec',
+  aaa_corporate: 'AAA Corporate',
+  section_54ec: 'Section 54EC',
+  tax_free_bonds: 'Tax-Free Bonds',
+  psu_bonds: 'PSU Bonds',
+  broad_market: 'Broad Market',
+  sectoral_thematic: 'Sectoral & Thematic',
+  smart_beta: 'Smart Beta & Factor',
+  commodity: 'Commodity ETFs',
+  international: 'International ETFs',
+  physical_gold_etf: 'Physical Gold ETF',
+  silver_etf: 'Silver ETF',
+  sgb_secondary: 'SGB Secondary',
+  largecap_index: 'LargeCap Index',
+  next50_midcap: 'Next50 & MidCap',
+  smart_beta_factor: 'Smart Beta Factor',
+  large_cap: 'Large Cap',
+  mid_cap: 'Mid Cap',
+  small_cap: 'Small Cap',
+  flexi_multi: 'Flexi & Multi Cap',
+  sector_thematic: 'Sector & Thematic',
+  value_contra: 'Value & Contra',
+  growth_bluechip: 'Growth & Bluechip',
+  momentum_quant: 'Momentum & Quant',
+  dividend_yield: 'Dividend Yield',
+  pharma_healthcare: 'Pharma & Healthcare',
+  banking_financial: 'Banking & Financial',
+  it_technology: 'IT & Technology',
+  infrastructure: 'Infrastructure',
+  defence_manufacturing: 'Defence & Mfg',
+  energy_metals: 'Energy & Metals',
+  consumption_fmcg: 'Consumption & FMCG',
   // midcap/smallcap MF strategy sub-tabs
-  growth_momentum: '🚀 Growth & Momentum',
-  diversified_core: '🛡️ Diversified Core',
-  value_quality: '💎 Value & Quality',
-  aggressive_alpha: '🔥 Aggressive Alpha',
-  diversified_broad: '📊 Diversified Broad',
-  quality_defensive: '🏰 Quality Defensive',
+  growth_momentum: 'Growth & Momentum',
+  diversified_core: 'Diversified Core',
+  value_quality: 'Value & Quality',
+  aggressive_alpha: 'Aggressive Alpha',
+  diversified_broad: 'Diversified Broad',
+  quality_defensive: 'Quality Defensive',
   // direct equity sector sub-tabs
-  energy_industrial: '⚡ Energy & Industrial',
-  fmcg_consumer: '🛒 FMCG & Consumer',
+  energy_industrial: 'Energy & Industrial',
+  fmcg_consumer: 'FMCG & Consumer',
   // REIT sub-tabs
-  office_reits: '🏢 Office REITs',
-  retail_reits: '🛍️ Retail REITs',
-  infrastructure_invits: '🏗️ Infrastructure InvITs',
+  office_reits: 'Office REITs',
+  retail_reits: 'Retail REITs',
+  infrastructure_invits: 'Infrastructure InvITs',
 };
 
 const WhereToInvestTab = ({ inv, userProfile }) => {
@@ -139,9 +139,9 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(15, 23, 42, 0.7)', padding: '4px 8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600, marginRight: 2 }}>Sort:</span>
           {[
-            { id: 'score', label: '🎯 Profile Match' },
-            { id: 'postTaxYield', label: '💰 Post-Tax Yield' },
-            { id: 'expense', label: '⚡ Low Cost' }
+            { id: 'score', label: 'Profile Match' },
+            { id: 'postTaxYield', label: 'Post-Tax Yield' },
+            { id: 'expense', label: 'Low Expense Ratio' }
           ].map(mode => (
             <button
               key={mode.id}
@@ -407,17 +407,17 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                     {product.badge && <span className="wti-badge">{product.badge}</span>}
                     {product.sharpeRatioEst !== undefined && product.sharpeRatioEst > 0 && (
                       <span className="wti-badge" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', borderColor: 'rgba(168, 85, 247, 0.35)' }} title="Sharpe Ratio Risk-Adjusted Efficiency">
-                        ⚡ Sharpe {product.sharpeRatioEst}
+                        Sharpe {product.sharpeRatioEst}
                       </span>
                     )}
                     {product.profileMatchTag && (
                       <span className="wti-badge" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', borderColor: 'rgba(34, 197, 94, 0.4)' }}>
-                        ✓ {product.profileMatchTag}
+                        {product.profileMatchTag.replace(/^[⚡✓📍]\s*/, '')}
                       </span>
                     )}
                     {product.investmentRoute && (
                       <span className="wti-badge" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
-                        📍 {product.investmentRoute}
+                        {product.investmentRoute.replace(/^[⚡✓📍]\s*/, '')}
                       </span>
                     )}
                   </div>
