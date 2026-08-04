@@ -296,15 +296,14 @@ function getProductsForInstrument(inv, platformCat) {
     ];
   }
 
-  // 13. REITs & InvITs (embassy_reit, mindspace_reit, etc.)
+  // 13. REITs & InvITs — show competing real REIT/InvIT products, not broker cards
   if (platformCat === 'reit') {
     return [
-      makeProduct('Zerodha Kite', 'Zerodha (NSE/BSE)', 'Zerodha Kite App', 
-        `Buy and sell units of ${name} directly on the stock exchange. Zerodha holds these units securely in your Demat account, and all quarterly dividend/lease payouts are credited directly into your bank account.`, 'Most Popular'),
-      makeProduct('Groww', 'Groww (NSE/BSE)', 'Groww App', 
-        `A simple way to own a fraction of office parks and earn rental income via ${name}. Buy units instantly with zero entry loads and track quarterly payouts on your dashboard.`, 'Best for Beginners'),
-      makeProduct('Angel One', 'Angel One (NSE/BSE)', 'Angel One App', 
-        `Purchase units of ${name} and track lease yields. Angel One provides detailed research on REIT dividend histories and occupancy rates, helping you choose the best passive income asset.`)
+      { name: 'Embassy Office Parks REIT', provider: 'NSE: EMBASSY', rate: '~8.5% (Yield)', highlight: `India's largest listed REIT with 45M+ sq ft Grade-A office space across Bengaluru, Mumbai, Pune, and NCR. Quarterly distributions. Alternative to ${name}.`, platform: 'Zerodha / Groww / Broker', minInvestment: '1 unit (~₹360)', badge: 'Largest REIT' },
+      { name: 'Mindspace Business Parks REIT', provider: 'NSE: MINDSPACE', rate: '~8.2% (Yield)', highlight: 'Grade-A tech parks in Hyderabad, Mumbai, Pune, and Chennai with high multinational tenant retention.', platform: 'Stock Broker App', minInvestment: '1 unit (~₹350)' },
+      { name: 'Brookfield India Real Estate Trust', provider: 'NSE: BIRET', rate: '~8.8% (Yield)', highlight: 'Institutional office parks across Gurugram, Noida, Mumbai, and Bengaluru. Highest yield office REIT.', platform: 'Stock Broker App', minInvestment: '1 unit (~₹280)', badge: 'Highest Yield' },
+      { name: 'Nexus Select Trust REIT', provider: 'NSE: NXST', rate: '~7.8% (Yield)', highlight: "India's 1st retail mall REIT owning 17 premium shopping malls across 14 cities.", platform: 'Stock Broker App', minInvestment: '1 unit (~₹135)' },
+      { name: 'India Grid Trust InvIT', provider: 'NSE: INDIGRID', rate: '~10.5% (Yield)', highlight: 'Power transmission InvIT providing highest quarterly distribution yield among listed REIT/InvIT alternatives.', platform: 'Stock Broker App', minInvestment: '1 unit (~₹140)', badge: 'Top InvIT Yield' }
     ];
   }
 

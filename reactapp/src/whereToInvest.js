@@ -568,9 +568,193 @@ const WHERE_TO_INVEST = {
       { name: "Franklin India Technology Fund", provider: "Franklin Templeton AMC", rate: "~19.1% (5Y)", highlight: "AUM ~₹1,400 Cr. Global tech allocation including US software leaders alongside Indian IT.", platform: "Franklin MF / Kuvera", minInvestment: "₹500 SIP" },
       { name: "Aditya Birla Sun Life Digital India Fund", provider: "Aditya Birla Sun Life AMC", rate: "~18.6% (5Y)", highlight: "AUM ~₹4,100 Cr. Concentrated IT services and telecom ecosystem portfolio.", platform: "ABSL MF / Groww", minInvestment: "₹100 SIP" }
     ]
+  },
+
+  // ═══════════════════ SPECIFIC REITS & INVITS ═══════════════════
+  mindspace_reit: {
+    title: "Mindspace Business Parks REIT — Investment Pathway",
+    riskLevel: 3,
+    note: "Grade-A commercial office parks across Mumbai Region, Hyderabad, Pune, and Chennai. 90%+ quarterly distribution mandate under SEBI.",
+    howToStart: "Buy units directly on NSE/BSE via any stock broker during market hours.",
+    products: [
+      { name: "Mindspace Business Parks REIT (Direct Purchase)", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "India's 2nd largest office REIT. Quarterly rental distributions credited to your bank account.", platform: "Zerodha / Groww / Broker", minInvestment: "1 unit (~₹350)", badge: "Top Pick" },
+      { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "India's largest REIT with 45M+ sq ft grade-A office space. Higher yield alternative.", platform: "Stock Broker App", minInvestment: "1 unit (~₹360)", badge: "Largest REIT" },
+      { name: "Brookfield India Real Estate Trust", provider: "NSE: BIRET", rate: "~8.8% (Yield)", highlight: "Institutional office parks in Gurugram, Noida, Mumbai, and Bengaluru.", platform: "Stock Broker App", minInvestment: "1 unit (~₹280)" },
+      { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "India's 1st retail mall REIT — diversification from office to consumer.", platform: "Stock Broker App", minInvestment: "1 unit (~₹135)" },
+      { name: "India Grid Trust InvIT", provider: "NSE: INDIGRID", rate: "~10.5% (Yield)", highlight: "Power transmission grid InvIT with highest distribution yield among listed alternatives.", platform: "Stock Broker App", minInvestment: "1 unit (~₹140)" }
+    ]
+  },
+  brookfield_reit: {
+    title: "Brookfield India Real Estate Trust — Investment Pathway",
+    riskLevel: 3,
+    note: "Institutional-grade office parks sponsored by Brookfield Asset Management across Delhi-NCR, Mumbai, and Bengaluru.",
+    howToStart: "Buy units on NSE/BSE via any stock broker. Quarterly distributions credited to demat-linked bank account.",
+    products: [
+      { name: "Brookfield India REIT (Direct Purchase)", provider: "NSE: BIRET", rate: "~8.8% (Yield)", highlight: "Highest yield office REIT in India. Institutional campus assets across premium tech corridors.", platform: "Zerodha / Groww / Broker", minInvestment: "1 unit (~₹280)", badge: "Highest Yield" },
+      { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "India's largest listed REIT for diversification.", platform: "Stock Broker App", minInvestment: "1 unit (~₹360)" },
+      { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "Grade-A tech parks in Hyderabad and Mumbai.", platform: "Stock Broker App", minInvestment: "1 unit (~₹350)" },
+      { name: "PowerGrid InvIT", provider: "NSE: PGINVIT", rate: "~9.8% (Yield)", highlight: "Sovereign-backed power transmission InvIT.", platform: "Stock Broker App", minInvestment: "1 unit (~₹98)" },
+      { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "Retail mall REIT diversification option.", platform: "Stock Broker App", minInvestment: "1 unit (~₹135)" }
+    ]
+  },
+  nexus_reit: {
+    title: "Nexus Select Trust REIT — Investment Pathway",
+    riskLevel: 3,
+    note: "India's 1st and only listed retail mall REIT. Owns 17 Grade-A urban consumption shopping centers across 14 cities.",
+    howToStart: "Buy units on NSE/BSE via any stock broker. Quarterly distributions include rental income from anchor retailers.",
+    products: [
+      { name: "Nexus Select Trust REIT (Direct Purchase)", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "Unique consumption-theme REIT with anchor tenants like Zara, H&M, PVR, and Starbucks across 17 malls.", platform: "Zerodha / Groww / Broker", minInvestment: "1 unit (~₹135)", badge: "Retail Leader" },
+      { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "Office REIT diversification — largest listed REIT in India.", platform: "Stock Broker App", minInvestment: "1 unit (~₹360)" },
+      { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "Commercial office REIT alternative.", platform: "Stock Broker App", minInvestment: "1 unit (~₹350)" },
+      { name: "India Grid Trust InvIT", provider: "NSE: INDIGRID", rate: "~10.5% (Yield)", highlight: "Highest yield InvIT for income-focused investors.", platform: "Stock Broker App", minInvestment: "1 unit (~₹140)", badge: "Highest Yield" },
+      { name: "Brookfield India REIT", provider: "NSE: BIRET", rate: "~8.8% (Yield)", highlight: "Institutional office parks with strong quarterly distributions.", platform: "Stock Broker App", minInvestment: "1 unit (~₹280)" }
+    ]
+  },
+  indigrid_invit: {
+    title: "India Grid Trust (IndiGrid InvIT) — Investment Pathway",
+    riskLevel: 3,
+    note: "Power transmission & solar grid infrastructure InvIT sponsored by KKR / Sterlite Power. AAA-backed predictable quarterly cash distributions.",
+    howToStart: "Buy units on NSE/BSE like stocks. Distributions (interest + principal repayment) credited quarterly.",
+    products: [
+      { name: "India Grid Trust InvIT (Direct Purchase)", provider: "NSE: INDIGRID", rate: "~10.5% (Yield)", highlight: "India's highest-yield listed InvIT. Transmission line assets with 25-year concession agreements providing highly predictable cash flows.", platform: "Zerodha / Groww / Broker", minInvestment: "1 unit (~₹140)", badge: "Highest Yield" },
+      { name: "PowerGrid InvIT", provider: "NSE: PGINVIT", rate: "~9.8% (Yield)", highlight: "Sovereign-backed alternative InvIT sponsored by Power Grid Corporation of India.", platform: "Stock Broker App", minInvestment: "1 unit (~₹98)", badge: "Govt Sponsored" },
+      { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "Office REIT — diversification from infrastructure to commercial real estate.", platform: "Stock Broker App", minInvestment: "1 unit (~₹360)" },
+      { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "Grade-A tech park REIT alternative.", platform: "Stock Broker App", minInvestment: "1 unit (~₹350)" },
+      { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "Retail mall REIT for consumer spending exposure.", platform: "Stock Broker App", minInvestment: "1 unit (~₹135)" }
+    ]
+  },
+  powergrid_invit: {
+    title: "PowerGrid Infrastructure Investment Trust — Investment Pathway",
+    riskLevel: 2,
+    note: "Sovereign-backed power transmission InvIT sponsored by Power Grid Corporation of India (Maharatna PSU). Quarterly distributions.",
+    howToStart: "Buy units on NSE/BSE via any stock broker during market hours.",
+    products: [
+      { name: "PowerGrid InvIT (Direct Purchase)", provider: "NSE: PGINVIT", rate: "~9.8% (Yield)", highlight: "Government-backed transmission InvIT. Power Grid Corp transfers operating power lines with 35-year useful life into this trust.", platform: "Zerodha / Groww / Broker", minInvestment: "1 unit (~₹98)", badge: "Govt Sponsored" },
+      { name: "India Grid Trust InvIT", provider: "NSE: INDIGRID", rate: "~10.5% (Yield)", highlight: "Higher-yield private sector power transmission InvIT backed by KKR.", platform: "Stock Broker App", minInvestment: "1 unit (~₹140)", badge: "Highest Yield" },
+      { name: "Embassy Office Parks REIT", provider: "NSE: EMBASSY", rate: "~8.5% (Yield)", highlight: "Largest office REIT for real estate diversification.", platform: "Stock Broker App", minInvestment: "1 unit (~₹360)" },
+      { name: "Mindspace Business Parks REIT", provider: "NSE: MINDSPACE", rate: "~8.2% (Yield)", highlight: "Commercial office REIT alternative.", platform: "Stock Broker App", minInvestment: "1 unit (~₹350)" },
+      { name: "Nexus Select Trust REIT", provider: "NSE: NXST", rate: "~7.8% (Yield)", highlight: "Retail mall REIT for consumer spending exposure.", platform: "Stock Broker App", minInvestment: "1 unit (~₹135)" }
+    ]
+  },
+
+  // ═══════════════════ VALUE / CONTRA MUTUAL FUNDS ═══════════════════
+  value_mf: {
+    title: "Best Value Equity Mutual Funds",
+    riskLevel: 5,
+    note: "Value funds buy undervalued stocks trading below intrinsic worth. Typically outperform in recovery & mean-reversion cycles.",
+    howToStart: "Invest in direct-growth plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "ICICI Pru Value Discovery Fund", provider: "ICICI Prudential AMC", rate: "~22.4% (5Y)", highlight: "AUM ~₹46,000 Cr. India's largest value fund. Disciplined P/E & P/B based deep-value stock picking.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "HDFC Capital Builder Value Fund", provider: "HDFC AMC", rate: "~20.8% (5Y)", highlight: "AUM ~₹8,500 Cr. Multi-cap value approach targeting mean-reversion opportunities.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "Nippon India Value Fund", provider: "Nippon India AMC", rate: "~21.2% (5Y)", highlight: "AUM ~₹8,100 Cr. Quantitative deep-value screening across mid and large caps.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "UTI Value Fund", provider: "UTI AMC", rate: "~19.5% (5Y)", highlight: "AUM ~₹10,800 Cr. Seasoned value investing approach with well-diversified sector allocation.", platform: "UTI MF / Kuvera", minInvestment: "₹500 SIP" },
+      { name: "Tata Equity PE Fund", provider: "Tata AMC", rate: "~18.8% (5Y)", highlight: "AUM ~₹7,200 Cr. Invests in stocks with PE ratio below Nifty 50 trailing PE.", platform: "Tata MF / Groww", minInvestment: "₹100 SIP" }
+    ]
+  },
+  contra_mf: {
+    title: "Best Contra / Contrarian Mutual Funds",
+    riskLevel: 5,
+    note: "Contrarian funds buy out-of-favour stocks that the market has over-punished. Only 1 fund per AMC is allowed by SEBI in this category.",
+    howToStart: "Invest in direct-growth plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "SBI Contra Fund", provider: "SBI MF", rate: "~24.6% (5Y)", highlight: "AUM ~₹38,000 Cr. India's most popular contrarian fund. Picks stocks beaten down by temporary cyclical issues with strong balance sheets.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP", badge: "Category Leader" },
+      { name: "Kotak India EQ Contra Fund", provider: "Kotak AMC", rate: "~19.8% (5Y)", highlight: "AUM ~₹4,200 Cr. Focuses on out-of-favour large-caps with improving fundamentals.", platform: "Kotak MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "Invesco India Contra Fund", provider: "Invesco AMC", rate: "~21.2% (5Y)", highlight: "AUM ~₹14,200 Cr. Multi-cap contrarian bets on sectors facing temporary headwinds.", platform: "Invesco MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "ICICI Pru Value Discovery Fund", provider: "ICICI Prudential AMC", rate: "~22.4% (5Y)", highlight: "AUM ~₹46,000 Cr. Value fund with contrarian overlap — buys deeply discounted quality stocks.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP" },
+      { name: "HDFC Capital Builder Value Fund", provider: "HDFC AMC", rate: "~20.8% (5Y)", highlight: "AUM ~₹8,500 Cr. Value-oriented fund seeking mean-reversion in mid and large cap universe.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" }
+    ]
+  },
+
+  // ═══════════════════ GILT / GOVERNMENT BOND FUNDS ═══════════════════
+  gilt_mf: {
+    title: "Best Gilt Mutual Funds (Government Securities)",
+    riskLevel: 2,
+    note: "Zero credit risk — invests only in Government of India securities (G-Secs & SDLs). High interest rate sensitivity. Benefits most during rate-cut cycles.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "ICICI Pru Gilt Fund", provider: "ICICI Prudential AMC", rate: "~8.2% (5Y)", highlight: "AUM ~₹5,400 Cr. Active duration management across short and long G-Secs. Industry-leading risk management.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "SBI Magnum Gilt Fund", provider: "SBI MF", rate: "~8.0% (5Y)", highlight: "AUM ~₹10,800 Cr. Conservative gilt fund backed by SBI MF's deep government bond research.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "HDFC Gilt Fund", provider: "HDFC AMC", rate: "~7.8% (5Y)", highlight: "AUM ~₹3,200 Cr. Focus on 10-year benchmark G-Sec with high sensitivity to rate cuts.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "Nippon India Gilt Securities Fund", provider: "Nippon India AMC", rate: "~7.5% (5Y)", highlight: "AUM ~₹2,400 Cr. Diversified SDL and G-Sec portfolio with quarterly interest accruals.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "Kotak Gilt Fund", provider: "Kotak AMC", rate: "~7.6% (5Y)", highlight: "AUM ~₹3,800 Cr. Laddered G-Sec portfolio providing stable accrual income.", platform: "Kotak MF / Kuvera", minInvestment: "₹100 SIP" }
+    ]
+  },
+
+  // ═══════════════════ MULTI CAP MUTUAL FUNDS ═══════════════════
+  multi_cap_mf: {
+    title: "Best Multi-Cap Mutual Funds",
+    riskLevel: 5,
+    note: "SEBI mandated: Must allocate min 25% each in large, mid, and small caps. True all-cap diversification in a single fund.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "Nippon India Multi Cap Fund", provider: "Nippon India AMC", rate: "~25.8% (5Y)", highlight: "AUM ~₹38,000 Cr. Top performer with disciplined 25/25/25 split across market caps.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "HDFC Multi Cap Fund", provider: "HDFC AMC", rate: "~24.1% (5Y)", highlight: "AUM ~₹14,500 Cr. Process-driven multi-cap allocation with strong stock selection alpha.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "ICICI Pru Multicap Fund", provider: "ICICI Prudential AMC", rate: "~22.6% (5Y)", highlight: "AUM ~₹12,800 Cr. Dynamic tactical allocation within the 25% floor mandates.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP" },
+      { name: "Kotak Multicap Fund", provider: "Kotak AMC", rate: "~21.2% (5Y)", highlight: "AUM ~₹11,400 Cr. Quality-first stock selection with lower portfolio turnover.", platform: "Kotak MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "Quant Multi Asset Fund", provider: "Quant AMC", rate: "~26.4% (5Y)", highlight: "AUM ~₹5,200 Cr. Aggressive momentum-driven multi-cap rotation.", platform: "Quant MF / Groww", minInvestment: "₹100 SIP", badge: "Highest Return" }
+    ]
+  },
+
+  // ═══════════════════ LARGE & MIDCAP MUTUAL FUNDS ═══════════════════
+  large_mid_mf: {
+    title: "Best Large & Mid-Cap Mutual Funds",
+    riskLevel: 5,
+    note: "SEBI mandated: Must invest min 35% in large-caps and min 35% in mid-caps. Blended growth-stability allocation.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "Quant Large & Mid Cap Fund", provider: "Quant AMC", rate: "~26.8% (5Y)", highlight: "AUM ~₹4,200 Cr. Aggressive momentum strategy blending large and mid-cap alpha.", platform: "Quant MF / Groww", minInvestment: "₹100 SIP", badge: "Highest Return" },
+      { name: "HDFC Large & Mid Cap Fund", provider: "HDFC AMC", rate: "~22.4% (5Y)", highlight: "AUM ~₹22,000 Cr. Process-driven portfolio balancing blue-chip stability with mid-cap growth.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "SBI Large & Midcap Fund", provider: "SBI MF", rate: "~21.6% (5Y)", highlight: "AUM ~₹26,000 Cr. Conservative blend backed by SBI MF research.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "Mirae Asset Large & Midcap Fund", provider: "Mirae Asset AMC", rate: "~20.8% (5Y)", highlight: "AUM ~₹38,000 Cr. Quality growth pick with strong downside protection.", platform: "Mirae MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "Kotak Equity Opportunities Fund", provider: "Kotak AMC", rate: "~21.1% (5Y)", highlight: "AUM ~₹25,000 Cr. Balanced large-mid allocation with low expense ratio.", platform: "Kotak MF / Groww", minInvestment: "₹100 SIP" }
+    ]
+  },
+
+  // ═══════════════════ CONSUMPTION / FMCG SECTOR FUNDS ═══════════════════
+  consumption_mf: {
+    title: "Best Consumption & FMCG Sector Funds",
+    riskLevel: 5,
+    note: "Focuses on rising domestic consumption: FMCG, consumer durables, retail, quick-commerce, and hospitality.",
+    howToStart: "Invest in direct plans via AMC portal or Groww / Zerodha Coin.",
+    products: [
+      { name: "ICICI Pru FMCG Fund", provider: "ICICI Prudential AMC", rate: "~15.8% (5Y)", highlight: "AUM ~₹2,600 Cr. Focused on consumer staples leaders (HUL, ITC, Nestlé, Dabur) with defensive earnings stability.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP", badge: "Category Leader" },
+      { name: "Nippon India Consumption Fund", provider: "Nippon India AMC", rate: "~18.4% (5Y)", highlight: "AUM ~₹2,100 Cr. Broader consumption theme including retail, hospitality, and consumer discretionary.", platform: "Nippon MF / Groww", minInvestment: "₹100 SIP", badge: "Broad Theme" },
+      { name: "Tata India Consumer Fund", provider: "Tata AMC", rate: "~17.2% (5Y)", highlight: "AUM ~₹2,800 Cr. Balanced allocation across FMCG, QSR, consumer durables, and quick-commerce.", platform: "Tata MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "SBI Consumption Opportunities Fund", provider: "SBI MF", rate: "~16.8% (5Y)", highlight: "AUM ~₹2,400 Cr. Rural-urban consumption blend backed by SBI research.", platform: "SBI MF / Groww", minInvestment: "₹500 SIP" },
+      { name: "Mirae Asset Great Consumer Fund", provider: "Mirae Asset AMC", rate: "~18.1% (5Y)", highlight: "AUM ~₹3,600 Cr. Premium brand-focused consumer portfolio with strong brand moat stocks.", platform: "Mirae MF / Kuvera", minInvestment: "₹100 SIP" }
+    ]
+  },
+
+  // ═══════════════════ INTERNATIONAL ETFS ═══════════════════
+  nasdaq_etf: {
+    title: "Best Nasdaq 100 ETFs & Index Funds (India-Listed)",
+    riskLevel: 6,
+    note: "Invest in US tech giants (Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta) from India in INR. RBI LRS limit: $250K/year. Gains taxed at slab rate.",
+    howToStart: "Buy ETF units on NSE/BSE via any stock broker, or invest in index fund via AMC portal / Groww.",
+    products: [
+      { name: "Motilal Oswal Nasdaq 100 ETF", provider: "Motilal Oswal AMC", rate: "~22.4% (5Y)", highlight: "India's most liquid Nasdaq 100 ETF. Ticker: N100. AUM ~₹8,400 Cr. Direct INR exposure to Apple, Microsoft, Nvidia, and Meta.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹175)", badge: "Most Liquid" },
+      { name: "Motilal Oswal Nasdaq 100 Index Fund", provider: "Motilal Oswal AMC", rate: "~22.1% (5Y)", highlight: "AUM ~₹5,200 Cr. No demat needed — invest via SIP like any mutual fund. Same Nasdaq 100 exposure.", platform: "Motilal Oswal MF / Groww", minInvestment: "₹500 SIP", badge: "No Demat Needed" },
+      { name: "ICICI Pru Nasdaq 100 Index Fund", provider: "ICICI Prudential AMC", rate: "~21.8% (5Y)", highlight: "AUM ~₹4,800 Cr. Low expense ratio Nasdaq index tracking via SIP route.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP" },
+      { name: "Kotak Nasdaq 100 FoF", provider: "Kotak AMC", rate: "~21.4% (5Y)", highlight: "AUM ~₹3,200 Cr. Fund-of-Fund structure investing in iShares Nasdaq 100 UCITS ETF.", platform: "Kotak MF / Kuvera", minInvestment: "₹100 SIP" },
+      { name: "Navi Nasdaq 100 FoF", provider: "Navi AMC", rate: "~21.2% (5Y)", highlight: "AUM ~₹2,100 Cr. Lowest expense ratio (0.06%) Nasdaq 100 fund in India.", platform: "Navi MF / Groww", minInvestment: "₹10 SIP", badge: "Lowest Cost" }
+    ]
+  },
+  sp500_etf: {
+    title: "Best S&P 500 ETFs & Index Funds (India-Listed)",
+    riskLevel: 5,
+    note: "Invest in the 500 largest US companies from India in INR. Broader diversification than Nasdaq 100 with lower tech concentration.",
+    howToStart: "Buy ETF units on NSE/BSE, or invest in index fund via AMC portal / Groww.",
+    products: [
+      { name: "Motilal Oswal S&P 500 Index Fund", provider: "Motilal Oswal AMC", rate: "~16.8% (5Y)", highlight: "AUM ~₹6,400 Cr. India's most popular S&P 500 fund. Broader US market exposure across all 11 GICS sectors.", platform: "Motilal Oswal MF / Groww", minInvestment: "₹500 SIP", badge: "Most Popular" },
+      { name: "Mirae Asset S&P 500 Top 50 ETF", provider: "Mirae Asset AMC", rate: "~18.2% (5Y)", highlight: "AUM ~₹2,800 Cr. Concentrated exposure to top 50 S&P 500 stocks.", platform: "Any Stock Broker", minInvestment: "1 unit (~₹65)" },
+      { name: "HDFC S&P 500 Index Fund", provider: "HDFC AMC", rate: "~16.4% (5Y)", highlight: "AUM ~₹1,200 Cr. Full S&P 500 replication via HDFC AMC's institutional infrastructure.", platform: "HDFC MF / Groww", minInvestment: "₹100 SIP" },
+      { name: "Navi US Total Stock Market FoF", provider: "Navi AMC", rate: "~15.8% (5Y)", highlight: "AUM ~₹1,800 Cr. Broadest US market exposure — entire US equity market, not just S&P 500.", platform: "Navi MF / Groww", minInvestment: "₹10 SIP", badge: "Broadest Coverage" },
+      { name: "ICICI Pru US Bluechip Equity Fund", provider: "ICICI Prudential AMC", rate: "~15.2% (5Y)", highlight: "AUM ~₹3,400 Cr. Actively managed US large-cap fund — can outperform passive S&P 500 tracking.", platform: "ICICI Direct / Groww", minInvestment: "₹100 SIP" }
+    ]
   }
 };
 
 export default WHERE_TO_INVEST;
+
 
 
