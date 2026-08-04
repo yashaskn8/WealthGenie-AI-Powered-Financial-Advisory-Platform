@@ -505,128 +505,78 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
           const monthlyIncome = Number(userProfile?.monthly_income) || (userProfile?.annual_income ? userProfile.annual_income / 12 : 65000);
           const monthlySavings = Number(userProfile?.monthly_savings) || 12000;
           const savingsRate = monthlyIncome > 0 ? ((monthlySavings / monthlyIncome) * 100).toFixed(0) : '18';
-          const goals = userProfile?.investment_goals || ['Retirement', 'Wealth Growth'];
           const annualIncomeLakhs = (monthlyIncome * 12 / 100000).toFixed(1);
 
           return (
             <div style={{
-              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(26, 36, 56, 0.92) 50%, rgba(15, 23, 42, 0.95) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
-              borderTop: '2px solid #38bdf8',
-              borderRadius: 20,
-              padding: '22px 26px',
-              marginBottom: 20,
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.88) 100%)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(56, 189, 248, 0.22)',
+              borderLeft: '4px solid #38bdf8',
+              borderRadius: 16,
+              padding: '14px 22px',
+              marginBottom: 18,
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              display: 'grid',
-              gridTemplateColumns: 'minmax(240px, 1fr) auto minmax(220px, auto)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+              display: 'flex',
               alignItems: 'center',
-              gap: 24
+              justify: 'space-between',
+              flexWrap: 'wrap',
+              gap: 16
             }}>
-              {/* Radial ambient glow */}
+              {/* Ambient Background Glow */}
               <div style={{
-                position: 'absolute', top: -50, right: -50, width: 220, height: 220,
-                background: 'radial-gradient(circle, rgba(56, 189, 248, 0.14), transparent 70%)',
+                position: 'absolute', top: -40, right: -40, width: 180, height: 180,
+                background: 'radial-gradient(circle, rgba(56, 189, 248, 0.12), transparent 70%)',
                 pointerEvents: 'none'
               }} />
 
-              {/* Column 1: Identity & Tax Regime */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, zIndex: 1 }}>
+              {/* Left Group: Avatar + Name + Badges + Micro Stat Chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', flex: 1, zIndex: 1 }}>
                 <div style={{
-                  width: 52, height: 52, borderRadius: 16,
-                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(129, 140, 248, 0.2))',
-                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  width: 44, height: 44, borderRadius: 12,
+                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(129, 140, 248, 0.18))',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#38bdf8', flexShrink: 0,
-                  boxShadow: '0 6px 20px rgba(56, 189, 248, 0.2)'
+                  boxShadow: '0 4px 16px rgba(56, 189, 248, 0.15)'
                 }}>
-                  <User size={26} />
+                  <User size={22} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.4px' }}>
-                      {userProfile?.name || 'Investor Profile'}
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
+                      {userProfile?.name || 'Investor Financial Profile'}
                     </h3>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                     <span style={{
-                      fontSize: '0.65rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
+                      fontSize: '0.64rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
                       background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)',
-                      padding: '3px 10px', borderRadius: 20, textTransform: 'uppercase'
+                      padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase'
                     }}>
                       {userProfile?.taxRegime || userProfile?.tax_regime ? `${(userProfile.taxRegime || userProfile.tax_regime).toUpperCase()} REGIME` : 'NEW REGIME'}
                     </span>
-                    <span style={{
-                      fontSize: '0.65rem', fontWeight: 700, color: '#818cf8',
-                      background: 'rgba(129, 140, 248, 0.12)', border: '1px solid rgba(129, 140, 248, 0.25)',
-                      padding: '3px 10px', borderRadius: 20
-                    }}>
-                      {horizon}Y Horizon
-                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap', fontSize: '0.78rem', color: '#94a3b8' }}>
+                    <span>Age <strong style={{ color: '#e2e8f0', fontWeight: 700 }}>{userProfile?.age || 35}</strong></span>
+                    <span style={{ color: '#475569' }}>•</span>
+                    <span>Income <strong style={{ color: '#38bdf8', fontWeight: 700 }}>₹{annualIncomeLakhs}L/yr</strong></span>
+                    <span style={{ color: '#475569' }}>•</span>
+                    <span>Savings <strong style={{ color: '#4ade80', fontWeight: 700 }}>₹{monthlySavings.toLocaleString()}/mo</strong> <span style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 600 }}>({savingsRate}%)</span></span>
+                    <span style={{ color: '#475569' }}>•</span>
+                    <span>Horizon <strong style={{ color: '#818cf8', fontWeight: 700 }}>{horizon} Yrs</strong></span>
                   </div>
                 </div>
               </div>
 
-              {/* Column 2: Key Financial Metric Cards Grid */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-                gap: 12,
-                flex: 1,
-                zIndex: 1
-              }}>
+              {/* Right Group: Risk Comfort Badge + Edit Profile Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, zIndex: 1 }}>
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.07)',
-                  borderRadius: 12, padding: '10px 14px', minWidth: 110
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  padding: '6px 14px', borderRadius: 12, textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Age</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f1f5f9', marginTop: 2 }}>{userProfile?.age || 35} <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500 }}>Yrs</span></div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.07)',
-                  borderRadius: 12, padding: '10px 14px', minWidth: 125
-                }}>
-                  <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Annual Income</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#38bdf8', marginTop: 2 }}>₹{annualIncomeLakhs}L <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500 }}>/yr</span></div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.07)',
-                  borderRadius: 12, padding: '10px 14px', minWidth: 135
-                }}>
-                  <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly Savings</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#4ade80', marginTop: 2 }}>₹{monthlySavings.toLocaleString()} <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 700 }}>({savingsRate}%)</span></div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.07)',
-                  borderRadius: 12, padding: '10px 14px', minWidth: 140
-                }}>
-                  <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Target Goals</div>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                    {goals.slice(0, 2).map((g, i) => (
-                      <span key={i} style={{
-                        fontSize: '0.64rem', fontWeight: 700, color: '#dfbd69',
-                        background: 'rgba(223, 189, 105, 0.12)', border: '1px solid rgba(223, 189, 105, 0.25)',
-                        padding: '1px 7px', borderRadius: 10
-                      }}>{g}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Column 3: Risk Level & Action Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, zIndex: 1 }}>
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.09)',
-                  padding: '10px 18px', borderRadius: 14, textAlign: 'center',
-                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
-                }}>
-                  <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Risk Comfort</div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69', marginTop: 2 }}>
+                  <div style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Risk Comfort</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69' }}>
                     {derivedRiskLabel}
                   </div>
                 </div>
@@ -635,17 +585,17 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                   type="button"
                   onClick={() => onNavigate && onNavigate('profile')}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '12px 20px', borderRadius: 14,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '9px 16px', borderRadius: 12,
                     background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-                    color: '#0f172a', fontWeight: 800, fontSize: '0.85rem',
+                    color: '#0f172a', fontWeight: 800, fontSize: '0.8rem',
                     border: 'none', cursor: 'pointer',
-                    boxShadow: '0 6px 20px rgba(56, 189, 248, 0.35)',
+                    boxShadow: '0 4px 16px rgba(56, 189, 248, 0.28)',
                     transition: 'all 0.2s ease', letterSpacing: '-0.2px',
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  <Edit3 size={16} />
+                  <Edit3 size={15} />
                   Edit Profile
                 </button>
               </div>
