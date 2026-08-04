@@ -532,40 +532,66 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                 pointerEvents: 'none'
               }} />
 
-              {/* Left Group: Avatar + Name + Badges + Micro Stat Chips */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', flex: 1, zIndex: 1 }}>
+              {/* Left Group: Avatar + Name + Regime Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, zIndex: 1 }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12,
+                  width: 42, height: 42, borderRadius: 12,
                   background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(129, 140, 248, 0.18))',
                   border: '1px solid rgba(56, 189, 248, 0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#38bdf8', flexShrink: 0,
                   boxShadow: '0 4px 16px rgba(56, 189, 248, 0.15)'
                 }}>
-                  <User size={22} />
+                  <User size={20} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
+                    <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
                       {userProfile?.name || 'Investor Financial Profile'}
                     </h3>
                     <span style={{
-                      fontSize: '0.64rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
+                      fontSize: '0.62rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
                       background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)',
                       padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase'
                     }}>
                       {userProfile?.taxRegime || userProfile?.tax_regime ? `${(userProfile.taxRegime || userProfile.tax_regime).toUpperCase()} REGIME` : 'NEW REGIME'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap', fontSize: '0.78rem', color: '#94a3b8' }}>
-                    <span>Age <strong style={{ color: '#e2e8f0', fontWeight: 700 }}>{userProfile?.age || 35}</strong></span>
-                    <span style={{ color: '#475569' }}>•</span>
-                    <span>Income <strong style={{ color: '#38bdf8', fontWeight: 700 }}>₹{annualIncomeLakhs}L/yr</strong></span>
-                    <span style={{ color: '#475569' }}>•</span>
-                    <span>Savings <strong style={{ color: '#4ade80', fontWeight: 700 }}>₹{monthlySavings.toLocaleString()}/mo</strong> <span style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 600 }}>({savingsRate}%)</span></span>
-                    <span style={{ color: '#475569' }}>•</span>
-                    <span>Horizon <strong style={{ color: '#818cf8', fontWeight: 700 }}>{horizon} Yrs</strong></span>
-                  </div>
+                </div>
+              </div>
+
+              {/* Middle Group: Sleek Horizontal Micro Metric Pills */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, justifyContent: 'center', zIndex: 1 }}>
+                <div style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Age</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f1f5f9' }}>{userProfile?.age || 35}</span>
+                </div>
+
+                <div style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Income</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8' }}>₹{annualIncomeLakhs}L/yr</span>
+                </div>
+
+                <div style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Savings</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#4ade80' }}>₹{monthlySavings.toLocaleString()} <span style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 700 }}>({savingsRate}%)</span></span>
+                </div>
+
+                <div style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Horizon</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#818cf8' }}>{horizon} Yrs</span>
                 </div>
               </div>
 
