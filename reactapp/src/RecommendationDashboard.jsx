@@ -502,55 +502,71 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
 
         {/* ─── ELEVATED FINANCIAL PROFILE BANNER AT START AFTER LOGIN ─── */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85))',
-          border: '1px solid rgba(56, 189, 248, 0.25)',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.88) 100%)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(56, 189, 248, 0.22)',
           borderTop: '2px solid #38bdf8',
-          borderRadius: 16,
-          padding: '16px 20px',
-          marginBottom: 16,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+          borderRadius: 20,
+          padding: '20px 24px',
+          marginBottom: 20,
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 16
+          gap: 20
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+          {/* Ambient Background Glow */}
+          <div style={{
+            position: 'absolute', top: -40, right: -40, width: 180, height: 180,
+            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.12), transparent 70%)',
+            pointerEvents: 'none'
+          }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 280, zIndex: 1 }}>
             <div style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.15))',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              width: 48, height: 48, borderRadius: 14,
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(129, 140, 248, 0.18))',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#38bdf8', flexShrink: 0
+              color: '#38bdf8', flexShrink: 0,
+              boxShadow: '0 4px 16px rgba(56, 189, 248, 0.15)'
             }}>
-              <User size={22} />
+              <User size={24} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.12rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
                   {userProfile?.name || 'Investor Financial Profile'}
                 </h3>
                 <span style={{
-                  fontSize: '0.68rem', fontWeight: 700, color: '#38bdf8',
+                  fontSize: '0.66rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
                   background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)',
-                  padding: '2px 8px', borderRadius: 6
+                  padding: '3px 10px', borderRadius: 20, textTransform: 'uppercase'
                 }}>
                   {userProfile?.taxRegime || userProfile?.tax_regime ? `${(userProfile.taxRegime || userProfile.tax_regime).toUpperCase()} REGIME` : 'NEW REGIME'}
                 </span>
               </div>
-              <p style={{ fontSize: '0.76rem', color: '#94a3b8', margin: '3px 0 0 0' }}>
-                Age {userProfile?.age || 35} · Income: ₹{userProfile?.annual_income ? (userProfile.annual_income / 100000).toFixed(1) + 'L/yr' : '10.0L/yr'} · Savings: ₹{(userProfile?.monthly_savings || 10000).toLocaleString()}/mo
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6, flexWrap: 'wrap', fontSize: '0.78rem', color: '#94a3b8' }}>
+                <span>Age <strong style={{ color: '#e2e8f0' }}>{userProfile?.age || 35}</strong></span>
+                <span style={{ opacity: 0.4 }}>•</span>
+                <span>Income <strong style={{ color: '#e2e8f0' }}>₹{userProfile?.annual_income ? (userProfile.annual_income / 100000).toFixed(1) + 'L/yr' : (userProfile?.monthly_income ? (userProfile.monthly_income * 12 / 100000).toFixed(1) + 'L/yr' : '10.0L/yr')}</strong></span>
+                <span style={{ opacity: 0.4 }}>•</span>
+                <span>Savings <strong style={{ color: '#4ade80' }}>₹{(userProfile?.monthly_savings || 10000).toLocaleString()}/mo</strong></span>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', zIndex: 1 }}>
             <div style={{
-              background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '6px 14px', borderRadius: 10, textAlign: 'center'
+              background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '8px 16px', borderRadius: 12, textAlign: 'center',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
             }}>
-              <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Risk Comfort</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69' }}>
+              <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Risk Comfort</div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69' }}>
                 {derivedRiskLabel}
               </div>
             </div>
@@ -559,16 +575,16 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
               type="button"
               onClick={() => onNavigate && onNavigate('profile')}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '8px 16px', borderRadius: 10,
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 18px', borderRadius: 12,
                 background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-                color: '#0f172a', fontWeight: 700, fontSize: '0.8rem',
+                color: '#0f172a', fontWeight: 800, fontSize: '0.82rem',
                 border: 'none', cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(56, 189, 248, 0.25)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 4px 18px rgba(56, 189, 248, 0.3)',
+                transition: 'all 0.2s ease', letterSpacing: '-0.2px'
               }}
             >
-              <Edit3 size={14} />
+              <Edit3 size={15} />
               Edit Profile
             </button>
           </div>
@@ -1142,15 +1158,22 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                                {(() => {
                                  const recObj = (recommendations || []).find(r => r.id === child.instId);
                                  const score = recObj ? computeSuitabilityMatch(recObj, userProfile) : null;
-                                 if (!score) return <span style={{color:'#475569', fontSize:'0.72rem'}}>--</span>;
-                                 const scoreColor = score >= 90 ? '#4ade80' : score >= 75 ? '#38bdf8' : score >= 60 ? '#dfbd69' : '#94a3b8';
+                                 if (!score) return <span style={{color:'#475569', fontSize:'0.72rem'}}>—</span>;
+                                 const scoreColor = score >= 90 ? '#10b981' : score >= 75 ? '#38bdf8' : score >= 60 ? '#f59e0b' : '#94a3b8';
+                                 const scoreBg = score >= 90 ? 'rgba(16, 185, 129, 0.12)' : score >= 75 ? 'rgba(56, 189, 248, 0.12)' : score >= 60 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(148, 163, 184, 0.1)';
+                                 const scoreBorder = score >= 90 ? 'rgba(16, 185, 129, 0.28)' : score >= 75 ? 'rgba(56, 189, 248, 0.28)' : score >= 60 ? 'rgba(245, 158, 11, 0.28)' : 'rgba(148, 163, 184, 0.2)';
                                  return (
                                    <span style={{
-                                     display: 'inline-block', padding: '3px 8px', borderRadius: 8,
-                                     fontSize: '0.7rem', fontWeight: 700, color: scoreColor,
-                                     background: `${scoreColor}12`, border: `1px solid ${scoreColor}25`,
-                                     fontVariantNumeric: 'tabular-nums'
-                                   }}>{score}%</span>
+                                     display: 'inline-flex', alignItems: 'center', gap: 4,
+                                     padding: '3px 9px', borderRadius: 20,
+                                     fontSize: '0.72rem', fontWeight: 800, color: scoreColor,
+                                     background: scoreBg, border: `1px solid ${scoreBorder}`,
+                                     boxShadow: `0 2px 8px ${scoreColor}15`,
+                                     fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.2px'
+                                   }}>
+                                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: scoreColor, flexShrink: 0 }} />
+                                     {score}% Match
+                                   </span>
                                  );
                                })()}
                              </td>
@@ -1456,15 +1479,21 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                           <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f1f5f9', letterSpacing: '-0.3px' }}>{rec.abbr || rec.name}</span>
                           {(() => {
                              const score = computeSuitabilityMatch(rec, userProfile);
-                             const scoreColor = score >= 90 ? '#4ade80' : score >= 75 ? '#38bdf8' : score >= 60 ? '#dfbd69' : '#94a3b8';
+                             const scoreColor = score >= 90 ? '#10b981' : score >= 75 ? '#38bdf8' : score >= 60 ? '#f59e0b' : '#94a3b8';
+                             const scoreBg = score >= 90 ? 'rgba(16, 185, 129, 0.12)' : score >= 75 ? 'rgba(56, 189, 248, 0.12)' : score >= 60 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(148, 163, 184, 0.1)';
+                             const scoreBorder = score >= 90 ? 'rgba(16, 185, 129, 0.28)' : score >= 75 ? 'rgba(56, 189, 248, 0.28)' : score >= 60 ? 'rgba(245, 158, 11, 0.28)' : 'rgba(148, 163, 184, 0.2)';
                              return (
                                <span style={{
-                                 display: 'inline-flex', alignItems: 'center', gap: 3,
-                                 padding: '2px 8px', borderRadius: 8,
-                                 fontSize: '0.65rem', fontWeight: 700, color: scoreColor,
-                                 background: `${scoreColor}10`, border: `1px solid ${scoreColor}20`,
-                                 fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'
-                               }}>{score}% Match</span>
+                                 display: 'inline-flex', alignItems: 'center', gap: 4,
+                                 padding: '3px 10px', borderRadius: 20,
+                                 fontSize: '0.7rem', fontWeight: 800, color: scoreColor,
+                                 background: scoreBg, border: `1px solid ${scoreBorder}`,
+                                 boxShadow: `0 2px 10px ${scoreColor}18`,
+                                 fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.2px', whiteSpace: 'nowrap'
+                               }}>
+                                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: scoreColor, flexShrink: 0 }} />
+                                 {score}% Match
+                               </span>
                              );
                            })()}
                           <RecommendationSourceBadge source={rec._source} />
