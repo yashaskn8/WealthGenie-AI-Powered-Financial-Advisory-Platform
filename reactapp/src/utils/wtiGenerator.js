@@ -727,17 +727,29 @@ function getProductsForInstrument(inv, platformCat) {
   const minInv = formatMinInvestment(inv.minMonthlyInvestment);
   const tenure = getTenureLabel(inv);
 
-  // Helper to build a product object
-  const makeProduct = (prodName, provider, platform, highlight, badge = null) => ({
-    name: `${inv.abbr || inv.name} via ${prodName}`,
-    provider,
-    rate: rateStr,
-    highlight,
-    platform,
-    minInvestment: minInv,
-    tenure,
-    badge
-  });
+  // Helper to build a product object with realistic AMC / Bank / Issuer branding
+  const makeProduct = (prodName, provider, platform, highlight, badge = null) => {
+    const cleanInvName = (inv.abbr || inv.name || 'Fund').replace(/\b(mf|mutual fund)\b/gi, '').trim();
+    const hasBrand = /sbi|hdfc|icici|nippon|axis|kotak|motilal|mirae|dsp|tata|uti|rbi|post office|lic|epfo|policybazaar|zerodha|groww|angel|goldenpi|wint/i.test(prodName);
+    
+    let finalName = prodName;
+    if (!hasBrand) {
+      finalName = `${provider} ${cleanInvName} Plan (${prodName})`;
+    } else if (!prodName.toLowerCase().includes(cleanInvName.toLowerCase()) && cleanInvName.length > 2 && !/etf|bond|sgb|ppf|scss|ssy|nps|fd|epf/i.test(cleanInvName)) {
+      finalName = `${prodName} — ${cleanInvName}`;
+    }
+
+    return {
+      name: finalName,
+      provider,
+      rate: rateStr,
+      highlight,
+      platform,
+      minInvestment: minInv,
+      tenure,
+      badge
+    };
+  };
 
   // 1. EPF & VPF
   if (id === 'epf' || id === 'vpf') {
@@ -929,11 +941,11 @@ function getProductsForInstrument(inv, platformCat) {
     const expRatioStr = inv.expenseRatio ? `Expense ratio: ${(inv.expenseRatio * 100).toFixed(2)}% (Direct)` : 'Low expense ratio (Direct plan)';
     const descText = inv.description || inv.desc || inv.cardSubtitle || `Invests in ${name} portfolio.`;
     const returnInfo = rateStr !== 'Market-linked' ? `historical 5Y return around ${rateStr}` : 'market-linked returns';
+    const cleanCat = (inv.name || inv.abbr || 'Equity Fund').replace(/\b(mf|mutual fund)\b/gi, '').trim() || 'Equity';
 
-    // Construct 5 distinct, instrument-tailored AMC / platform execution cards
     return [
       {
-        name: `SBI ${name} (Direct Plan)`,
+        name: `SBI ${cleanCat} Fund (Direct Growth)`,
         provider: 'SBI Mutual Fund',
         rate: rateStr,
         highlight: `Backed by India's largest AMC by AUM. ${descText} Offers ${expRatioStr} with ${returnInfo}. Instant SIP setup via YONO or SBI MF portal with zero distributor commission.`,
@@ -943,17 +955,7 @@ function getProductsForInstrument(inv, platformCat) {
         badge: 'Largest AMC'
       },
       {
-        name: `HDFC ${name} (Direct Plan)`,
-        provider: 'HDFC Mutual Fund',
-        rate: rateStr,
-        highlight: `Managed by HDFC AMC's experienced equity team. Process-driven investment approach focused on portfolio quality. ${expRatioStr}. Ideal for long-term goal compounding.`,
-        platform: 'HDFC MF Portal / Groww / Coin',
-        minInvestment: minInv,
-        tenure,
-        badge: 'Top Track Record'
-      },
-      {
-        name: `ICICI Prudential ${name} (Direct Plan)`,
+        name: `ICICI Prudential ${cleanCat} Fund (Direct Growth)`,
         provider: 'ICICI Prudential AMC',
         rate: rateStr,
         highlight: `Consistently high active risk management. ${descText} Zero entry load with direct digital execution via iMobile Pay and CAMS MF Central.`,
@@ -963,23 +965,33 @@ function getProductsForInstrument(inv, platformCat) {
         badge: 'Low Volatility'
       },
       {
-        name: `Nippon India ${name} (Direct Plan)`,
+        name: `HDFC ${cleanCat} Fund (Direct Growth)`,
+        provider: 'HDFC Mutual Fund',
+        rate: rateStr,
+        highlight: `Managed by HDFC AMC's experienced equity team. Process-driven investment approach focused on portfolio quality. ${expRatioStr}. Ideal for long-term goal compounding.`,
+        platform: 'HDFC MF Portal / Groww / Coin',
+        minInvestment: minInv,
+        tenure,
+        badge: 'Top Track Record'
+      },
+      {
+        name: `Nippon India ${cleanCat} Fund (Direct Growth)`,
         provider: 'Nippon India Mutual Fund',
         rate: rateStr,
-        highlight: `Highly liquid fund management with deep institutional research across ${name}. Direct-growth plan saves up to 1% annual distributor commission.`,
+        highlight: `Highly liquid fund management with deep institutional research across ${cleanCat}. Direct-growth plan saves up to 1% annual distributor commission.`,
         platform: 'Nippon MF Portal / Groww',
         minInvestment: minInv,
         tenure
       },
       {
-        name: `MF Central Unified Portal (${name})`,
-        provider: 'CAMS & KFintech (SEBI Official)',
+        name: `Axis / Motilal Oswal ${cleanCat} Fund (Direct Growth)`,
+        provider: 'Axis & Motilal Oswal AMC',
         rate: rateStr,
-        highlight: `Official SEBI-regulated mutual fund servicing platform. Transact in direct plans of ${name} across all AMCs with zero commission and unified tax statements.`,
-        platform: 'mfcentral.com (Official)',
+        highlight: `Official SEBI-regulated direct mutual fund scheme. Transact in direct plans of ${cleanCat} across top AMCs with zero commission and unified tax statements.`,
+        platform: 'Axis MF / Kuvera / MF Central',
         minInvestment: minInv,
         tenure,
-        badge: 'Official Service'
+        badge: 'Direct Plan'
       }
     ];
   }
@@ -987,33 +999,34 @@ function getProductsForInstrument(inv, platformCat) {
   // 16. ETFs
   if (platformCat === 'etf') {
     const descText = inv.description || inv.desc || `Passively tracks ${name}.`;
+    const cleanEtfName = (inv.name || inv.abbr || 'ETF').replace(/\b(etf)\b/gi, '').trim() || 'Index';
     return [
-      makeProduct('Nippon India ETF', 'Nippon India AMC', 'Zerodha Kite / Groww', 
+      makeProduct(`Nippon India ${cleanEtfName} ETF`, 'Nippon India AMC', 'Zerodha Kite / Groww', 
         `Ticker: ${inv.abbr || inv.name}. ${descText} Trade live during exchange hours with ultra-low expense ratio and high daily liquidity.`, 'Most Liquid'),
-      makeProduct('ICICI Prudential ETF', 'ICICI Prudential AMC', 'Zerodha Kite / Groww', 
+      makeProduct(`ICICI Prudential ${cleanEtfName} ETF`, 'ICICI Prudential AMC', 'Zerodha Kite / Groww', 
         `Institutional-grade passive tracking for ${name}. Lowest expense ratio structure on NSE/BSE.`, 'Lowest Cost'),
-      makeProduct('SBI ETF', 'SBI Mutual Fund', 'Stock Broker App', 
+      makeProduct(`SBI ${cleanEtfName} ETF`, 'SBI Mutual Fund', 'Stock Broker App', 
         `Massive institutional liquidity backed by SBI MF. Buy single units like regular equity shares during market hours.`, 'Institutional Liquidity'),
-      makeProduct('HDFC ETF', 'HDFC Mutual Fund', 'Stock Broker App', 
+      makeProduct(`HDFC ${cleanEtfName} ETF`, 'HDFC Mutual Fund', 'Stock Broker App', 
         `Efficient index replication with tight bid-ask spreads on exchange. Zero demat entry lock-in.`),
-      makeProduct('Mirae Asset / DSP ETF', 'Mirae Asset / DSP AMC', 'Stock Broker App', 
+      makeProduct(`Mirae Asset ${cleanEtfName} ETF`, 'Mirae Asset AMC', 'Stock Broker App', 
         `Global best-practice passive portfolio management for ${name} with real-time NAV tracking.`)
     ];
   }
 
   // 17. Direct Stocks / Equity
   if (platformCat === 'equity') {
-    const descText = inv.description || inv.desc || `Direct equity stock selection for ${name}.`;
+    const cleanStockName = inv.name || inv.abbr || 'Blue-Chip Stock';
     return [
-      makeProduct('Zerodha Kite (Stock SIP)', 'Zerodha (NSE/BSE)', 'Zerodha Kite App', 
-        `Flat ₹20 discount brokerage per trade. Set up automated monthly stock SIPs for ${name} with clean charting and zero delivery brokerage.`, 'Lowest Brokerage'),
-      makeProduct('Groww Stock Desk', 'Groww (NSE/BSE)', 'Groww App', 
-        `1-tap stock purchase interface with clear financial statements and balance sheet metrics for ${name}. Best for beginner investors.`, 'Best for Beginners'),
-      makeProduct('Angel One Advisory', 'Angel One (NSE/BSE)', 'Angel One App', 
-        `Provides daily technical charts, margin trading facilities, and expert research reports for ${name}.`, 'Research Advisory'),
-      makeProduct('ICICI Direct Prime', 'ICICI Securities', 'ICICI Direct App', 
+      makeProduct(`Zerodha Stock SIP (${cleanStockName})`, 'Zerodha (NSE/BSE)', 'Zerodha Kite App', 
+        `Flat ₹20 discount brokerage per trade. Set up automated monthly stock SIPs for ${cleanStockName} with clean charting and zero delivery brokerage.`, 'Lowest Brokerage'),
+      makeProduct(`Groww Direct Desk (${cleanStockName})`, 'Groww (NSE/BSE)', 'Groww App', 
+        `1-tap stock purchase interface with clear financial statements and balance sheet metrics for ${cleanStockName}. Best for beginner investors.`, 'Best for Beginners'),
+      makeProduct(`Angel One Research (${cleanStockName})`, 'Angel One (NSE/BSE)', 'Angel One App', 
+        `Provides daily technical charts, margin trading facilities, and expert research reports for ${cleanStockName}.`, 'Research Advisory'),
+      makeProduct(`ICICI Direct Prime (${cleanStockName})`, 'ICICI Securities', 'ICICI Direct App', 
         `3-in-1 account integrating savings, demat, and trading for instant fund transfer and stock delivery.`),
-      makeProduct('HDFC Sky Platform', 'HDFC Securities', 'HDFC Sky App', 
+      makeProduct(`HDFC Sky Direct (${cleanStockName})`, 'HDFC Securities', 'HDFC Sky App', 
         `Modern discount brokerage platform by HDFC with advanced stock screeners and research insights.`)
     ];
   }
@@ -1021,25 +1034,50 @@ function getProductsForInstrument(inv, platformCat) {
   // 18. Insurance
   if (platformCat === 'insurance') {
     return [
-      makeProduct('PolicyBazaar Comparison', 'PolicyBazaar Portal', 'PolicyBazaar App / Web', 
+      makeProduct('PolicyBazaar Term Insurance Comparison', 'PolicyBazaar Portal', 'PolicyBazaar App / Web', 
         `Compare premium rates, claim settlement ratios, and benefits of ${name} across 20+ insurance providers.`, 'Compare Plans'),
-      makeProduct('LIC of India Direct', 'Life Insurance Corp', 'licindia.in / Branch', 
+      makeProduct('LIC of India Direct Policy', 'Life Insurance Corp', 'licindia.in / Branch', 
         `The trusted public sector life insurer. Invest in ${name} with high sovereign-backed security and offline support.`, 'Most Trusted'),
-      makeProduct('HDFC Life Direct', 'HDFC Life Insurance', 'hdfclife.com', 
+      makeProduct('HDFC Life Wealth Builder', 'HDFC Life Insurance', 'hdfclife.com', 
         `Invest in modern wealth-builder plans for ${name} with zero premium allocation charges and online claim tracking.`),
-      makeProduct('ICICI Pru Life Portal', 'ICICI Prudential Life', 'iciciprulife.com', 
+      makeProduct('ICICI Pru Life iProtect', 'ICICI Prudential Life', 'iciciprulife.com', 
         `Digital-first insurance policy management with flexible payout options and tax receipt downloads.`)
     ];
   }
 
-  // Generic fallback if no specific rule matched
+  // Generic fallback if no specific rule matched — Real AMC / Bank titles instead of "via Platform"
+  const cleanFallbackName = (inv.name || inv.abbr || 'Investment').replace(/\b(mf|mutual fund)\b/gi, '').trim() || 'Plan';
   return [
-    makeProduct('SBI / HDFC Bank Route', 'Scheduled Commercial Banks', 'NetBanking / Branch', 
-      `Open and manage ${name} directly with your primary savings bank. Safe, simple, and convenient auto-debit options.`, 'Bank Route'),
-    makeProduct('Zerodha / Groww Direct', 'Discount Investment Broker', 'Broker App', 
-      `Invest in ${name} through your primary investment app. Direct commission-free tracking and simple setup.`, 'Broker Route'),
-    makeProduct('MF Central Portal', 'CAMS & KFintech', 'mfcentral.com', 
-      `Official SEBI servicing portal for managing and tracking ${name} transactions.`, 'Official Channel')
+    {
+      name: `SBI ${cleanFallbackName} Growth Scheme`,
+      provider: 'State Bank of India',
+      rate: rateStr,
+      highlight: `Open and manage ${name} directly with SBI. Safe, simple, and convenient auto-debit options.`,
+      platform: 'SBI NetBanking / Branch',
+      minInvestment: minInv,
+      tenure,
+      badge: 'Primary Bank'
+    },
+    {
+      name: `HDFC ${cleanFallbackName} Direct Plan`,
+      provider: 'HDFC Bank & AMC',
+      rate: rateStr,
+      highlight: `Invest in ${name} via HDFC. Clean digital interface with instant SIP setup and high institutional backing.`,
+      platform: 'HDFC NetBanking / App',
+      minInvestment: minInv,
+      tenure,
+      badge: 'Top Rated'
+    },
+    {
+      name: `ICICI Prudential ${cleanFallbackName} Direct`,
+      provider: 'ICICI Prudential AMC',
+      rate: rateStr,
+      highlight: `Direct investment option for ${name} with real-time portfolio tracking and zero commission fees.`,
+      platform: 'ICICI Direct App / iMobile',
+      minInvestment: minInv,
+      tenure,
+      badge: 'Digital Portal'
+    }
   ];
 }
 
