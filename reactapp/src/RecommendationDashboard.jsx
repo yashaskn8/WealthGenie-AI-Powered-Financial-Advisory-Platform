@@ -696,7 +696,12 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
           </div>
         )}
 
-        <div className="status-bar">
+        <div className="status-bar" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 12,
+          marginBottom: 20
+        }}>
           {(() => {
             const goals = userProfile?.investment_goals || [];
             const allocatedGoals = goals.filter(g => {
@@ -711,39 +716,72 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
             const budgetUsed = userProfile?.monthly_savings ? ((currentMonthly / userProfile.monthly_savings) * 100).toFixed(0) : 100;
             return (
               <>
-                <div className="status-item" style={{display:'flex', alignItems:'center', gap: 8}}>
-                  <Target size={14} color="#38bdf8" style={{flexShrink:0}} />
-                  <span style={{color:'#94a3b8', fontWeight:500, fontSize:'0.72rem'}}>Goal</span>
+                <div className="status-item" style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(56, 189, 248, 0.18)',
+                  borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)'
+                }}>
+                  <Target size={15} color="#38bdf8" style={{flexShrink:0}} />
+                  <span style={{color:'#94a3b8', fontWeight:600, fontSize:'0.75rem'}}>Goal</span>
                   <span style={{marginLeft:'auto', display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end'}}>
                     {goals.map((g, i) => (
                       <span key={i} style={{
-                        background: 'rgba(56, 189, 248, 0.08)', 
-                        border: '1px solid rgba(56, 189, 248, 0.15)', 
-                        padding: '1px 8px', borderRadius: 10, 
-                        fontSize: '0.68rem', fontWeight: 600, color: '#38bdf8'
+                        background: 'rgba(56, 189, 248, 0.12)', 
+                        border: '1px solid rgba(56, 189, 248, 0.25)', 
+                        padding: '2px 8px', borderRadius: 20, 
+                        fontSize: '0.66rem', fontWeight: 700, color: '#38bdf8'
                       }}>{g}</span>
                     ))}
                   </span>
                 </div>
-                <div className="status-item" style={{display:'flex', alignItems:'center', gap: 8}}>
-                  <Activity size={14} color={statusColor} style={{flexShrink:0}} />
-                  <span style={{color:'#94a3b8', fontWeight:500, fontSize:'0.72rem'}}>Status</span>
-                  <span style={{marginLeft:'auto', color: statusColor}}>{status}</span>
+
+                <div className="status-item" style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: `1px solid ${statusColor}30`,
+                  borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)'
+                }}>
+                  <Activity size={15} color={statusColor} style={{flexShrink:0}} />
+                  <span style={{color:'#94a3b8', fontWeight:600, fontSize:'0.75rem'}}>Status</span>
+                  <span style={{
+                    marginLeft:'auto', color: statusColor, fontWeight: 800, fontSize: '0.78rem',
+                    background: `${statusColor}15`, padding: '2px 10px', borderRadius: 20,
+                    border: `1px solid ${statusColor}30`, display: 'inline-flex', alignItems: 'center', gap: 4
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor }} />
+                    {status}
+                  </span>
                 </div>
-                <div className="status-item" style={{display:'flex', alignItems:'center', gap: 8}}>
-                  <PiggyBank size={14} color="#dfbd69" style={{flexShrink:0}} />
-                  <span style={{color:'#94a3b8', fontWeight:500, fontSize:'0.72rem'}}>SIP Budget</span>
-                  <span style={{marginLeft:'auto'}}>₹{(userProfile?.monthly_savings || 0).toLocaleString()}</span>
+
+                <div className="status-item" style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(223, 189, 105, 0.18)',
+                  borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)'
+                }}>
+                  <PiggyBank size={15} color="#dfbd69" style={{flexShrink:0}} />
+                  <span style={{color:'#94a3b8', fontWeight:600, fontSize:'0.75rem'}}>SIP Budget</span>
+                  <span style={{marginLeft:'auto', fontWeight: 800, color: '#e2e8f0', fontSize: '0.85rem'}}>₹{(userProfile?.monthly_savings || 0).toLocaleString()}</span>
                 </div>
-                <div className="status-item" style={{display:'flex', alignItems:'center', gap: 8}}>
-                  <Wallet size={14} color={currentMonthly === (userProfile?.monthly_savings || 0) ? '#4ade80' : '#f59e0b'} style={{flexShrink:0}} />
-                  <span style={{color:'#94a3b8', fontWeight:500, fontSize:'0.72rem'}}>Allocated</span>
-                  <span style={{marginLeft:'auto', color: currentMonthly === (userProfile?.monthly_savings || 0) ? '#4ade80' : '#f59e0b'}}>₹{currentMonthly.toLocaleString()} <span style={{fontSize:'0.65rem', color:'#64748b', fontWeight:400}}>({budgetUsed}%)</span></span>
+
+                <div className="status-item" style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(56, 189, 248, 0.18)',
+                  borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)'
+                }}>
+                  <Wallet size={15} color={currentMonthly === (userProfile?.monthly_savings || 0) ? '#4ade80' : '#f59e0b'} style={{flexShrink:0}} />
+                  <span style={{color:'#94a3b8', fontWeight:600, fontSize:'0.75rem'}}>Allocated</span>
+                  <span style={{marginLeft:'auto', color: currentMonthly === (userProfile?.monthly_savings || 0) ? '#4ade80' : '#f59e0b', fontWeight: 800, fontSize: '0.85rem'}}>
+                    ₹{currentMonthly.toLocaleString()} <span style={{fontSize:'0.68rem', color:'#64748b', fontWeight: 600}}>({budgetUsed}%)</span>
+                  </span>
                 </div>
-                <div className="status-item" style={{display:'flex', alignItems:'center', gap: 8}}>
-                  <Clock size={14} color="#8b5cf6" style={{flexShrink:0}} />
-                  <span style={{color:'#94a3b8', fontWeight:500, fontSize:'0.72rem'}}>Horizon</span>
-                  <span style={{marginLeft:'auto'}}>{horizon} Yrs</span>
+
+                <div className="status-item" style={{
+                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(139, 92, 246, 0.18)',
+                  borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)'
+                }}>
+                  <Clock size={15} color="#8b5cf6" style={{flexShrink:0}} />
+                  <span style={{color:'#94a3b8', fontWeight:600, fontSize:'0.75rem'}}>Horizon</span>
+                  <span style={{marginLeft:'auto', fontWeight: 800, color: '#818cf8', fontSize: '0.85rem'}}>{horizon} Yrs</span>
                 </div>
               </>
             );
