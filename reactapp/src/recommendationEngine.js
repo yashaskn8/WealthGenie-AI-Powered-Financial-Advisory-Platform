@@ -153,9 +153,20 @@ function _checkInstrumentSpecificRules(inv, age, annualIncome, savings, horizon,
 
 function _checkRiskAppetiteRules(inv, risk, horizon) {
   const numericRisk = typeof inv.risk === 'number' ? inv.risk : (inv.risk_level === 'Very High' ? 5 : inv.risk_level === 'High' ? 4 : inv.risk_level === 'Medium' ? 3 : 2);
-  if (risk === "low" && (numericRisk >= 4 || (numericRisk >= 3 && horizon <= 5))) return false;
-  if (risk === "medium" && (numericRisk >= 5 || (numericRisk >= 4 && horizon < 5))) return false;
-  if (risk === "high" && numericRisk === 1 && horizon <= 3) return false;
+  const r = String(risk || '').toLowerCase();
+
+  if (r === "low" || r === "very low" || r === "conservative") {
+    if (numericRisk >= 4) return false;
+    if (numericRisk >= 3 && horizon <= 5) return false;
+  }
+  if (r === "medium" || r === "moderate") {
+    if (numericRisk >= 5 && horizon < 5) return false;
+  }
+  if (r === "high" || r === "very high" || r === "aggressive") {
+    // High risk profile: strictly exclude Very Low (1) & Low (2) risk options (EPF, VPF, PPF, FDs, Gilt/Liquid debt MFs).
+    // Only High (4), Very High (5), and Moderate-High (3) growth options are allowed.
+    if (numericRisk <= 2) return false;
+  }
   return true;
 }
 
@@ -202,10 +213,10 @@ export function getEligibleInvestments(profile) {
 
   // ── MINIMUM ELIGIBLE INSTRUMENTS FALLBACK ──
   if (result.length < 3) {
-    const riskTiers = risk === 'high'
-      ? [5, 4, 3, 2, 1]
-      : risk === 'medium'
-        ? [3, 2, 4, 1]
+    const riskTiers = (risk === 'high' || risk === 'very high' || risk === 'aggressive')
+      ? [5, 4, 3]
+      : (risk === 'medium' || risk === 'moderate')
+        ? [3, 2, 4]
         : [1, 2, 3];
 
     const existingIds = new Set(result.map(i => i.id));

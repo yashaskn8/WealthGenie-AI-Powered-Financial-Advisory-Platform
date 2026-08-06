@@ -109,6 +109,16 @@ export function filterEligible(instruments, profile) {
     // Special: girl child requirement (skip if user doesn't have one)
     if (elig.hasGirlChild && !profile.hasGirlChild) return false;
 
+    // Risk appetite gating
+    const riskCat = (profile.riskCategory || profile.risk_appetite || '').toLowerCase();
+    const invRisk = inv.dynamicData?.risk?.value || inv.riskLevel || inv.risk || 3;
+    if ((riskCat === 'high' || riskCat === 'aggressive' || riskCat === 'very high') && invRisk <= 2) {
+      return false;
+    }
+    if ((riskCat === 'conservative' || riskCat === 'low' || riskCat === 'very low') && invRisk >= 4) {
+      return false;
+    }
+
     return true;
   });
 }
