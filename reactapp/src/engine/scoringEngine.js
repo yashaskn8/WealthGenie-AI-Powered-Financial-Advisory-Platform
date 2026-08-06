@@ -325,6 +325,16 @@ export function computeScore(inv, profile) {
   const horizonMatch     = computeHorizonMatch(inv, p);
   const costPenalty      = computeCostPenalty(inv);
 
+  // Risk-Adjusted Sharpe Ratio Bonus & Real Yield Factor
+  const vol = inv.volatility || (inv.riskLevel >= 4 ? 0.18 : inv.riskLevel >= 3 ? 0.10 : 0.04);
+  const rfRate = 6.5; // 6.5% risk-free baseline (RBI Repo / T-Bill)
+  const sharpeEst = vol > 0.01 ? (postTaxRate - rfRate) / (vol * 100) : 0;
+  const sharpeBonus = sharpeEst > 0 ? Math.min(10, sharpeEst * 5) : 0;
+
+  // Real Return / Inflation Drag Factor (Assumed 6% benchmark inflation)
+  const realReturn = ((1 + postTaxRate / 100) / (1 + 0.06) - 1) * 100;
+  const realYieldBonus = realReturn > 0 ? Math.min(8, realReturn * 1.5) : -Math.abs(realReturn * 2);
+
   // Weighted utility score
   let score = 0;
   score += w.alpha   * returnScore;
@@ -334,6 +344,8 @@ export function computeScore(inv, profile) {
   score += w.epsilon * goalBonus;
   score += w.zeta    * horizonMatch;
   score -= w.eta     * costPenalty;
+  score += sharpeBonus;
+  score += realYieldBonus;
 
   // Instrument-specific bonuses — preserved for backward compatibility with
   // instruments that have unique policy characteristics not captured by metadata
@@ -343,7 +355,7 @@ export function computeScore(inv, profile) {
     score += SCORING.NPS_LONG_HORIZON_BONUS;
   }
 
-  return { ...inv, score, postTaxRate };
+  return { ...inv, score, postTaxRate, sharpeEst, realReturn };
 }
 
 // ═══════════════════════════════════════════════════════════════════

@@ -312,6 +312,10 @@ function computeInstrumentScore(inv, p, w, confScores) {
   const horizonMatch = scoreHorizon(inv, p);
   const costPenalty = scoreCost(inv);
 
+  // Real Return / Inflation Drag Factor (Assumed 6% benchmark inflation)
+  const realReturn = ((1 + postTaxRate / 100) / (1 + 0.06) - 1) * 100;
+  const realYieldBonus = realReturn > 0 ? Math.min(8, realReturn * 1.5) : -Math.abs(realReturn * 2);
+
   // Weighted composite
   let score = 0;
   score += w.alpha * returnScore;
@@ -321,6 +325,7 @@ function computeInstrumentScore(inv, p, w, confScores) {
   score += w.epsilon * goalBonus;
   score += w.zeta * horizonMatch;
   score -= w.eta * costPenalty;
+  score += realYieldBonus;
 
   // One-time lump sum suitability boost for instruments suited for lump-sum deployment
   if (p.hasLumpSum && p.lumpSumAmount > 0) {
@@ -339,6 +344,7 @@ function computeInstrumentScore(inv, p, w, confScores) {
     ...inv,
     score,
     postTaxReturn: postTaxRate,
+    realReturn,
     backendType,
     nominalReturn: rate,
     effectiveYield: postTaxRate,
