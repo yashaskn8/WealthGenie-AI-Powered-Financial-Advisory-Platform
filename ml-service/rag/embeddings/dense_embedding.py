@@ -197,11 +197,10 @@ def get_embedding_provider(config=None) -> BaseEmbeddingProvider:
     if provider_name == "sentence_transformer":
         try:
             return SentenceTransformerEmbeddingProvider()
-        except ImportError:
+        except Exception as e:
             logger.warning(
-                "sentence-transformers package is not installed. "
-                "Falling back to DenseVectorEmbeddingProvider (lexical hashing). "
-                "Install with: pip install sentence-transformers"
+                f"sentence-transformers model initialization unavailable ({e}). "
+                "Falling back to DenseVectorEmbeddingProvider (lexical hashing)."
             )
             return DenseVectorEmbeddingProvider(dimension=config.embedding_dim, enable_cache=True)
     elif provider_name == "tf_idf_dense":
