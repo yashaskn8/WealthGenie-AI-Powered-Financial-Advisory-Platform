@@ -259,7 +259,7 @@ function computeCostPenalty(inv) {
 const _WEIGHT_FLOOR = 0.5;
 const _WEIGHT_CEIL  = 3.0;
 
-function _deriveWeightsLocal(p, rawProfile) {
+export function deriveWeights(p, rawProfile) {
   const clamp = (v) => Math.max(_WEIGHT_FLOOR, Math.min(_WEIGHT_CEIL, v));
 
   // α — Return: long horizon + high risk + lump sum → prioritize growth
@@ -312,11 +312,11 @@ function _deriveWeightsLocal(p, rawProfile) {
 // ═══════════════════════════════════════════════════════════════════
 export function computeScore(inv, profile) {
   const p = parseProfile(profile);
-  // WG-004: Use backend-supplied weights when available (API-driven path),
+  // WG-004: Use backend-supplied weights when available (API-driven path,
+  // checking both camelCase computedWeights and snake_case computed_weights),
   // otherwise derive them locally using the same algorithm as the backend's
-  // RecommendationPipeline.deriveWeights(). This replaces the prior silent
-  // fallback to flat {alpha:1,...} which ignored all profile dimensions.
-  const w = profile?.computedWeights || _deriveWeightsLocal(p, profile);
+  // RecommendationPipeline.deriveWeights().
+  const w = profile?.computedWeights || profile?.computed_weights || deriveWeights(p, profile);
 
   // Reuse existing tax computation
   const { postTaxRate } = computePostTaxReturn(inv, p.annualSavings, p.annualIncome, profile);

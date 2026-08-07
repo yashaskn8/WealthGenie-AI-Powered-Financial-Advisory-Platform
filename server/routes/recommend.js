@@ -143,9 +143,10 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     reconciliation_note: riskReconciliation.reconciliation_note,
     advisory_note: riskReconciliation.advisory_note,
     excluded_due_to_eligibility: riskReconciliation.excluded_due_to_eligibility,
-    // WG-004: Attach backend-computed scoring weights so the frontend can use
-    // profile-aware weights instead of falling back to flat {alpha:1,...} defaults.
+    // WG-004: Attach backend-computed scoring weights in both snake_case and camelCase
+    // so the frontend can read profile.computedWeights / profile.computed_weights cleanly.
     computed_weights: computedWeights,
+    computedWeights: computedWeights,
   };
 
   // Cache for 24 hours

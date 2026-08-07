@@ -237,14 +237,12 @@ test('WG-010: rankWhereToInvestBackend and runPipeline agree on risk tier classi
   }
 });
 
-test('WG-004: deriveWeights is exclusive to RecommendationPipeline.js backend', async () => {
-  const fs = await import('node:fs');
+test('WG-004: scoringEngine.js exports deriveWeights for parity and computeScore respects backend weights', async () => {
   const path = await import('node:path');
   const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
-  if (fs.existsSync(scoringEnginePath)) {
-    const code = fs.readFileSync(scoringEnginePath, 'utf8');
-    assert.ok(!code.includes('function deriveWeights'), 'scoringEngine.js must not contain deriveWeights function');
-  }
+  const scoringEngine = await import(`file://${scoringEnginePath}`);
+  assert.equal(typeof scoringEngine.deriveWeights, 'function', 'scoringEngine.js must export deriveWeights');
+  assert.equal(typeof scoringEngine.computeScore, 'function', 'scoringEngine.js must export computeScore');
 });
 
 test('deriveWeights exact alpha values for horizon and risk combinations', () => {
@@ -760,6 +758,60 @@ test('WG-004: runPipeline computedWeights are profile-differentiated, not flat d
   assert.ok(wA.epsilon > wB.epsilon,
     `Profile with goals epsilon (${wA.epsilon}) must exceed no-goals epsilon (${wB.epsilon})`);
 });
+
+test('WG-004 CROSS-BOUNDARY: scoringEngine computeScore consumes API computed_weights payload', async () => {
+  const path = await import('node:path');
+  const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
+  const { computeScore } = await import(`file://${scoringEnginePath}`);
+
+  // Construct a valid dummy investment instrument
+  const inv = { id: 'ppf', name: 'Public Provident Fund', assetClass: 'Debt', riskLevel: 1, rate: 7.1, nominalReturn: 7.1, postTaxReturn: 7.1, taxType: 'eee', taxEfficiencyScore: 5 };
+
+  // Construct a simulated API response payload with explicit custom weights
+  const customBackendWeights = { alpha: 2.8, beta: 0.6, gamma: 2.2, delta: 0.7, epsilon: 1.8, zeta: 1.4, eta: 0.9 };
+  const apiProfilePayload = {
+    age: 30,
+    monthly_income: 100000,
+    monthly_savings: 30000,
+    riskCategory: 'Moderate',
+    computed_weights: customBackendWeights,
+  };
+
+  // Score using the profile payload carrying API computed_weights
+  const resultApi = computeScore(inv, apiProfilePayload);
+
+  // Score using identical profile WITHOUT computed_weights (triggers local fallback)
+  const apiProfileNoWeights = { ...apiProfilePayload };
+  delete apiProfileNoWeights.computed_weights;
+  const resultFallback = computeScore(inv, apiProfileNoWeights);
+
+  // Prove computeScore used customBackendWeights: score should differ from local fallback
+  assert.notEqual(resultApi.score, resultFallback.score,
+    'computeScore must consume backend computed_weights when present instead of fallback');
+});
+
+test('WG-004 PARITY: Backend deriveWeights and Frontend deriveWeights produce identical results', async () => {
+  const path = await import('node:path');
+  const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
+  const frontendModule = await import(`file://${scoringEnginePath}`);
+  const frontendDeriveWeights = frontendModule.deriveWeights;
+
+  const testProfiles = [
+    { age: 25, annualIncome: 1200000, savings: 25000, risk: 'aggressive', horizon: 15, goals: ['Retirement'], mr: 0.3 },
+    { age: 55, annualIncome: 800000, savings: 10000, risk: 'conservative', horizon: 3, goals: [], mr: 0.1 },
+    { age: 35, annualIncome: 2500000, savings: 60000, risk: 'moderate', horizon: 10, goals: ['Home'], mr: 0.312 },
+  ];
+
+  for (const rawP of testProfiles) {
+    const backendP = parseProfile(rawP);
+    const backendW = deriveWeights(backendP);
+    const frontendW = frontendDeriveWeights(backendP, rawP);
+
+    assert.deepEqual(frontendW, backendW,
+      `Frontend and Backend deriveWeights must produce identical weights for profile age=${rawP.age}`);
+  }
+});
+
 
 
 
