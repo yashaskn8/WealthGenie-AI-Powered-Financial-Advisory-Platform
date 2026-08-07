@@ -23,6 +23,14 @@ function buildProfileHash(profile) {
     risk_tolerance: profile.risk_tolerance,
     regime: profile.taxRegime,
     horizon: profile.investmentHorizon,
+    emergency_fund_months: profile.emergency_fund_months,
+    hasLumpSum: profile.hasLumpSum,
+    lumpSumAmount: profile.lumpSumAmount,
+    soldPropertyAmount: profile.soldPropertyAmount,
+    liquid_savings: profile.liquid_savings,
+    existing_debt: profile.existing_debt,
+    dependents: profile.dependents,
+    goal_type: profile.goal_type,
   })).digest('hex').substring(0, 16);
 }
 

@@ -19,7 +19,7 @@ const financialProfileSchema = new mongoose.Schema({
   investableAmount: { type: Number, min: 0 },
   investmentHorizon: { type: Number, min: 1, max: 40, default: 15 },
   liquid_savings: { type: Number, default: 0 },
-  existing_debt: { type: Number, default: 0 },
+  existing_debt: { type: Number, default: 0, min: 0, max: 100 },
   dependents: { type: Number, default: 0 },
   emergency_fund_months: { type: Number, default: 0 },
   risk_tolerance: { type: String, enum: ['Conservative', 'Moderate', 'Aggressive'], default: 'Moderate' },

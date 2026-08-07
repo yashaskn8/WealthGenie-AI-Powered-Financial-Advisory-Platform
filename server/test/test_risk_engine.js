@@ -216,64 +216,78 @@ test('instrumentRiskTier: fallback to riskLevel when dynamicData missing', () =>
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// 7. Cache hash divergence: profiles differing only in risk_tolerance
+// 7. Cache hash divergence: profiles differing only in a single field
 //    produce different hashes. No Redis required.
 // ═══════════════════════════════════════════════════════════════════
+
+// Mirror of the production buildProfileHash from recommend.js
+function buildProfileHash(profile) {
+  return crypto.createHash('sha256').update(JSON.stringify({
+    age: profile.age,
+    income: profile.annualIncome,
+    savings: profile.savings,
+    riskCategory: profile.riskCategory,
+    risk_tolerance: profile.risk_tolerance,
+    regime: profile.taxRegime,
+    horizon: profile.investmentHorizon,
+    emergency_fund_months: profile.emergency_fund_months,
+    hasLumpSum: profile.hasLumpSum,
+    lumpSumAmount: profile.lumpSumAmount,
+    soldPropertyAmount: profile.soldPropertyAmount,
+    liquid_savings: profile.liquid_savings,
+    existing_debt: profile.existing_debt,
+    dependents: profile.dependents,
+    goal_type: profile.goal_type,
+  })).digest('hex').substring(0, 16);
+}
+
+const BASE_HASH_PROFILE = {
+  age: 30, annualIncome: 600000, savings: 10000,
+  riskCategory: 'Moderate', risk_tolerance: 'Moderate',
+  taxRegime: 'new', investmentHorizon: 15,
+  emergency_fund_months: 6, hasLumpSum: false, lumpSumAmount: 0,
+  soldPropertyAmount: 0, liquid_savings: 50000, existing_debt: 0,
+  dependents: 0, goal_type: 'wealth-building',
+};
+
 test('buildProfileHash: different risk_tolerance → different hash', () => {
-  function buildProfileHash(profile) {
-    return crypto.createHash('sha256').update(JSON.stringify({
-      age: profile.age,
-      income: profile.annualIncome,
-      savings: profile.savings,
-      riskCategory: profile.riskCategory,
-      risk_tolerance: profile.risk_tolerance,
-      regime: profile.taxRegime,
-      horizon: profile.investmentHorizon,
-    })).digest('hex').substring(0, 16);
-  }
-
-  const baseProfile = {
-    age: 30,
-    annualIncome: 600000,
-    savings: 10000,
-    riskCategory: 'Moderate',
-    taxRegime: 'new',
-    investmentHorizon: 15,
-  };
-
-  const hashConservative = buildProfileHash({ ...baseProfile, risk_tolerance: 'Conservative' });
-  const hashAggressive = buildProfileHash({ ...baseProfile, risk_tolerance: 'Aggressive' });
-  const hashModerate = buildProfileHash({ ...baseProfile, risk_tolerance: 'Moderate' });
-
-  assert.notEqual(hashConservative, hashAggressive, 'Conservative and Aggressive should produce different hashes');
-  assert.notEqual(hashConservative, hashModerate, 'Conservative and Moderate should produce different hashes');
-  assert.notEqual(hashModerate, hashAggressive, 'Moderate and Aggressive should produce different hashes');
-
-  // Same profile → same hash (deterministic)
-  const hash1 = buildProfileHash({ ...baseProfile, risk_tolerance: 'Moderate' });
-  const hash2 = buildProfileHash({ ...baseProfile, risk_tolerance: 'Moderate' });
-  assert.equal(hash1, hash2, 'Same profile should produce identical hash');
+  const h1 = buildProfileHash({ ...BASE_HASH_PROFILE, risk_tolerance: 'Conservative' });
+  const h2 = buildProfileHash({ ...BASE_HASH_PROFILE, risk_tolerance: 'Aggressive' });
+  const h3 = buildProfileHash({ ...BASE_HASH_PROFILE, risk_tolerance: 'Moderate' });
+  assert.notEqual(h1, h2);
+  assert.notEqual(h1, h3);
+  assert.notEqual(h2, h3);
+  // Deterministic
+  assert.equal(h3, buildProfileHash({ ...BASE_HASH_PROFILE, risk_tolerance: 'Moderate' }));
 });
 
 test('buildProfileHash: different riskCategory → different hash', () => {
-  function buildProfileHash(profile) {
-    return crypto.createHash('sha256').update(JSON.stringify({
-      age: profile.age,
-      income: profile.annualIncome,
-      savings: profile.savings,
-      riskCategory: profile.riskCategory,
-      risk_tolerance: profile.risk_tolerance,
-      regime: profile.taxRegime,
-      horizon: profile.investmentHorizon,
-    })).digest('hex').substring(0, 16);
-  }
-
-  const base = {
-    age: 30, annualIncome: 600000, savings: 10000,
-    risk_tolerance: 'Moderate', taxRegime: 'new', investmentHorizon: 15,
-  };
-
-  const h1 = buildProfileHash({ ...base, riskCategory: 'Conservative' });
-  const h2 = buildProfileHash({ ...base, riskCategory: 'Aggressive' });
+  const h1 = buildProfileHash({ ...BASE_HASH_PROFILE, riskCategory: 'Conservative' });
+  const h2 = buildProfileHash({ ...BASE_HASH_PROFILE, riskCategory: 'Aggressive' });
   assert.notEqual(h1, h2, 'Different riskCategory → different hash');
 });
+
+test('buildProfileHash: emergency_fund_months divergence busts cache', () => {
+  const h1 = buildProfileHash({ ...BASE_HASH_PROFILE, emergency_fund_months: 6 });
+  const h2 = buildProfileHash({ ...BASE_HASH_PROFILE, emergency_fund_months: 1 });
+  assert.notEqual(h1, h2, 'Different emergency_fund_months → different hash');
+});
+
+test('buildProfileHash: lumpSumAmount divergence busts cache', () => {
+  const h1 = buildProfileHash({ ...BASE_HASH_PROFILE, hasLumpSum: false, lumpSumAmount: 0 });
+  const h2 = buildProfileHash({ ...BASE_HASH_PROFILE, hasLumpSum: true, lumpSumAmount: 500000 });
+  assert.notEqual(h1, h2, 'Different lumpSum → different hash');
+});
+
+test('buildProfileHash: soldPropertyAmount divergence busts cache', () => {
+  const h1 = buildProfileHash({ ...BASE_HASH_PROFILE, soldPropertyAmount: 0 });
+  const h2 = buildProfileHash({ ...BASE_HASH_PROFILE, soldPropertyAmount: 3000000 });
+  assert.notEqual(h1, h2, 'Different soldPropertyAmount → different hash');
+});
+
+test('buildProfileHash: existing_debt divergence busts cache', () => {
+  const h1 = buildProfileHash({ ...BASE_HASH_PROFILE, existing_debt: 0 });
+  const h2 = buildProfileHash({ ...BASE_HASH_PROFILE, existing_debt: 50 });
+  assert.notEqual(h1, h2, 'Different existing_debt → different hash');
+});
+
