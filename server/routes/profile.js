@@ -36,7 +36,7 @@ async function checkProfileRateLimit(userId) {
  */
 router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHandler(async (req, res) => {
   // Throttle: prevent unbounded profile creation
-  if (process.env.DISABLE_RATE_LIMIT !== 'true' && !checkProfileRateLimit(req.user.userId)) {
+  if (process.env.DISABLE_RATE_LIMIT !== 'true' && !(await checkProfileRateLimit(req.user.userId))) {
     throw createError(429, `Profile rate limit for user ${req.user.userId}`,
       `Too many profile submissions. Maximum ${PROFILE_RATE_LIMIT} per hour.`);
   }
@@ -67,9 +67,11 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
   const taxComparison = compareTaxRegimes(annualIncome, taxDeductions);
 
   // Compute risk profile incorporating available lump sum & property sale liquidity
+  const monthlyIncome = annualIncome / 12;
+  const impliedMonthlyDebt = monthlyIncome > 0 ? ((Number(existing_debt || 0) / 100) * monthlyIncome) : 0;
   const riskProfile = getRiskProfile(
     age, annualIncome, investment_horizon, 0, dependents || 0,
-    monthly_savings, existing_debt || 0, safeLumpSumAmount, safeSoldPropertyAmount
+    monthly_savings, impliedMonthlyDebt, safeLumpSumAmount, safeSoldPropertyAmount
   );
 
   // Investable amount separation: monthly vs one-time lump sum
@@ -214,9 +216,11 @@ router.put('/:profileId', verifyJWT, validate(profileSchema), asyncHandler(async
   const taxDeductions = { basicSalary: safeBasicComponent };
   const taxResult = computeTax(profile.annualIncome, profile.taxRegime, taxDeductions);
   const marginalRate = getTaxSlab(profile.annualIncome, profile.taxRegime, taxDeductions);
+  const monthlyIncomeVal = profile.annualIncome / 12;
+  const impliedMonthlyDebtVal = monthlyIncomeVal > 0 ? ((Number(profile.existing_debt || 0) / 100) * monthlyIncomeVal) : 0;
   const riskProfile = getRiskProfile(
     age, profile.annualIncome, investment_horizon, 0, profile.dependents || 0,
-    monthly_savings, profile.existing_debt || 0, safeLumpSumAmount, safeSoldPropertyAmount
+    monthly_savings, impliedMonthlyDebtVal, safeLumpSumAmount, safeSoldPropertyAmount
   );
 
   profile.taxSlab = marginalRate;

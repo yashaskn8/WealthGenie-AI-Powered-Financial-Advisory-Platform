@@ -137,4 +137,8 @@ export function setRedisAvailable(val) {
   redisAvailable = val;
 }
 
+export function setRedisClient(client) {
+  redisClient = client;
+}
+
 export { connectRedis, getCache, setCache, setCacheNX, delCache, blacklistToken, isTokenBlacklisted, redisClient, redisAvailable };

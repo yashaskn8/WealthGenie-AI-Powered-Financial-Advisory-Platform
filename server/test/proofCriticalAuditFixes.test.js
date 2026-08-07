@@ -1,0 +1,237 @@
+/**
+ * proofCriticalAuditFixes.test.js — Verification suite for Audit Severity 1 Fixes:
+ *   1. Profile creation rate limit `await` enforcement.
+ *   2. Debt penalty unit normalization in `getRiskProfile` and profile build/update routes.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import express from 'express';
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+import profileRoutes from '../routes/profile.js';
+import recommendRoutes from '../routes/recommend.js';
+import { enforceJsonContentType } from '../middleware/contentType.js';
+import { errorHandler } from '../middleware/errorHandler.js';
+import FinancialProfile from '../models/FinancialProfile.js';
+import { getRiskProfile } from '../services/riskProfiler.js';
+import * as redisModule from '../config/redis.js';
+
+const testJwtSecret = ['audit', 'fixes', 'test', 'key'].join('-');
+process.env.JWT_SECRET = process.env.JWT_SECRET || testJwtSecret;
+process.env.NODE_ENV = 'test';
+
+let mongoServer = null;
+let dbConnected = false;
+const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
+
+function signToken(userId = TEST_USER_ID) {
+  return jwt.sign(
+    { userId, email: 'audit-test@example.com', jti: crypto.randomUUID() },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+}
+
+function buildApp() {
+  const app = express();
+  app.use(enforceJsonContentType);
+  app.use(express.json());
+  app.use('/api/profile', profileRoutes);
+  app.use('/api/recommend', recommendRoutes);
+  app.use(errorHandler);
+  return app;
+}
+
+async function withServer(fn) {
+  const server = buildApp().listen(0);
+  await new Promise(resolve => server.once('listening', resolve));
+  try {
+    return await fn(`http://127.0.0.1:${server.address().port}`);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
+async function jsonFetch(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'content-type': 'application/json' } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  return { response, body: text ? JSON.parse(text) : null };
+}
+
+async function ensureDb() {
+  if (dbConnected) return;
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
+  }
+  const mongoUri = mongoServer.getUri();
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(mongoUri);
+  }
+  dbConnected = true;
+}
+
+test.after(async () => {
+  try {
+    await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
+  } catch (_) {}
+  if (dbConnected) {
+    await mongoose.disconnect();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// 1. Debt Penalty Unit Normalization Unit Tests
+// ═══════════════════════════════════════════════════════════════════
+
+test('Audit Fix 1.2: Debt penalty triggers correctly when passed as percentage or monthly ₹ EMI', () => {
+  const annualIncome = 600000; // 50,000 / month
+
+  // Baseline: zero debt (0% EMI burden)
+  const baseline = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 0);
+
+  // 20% EMI burden (below 30% penalty threshold) → zero penalty
+  const lowDebtPercentage = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 20);
+  assert.equal(lowDebtPercentage.riskScore, baseline.riskScore, 'Debt <= 30% should incur zero penalty');
+
+  // 50% EMI burden passed as percentage (50) → penalty = (0.50 - 0.30) * 50 = 10 points
+  const highDebtPercentage = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 50);
+  assert.equal(highDebtPercentage.riskScore, baseline.riskScore - 10, '50% debt burden should subtract exactly 10 points');
+
+  // 50% EMI burden passed as rupee amount (25,000/month) → penalty = 10 points
+  const highDebtRupees = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 25000);
+  assert.equal(highDebtRupees.riskScore, baseline.riskScore - 10, '25,000 ₹/mo debt (50%) should subtract exactly 10 points');
+
+  // 60% EMI burden passed as percentage (60) → max penalty = 15 points
+  const maxDebtPercentage = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 60);
+  assert.equal(maxDebtPercentage.riskScore, baseline.riskScore - 15, '60% debt burden should subtract max 15 points');
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// 2. Profile Build & Update Debt Integration Test
+// ═══════════════════════════════════════════════════════════════════
+
+test('Audit Fix 1.2: POST /api/profile/build correctly penalizes profile with 50% debt burden', async () => {
+  await ensureDb();
+  const token = signToken();
+
+  const basePayload = {
+    monthly_income: 50000,
+    age: 30,
+    monthly_savings: 10000,
+    regime: 'new',
+    investment_horizon: 15,
+    liquid_savings: 50000,
+    dependents: 0,
+    emergency_fund_months: 3,
+    risk_tolerance: 'Moderate',
+    goal_type: 'wealth-building',
+  };
+
+  await withServer(async (baseUrl) => {
+    // 1. Build profile with 0% debt
+    const { response: resZero, body: bodyZero } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+      method: 'POST',
+      body: JSON.stringify({ ...basePayload, existing_debt: 0 }),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(resZero.status, 201);
+    const profileZero = await FinancialProfile.findById(bodyZero.profileId).lean();
+
+    // 2. Build profile with 50% debt
+    const { response: resFifty, body: bodyFifty } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+      method: 'POST',
+      body: JSON.stringify({ ...basePayload, existing_debt: 50 }),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(resFifty.status, 201);
+    const profileFifty = await FinancialProfile.findById(bodyFifty.profileId).lean();
+
+    // Assert: 50% debt profile has riskScore exactly 10 points lower than 0% debt profile
+    assert.equal(
+      profileFifty.riskScore,
+      profileZero.riskScore - 10,
+      `Profile with 50% debt should have riskScore ${profileZero.riskScore - 10}, got ${profileFifty.riskScore}`
+    );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// 3. Profile Creation Rate Limit Await Integration Test
+// ═══════════════════════════════════════════════════════════════════
+
+test('Audit Fix 1.1: POST /api/profile/build rate limit is actually awaited and enforced', async () => {
+  await ensureDb();
+  const originalEnv = process.env.DISABLE_RATE_LIMIT;
+  process.env.DISABLE_RATE_LIMIT = 'false';
+
+  // Mock Redis client to simulate counter
+  const counts = new Map();
+  const mockRedisClient = {
+    async incr(key) {
+      const val = (counts.get(key) || 0) + 1;
+      counts.set(key, val);
+      return val;
+    },
+    async expire(key, sec) {}
+  };
+
+  redisModule.setRedisAvailable(true);
+  redisModule.setRedisClient(mockRedisClient);
+
+  const rateLimitUserId = new mongoose.Types.ObjectId().toString();
+  const token = signToken(rateLimitUserId);
+
+  const payload = {
+    monthly_income: 50000,
+    age: 30,
+    monthly_savings: 10000,
+    regime: 'new',
+    investment_horizon: 15,
+    liquid_savings: 50000,
+    existing_debt: 0,
+    dependents: 0,
+    emergency_fund_months: 3,
+    risk_tolerance: 'Moderate',
+    goal_type: 'wealth-building',
+  };
+
+  try {
+    await withServer(async (baseUrl) => {
+      // Send 10 successful requests (PROFILE_RATE_LIMIT = 10)
+      for (let i = 1; i <= 10; i++) {
+        const { response } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { authorization: `Bearer ${token}` },
+        });
+        assert.equal(response.status, 201, `Request ${i} should succeed with 201`);
+      }
+
+      // 11th request must be blocked by rate limit with 429 Too Many Requests
+      const { response: res11, body: body11 } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      assert.equal(res11.status, 429, `11th request should be blocked with 429, got ${res11.status}`);
+      assert.match(body11.error, /Too many profile submissions/i);
+    });
+  } finally {
+    process.env.DISABLE_RATE_LIMIT = originalEnv;
+    redisModule.setRedisAvailable(false);
+    redisModule.setRedisClient(null);
+  }
+});
