@@ -372,7 +372,7 @@ test('parseProfile parses numeric fields and applies defaults', () => {
   assert.equal(oldRegime.taxRegime, 'old');
 });
 
-test('WG-026: parseProfile throws in strict mode when required fields are missing', () => {
+test('WG-026: parseProfile and runPipeline throw in strict mode when required fields are missing', () => {
   assert.throws(
     () => parseProfile({}, null, { strict: true }),
     /Missing or invalid required profile field: age/
@@ -383,6 +383,20 @@ test('WG-026: parseProfile throws in strict mode when required fields are missin
   );
   assert.throws(
     () => parseProfile({ age: 30, annualIncome: 600000 }, null, { strict: true }),
+    /Missing or invalid required profile field: savings/
+  );
+
+  // End-to-end runPipeline verification with strict mode
+  assert.throws(
+    () => runPipeline({}, {}, { strict: true }),
+    /Missing or invalid required profile field: age/
+  );
+  assert.throws(
+    () => runPipeline({ age: 30 }, {}, { strict: true }),
+    /Missing or invalid required profile field: annualIncome/
+  );
+  assert.throws(
+    () => runPipeline({ age: 30, annualIncome: 600000 }, {}, { strict: true }),
     /Missing or invalid required profile field: savings/
   );
 

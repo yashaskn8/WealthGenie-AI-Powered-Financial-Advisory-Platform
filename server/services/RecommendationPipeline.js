@@ -774,7 +774,23 @@ function computeSharpe(postTaxReturn, backendType) {
  * savings/monthly_savings, horizon/investment_horizon/investmentHorizon, etc.)
  * into a single canonical data structure for all pipeline stages.
  */
-export function normalizeProfile(profile = {}) {
+export function normalizeProfile(profile = {}, options = {}) {
+  const isStrict = options.strict || options.throwOnMissingRequired;
+  if (isStrict) {
+    if (!profile || typeof profile !== 'object') throw new Error('Invalid profile object');
+    if (profile.age === undefined || profile.age === null || Number(profile.age) <= 0) {
+      throw new Error('Missing or invalid required profile field: age');
+    }
+    const hasIncome = profile.annualIncome !== undefined || profile.monthly_income !== undefined || profile.income !== undefined;
+    if (!hasIncome) {
+      throw new Error('Missing or invalid required profile field: annualIncome');
+    }
+    const hasSavings = profile.savings !== undefined || profile.monthly_savings !== undefined;
+    if (!hasSavings) {
+      throw new Error('Missing or invalid required profile field: savings');
+    }
+  }
+
   const age = Number(profile.age) || 30;
   const monthly_income = Number(profile.monthly_income || profile.income) || (Number(profile.annualIncome) ? Number(profile.annualIncome) / 12 : 50000);
   const annualIncome = Number(profile.annualIncome) || (monthly_income * 12);
@@ -841,7 +857,7 @@ export function normalizeProfile(profile = {}) {
  * @returns {Object} { instruments: Array, confidenceScores: Object }
  */
 export function runPipeline(profile, mlResult, options = {}) {
-  const normProfile = normalizeProfile(profile);
+  const normProfile = normalizeProfile(profile, options);
   const topN = options.topN || PIPELINE_CONFIG.TOP_N;
   const minClasses = options.minAssetClasses || PIPELINE_CONFIG.MIN_ASSET_CLASSES;
 
