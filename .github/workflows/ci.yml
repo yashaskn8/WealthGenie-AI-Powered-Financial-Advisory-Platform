@@ -43,6 +43,11 @@ jobs:
           cd server
           npm ci
 
+      - name: Run Backend ESLint Check
+        run: |
+          cd server
+          npm run lint
+
       - name: Run Backend Tests & Coverage
         env:
           MONGODB_URI: 'mongodb://127.0.0.1:27017/wealthgenie_test'
@@ -93,6 +98,11 @@ jobs:
         run: |
           cd server
           npm ci
+
+      - name: Run Backend ESLint Check
+        run: |
+          cd server
+          npm run lint
 
       - name: Run Backend Unit Tests & Coverage (No MongoDB Required)
         run: |

@@ -384,14 +384,35 @@ export function filterEligible(instruments, profile, reconciledTier = null) {
  * @param {string|null} reconciledRiskStr - Reconciled risk tier from risk engine (overrides profile.riskCategory)
  * @returns {Object} Normalized profile for pipeline consumption
  */
-function parseProfile(profile, reconciledRiskStr = null) {
-  const age = Number(profile.age) || 30;                                        // Default: 30 years
+function parseProfile(profile, reconciledRiskStr = null, options = {}) {
+  const isStrict = options.strict || options.throwOnMissingRequired;
+  if (!profile || typeof profile !== 'object') {
+    if (isStrict) throw new Error('Invalid profile object');
+    profile = {};
+  }
+
+  // Required fields checking for strict mode
+  if (isStrict) {
+    if (profile.age === undefined || profile.age === null || Number(profile.age) <= 0) {
+      throw new Error('Missing or invalid required profile field: age');
+    }
+    const hasIncome = profile.annualIncome !== undefined || profile.monthly_income !== undefined || profile.income !== undefined;
+    if (!hasIncome) {
+      throw new Error('Missing or invalid required profile field: annualIncome');
+    }
+    const hasSavings = profile.savings !== undefined || profile.monthly_savings !== undefined;
+    if (!hasSavings) {
+      throw new Error('Missing or invalid required profile field: savings');
+    }
+  }
+
+  const age = Number(profile.age) || 30;
   const income = Number(profile.monthly_income || profile.income) || 0;
-  const annualIncome = Number(profile.annualIncome) || (income > 0 ? income * 12 : 600000); // Default: ₹6L
-  const savings = Number(profile.savings || profile.monthly_savings) || 10000;  // Default: ₹10K/month
+  const annualIncome = Number(profile.annualIncome) || (income > 0 ? income * 12 : 600000);
+  const savings = Number(profile.savings || profile.monthly_savings) || 10000;
   // Use reconciled risk tier if provided; single source = profile.riskCategory
-  const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase(); // Default: Moderate
-  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10; // Default: 10 years
+  const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase();
+  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
   // WG-021: Canonical source is profile.goals, but fall back to investment_goals/goal_type
   // for profiles created via onboarding (ProfileEditor) where goals.js sync hasn't run
   const goals = (Array.isArray(profile.goals) && profile.goals.length > 0)
@@ -399,14 +420,14 @@ function parseProfile(profile, reconciledRiskStr = null) {
     : (Array.isArray(profile.investment_goals) && profile.investment_goals.length > 0)
       ? profile.investment_goals
       : (profile.goal_type && profile.goal_type !== 'wealth-building' ? [profile.goal_type] : []);
-  const taxRegime = profile.taxRegime || profile.regime || 'new';               // Default: new regime
+  const taxRegime = profile.taxRegime || profile.regime || 'new';
 
-  const hasLumpSum = Boolean(profile.hasLumpSum);                               // Default: false (optional)
-  const lumpSumAmount = hasLumpSum ? (Number(profile.lumpSumAmount) || 0) : 0;  // Default: 0 (optional)
-  const soldPropertyAmount = Number(profile.soldPropertyAmount) || 0;           // Default: 0 (optional)
-  const totalCTC = Number(profile.totalCTC) || annualIncome;                    // Default: annualIncome (derived)
-  const basicComponent = Number(profile.basicComponent) || (totalCTC * 0.5);    // Default: 50% of CTC (derived)
-  const monthlyTakeHome = Number(profile.monthlyTakeHome) || (annualIncome / 12); // Default: annualIncome/12 (derived)
+  const hasLumpSum = Boolean(profile.hasLumpSum);
+  const lumpSumAmount = hasLumpSum ? (Number(profile.lumpSumAmount) || 0) : 0;
+  const soldPropertyAmount = Number(profile.soldPropertyAmount) || 0;
+  const totalCTC = Number(profile.totalCTC) || annualIncome;
+  const basicComponent = Number(profile.basicComponent) || (totalCTC * 0.5);
+  const monthlyTakeHome = Number(profile.monthlyTakeHome) || (annualIncome / 12);
 
   // Re-use backend tax slab calculator passing basicComponent for 80CCD(2) employer NPS accuracy
   const mr = getTaxSlab(annualIncome, taxRegime, { basicSalary: basicComponent });

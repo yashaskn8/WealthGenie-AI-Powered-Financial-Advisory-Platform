@@ -126,7 +126,7 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     soldPropertyAmount: safeSoldPropertyAmount,
     hasLumpSum: safeHasLumpSum,
     lumpSumAmount: safeLumpSumAmount,
-    oneTimeInvestableAmount: safeLumpSumAmount,
+    oneTimeInvestableAmount: safeLumpSumAmount + safeSoldPropertyAmount,
   });
 
   // Invalidate ALL chatbot system prompt caches for this user
@@ -228,7 +228,7 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
     riskDescription: riskProfile.description,
     recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
     investableAmount,
-    oneTimeInvestableAmount: safeLumpSumAmount,
+    oneTimeInvestableAmount: safeLumpSumAmount + safeSoldPropertyAmount,
   };
   if (incomingGoalsPut !== undefined) {
     updateFields.goals = incomingGoalsPut;
@@ -263,7 +263,9 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
 
 export function formatProfileResponse(profile, extra = {}) {
   const p = profile.toObject ? profile.toObject() : profile;
-  return {
+
+  // Canonical camelCase response object — single source of truth
+  const camelResponse = {
     profileId: p._id,
     version: p.version || 1,
     taxSlab: p.taxSlabDecimal !== undefined ? p.taxSlabDecimal : p.taxSlab,
@@ -276,19 +278,25 @@ export function formatProfileResponse(profile, extra = {}) {
     riskScore: p.riskScore,
     riskDescription: p.riskDescription,
     recommendedEquityAllocation: p.recommendedEquityAllocation,
-    annual_income: p.annualIncome,
-    investable_amount: p.investableAmount || p.savings,
-    investable_amount_monthly: p.savings,
-    investable_amount_onetime: p.oneTimeInvestableAmount !== undefined ? p.oneTimeInvestableAmount : (p.lumpSumAmount || 0),
-    oneTimeInvestableAmount: p.oneTimeInvestableAmount !== undefined ? p.oneTimeInvestableAmount : (p.lumpSumAmount || 0),
-    total_ctc: p.totalCTC,
-    basic_component: p.basicComponent,
-    monthly_take_home: p.monthlyTakeHome,
-    sold_property_amount: p.soldPropertyAmount,
-    has_lump_sum: p.hasLumpSum,
-    lump_sum_amount: p.lumpSumAmount,
+    annualIncome: p.annualIncome,
+    investableAmount: p.investableAmount || p.savings,
+    investableAmountMonthly: p.savings,
+    investableAmountOnetime: p.oneTimeInvestableAmount !== undefined ? p.oneTimeInvestableAmount : ((p.lumpSumAmount || 0) + (p.soldPropertyAmount || 0)),
+    oneTimeInvestableAmount: p.oneTimeInvestableAmount !== undefined ? p.oneTimeInvestableAmount : ((p.lumpSumAmount || 0) + (p.soldPropertyAmount || 0)),
+    totalCtc: p.totalCTC,
+    basicComponent: p.basicComponent,
+    monthlyTakeHome: p.monthlyTakeHome,
+    soldPropertyAmount: p.soldPropertyAmount,
+    hasLumpSum: p.hasLumpSum,
+    lumpSumAmount: p.lumpSumAmount,
     goals: p.goals || [],
   };
+
+  // WG-012: Auto-generate snake_case aliases via caseConverter (not manual mapping)
+  const snakeResponse = toSnakeCase(camelResponse);
+
+  // Merge: snake_case keys for backward compat, camelCase keys as canonical
+  return { ...snakeResponse, ...camelResponse };
 }
 
 export default router;

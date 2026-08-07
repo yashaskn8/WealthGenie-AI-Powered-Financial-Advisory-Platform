@@ -6,7 +6,7 @@
 
 export const LEGACY_TYPE_MAP = {
   'Government':           'Government',
-  'Gold':                 'ETF',
+  'Gold':                 'Gold',
   'Equity-Debt':          'Mutual_Fund',
   'Alternative':          'ETF',
   'Mutual Fund':          'Mutual_Fund',

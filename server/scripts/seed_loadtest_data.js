@@ -13,7 +13,7 @@ const LOADTEST_USER_ID = '60d5ecb8b3b3a72d9c8e4a11';
 function mapToDocument(inv) {
   const LEGACY_TYPE_MAP = {
     'Government': 'Government',
-    'Gold': 'ETF',
+    'Gold': 'Gold',
     'Retirement': 'Government',
     'Bank Deposits': 'FD',
     'Debt Mutual Funds': 'Mutual_Fund',

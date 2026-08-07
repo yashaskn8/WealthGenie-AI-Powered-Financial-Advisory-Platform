@@ -90,7 +90,7 @@ masterCatalog.instruments.forEach(inst => {
 // Map frontend category to legacy type for backward compatibility
 const LEGACY_TYPE_MAP = {
   'Government':           'Government',
-  'Gold':                 'ETF',
+  'Gold':                 'Gold',
   'Retirement':           'Government',
   'Bank Deposits':        'FD',
   'Debt Mutual Funds':    'Mutual_Fund',

@@ -150,7 +150,7 @@ describe('Financial Profile Deep Integration Test Suite', () => {
       assert.equal(body.sold_property_amount, 2000000);
       assert.equal(body.has_lump_sum, true);
       assert.equal(body.lump_sum_amount, 2000000);
-      assert.equal(body.investable_amount_onetime, 2000000);
+      assert.equal(body.investable_amount_onetime, 4000000);
 
       const dbProfile = await FinancialProfile.findById(body.profileId);
       assert.equal(dbProfile.totalCTC, 2400000);
