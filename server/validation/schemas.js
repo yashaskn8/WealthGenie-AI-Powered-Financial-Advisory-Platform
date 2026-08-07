@@ -87,6 +87,8 @@ export const profileSchema = Joi.object({
     then: Joi.number().min(1).required().messages({ 'number.min': 'Lump sum amount must be greater than 0 when has_lump_sum is true' }),
     otherwise: Joi.number().min(0).optional().default(0)
   }),
+  goals: Joi.array().items(Joi.string()).optional(),
+  investment_goals: Joi.array().items(Joi.string()).optional(),
   version: Joi.number().integer().min(0).optional(),
 }).custom((value, helpers) => {
   if (value.monthly_savings >= value.monthly_income) {

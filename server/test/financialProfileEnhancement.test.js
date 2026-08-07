@@ -287,4 +287,40 @@ describe('Financial Profile Deep Integration Test Suite', () => {
     assert(corpusWithLump10y > corpusWithoutLump10y, 'Projected wealth with initial lump sum must be strictly greater than without');
     assert.equal(projWithLump.totalInvested[10] - projWithoutLump.totalInvested[10], 1000000, 'Total invested at 10Y must reflect the initial ₹10L lump sum');
   });
+
+  // 8. Onboarding HTTP Wire Integration Test (validate middleware + route handler)
+  it('8. Onboarding HTTP Wire Integration — POST /api/profile/build with investment_goals passes Joi validation and populates FinancialProfile.goals', async () => {
+    await withServer(app, async (baseUrl) => {
+      const payload = {
+        monthly_income: 120000,
+        age: 32,
+        monthly_savings: 40000,
+        liquid_savings: 500000,
+        existing_debt: 10,
+        dependents: 1,
+        emergency_fund_months: 6,
+        risk_tolerance: 'Moderate',
+        goal_type: 'wealth-building',
+        investment_goals: ['Retirement', 'Home Purchase'],
+        regime: 'new',
+        investment_horizon: 15,
+      };
+
+      const { response, body } = await jsonRequest(`${baseUrl}/api/profile/build`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+
+      assert.equal(response.status, 201, 'POST /api/profile/build must succeed with 201 Created');
+      const profileId = body.profileId || body.id || body._id;
+      assert.ok(profileId, 'Response must contain created profile ID');
+      assert.deepEqual(body.goals, ['Retirement', 'Home Purchase'], 'formatProfileResponse must return populated goals');
+
+      // Fetch stored document from MongoDB directly to prove persistence through validation middleware
+      const dbDoc = await FinancialProfile.findById(profileId).lean();
+      assert.ok(dbDoc, 'Document must exist in MongoDB');
+      assert.deepEqual(dbDoc.goals, ['Retirement', 'Home Purchase'], 'FinancialProfile.goals must be populated from investment_goals payload');
+    });
+  });
 });
