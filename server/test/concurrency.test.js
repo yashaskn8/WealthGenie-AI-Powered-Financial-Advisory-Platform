@@ -20,11 +20,12 @@ import goalsRoutes from '../routes/goals.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import Goal from '../models/Goal.js';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
 process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
 process.env.NODE_ENV = 'test';
 
-const TEST_DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wealthgenie';
+let mongoServer = null;
 const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
 const TEST_USER_ID_2 = new mongoose.Types.ObjectId().toString();
 
@@ -86,8 +87,11 @@ let dbConnected = false;
 
 async function ensureDb() {
   if (dbConnected) return;
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
+  }
   if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(TEST_DB_URI);
+    await mongoose.connect(mongoServer.getUri());
   }
   dbConnected = true;
 }
@@ -95,6 +99,9 @@ async function ensureDb() {
 test.after(async () => {
   if (dbConnected) {
     await mongoose.disconnect();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
   }
 });
 

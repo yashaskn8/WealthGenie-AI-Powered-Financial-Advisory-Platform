@@ -25,8 +25,9 @@ import { withServer, rawRequest } from '../test-utils/httpTestUtils.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import Goal from '../models/Goal.js';
 import Recommendation from '../models/Recommendation.js';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
-const TEST_DB_URI = process.env.MONGODB_URI || ('mongo' + 'db://127.0.0.1:27017/wealthgenie_test');
+let mongoServer = null;
 const testSecret = ['test', 'auth', 'jwt', 'key'].join('-');
 process.env.JWT_SECRET = process.env.JWT_SECRET || testSecret;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -51,8 +52,11 @@ function buildTestApp() {
 
 async function ensureDb() {
   if (dbConnected) return;
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
+  }
   if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(TEST_DB_URI);
+    await mongoose.connect(mongoServer.getUri());
   }
   dbConnected = true;
 }
@@ -100,6 +104,9 @@ test.after(async () => {
   } catch (_) {}
   if (dbConnected) {
     await mongoose.disconnect();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
   }
 });
 
