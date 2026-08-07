@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { generateRecommendations } from './recommendationEngine.js';
 
 describe('generateRecommendations', () => {
@@ -6,8 +6,8 @@ describe('generateRecommendations', () => {
     const recommendations = generateRecommendations({
       age: 32,
       monthly_income: 90000,
-      monthly_savings: 20000,
-      risk_appetite: 'Medium',
+      riskCategory: 'Moderate',
+      risk_tolerance: 'Moderate',
       investment_goals: ['Wealth Growth'],
       investment_horizon: 10,
       taxRegime: 'new',
@@ -25,8 +25,8 @@ describe('generateRecommendations', () => {
     const recommendations = generateRecommendations({
       age: 28,
       monthly_income: 80000,
-      monthly_savings: 20000,
-      risk_appetite: 'High',
+      riskCategory: 'Aggressive',
+      risk_tolerance: 'Aggressive',
       investment_goals: ['Emergency Fund'],
       investment_horizon: 2,
       taxRegime: 'new',

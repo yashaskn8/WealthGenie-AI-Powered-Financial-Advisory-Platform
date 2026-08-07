@@ -83,12 +83,22 @@ const PIPELINE_CONFIG = Object.freeze({
 // ═══════════════════════════════════════════════════════════════════
 
 /**
+ * Extract instrument risk value (1–5) from catalog metadata.
+ * Source of truth: inv.dynamicData.risk.value (with fallbacks to legacy fields).
+ * @param {Object} inv - Catalog instrument object
+ * @returns {number} Risk value (1–5, defaulting to 3)
+ */
+export function getInstrumentRisk(inv) {
+  return inv.dynamicData?.risk?.value ?? inv.riskLevel ?? inv.risk ?? 3;
+}
+
+/**
  * Derive instrument risk tier from catalog dynamicData.risk.value.
  * Section 4 CATALOG: 1–2 → 'Low', 3 → 'Medium', 4–5 → 'High'.
  * Source: investment_master.json — never hardcoded.
  */
 export function instrumentRiskTier(inv) {
-  const riskValue = inv.dynamicData?.risk?.value ?? inv.riskLevel ?? inv.risk ?? 3;
+  const riskValue = getInstrumentRisk(inv);
   if (riskValue <= 2) return 'Low';
   if (riskValue === 3) return 'Medium';
   return 'High';
@@ -336,8 +346,8 @@ export function filterEligible(instruments, profile, reconciledTier = null) {
 
     // Risk alignment (uses reconciled tier when available, legacy fallback otherwise)
     if (reconciledTier === null) {
-      const riskCat = (profile.riskCategory || profile.risk || '').toLowerCase();
-      const invRisk = inv.dynamicData?.risk?.value || inv.riskLevel || inv.risk || 3;
+      const riskCat = (profile.riskCategory || '').toLowerCase();
+      const invRisk = getInstrumentRisk(inv);
       if ((riskCat === 'high' || riskCat === 'aggressive' || riskCat === 'very high') && invRisk <= 2) return false;
       if ((riskCat === 'conservative' || riskCat === 'low' || riskCat === 'very low') && invRisk >= 4) return false;
     }
@@ -361,8 +371,8 @@ function parseProfile(profile, reconciledRiskStr = null) {
   const income = Number(profile.monthly_income || profile.income) || 0;
   const annualIncome = Number(profile.annualIncome) || (income > 0 ? income * 12 : 600000);
   const savings = Number(profile.savings || profile.monthly_savings) || 10000;
-  // Use reconciled risk tier if provided; no risk_appetite in fallback (Section 3 single source)
-  const risk = (reconciledRiskStr || profile.riskCategory || profile.risk || 'Moderate').toLowerCase();
+  // Use reconciled risk tier if provided; single source = profile.riskCategory
+  const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase();
   const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
   const goals = Array.isArray(profile.investment_goals)
     ? profile.investment_goals
@@ -442,7 +452,7 @@ function scoreReturn(postTaxRate) {
 }
 
 function scoreRisk(inv, p) {
-  const invRisk = typeof inv.riskLevel === 'number' ? inv.riskLevel : (inv.risk || 3);
+  const invRisk = getInstrumentRisk(inv);
   let idealMin, idealMax;
   if (p.risk === 'conservative' || p.risk === 'conservative-moderate') { idealMin = 1; idealMax = 2; }
   else if (p.risk === 'aggressive' || p.risk === 'moderate-aggressive') { idealMin = 3; idealMax = 5; }
@@ -733,7 +743,7 @@ export function normalizeProfile(profile = {}) {
   const taxRegime = profile.taxRegime || profile.regime || 'new';
   const regime = taxRegime;
   const risk_tolerance = profile.risk_tolerance || 'Moderate';
-  const riskCategory = profile.riskCategory || profile.risk || 'Moderate';
+  const riskCategory = profile.riskCategory || 'Moderate';
   const goal_type = profile.goal_type || (Array.isArray(profile.investment_goals) && profile.investment_goals[0]) || 'wealth-building';
 
   return {

@@ -226,10 +226,10 @@ export function ProactiveNudge({ profile, onAsk }) {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed || !profile) return null;
   let nudge = null;
-  if (profile.risk_appetite === 'High' && profile.age > 50) {
+  if ((profile.riskCategory || '').includes('Aggressive') && profile.age > 50) {
     nudge = { 
       icon: <AlertTriangle size={15} style={{ verticalAlign: 'middle' }} />, 
-      text: 'Your risk appetite is set to Aggressive but you are over 50. Review safer allocations.', 
+      text: 'Your risk category is set to Aggressive but you are over 50. Review safer allocations.', 
       question: 'Should I reduce my equity exposure at my age?' 
     };
   } else if (profile.monthly_savings && profile.monthly_savings < (profile.monthly_income || 0) * 0.2) {
@@ -254,10 +254,10 @@ export function ProactiveNudge({ profile, onAsk }) {
 export function PortfolioSnapshot({ profile }) {
   if (!profile) return null;
   const annualIncome = profile.annualIncome || (profile.monthly_income || profile.income || 0) * 12;
-  const riskLabel = profile.risk_appetite || profile.riskCategory || 'N/A';
+  const riskLabel = profile.riskCategory || profile.risk_tolerance || 'N/A';
   const items = [
     { label: 'Income', value: `₹${(annualIncome / 100000).toFixed(1)}L`, color: '#38bdf8' },
-    { label: 'Risk', value: riskLabel, color: riskLabel === 'High' ? '#ef4444' : riskLabel === 'Medium' ? '#f59e0b' : '#22c55e' },
+    { label: 'Risk', value: riskLabel, color: riskLabel.includes('Aggressive') ? '#ef4444' : riskLabel.includes('Conservative') ? '#22c55e' : '#f59e0b' },
     { label: 'Regime', value: (profile.taxRegime || 'new').toUpperCase(), color: '#a855f7' },
   ];
   return (

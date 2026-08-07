@@ -27,7 +27,6 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
   const [age, setAge] = useState(savedProfile?.age || 32);
   const [monthlyIncome, setMonthlyIncome] = useState(savedProfile?.monthly_income || 65000);
   const [monthlySavings, setMonthlySavings] = useState(savedProfile?.monthly_savings || 12000);
-  const [riskAppetite, setRiskAppetite] = useState(savedProfile?.risk_appetite || 'Medium');
   const [investmentGoals, setInvestmentGoals] = useState(savedProfile?.investment_goals || ['Retirement', 'Wealth Growth']);
   const [horizon, setHorizon] = useState(savedProfile?.investment_horizon || 15);
   const [taxRegime, setTaxRegime] = useState(savedProfile?.taxRegime || 'new');
@@ -59,7 +58,6 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
     age: Number(age),
     monthly_income: Number(monthlyIncome),
     monthly_savings: Number(monthlySavings),
-    risk_appetite: riskAppetite,
     investment_goals: investmentGoals,
     investment_horizon: horizon,
     taxRegime,
@@ -77,7 +75,7 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
     has_lump_sum: Boolean(hasLumpSum),
     lump_sum_amount: hasLumpSum ? Number(lumpSumAmount) : 0,
   }), [
-    age, monthlyIncome, monthlySavings, riskAppetite, investmentGoals, horizon, taxRegime, profileId,
+    age, monthlyIncome, monthlySavings, investmentGoals, horizon, taxRegime, profileId,
     liquidSavings, existingDebt, dependents, emergencyFundMonths, riskTolerance, goalType,
     totalCTC, basicComponent, monthlyTakeHome, soldPropertyAmount, hasLumpSum, lumpSumAmount
   ]);
@@ -163,7 +161,6 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
     setAge(updatedProfile.age);
     setMonthlyIncome(updatedProfile.monthly_income);
     setMonthlySavings(updatedProfile.monthly_savings);
-    setRiskAppetite(updatedProfile.risk_appetite);
     setInvestmentGoals(updatedProfile.investment_goals);
     setHorizon(updatedProfile.investment_horizon);
     setTaxRegime(updatedProfile.taxRegime);
@@ -334,14 +331,14 @@ const ProfilePage = ({ onCompleteProfile, children }) => {
                 />
               </div>
               <div className="pf-field">
-                <label>Risk Appetite</label>
+                <label>Risk Tolerance</label>
                 <div className="risk-toggle-group">
-                  {['Low', 'Medium', 'High'].map((level) => (
+                  {['Conservative', 'Moderate', 'Aggressive'].map((level) => (
                     <button
                       key={level}
                       type="button"
-                      className={`risk-toggle-btn ${riskAppetite === level ? 'active' : ''}`}
-                      onClick={() => setRiskAppetite(level)}
+                      className={`risk-toggle-btn ${riskTolerance === level ? 'active' : ''}`}
+                      onClick={() => setRiskTolerance(level)}
                     >
                       {level}
                     </button>

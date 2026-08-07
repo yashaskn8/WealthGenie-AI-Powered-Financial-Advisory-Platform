@@ -4,7 +4,7 @@ import { computeSuitabilityMatch } from '../ComparisonTableModal.jsx';
 describe('computeSuitabilityMatch — Advanced Multi-Factor Scoring', () => {
   const baseProfile = {
     age: 30,
-    risk_appetite: 'Medium',
+    riskCategory: 'Moderate',
     investment_horizon: 10,
     investment_goals: ['Wealth Creation'],
     taxRegime: 'new'
@@ -59,7 +59,7 @@ describe('computeSuitabilityMatch — Advanced Multi-Factor Scoring', () => {
     const seniorProfile = {
       ...baseProfile,
       age: 65,
-      risk_appetite: 'Low'
+      riskCategory: 'Conservative'
     };
     const seniorFDScore = computeSuitabilityMatch(conservativeFD, seniorProfile);
     const seniorEquityScore = computeSuitabilityMatch(highEquityFund, seniorProfile);

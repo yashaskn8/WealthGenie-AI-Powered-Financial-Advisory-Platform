@@ -48,14 +48,14 @@ const AllocationPlanner = ({ profile }) => {
 
   // Risk view toggle state
   const [riskView, setRiskView] = useState(
-    profile?.risk_appetite === 'High' ? 'Aggressive Growth' : 
-    profile?.risk_appetite === 'Low' ? 'Safe & Stable' : 'Balanced Growth'
+    (profile?.riskCategory || '').includes('Aggressive') ? 'Aggressive Growth' : 
+    (profile?.riskCategory || '').includes('Conservative') ? 'Safe & Stable' : 'Balanced Growth'
   );
 
   // Compute allocation for the selected risk view
   const baseAllocation = useMemo(() => {
-    const overrideRisk = riskView === 'Aggressive Growth' ? 'High' : riskView === 'Safe & Stable' ? 'Low' : 'Medium';
-    return computeAllocation({ ...profile, risk_appetite: overrideRisk }, eligible);
+    const overrideRisk = riskView === 'Aggressive Growth' ? 'Aggressive' : riskView === 'Safe & Stable' ? 'Conservative' : 'Moderate';
+    return computeAllocation({ ...profile, riskCategory: overrideRisk }, eligible);
   }, [profile, eligible, riskView]);
 
   const allocation = useMemo(() => {

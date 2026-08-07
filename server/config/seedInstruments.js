@@ -56,8 +56,7 @@ function mapToDocument(inv) {
     rate: inv.rate || inv.expectedReturn,
     returnRange: inv.returnRange,
     interestRate: inv.interestRate || inv.expectedReturn || inv.rate,
-    riskLevel: inv.riskLabel || inv.riskLevel,
-    risk: typeof inv.riskLevel === 'number' ? inv.riskLevel : (inv.risk || 3),
+    risk: inv.dynamicData?.risk?.value ?? inv.riskLevel ?? 3,
     riskLabel: inv.riskLabel,
     volatility: inv.volatility,
 

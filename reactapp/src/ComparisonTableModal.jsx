@@ -127,7 +127,7 @@ export const computeSuitabilityMatch = (inv, profile) => {
   if (!inv) return 70;
   let score = 65; // base score
 
-  const userRisk = profile?.risk_tolerance || profile?.riskCategory || profile?.risk_appetite || profile?.riskAppetite || 'Moderate';
+  const userRisk = profile?.riskCategory || profile?.risk_tolerance || 'Moderate';
   const instRisk = inv?.riskLabel || inv?.risk_level || inv?.riskLevel || (inv?.dynamicData?.risk?.level) || 'Medium';
 
   // 1. Risk Congruence

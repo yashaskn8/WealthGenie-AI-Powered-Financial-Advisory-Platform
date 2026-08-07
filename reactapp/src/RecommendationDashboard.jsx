@@ -79,12 +79,25 @@ const RecommendationSourceBadge = ({ source }) => {
   );
 };
 
-// Map slider value (1-10) → risk appetite label
+// Map 5-tier riskCategory to slider value (1-10)
+const riskCategoryToSlider = (cat) => {
+  const c = cat || 'Moderate';
+  if (c === 'Conservative') return 2;
+  if (c === 'Conservative-Moderate') return 4;
+  if (c === 'Moderate') return 6;
+  if (c === 'Moderate-Aggressive') return 8;
+  if (c === 'Aggressive') return 10;
+  return 6;
+};
+
+// Map slider value (1-10) → riskCategory label
 const riskValueToLabel = (v) => {
   const n = Number(v);
-  if (n <= 3) return 'Low';
-  if (n <= 7) return 'Medium';
-  return 'High';
+  if (n <= 2) return 'Conservative';
+  if (n <= 4) return 'Conservative-Moderate';
+  if (n <= 6) return 'Moderate';
+  if (n <= 8) return 'Moderate-Aggressive';
+  return 'Aggressive';
 };
 
 const RecommendationDashboard = ({ userProfile, recommendations: propRecommendations, onExploreAll, onRebalance, onNavigate, onLearnMore, isLoading: isLoadingProp, explanation, fallbackNotice, onDismissFallbackNotice }) => {
@@ -104,7 +117,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
     }
   }, [isLoadingProp]);
   
-  const [riskValue, setRiskValue] = useState(userProfile?.risk_appetite === 'High' ? 8 : userProfile?.risk_appetite === 'Medium' ? 6 : 3);
+  const [riskValue, setRiskValue] = useState(riskCategoryToSlider(userProfile?.riskCategory));
 
   // Sync local state with profile prop changes (useState ignores updates after mount)
   useEffect(() => {
@@ -112,18 +125,18 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
   }, [userProfile?.investment_horizon]);
 
   useEffect(() => {
-    setRiskValue(userProfile?.risk_appetite === 'High' ? 8 : userProfile?.risk_appetite === 'Medium' ? 6 : 3);
-  }, [userProfile?.risk_appetite]);
+    setRiskValue(riskCategoryToSlider(userProfile?.riskCategory));
+  }, [userProfile?.riskCategory]);
 
   // ─── Live re-computation: derive risk label from slider & regenerate recommendations ───
   const derivedRiskLabel = riskValueToLabel(riskValue);
   const recommendations = useMemo(() => {
     // If the slider matches the original profile risk, use prop recommendations (includes backend data)
-    if (derivedRiskLabel === (userProfile?.risk_appetite || 'Medium')) {
+    if (derivedRiskLabel === (userProfile?.riskCategory || 'Moderate')) {
       return propRecommendations;
     }
-    // Otherwise, re-generate locally with the overridden risk appetite + current horizon
-    const modifiedProfile = { ...userProfile, risk_appetite: derivedRiskLabel, investment_horizon: horizon };
+    // Otherwise, re-generate locally with the overridden riskCategory + current horizon
+    const modifiedProfile = { ...userProfile, riskCategory: derivedRiskLabel, investment_horizon: horizon };
     return generateRecommendations(modifiedProfile);
   }, [derivedRiskLabel, userProfile, propRecommendations, horizon]);
   const [expandedRows, setExpandedRows] = useState({});
@@ -487,7 +500,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
               padding: '6px 14px', borderRadius: 20, fontSize: '0.72rem', color: '#94a3b8'
             }}>
               <span style={{width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'pulseDot 2s ease-in-out infinite'}} />
-              Age {userProfile?.age || '--'} · {userProfile?.risk_appetite || 'Medium'} Risk · {(userProfile?.investment_goals || ['Retirement']).join(' + ')}
+              Age {userProfile?.age || '--'} · {userProfile?.riskCategory || userProfile?.risk_tolerance || 'Moderate'} Risk · {(userProfile?.investment_goals || ['Retirement']).join(' + ')}
             </div>
             <span className="last-updated">
                {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -1372,7 +1385,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
                   Diversification <strong>{allocationDataOuter.length} {allocationDataOuter.length === 1 ? 'Category' : 'Categories'}</strong>
                 </div>
                 <div className="mini-stat" style={{textAlign: 'right'}}>
-                  Risk Bias <strong style={{color: userProfile?.risk_appetite === 'High' ? '#fb7185' : userProfile?.risk_appetite === 'Low' ? '#34d399' : '#dfbd69'}}>{userProfile?.risk_appetite}</strong>
+                  Risk Bias <strong style={{color: (userProfile?.riskCategory || '').includes('Aggressive') ? '#fb7185' : (userProfile?.riskCategory || '').includes('Conservative') ? '#34d399' : '#dfbd69'}}>{userProfile?.riskCategory || 'Moderate'}</strong>
                 </div>
               </div>
             </div>

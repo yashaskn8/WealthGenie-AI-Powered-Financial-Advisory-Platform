@@ -122,7 +122,7 @@ function exportHealthScorecard(score, metrics, profile) {
   const cardH = 18;
   const cards = [
     { title: 'SAVINGS RATE', val: `${savingsRate}%`, c: [34,197,94] },
-    { title: 'RISK APPETITE', val: profile.risk_appetite || 'Medium', c: [245,158,11] },
+    { title: 'RISK CATEGORY', val: profile.riskCategory || profile.risk_tolerance || 'Moderate', c: [245,158,11] },
     { title: 'HORIZON', val: `${profile.investment_horizon || 15} ${(profile.investment_horizon || 15) === 1 ? 'Year' : 'Years'}`, c: [139,92,246] },
   ];
 
@@ -443,7 +443,7 @@ const ScoreHistoryPanel = ({ currentScore, profile, subScores }) => {
 /* ── Peer Comparison Panel (profile-aware, labeled estimates) ─── */
 const PeerComparisonPanel = ({ score, profile, subScores }) => {
   const age = profile?.age || 30;
-  const risk = profile?.risk_appetite || 'Medium';
+  const risk = profile?.riskCategory || profile?.risk_tolerance || 'Moderate';
   const savingsRate = ((profile?.monthly_savings || 0) / (profile?.monthly_income || 1)) * 100;
 
   const ageLow = Math.floor(age / 5) * 5;
@@ -606,8 +606,8 @@ const HealthScoreScreen = ({ profile, recommendations, onNavigate }) => {
     const goalScore = declaredGoals.length > 0 ? (coveredGoals.length / declaredGoals.length) * 100 : 100;
 
     let riskScore = 100;
-    if (profile?.risk_appetite === 'High' && profile?.investment_horizon < 5) riskScore = 20;
-    if (profile?.risk_appetite === 'Low' && profile?.investment_horizon > 15) riskScore = 60;
+    if ((profile?.riskCategory || '').includes('Aggressive') && profile?.investment_horizon < 5) riskScore = 20;
+    if ((profile?.riskCategory || '').includes('Conservative') && profile?.investment_horizon > 15) riskScore = 60;
 
     const total = (savingsScore * 0.25) + (emergencyScore * 0.20) + (divScore * 0.20) + (taxScore * 0.15) + (goalScore * 0.10) + (riskScore * 0.10);
 

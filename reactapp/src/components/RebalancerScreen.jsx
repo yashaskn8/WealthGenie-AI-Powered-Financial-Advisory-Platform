@@ -661,15 +661,15 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
   }, [allocations, originalAllocations]);
 
   const riskScore = useMemo(() => {
-    const userRisk = (profile?.risk_appetite || 'Medium').toLowerCase();
+    const userRisk = (profile?.riskCategory || profile?.risk_tolerance || 'Moderate').toLowerCase();
     if (preset === 'Safe') {
-      return userRisk === 'low' ? 100 : userRisk === 'medium' ? 70 : 40;
+      return userRisk.includes('conservative') ? 100 : userRisk.includes('moderate') ? 70 : 40;
     } else if (preset === 'Balanced') {
-      return userRisk === 'medium' ? 100 : 80;
+      return userRisk.includes('moderate') ? 100 : 80;
     } else if (preset === 'Growth') {
-      return userRisk === 'high' ? 100 : userRisk === 'medium' ? 80 : 50;
+      return userRisk.includes('aggressive') ? 100 : userRisk.includes('moderate') ? 80 : 50;
     } else if (preset === 'High Growth') {
-      return userRisk === 'high' ? 100 : userRisk === 'medium' ? 60 : 30;
+      return userRisk.includes('aggressive') ? 100 : userRisk.includes('moderate') ? 60 : 30;
     }
 
     let weightedRisk = 0;
@@ -1152,7 +1152,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
                 </div>
                 <div className="match-metric-details">
                   <span className="match-metric-label">Risk Profile</span>
-                  <span className="match-metric-value">{profile?.risk_appetite || 'Medium'}</span>
+                  <span className="match-metric-value">{profile?.riskCategory || profile?.risk_tolerance || 'Moderate'}</span>
                 </div>
                 <div className="match-metric-status" style={{ color: riskScore >= 80 ? '#10b981' : '#f59e0b' }}>✓</div>
               </div>

@@ -10,8 +10,6 @@ const DEFAULT_PROFILE = {
   age: 32,
   monthly_income: 65000,
   monthly_savings: 12000,
-  // risk_appetite derived from risk_tolerance for backward compat with display components
-  risk_appetite: 'Medium',
   investment_goals: ['Retirement', 'Wealth Growth'],
   investment_horizon: 15,
   taxRegime: 'new',

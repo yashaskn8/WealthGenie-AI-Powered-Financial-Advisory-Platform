@@ -8,7 +8,8 @@ const DEFAULT_PROFILE = {
   age: 32,
   monthly_income: 65000,
   monthly_savings: 12000,
-  risk_appetite: 'Medium',
+  riskCategory: 'Moderate',
+  risk_tolerance: 'Moderate',
   investment_goals: ['Retirement', 'Wealth Growth'],
   investment_horizon: 15,
 };

@@ -4,7 +4,7 @@ import { Lightbulb, TrendingUp, AlertTriangle, BarChart3, Newspaper, Sparkles, S
 import './InsightsScreen.css';
 
 const InsightsScreen = ({ profile, recommendations }) => {
-  const isHighRisk = profile?.risk_appetite === 'High';
+  const isHighRisk = (profile?.riskCategory || profile?.risk_tolerance || '').includes('Aggressive');
   const horizon = profile?.investment_horizon || 15;
   const savings = Number(profile?.monthly_savings || 0);
   const income = Number(profile?.monthly_income || 0);

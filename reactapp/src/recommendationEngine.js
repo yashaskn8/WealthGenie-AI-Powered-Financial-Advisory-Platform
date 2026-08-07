@@ -175,7 +175,7 @@ export function getEligibleInvestments(profile) {
   const age = Number(profile.age) || 25;
   const income = Number(profile.monthly_income || profile.income) || 0;
   const savings = Number(profile.monthly_savings || profile.savings) || 0;
-  const risk = (profile.risk_appetite || profile.risk || "Medium").toLowerCase();
+  const risk = (profile.riskCategory || profile.risk_tolerance || "Moderate").toLowerCase();
   const horizon = Number(profile.investment_horizon || profile.horizon) || 10;
   const annualIncome = income * 12;
   const mr = getMarginalRate(annualIncome, profile.taxRegime || profile.regime || 'new');
@@ -259,7 +259,7 @@ export function getEligibleInvestments(profile) {
 
 // ─── MAIN: generateRecommendations ────────────────────────────────
 export function generateRecommendations(userProfile) {
-  const { age, monthly_income, monthly_savings, risk_appetite, investment_goals, investment_horizon } = userProfile;
+  const { age, monthly_income, monthly_savings, riskCategory, risk_tolerance, investment_goals, investment_horizon } = userProfile;
   const savings = Number(monthly_savings) || 0;
   const primaryGoal = (investment_goals || [])[0] || null;
 
@@ -274,8 +274,8 @@ export function generateRecommendations(userProfile) {
     income: Number(monthly_income) || 0,
     monthly_savings: savings,
     savings: savings,
-    risk_appetite: risk_appetite || "Medium",
-    risk: risk_appetite || "Medium",
+    riskCategory: riskCategory || userProfile.riskCategory || "Moderate",
+    risk_tolerance: risk_tolerance || userProfile.risk_tolerance || "Moderate",
     investment_goals: investment_goals || [],
     investment_horizon: Number(investment_horizon) || 10,
     horizon: Number(investment_horizon) || 10,

@@ -56,7 +56,7 @@ const GenieChat = ({ profile, onNavigate }) => {
 
   useEffect(() => {
     if (profile) {
-      setTargetEquity(profile.recommendedEquityAllocation || (profile.risk_appetite === 'High' ? 80 : profile.risk_appetite === 'Low' ? 30 : 60));
+      setTargetEquity(profile.recommendedEquityAllocation || ((profile.riskCategory || '').includes('Aggressive') ? 80 : (profile.riskCategory || '').includes('Conservative') ? 30 : 60));
       setRebalanceMonthlySIP(profile.monthly_savings || profile.savings || 12000);
       setSipMonthlyAmount(profile.monthly_savings || profile.savings || 12000);
       setSipHorizon(profile.investment_horizon || profile.investmentHorizon || 15);

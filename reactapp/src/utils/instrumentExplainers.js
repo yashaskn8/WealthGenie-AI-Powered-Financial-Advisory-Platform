@@ -161,12 +161,11 @@ export function getLockInWarning(instrument, horizonYears) {
 
 // Risk-age mismatch detection
 export function detectRiskAgeMismatch(profile) {
-  const age = Number(profile?.age) || 30;
-  const risk = (profile?.risk_appetite || 'Medium').toLowerCase();
+  const risk = (profile?.riskCategory || profile?.risk_tolerance || 'Moderate').toLowerCase();
   const goals = profile?.investment_goals || [];
   const horizon = Number(profile?.investment_horizon) || 10;
   const isNearRetirement = age >= 55;
-  const isHighRisk = ['high', 'very high'].includes(risk);
+  const isHighRisk = risk.includes('aggressive');
   const isRetirementGoal = goals.includes('Retirement');
 
   if (isNearRetirement && isHighRisk && isRetirementGoal) {

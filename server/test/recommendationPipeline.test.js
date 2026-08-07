@@ -12,6 +12,7 @@ import {
   computeInstrumentScore,
   scoreReturn,
   scoreRisk,
+  getInstrumentRisk,
   scoreTax,
   scoreLiquidity,
   scoreCost,
@@ -627,6 +628,30 @@ test('rankWhereToInvestBackend evaluates candidates with backend taxEngine and m
   // Verify tax savings note computed for 30% slab profile
   const ppf = ranked.find(c => c.name.includes('PPF'));
   assert.ok(ppf.taxSavingsNote.includes('Sec 80C'));
+});
+
+test('WG-001: scoreRisk differentiates low-risk (PPF, value=1) vs high-risk (ELSS, value=4) instruments', () => {
+  const conservativeProfile = { risk: 'conservative' };
+  const aggressiveProfile = { risk: 'aggressive' };
+
+  const ppf = { id: 'ppf', dynamicData: { risk: { level: 'Very Low', value: 1 } } };
+  const elss = { id: 'elss', dynamicData: { risk: { level: 'High', value: 4 } } };
+
+  // Verify getInstrumentRisk correctly extracts values
+  assert.equal(getInstrumentRisk(ppf), 1);
+  assert.equal(getInstrumentRisk(elss), 4);
+
+  // For conservative user: PPF (risk 1) is ideal, ELSS (risk 4) is mismatch/penalty
+  const scorePpfCons = scoreRisk(ppf, conservativeProfile);
+  const scoreElssCons = scoreRisk(elss, conservativeProfile);
+  assert.notEqual(scorePpfCons, scoreElssCons, 'Conservative user must score PPF and ELSS risk differently');
+  assert.ok(scorePpfCons < scoreElssCons, 'PPF should have better (lower penalty) risk score for conservative user');
+
+  // For aggressive user: ELSS (risk 4) is ideal, PPF (risk 1) is close/mismatch
+  const scorePpfAgg = scoreRisk(ppf, aggressiveProfile);
+  const scoreElssAgg = scoreRisk(elss, aggressiveProfile);
+  assert.notEqual(scorePpfAgg, scoreElssAgg, 'Aggressive user must score PPF and ELSS risk differently');
+  assert.ok(scoreElssAgg < scorePpfAgg, 'ELSS should have better (lower penalty) risk score for aggressive user');
 });
 
 

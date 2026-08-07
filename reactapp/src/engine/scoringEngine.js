@@ -88,7 +88,7 @@ const SCORING = Object.freeze({
 function parseProfile(profile) {
   const income = Number(profile.monthly_income || profile.income) || 0;
   const savings = Number(profile.monthly_savings || profile.savings) || 0;
-  const risk = (profile.risk_appetite || profile.risk || 'Medium').toLowerCase();
+  const risk = (profile.riskCategory || profile.risk_tolerance || 'Moderate').toLowerCase();
   const horizon = Number(profile.investment_horizon || profile.horizon) || 10;
   const age = Number(profile.age) || 30;
   const goals = profile.investment_goals || [];

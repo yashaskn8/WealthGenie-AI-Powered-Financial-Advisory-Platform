@@ -40,10 +40,10 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
   // Stable serialized key - changes ONLY when profile data changes, not on every render
   const profileKey = useMemo(() => JSON.stringify({
     a: userProfile.age, i: userProfile.monthly_income, s: userProfile.monthly_savings,
-    r: userProfile.risk_appetite, g: userProfile.investment_goals,
+    r: userProfile.riskCategory || userProfile.risk_tolerance, g: userProfile.investment_goals,
     h: userProfile.investment_horizon, t: userProfile.taxRegime, p: userProfile.profileId,
   }), [userProfile.age, userProfile.monthly_income, userProfile.monthly_savings,
-       userProfile.risk_appetite, userProfile.investment_goals,
+       userProfile.riskCategory, userProfile.risk_tolerance, userProfile.investment_goals,
        userProfile.investment_horizon, userProfile.taxRegime, userProfile.profileId]);
 
   // Memoize local recommendations - only recomputes when profile key changes
