@@ -743,7 +743,7 @@ export function normalizeProfile(profile = {}) {
   const regime = taxRegime;
   const risk_tolerance = profile.risk_tolerance || 'Moderate';
   const riskCategory = profile.riskCategory || 'Moderate';
-  const goal_type = profile.goal_type || (Array.isArray(profile.investment_goals) && profile.investment_goals[0]) || 'wealth-building';
+  const goal_type = (Array.isArray(profile.goals) && profile.goals[0]) || profile.goal_type || 'wealth-building';
 
   return {
     ...profile,

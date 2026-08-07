@@ -257,12 +257,11 @@ export function getEligibleInvestments(profile) {
   return result;
 }
 
-// ─── MAIN: generateRecommendations ────────────────────────────────
-export function generateRecommendations(userProfile) {
-  const { age, monthly_income, monthly_savings, riskCategory, risk_tolerance, investment_goals, investment_horizon } = userProfile;
+  const { age, monthly_income, monthly_savings, riskCategory, risk_tolerance, goals, investment_horizon } = userProfile;
+  const userGoals = Array.isArray(userProfile?.goals) ? userProfile.goals : (userProfile?.investment_goals || []);
   const inferredSavings = Number(monthly_income) > 0 ? Math.round((Number(monthly_income) * (2 / 9)) / 100) * 100 : 0;
   const savings = Number(monthly_savings) || Number(userProfile.savings) || inferredSavings;
-  const primaryGoal = (investment_goals || [])[0] || null;
+  const primaryGoal = userGoals[0] || null;
 
   // FIX 1: Emergency Fund uses dedicated liquid portfolio
   if (primaryGoal === 'Emergency Fund') {
@@ -277,7 +276,8 @@ export function generateRecommendations(userProfile) {
     savings: savings,
     riskCategory: riskCategory || userProfile.riskCategory || "Moderate",
     risk_tolerance: risk_tolerance || userProfile.risk_tolerance || "Moderate",
-    investment_goals: investment_goals || [],
+    goals: userGoals,
+    investment_goals: userGoals,
     investment_horizon: Number(investment_horizon) || 10,
     horizon: Number(investment_horizon) || 10,
     taxRegime: userProfile.taxRegime || "new",

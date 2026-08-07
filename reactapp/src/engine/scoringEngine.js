@@ -91,7 +91,7 @@ function parseProfile(profile) {
   const risk = (profile.riskCategory || profile.risk_tolerance || 'Moderate').toLowerCase();
   const horizon = Number(profile.investment_horizon || profile.horizon) || 10;
   const age = Number(profile.age) || 30;
-  const goals = profile.investment_goals || [];
+  const goals = profile.goals || [];
   const annualIncome = income * 12;
   const annualSavings = savings * 12;
   const taxRegime = profile.taxRegime || 'new';
