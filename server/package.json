@@ -11,6 +11,8 @@
     "test:unit": "node --test test/*.test.js",
     "test:coverage": "npx c8 --reporter=text --reporter=text-summary --reporter=json --reporter=lcovonly --reports-dir=reports node --test test/*.test.js",
     "test:coverage:unit": "npx c8 --reporter=text --reporter=text-summary --reporter=json --reporter=lcovonly --reports-dir=reports node --test test/*.test.js",
+    "lint": "node --check server.js",
+    "typecheck": "node --check server.js",
     "loadtest": "node scripts/loadtest.js",
     "seed": "node config/seedInstruments.js",
     "eval": "node scripts/run-eval.js"

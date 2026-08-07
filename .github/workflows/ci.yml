@@ -135,6 +135,11 @@ jobs:
           cd reactapp
           npm ci
 
+      - name: Run ESLint Check
+        run: |
+          cd reactapp
+          npx eslint src/
+
       - name: Run Vitest Suite
         run: |
           cd reactapp
