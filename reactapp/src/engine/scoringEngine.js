@@ -101,62 +101,6 @@ function parseProfile(profile) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// DYNAMIC WEIGHT DERIVATION — weights shaped by user profile
-// ═══════════════════════════════════════════════════════════════════
-function deriveWeights(p) {
-  const { risk, horizon, age, mr, goals, savings, income } = p;
-
-  // α — Return Weight: long horizon + high risk → prioritize growth
-  let alpha = 1.0;
-  if (horizon >= 15) alpha += 0.5;
-  if (horizon >= 20) alpha += 0.3;
-  if (risk === 'high') alpha += 0.5;
-  else if (risk === 'low') alpha -= 0.3;
-
-  // β — Risk Penalty Weight: older, more dependents, low risk → penalize risky instruments
-  let beta = 1.0;
-  if (age >= 50) beta += 0.8;
-  else if (age >= 40) beta += 0.4;
-  if (risk === 'low') beta += 0.8;
-  else if (risk === 'high') beta -= 0.4;
-
-  // γ — Tax Penalty Weight: high slab → heavily penalize slab-taxed instruments
-  let gamma = mr > 0 ? (mr / 0.312) * 1.5 : 0; // normalize against max marginal rate
-
-  // δ — Liquidity Bonus Weight: low emergency savings → boost liquid instruments
-  let delta = 0.8;
-  const emergencyCover = income > 0 ? (savings / income) : 0;
-  if (emergencyCover < 0.2) delta += 0.6;  // very low savings ratio
-  if (goals.includes('Emergency Fund')) delta += 1.0;
-
-  // ε — Goal Bonus Weight: stronger when user has explicit goals
-  let epsilon = goals.length > 0 ? 1.2 : 0.5;
-  if (goals.includes('Tax Saving') && mr > 0.1) epsilon += 0.5;
-
-  // ζ — Horizon Match Weight: always important
-  let zeta = 1.0;
-  if (horizon <= 3) zeta += 0.5;  // short horizon = more strict on fit
-  if (horizon >= 20) zeta += 0.3;
-
-  // η — Cost Penalty Weight: grows with horizon (compounding effect)
-  let eta = 0.5;
-  if (horizon >= 10) eta += 0.3;
-  if (horizon >= 20) eta += 0.4;
-
-  // Clamp all weights
-  const clamp = (v) => Math.max(SCORING.WEIGHT_FLOOR, Math.min(SCORING.WEIGHT_CEIL, v));
-  return {
-    alpha: clamp(alpha),
-    beta: clamp(beta),
-    gamma: clamp(gamma),
-    delta: clamp(delta),
-    epsilon: clamp(epsilon),
-    zeta: clamp(zeta),
-    eta: clamp(eta),
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════
 // SCORING SUB-FUNCTIONS — each factor is isolated for testability
 // ═══════════════════════════════════════════════════════════════════
 
@@ -311,7 +255,9 @@ function computeCostPenalty(inv) {
 // ═══════════════════════════════════════════════════════════════════
 export function computeScore(inv, profile) {
   const p = parseProfile(profile);
-  const w = deriveWeights(p);
+  const w = profile?.computedWeights || {
+    alpha: 1.0, beta: 1.0, gamma: 1.0, delta: 1.0, epsilon: 1.0, zeta: 1.0, eta: 1.0
+  };
 
   // Reuse existing tax computation
   const { postTaxRate } = computePostTaxReturn(inv, p.annualSavings, p.annualIncome, profile);

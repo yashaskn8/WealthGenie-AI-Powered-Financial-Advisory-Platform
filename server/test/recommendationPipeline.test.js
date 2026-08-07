@@ -237,6 +237,16 @@ test('WG-010: rankWhereToInvestBackend and runPipeline agree on risk tier classi
   }
 });
 
+test('WG-004: deriveWeights is exclusive to RecommendationPipeline.js backend', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
+  if (fs.existsSync(scoringEnginePath)) {
+    const code = fs.readFileSync(scoringEnginePath, 'utf8');
+    assert.ok(!code.includes('function deriveWeights'), 'scoringEngine.js must not contain deriveWeights function');
+  }
+});
+
 test('deriveWeights exact alpha values for horizon and risk combinations', () => {
   // Base case: moderate risk, 10 year horizon
   const base = deriveWeights({ age: 30, annualIncome: 1000000, savings: 50000, risk: 'moderate', horizon: 10, goals: [], mr: 0 });
