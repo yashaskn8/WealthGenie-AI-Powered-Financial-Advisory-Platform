@@ -5,6 +5,7 @@
  */
 import { test, describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import chatRouter from '../routes/chatRoutes.js';
@@ -163,9 +164,10 @@ describe('Phase 1 Architecture Truth — RAG Chat Integration Tests', () => {
   });
 
   it('WG-024: ConversationHistory save succeeds for RAG response without enum ValidationError', async () => {
-    // Construct a real ConversationHistory Mongoose document instance
+    // Construct a real ConversationHistory Mongoose document instance matching geminiChatService RAG persistence
     const doc = new ConversationHistory({
       userId: mockUserId,
+      profileId: new mongoose.Types.ObjectId(),
       session_id: 'rag-test-session-001',
       messages: [
         {
@@ -174,10 +176,11 @@ describe('Phase 1 Architecture Truth — RAG Chat Integration Tests', () => {
           timestamp: new Date(),
         },
         {
-          role: 'assistant',
+          role: 'model',
           content: '₹1.5 Lakhs limit under Section 80C.',
           timestamp: new Date(),
-          metadata: { tokens_used: 45, model_version: 'v3' }
+          metadata: { tokens_used: 45, model_version: 'v3' },
+          // RAG path omits metadata.provider key to avoid Mongoose provider enum validation exception
         }
       ]
     });

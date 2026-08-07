@@ -374,8 +374,13 @@ function parseProfile(profile, reconciledRiskStr = null) {
   // Use reconciled risk tier if provided; single source = profile.riskCategory
   const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase();
   const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
-  // WG-021: Canonical single source of truth for goals is profile.goals (Array)
-  const goals = Array.isArray(profile.goals) ? profile.goals : [];
+  // WG-021: Canonical source is profile.goals, but fall back to investment_goals/goal_type
+  // for profiles created via onboarding (ProfileEditor) where goals.js sync hasn't run
+  const goals = (Array.isArray(profile.goals) && profile.goals.length > 0)
+    ? profile.goals
+    : (Array.isArray(profile.investment_goals) && profile.investment_goals.length > 0)
+      ? profile.investment_goals
+      : (profile.goal_type && profile.goal_type !== 'wealth-building' ? [profile.goal_type] : []);
   const taxRegime = profile.taxRegime || profile.regime || 'new';
 
   const hasLumpSum = Boolean(profile.hasLumpSum);
@@ -743,7 +748,12 @@ export function normalizeProfile(profile = {}) {
   const regime = taxRegime;
   const risk_tolerance = profile.risk_tolerance || 'Moderate';
   const riskCategory = profile.riskCategory || 'Moderate';
-  const goal_type = (Array.isArray(profile.goals) && profile.goals[0]) || profile.goal_type || 'wealth-building';
+  const goals = (Array.isArray(profile.goals) && profile.goals.length > 0)
+    ? profile.goals
+    : (Array.isArray(profile.investment_goals) && profile.investment_goals.length > 0)
+      ? profile.investment_goals
+      : (profile.goal_type && profile.goal_type !== 'wealth-building' ? [profile.goal_type] : []);
+  const goal_type = goals[0] || profile.goal_type || 'wealth-building';
 
   return {
     ...profile,
@@ -761,6 +771,8 @@ export function normalizeProfile(profile = {}) {
     risk_tolerance,
     riskCategory,
     goal_type,
+    goals,
+    investment_goals: goals,
     liquid_savings: Number(profile.liquid_savings) || 0,
     existing_debt: Number(profile.existing_debt) || 0,
     dependents: Number(profile.dependents) || 0,

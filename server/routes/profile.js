@@ -90,6 +90,10 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     );
   }
 
+  const incomingGoals = Array.isArray(req.body.goals)
+    ? req.body.goals
+    : (Array.isArray(req.body.investment_goals) ? req.body.investment_goals : []);
+
   // Save to MongoDB
   const profile = await FinancialProfile.create({
     userId: req.user.userId,
@@ -112,6 +116,7 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     emergency_fund_months: emergency_fund_months || 0,
     risk_tolerance: risk_tolerance || 'Moderate',
     goal_type: goal_type || 'wealth-building',
+    goals: incomingGoals,
     totalCTC: safeTotalCTC,
     basicComponent: safeBasicComponent,
     monthlyTakeHome: safeMonthlyTakeHome,
@@ -186,38 +191,47 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
     monthly_savings, impliedMonthlyDebtVal, safeLumpSumAmount, safeSoldPropertyAmount
   );
 
+  const incomingGoalsPut = Array.isArray(req.body.goals)
+    ? req.body.goals
+    : (Array.isArray(req.body.investment_goals) ? req.body.investment_goals : undefined);
+
   const investableAmount = monthly_savings;
+
+  const updateFields = {
+    monthlyIncome: monthly_income,
+    age,
+    savings: monthly_savings,
+    annualIncome,
+    taxRegime,
+    investmentHorizon: investment_horizon,
+    liquid_savings: liquid_savings || 0,
+    existing_debt: existing_debt || 0,
+    dependents: dependents || 0,
+    emergency_fund_months: emergency_fund_months || 0,
+    risk_tolerance: risk_tolerance || 'Moderate',
+    goal_type: goal_type || 'wealth-building',
+    totalCTC: safeTotalCTC,
+    basicComponent: safeBasicComponent,
+    monthlyTakeHome: safeMonthlyTakeHome,
+    soldPropertyAmount: safeSoldPropertyAmount,
+    hasLumpSum: safeHasLumpSum,
+    lumpSumAmount: safeLumpSumAmount,
+    taxSlabDecimal: marginalRate,
+    effectiveTaxRatePercent: taxResult.effectiveRate,
+    riskCategory: riskProfile.category,
+    riskScore: riskProfile.riskScore,
+    riskDescription: riskProfile.description,
+    recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
+    investableAmount,
+  };
+  if (incomingGoalsPut !== undefined) {
+    updateFields.goals = incomingGoalsPut;
+  }
 
   const updatedProfile = await FinancialProfile.findOneAndUpdate(
     { _id: profileId, userId: req.user.userId, version: expectedVersion },
     {
-      $set: {
-        monthlyIncome: monthly_income,
-        age,
-        savings: monthly_savings,
-        annualIncome,
-        taxRegime,
-        investmentHorizon: investment_horizon,
-        liquid_savings: liquid_savings || 0,
-        existing_debt: existing_debt || 0,
-        dependents: dependents || 0,
-        emergency_fund_months: emergency_fund_months || 0,
-        risk_tolerance: risk_tolerance || 'Moderate',
-        goal_type: goal_type || 'wealth-building',
-        totalCTC: safeTotalCTC,
-        basicComponent: safeBasicComponent,
-        monthlyTakeHome: safeMonthlyTakeHome,
-        soldPropertyAmount: safeSoldPropertyAmount,
-        hasLumpSum: safeHasLumpSum,
-        lumpSumAmount: safeLumpSumAmount,
-        taxSlabDecimal: marginalRate,
-        effectiveTaxRatePercent: taxResult.effectiveRate,
-        riskCategory: riskProfile.category,
-        riskScore: riskProfile.riskScore,
-        riskDescription: riskProfile.description,
-        recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
-        investableAmount,
-      },
+      $set: updateFields,
       $inc: { version: 1 },
     },
     { new: true }

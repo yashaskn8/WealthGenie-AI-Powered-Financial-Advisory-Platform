@@ -812,6 +812,30 @@ test('WG-004 PARITY: Backend deriveWeights and Frontend deriveWeights produce id
   }
 });
 
+test('WG-021: Goal-based scoring works when goal data lives in onboarding profile (investment_goals)', () => {
+  // Profile from onboarding form (ProfileEditor.jsx) providing investment_goals
+  const onboardingProfile = {
+    age: 30,
+    annualIncome: 1200000,
+    monthly_savings: 25000,
+    riskCategory: 'Moderate',
+    investment_horizon: 10,
+    investment_goals: ['Retirement', 'Children Education'],
+  };
+
+  const parsed = parseProfile(onboardingProfile);
+  assert.ok(Array.isArray(parsed.goals), 'parseProfile must normalize goals array');
+  assert.equal(parsed.goals.length, 2, 'parsed.goals must contain the 2 onboarding goals');
+  assert.equal(parsed.goals[0], 'Retirement');
+
+  const resultWithGoals = runPipeline(onboardingProfile, {});
+  const resultNoGoals = runPipeline({ ...onboardingProfile, investment_goals: [], goals: [] }, {});
+
+  // Prove epsilon weight (goal alignment) is higher when goals are specified in onboarding profile
+  assert.ok(resultWithGoals.computedWeights.epsilon > resultNoGoals.computedWeights.epsilon,
+    `Epsilon weight with onboarding goals (${resultWithGoals.computedWeights.epsilon}) must exceed no-goals epsilon (${resultNoGoals.computedWeights.epsilon})`);
+});
+
 
 
 

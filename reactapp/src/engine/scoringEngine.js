@@ -91,7 +91,11 @@ function parseProfile(profile) {
   const risk = (profile.riskCategory || profile.risk_tolerance || 'Moderate').toLowerCase();
   const horizon = Number(profile.investment_horizon || profile.horizon) || 10;
   const age = Number(profile.age) || 30;
-  const goals = profile.goals || [];
+  const goals = (Array.isArray(profile.goals) && profile.goals.length > 0)
+    ? profile.goals
+    : (Array.isArray(profile.investment_goals) && profile.investment_goals.length > 0)
+      ? profile.investment_goals
+      : (profile.goal_type ? [profile.goal_type] : []);
   const annualIncome = income * 12;
   const annualSavings = savings * 12;
   const taxRegime = profile.taxRegime || 'new';
