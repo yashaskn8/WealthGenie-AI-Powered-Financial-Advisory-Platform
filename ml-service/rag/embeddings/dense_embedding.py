@@ -9,7 +9,7 @@ Contains:
 import logging
 import math
 import re
-from typing import List
+from typing import List, Optional, cast
 
 import numpy as np
 
@@ -98,7 +98,7 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
 
     DEFAULT_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
-    def __init__(self, model_name: str = None, enable_cache: bool = True, batch_size: int = 32):
+    def __init__(self, model_name: Optional[str] = None, enable_cache: bool = True, batch_size: int = 32):
         self._model_name = model_name or self.DEFAULT_MODEL_NAME
         self._batch_size = batch_size
         self.enable_cache = enable_cache
@@ -108,9 +108,12 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
         from sentence_transformers import SentenceTransformer
         self._model = SentenceTransformer(self._model_name)
         if hasattr(self._model, "get_embedding_dimension"):
-            self._dim = self._model.get_embedding_dimension()
+            self._dim: int = int(self._model.get_embedding_dimension())
+        elif hasattr(self._model, "get_sentence_embedding_dimension"):
+            self._dim: int = int(self._model.get_sentence_embedding_dimension())
         else:
-            self._dim = self._model.get_sentence_embedding_dimension()
+            self._dim: int = 384
+
         logger.info(
             f"Sentence-transformer model loaded: '{self._model_name}' "
             f"(dimension={self._dim}, batch_size={self._batch_size})"
@@ -146,7 +149,7 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
             return []
 
         # Check cache for all texts first
-        results = [None] * len(texts)
+        results: List[Optional[List[float]]] = [None] * len(texts)
         uncached_indices = []
         uncached_texts = []
 
@@ -175,7 +178,7 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
                 if self.cache and self.enable_cache:
                     self.cache.put(texts[idx], vec)
 
-        return results
+        return cast(List[List[float]], results)
 
 
 def get_embedding_provider(config=None) -> BaseEmbeddingProvider:
