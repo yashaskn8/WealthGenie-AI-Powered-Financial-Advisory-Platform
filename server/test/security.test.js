@@ -5,6 +5,8 @@
  *   1. Mass Assignment Prevention (unexpected fields stripped)
  *   2. IDOR Protection (cannot update other user's profile)
  *   3. Token Revocation / Expired Token Rejection
+ *   5. WG-005: POST /api/instruments/rank-wti requires auth + schema validation
+ *   6. WG-018: GET /api/metrics requires auth
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,6 +15,8 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import profileRoutes from '../routes/profile.js';
+import instrumentRoutes from '../routes/instruments.js';
+import metricsRoutes from '../routes/metricsRoutes.js';
 import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { blacklistToken } from '../config/redis.js';
@@ -191,5 +195,58 @@ test('Security: expired token is rejected with 401 Unauthorized', async () => {
 
     assert.equal(response.status, 401);
     assert.match(body.error, /expired/i);
+  });
+});
+
+// ── 5. WG-005: POST /api/instruments/rank-wti auth + validation ───────
+function buildInstrumentApp() {
+  const app = express();
+  app.use(enforceJsonContentType);
+  app.use(express.json());
+  app.use('/api/instruments', instrumentRoutes);
+  app.use(errorHandler);
+  return app;
+}
+
+test('WG-005: POST /api/instruments/rank-wti returns 401 without auth', async () => {
+  await withServer(buildInstrumentApp(), async (baseUrl) => {
+    const { response } = await jsonFetch(`${baseUrl}/api/instruments/rank-wti`, {
+      method: 'POST',
+      body: JSON.stringify({ candidates: [], userProfile: {}, options: {} }),
+    });
+    assert.equal(response.status, 401, 'rank-wti must reject unauthenticated requests');
+  });
+});
+
+test('WG-005: POST /api/instruments/rank-wti returns 400 for invalid payload', async () => {
+  const token = signToken(USER_A_ID);
+  await withServer(buildInstrumentApp(), async (baseUrl) => {
+    // candidates array exceeding max 50 items
+    const oversizedCandidates = Array.from({ length: 51 }, (_, i) => ({ name: `item${i}` }));
+    const { response, body } = await jsonFetch(`${baseUrl}/api/instruments/rank-wti`, {
+      method: 'POST',
+      body: JSON.stringify({ candidates: oversizedCandidates, userProfile: {}, options: {} }),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(response.status, 400, 'rank-wti must reject oversized candidates array');
+    assert.ok(body.details || body.error, 'Should return validation error details');
+  });
+});
+
+// ── 6. WG-018: GET /api/metrics auth ─────────────────────────────────
+function buildMetricsApp() {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/metrics', metricsRoutes);
+  app.use(errorHandler);
+  return app;
+}
+
+test('WG-018: GET /api/metrics returns 401 without auth', async () => {
+  await withServer(buildMetricsApp(), async (baseUrl) => {
+    const { response } = await jsonFetch(`${baseUrl}/api/metrics`, {
+      method: 'GET',
+    });
+    assert.equal(response.status, 401, 'metrics endpoint must reject unauthenticated requests');
   });
 });

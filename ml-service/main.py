@@ -37,6 +37,16 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 
 async def verify_api_key(api_key: str = Security(api_key_header)) -> str:
+    """Authenticate requests via constant-time API key comparison.
+
+    Uses ``hmac.compare_digest`` for timing-attack-resistant string equality
+    checks against the ``ML_SERVICE_API_KEY`` environment variable.  This is
+    *not* an HMAC signature — it is a constant-time bearer-token comparison
+    over a private TLS server-to-server channel.
+
+    Returns the validated key on success.  Raises HTTP 500 when the expected
+    key is absent (fail-closed) and HTTP 401 on mismatch.
+    """
     expected_key = os.environ.get("ML_SERVICE_API_KEY", "")
     env_mode = os.environ.get("ENVIRONMENT", "").lower()
 

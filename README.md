@@ -69,7 +69,7 @@ Combining **Agentic AI tool orchestration**, **multi-model machine learning**, *
 
 ### 🛡️ 4. SDE Architecture & Security
 - **Microservices Setup**: React 18 TS + Express Gateway + Python FastAPI Microservice.
-- **Fail-Closed Auth**: Security pipeline with HMAC API Key signature verification.
+- **Fail-Closed Auth**: Security pipeline with constant-time API key comparison (`hmac.compare_digest`).
 - **Structured Response Protocols**: Strict JSON action cards for interactive client UIs.
 - **Prompt Injection Defense**: Security pipeline neutralizing prompt hijacking vectors.
 
@@ -119,7 +119,7 @@ Designed with production microservice principles and financial accuracy:
   - **React 18 + Vite + TypeScript (`reactapp`)**: Modular UI featuring dynamic risk charts, tax sliders, portfolio health dashboards, and interactive action card chat windows.
   - **Express.js API Gateway (IntentGate)**: Node.js gateway managing authentication, rate limiting, and agentic orchestration.
   - **FastAPI ML Microservice**: High-throughput Python microservice delivering ML inference, tree explainability, and vector RAG.
-- **Fail-Closed Security Architecture**: HMAC SHA-256 API key verification (`verify_api_key`) returning HTTP 500 on server misconfiguration and HTTP 401 on bad keys, preventing silent auth bypasses.
+- **Fail-Closed Security Architecture**: Constant-time API key comparison (`verify_api_key` via `hmac.compare_digest`) returning HTTP 500 on server misconfiguration and HTTP 401 on bad keys, preventing silent auth bypasses.
 - **Deterministic Financial Engines**:
   - **Indian Progressive Tax Engine (`taxEngine.js`)**: Computes exact tax under FY 2025-26 Old & New Regimes (80C, 80D, 80CCD, standard deduction ₹75k, 87A rebate).
   - **Monte Carlo Portfolio Simulator (`monteCarloEngine.js`)**: Runs Geometric Brownian Motion (GBM) over asset covariance matrices to generate 10th, 50th, and 90th percentile wealth projections.
@@ -149,7 +149,7 @@ graph LR
     end
     
     IntentGate -->|Factual / Regulatory| RAGClient["ragClient.js<br/>queryRAG()"]
-    RAGClient -->|POST /rag/query<br/>HMAC API Key| FastAPI["FastAPI ML Service<br/>(Python Microservice)"]
+    RAGClient -->|POST /rag/query<br/>API Key| FastAPI["FastAPI ML Service<br/>(Python Microservice)"]
     ToolReg -->|Prediction Requests| MLClient["mlClient.js"]
     MLClient -->|POST /predict| FastAPI
     

@@ -76,17 +76,4 @@ router.delete('/session/:sessionId', verifyJWT, asyncHandler(async (req, res) =>
   res.json({ message: 'Session cleared.' });
 }));
 
-/**
- * GET /api/chat/metrics
- * Expose production Prometheus and JSON performance metrics for monitoring.
- */
-router.get('/metrics', asyncHandler(async (req, res) => {
-  const { PrometheusMetrics } = await import('../services/metricsCollector.js');
-  if (req.headers.accept && req.headers.accept.includes('json')) {
-    return res.json(PrometheusMetrics.getSnapshotJSON());
-  }
-  res.setHeader('Content-Type', 'text/plain; version=0.0.4');
-  res.send(PrometheusMetrics.getPrometheusFormat());
-}));
-
 export default router;

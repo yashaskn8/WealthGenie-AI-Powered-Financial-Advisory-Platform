@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { verifyJWT } from '../middleware/authMiddleware.js';
+import { validate, rankWtiSchema } from '../validation/schemas.js';
 import Instrument from '../models/Instrument.js';
 import { getCache, setCache } from '../config/redis.js';
 
@@ -63,10 +65,11 @@ router.get('/', asyncHandler(async (req, res) => {
 import { rankWhereToInvestBackend } from '../services/RecommendationPipeline.js';
 
 /**
- * POST /api/instruments/rank-wti [Public/Advisory]
+ * POST /api/instruments/rank-wti [Protected]
  * Dynamically ranks Where To Invest product candidates against user profile & macro regimes.
+ * WG-005: Protected with verifyJWT + Joi schema validation.
  */
-router.post('/rank-wti', asyncHandler(async (req, res) => {
+router.post('/rank-wti', verifyJWT, validate(rankWtiSchema), asyncHandler(async (req, res) => {
   const { candidates = [], userProfile = {}, options = {} } = req.body || {};
   const ranked = rankWhereToInvestBackend(candidates, userProfile, options);
   res.json({

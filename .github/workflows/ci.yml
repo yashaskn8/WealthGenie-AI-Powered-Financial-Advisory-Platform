@@ -46,8 +46,12 @@ jobs:
       - name: Run Backend Tests & Coverage
         env:
           MONGODB_URI: 'mongodb://127.0.0.1:27017/wealthgenie_test'
-          JWT_SECRET: 'super-secret-test-key-for-ci-pipeline-2026'
         run: |
+          JWT_SECRET="${{ secrets.CI_JWT_SECRET }}"
+          if [ -z "$JWT_SECRET" ]; then
+            JWT_SECRET=$(openssl rand -hex 32)
+          fi
+          export JWT_SECRET
           cd server
           npm run test:coverage
 
@@ -57,6 +61,15 @@ jobs:
         with:
           name: backend-coverage-linux-node${{ matrix.node-version }}-mongo${{ matrix.mongodb-version }}
           path: server/reports/
+
+      - name: Audit npm dependencies
+        continue-on-error: true
+        run: |
+          cd server
+          echo '## 🔍 npm Audit (backend)' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npm audit --audit-level=high 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
   backend-unit-windows:
     name: Backend Windows (Node ${{ matrix.node-version }})
@@ -82,9 +95,12 @@ jobs:
           npm ci
 
       - name: Run Backend Unit Tests & Coverage (No MongoDB Required)
-        env:
-          JWT_SECRET: 'super-secret-test-key-for-ci-pipeline-2026'
         run: |
+          $JWT_SECRET = "${{ secrets.CI_JWT_SECRET }}"
+          if (-not $JWT_SECRET) {
+            $JWT_SECRET = -join ((48..57) + (97..122) | Get-Random -Count 64 | ForEach-Object { [char]$_ })
+          }
+          $env:JWT_SECRET = $JWT_SECRET
           cd server
           npm run test:coverage:unit
 
@@ -152,3 +168,13 @@ jobs:
         run: |
           cd ml-service
           pytest
+
+      - name: Audit pip dependencies
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          echo '## 🔍 pip-audit (ml-service)' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          pip-audit -r ml-service/requirements.txt 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

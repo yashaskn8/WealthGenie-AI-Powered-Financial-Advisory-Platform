@@ -232,6 +232,34 @@ export const chatMessageSchema = Joi.object({
   session_id: Joi.string().max(100).optional(),
 });
 
+// ── Rank WTI Schema (WG-005) ─────────────────────────────────────────
+export const rankWtiSchema = Joi.object({
+  userProfile: Joi.object({
+    age: Joi.number().integer().min(18).max(80).optional(),
+    monthly_income: Joi.number().min(0).max(10000000).optional(),
+    annualIncome: Joi.number().min(0).max(120000000).optional(),
+    monthly_savings: Joi.number().min(0).max(10000000).optional(),
+    riskCategory: Joi.string().valid('Conservative', 'Conservative-Moderate', 'Moderate', 'Moderate-Aggressive', 'Aggressive').optional(),
+    risk_tolerance: Joi.string().valid('Conservative', 'Moderate', 'Aggressive').optional(),
+    investment_horizon: Joi.number().integer().min(1).max(40).optional(),
+    investmentHorizon: Joi.number().integer().min(1).max(40).optional(),
+    taxRegime: Joi.string().valid('new', 'old').optional(),
+  }).optional().default({}),
+  candidates: Joi.array().items(Joi.object({
+    name: Joi.string().trim().max(100).required(),
+    rate: Joi.alternatives().try(Joi.number().min(0).max(100), Joi.string().max(20)).optional(),
+    expectedReturn: Joi.number().min(0).max(100).optional(),
+    highlight: Joi.string().max(200).optional(),
+    badge: Joi.string().max(100).optional(),
+    type: Joi.string().max(50).optional(),
+    id: Joi.string().max(50).optional(),
+  })).max(50).optional().default([]),
+  options: Joi.object({
+    regimeApplied: Joi.boolean().optional(),
+    regimeKey: Joi.string().max(50).optional(),
+  }).optional().default({}),
+});
+
 function _createValidator(schema, property) {
   return (req, res, next) => {
     const { error, value } = schema.validate(req[property], {
