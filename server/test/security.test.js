@@ -230,6 +230,40 @@ test('WG-005: POST /api/instruments/rank-wti returns 400 for invalid payload', a
     });
     assert.equal(response.status, 400, 'rank-wti must reject oversized candidates array');
     assert.ok(body.details || body.error, 'Should return validation error details');
+test('WG-005: POST /api/instruments/rank-wti returns 400 for malformed userProfile', async () => {
+  const token = signToken(USER_A_ID);
+  await withServer(buildInstrumentApp(), async (baseUrl) => {
+    // age outside valid range (18-80)
+    const { response, body } = await jsonFetch(`${baseUrl}/api/instruments/rank-wti`, {
+      method: 'POST',
+      body: JSON.stringify({
+        candidates: [{ name: 'PPF' }],
+        userProfile: { age: 150, riskCategory: 'InvalidTier', investment_horizon: 999 },
+        options: {},
+      }),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(response.status, 400, 'rank-wti must reject out-of-range userProfile fields');
+    assert.ok(body.details || body.error, 'Should return validation error details');
+  });
+});
+
+test('WG-005: POST /api/instruments/rank-wti returns 200 for valid authenticated request', async () => {
+  const token = signToken(USER_A_ID);
+  await withServer(buildInstrumentApp(), async (baseUrl) => {
+    const { response, body } = await jsonFetch(`${baseUrl}/api/instruments/rank-wti`, {
+      method: 'POST',
+      body: JSON.stringify({
+        candidates: [{ name: 'PPF' }, { name: 'ELSS' }],
+        userProfile: { age: 30, riskCategory: 'Moderate', investment_horizon: 15 },
+        options: { regimeApplied: true, regimeKey: 'new' },
+      }),
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert.equal(response.status, 200, 'rank-wti must succeed with valid auth + valid payload');
+    assert.ok(body.success, 'Response should include success flag');
+    assert.ok(Array.isArray(body.products), 'Response should include products array');
+    assert.equal(body.total, 2, 'Should return 2 ranked products');
   });
 });
 
