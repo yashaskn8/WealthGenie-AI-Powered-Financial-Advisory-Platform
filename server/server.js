@@ -140,7 +140,7 @@ app.get('/api/health', (req, res) => {
     engines: {
       tax: 'FY2025-26 (Section 87A marginal relief + surcharge marginal relief)',
       monte_carlo: 'Halton QMC + Antithetic Variates + Control Variates',
-      risk_profiler: '3-Factor Model (Age + Income + Horizon)',
+      risk_profiler: '7-Factor Model (Age, Income, Horizon, Dependents, Savings Ratio, Debt, Liquidity)',
       projections: 'Real + Nominal (Fisher Equation inflation adjustment)',
       post_tax: 'FY2025-26 LTCG/STCG/EEE compliance',
     },

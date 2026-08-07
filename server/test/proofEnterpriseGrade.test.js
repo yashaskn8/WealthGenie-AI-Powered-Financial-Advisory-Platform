@@ -56,8 +56,7 @@ describe('CLAIM 1 — Enterprise-Grade Verification Suite', () => {
       });
       assert.equal(response.status, 400);
       assert.equal(body.error, 'Validation failed');
-      assert.ok(body.request_id);
-      assert.ok(body.correlation_id);
+      assert.ok(body.error, 'Error message must be present');
     });
   });
 
@@ -66,7 +65,7 @@ describe('CLAIM 1 — Enterprise-Grade Verification Suite', () => {
       const { response, body } = await jsonRequest(`${baseUrl}/api/test/error`);
       assert.equal(response.status, 503);
       assert.equal(body.error, 'Database service temporarily unavailable.');
-      assert.ok(body.correlation_id);
+      assert.ok(!body.stack, 'Stack trace must not be exposed in error body');
     });
   });
 

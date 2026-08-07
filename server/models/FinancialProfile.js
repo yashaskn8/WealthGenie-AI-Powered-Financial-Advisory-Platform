@@ -6,8 +6,10 @@ const financialProfileSchema = new mongoose.Schema({
   age: { type: Number, required: true, min: 18, max: 80 },
   savings: { type: Number, required: true, min: 0 },
   annualIncome: { type: Number, required: true, min: 0 },
-  taxSlab: { type: Number, min: 0, max: 1 },
-  effectiveTaxRate: { type: Number, min: 0, max: 100 },
+  /** Marginal tax rate as a decimal (0.0 to 1.0, e.g. 0.30 for 30% slab) */
+  taxSlabDecimal: { type: Number, min: 0, max: 1 },
+  /** Effective tax rate as a percentage (0.0 to 100.0, e.g. 18.5 for 18.5%) */
+  effectiveTaxRatePercent: { type: Number, min: 0, max: 100 },
   taxRegime: { type: String, enum: ['new', 'old'], default: 'new' },
   riskCategory: {
     type: String,
@@ -24,6 +26,8 @@ const financialProfileSchema = new mongoose.Schema({
   emergency_fund_months: { type: Number, default: 0 },
   risk_tolerance: { type: String, enum: ['Conservative', 'Moderate', 'Aggressive'], default: 'Moderate' },
   goal_type: { type: String, enum: ['retirement', 'house purchase', 'education', 'wealth-building'], default: 'wealth-building' },
+  /** Canonical user goals array (WG-021 consolidation) */
+  goals: { type: [String], default: [] },
   totalCTC: { type: Number, default: function() { return this.annualIncome || (this.monthlyIncome ? this.monthlyIncome * 12 : 600000); } },
   basicComponent: { type: Number, default: function() { return (this.totalCTC || (this.annualIncome || (this.monthlyIncome ? this.monthlyIncome * 12 : 600000))) * 0.5; } },
   monthlyTakeHome: { type: Number, default: function() { return this.monthlyIncome || 50000; } },
@@ -43,6 +47,15 @@ const financialProfileSchema = new mongoose.Schema({
 financialProfileSchema.virtual('income')
   .get(function() { return this.monthlyIncome; })
   .set(function(v) { this.monthlyIncome = v; });
+
+// Backwards-compatible virtual getters/setters for renamed tax fields (WG-023)
+financialProfileSchema.virtual('taxSlab')
+  .get(function() { return this.taxSlabDecimal; })
+  .set(function(v) { this.taxSlabDecimal = v; });
+
+financialProfileSchema.virtual('effectiveTaxRate')
+  .get(function() { return this.effectiveTaxRatePercent; })
+  .set(function(v) { this.effectiveTaxRatePercent = v; });
 
 financialProfileSchema.index({ userId: 1, createdAt: -1 });
 

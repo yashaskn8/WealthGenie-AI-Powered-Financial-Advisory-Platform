@@ -150,7 +150,7 @@ test('OCC: PUT /api/profile/:id with stale version returns 409 Conflict', async 
 
     // 4. Verify the DB still has the value from update 1 (90000), not update 2 (100000)
     const profile = await FinancialProfile.findById(profileId).lean();
-    assert.equal(profile.income, 90000, 'DB should reflect first update, not stale second update');
+    assert.equal(profile.monthlyIncome, 90000, 'DB should reflect first update, not stale second update');
   });
 });
 
@@ -199,8 +199,8 @@ test('OCC: concurrent .save() on same profile triggers VersionError', async (t) 
   );
 
   // Verify DB has copy1's value (70000), not copy2's (80000)
-  const final = await FinancialProfile.findById(profile._id).lean();
-  assert.equal(final.income, 70000, 'DB should reflect copy1 save, not copy2');
+  const saved1 = await FinancialProfile.findById(profile._id).lean();
+  assert.equal(saved1.monthlyIncome, 70000, 'DB should reflect copy1 save, not copy2');
 });
 
 // ── Test 3: Idempotency-Key prevents duplicate profile creation ───────

@@ -97,8 +97,8 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     age,
     savings: monthly_savings,
     annualIncome,
-    taxSlab: marginalRate,
-    effectiveTaxRate: taxResult.effectiveRate,
+    taxSlabDecimal: marginalRate,
+    effectiveTaxRatePercent: taxResult.effectiveRate,
     taxRegime,
     riskCategory: riskProfile.category,
     riskScore: riskProfile.riskScore,
@@ -192,7 +192,7 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
     { _id: profileId, userId: req.user.userId, version: expectedVersion },
     {
       $set: {
-        income: monthly_income,
+        monthlyIncome: monthly_income,
         age,
         savings: monthly_savings,
         annualIncome,
@@ -210,8 +210,8 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
         soldPropertyAmount: safeSoldPropertyAmount,
         hasLumpSum: safeHasLumpSum,
         lumpSumAmount: safeLumpSumAmount,
-        taxSlab: marginalRate,
-        effectiveTaxRate: taxResult.effectiveRate,
+        taxSlabDecimal: marginalRate,
+        effectiveTaxRatePercent: taxResult.effectiveRate,
         riskCategory: riskProfile.category,
         riskScore: riskProfile.riskScore,
         riskDescription: riskProfile.description,
@@ -246,8 +246,10 @@ export function formatProfileResponse(profile, extra = {}) {
   return {
     profileId: p._id,
     version: p.version || 1,
-    taxSlab: p.taxSlab,
-    effectiveTaxRate: p.effectiveTaxRate,
+    taxSlab: p.taxSlabDecimal !== undefined ? p.taxSlabDecimal : p.taxSlab,
+    taxSlabDecimal: p.taxSlabDecimal !== undefined ? p.taxSlabDecimal : p.taxSlab,
+    effectiveTaxRate: p.effectiveTaxRatePercent !== undefined ? p.effectiveTaxRatePercent : p.effectiveTaxRate,
+    effectiveTaxRatePercent: p.effectiveTaxRatePercent !== undefined ? p.effectiveTaxRatePercent : p.effectiveTaxRate,
     taxDetails: extra.taxResult || null,
     taxComparison: extra.taxComparison || null,
     riskCategory: p.riskCategory,
@@ -264,6 +266,7 @@ export function formatProfileResponse(profile, extra = {}) {
     sold_property_amount: p.soldPropertyAmount,
     has_lump_sum: p.hasLumpSum,
     lump_sum_amount: p.lumpSumAmount,
+    goals: p.goals || [],
   };
 }
 

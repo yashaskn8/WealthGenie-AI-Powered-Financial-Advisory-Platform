@@ -31,7 +31,7 @@
 2. **Scenario 2 — Compute-heavy (`GET /api/tax/compare`)**: Exercises the in-memory financial tax engine (FY2025-26 tax regime comparison, Section 87A marginal relief, surcharge calculation, 80C/80D deductions).
 3. **Scenario 3 — Agentic LLM / Chat Path (`POST /api/chat/message`)**: Exercises the full Phase 3 agentic orchestration stack (Security prompt injection inspection, MongoDB profile & conversation history queries, RAG intent classification `isFactualQuery`, `LayeredMemoryManager` context retrieval & prompt formatting, and `ToolTraceGraph` snapshotting).
    - **Initial Pre-Patch Finding**: In the initial un-patched run of Scenario 3, **98–100% of requests failed with HTTP 500 Internal Server Error** across all concurrency levels. Root cause was a **two-step causal chain**: RAG's HTTP 429 rate-limit response triggered the fallback path → the fallback persisted a response with an out-of-enum provider value (`'rag'` or `'mock_llm_loadtest'`) → Mongoose's `ConversationHistory` `MessageSchema` threw a `ValidationError` → Express's error handler returned HTTP 500.
-   - **Post-Patch Verification**: `ConversationHistory.js` schema was patched to include `'rag'` and `'mock_llm_loadtest'` in its provider enum, and a regression test was added to `server/test/ragIntegration.test.js`. **All three concurrency levels re-verified post-patch**: c10 → 0.00% errors (3,196/3,196 HTTP 200), c50 → 0.00% errors (5,571/5,571 HTTP 200), c100 → 0.00% errors (4,891/4,891 HTTP 200).
+   - **Post-Patch Verification**: `geminiChatService.js` persists RAG-path messages without attaching a `metadata.provider` key (preventing Mongoose provider enum validation exceptions), and a regression test was added to `server/test/ragIntegration.test.js`. **All three concurrency levels re-verified post-patch**: c10 → 0.00% errors (3,196/3,196 HTTP 200), c50 → 0.00% errors (5,571/5,571 HTTP 200), c100 → 0.00% errors (4,891/4,891 HTTP 200).
 4. **Scenario 4 — Stress Ceiling Check (`GET /api/tax/compare` at 200 Connections)**: Tests single-process Node.js event-loop throughput at 200 concurrent connections.
 
 ---
@@ -80,7 +80,7 @@ Detailed failure sequence:
 4. Express's `errorHandler.js` caught the unhandled Mongoose validation error and returned **HTTP 500 Internal Server Error** to the client.
 
 **Remediation Executed**:
-- **Schema Patch**: Updated `ConversationHistory.js` to accept `'rag'` and `'mock_llm_loadtest'` in the `provider` enum.
+- **Persistence Patch**: Updated `geminiChatService.js` to persist RAG-path messages without attaching a `metadata.provider` key (preventing Mongoose provider enum validation exceptions).
 - **Regression Test**: Added a regression test to `server/test/ragIntegration.test.js` verifying graceful handling of RAG rate limiting without 500 crashes (**3/3 tests passing**).
 - **Post-Patch Benchmark (all 3 concurrency levels verified)**:
   - **c10**: 106.5 req/s, p50: 93ms, p99: 144ms — 3,196/3,196 HTTP 200 (**0.00% errors**, down from 98.11%)

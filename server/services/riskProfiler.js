@@ -1,6 +1,6 @@
 /**
  * WealthGenie Risk Profiler
- * Categorizes users into risk buckets based on age + annual income + investment horizon + financial ratios.
+ * Categorizes users into risk buckets based on a comprehensive multi-factor model.
  *
  * =========================================================================
  * 📘 BEGINNER NOTE: WHAT IS COMPOSITE RISK SCORING?
@@ -9,24 +9,17 @@
  * a mathematical combination of your ability to take risk (financial strength)
  * and your timeline (investment horizon).
  * 
- * WealthGenie uses a 3-Factor Composite Scoring Model (ranging from 0 to 100 points):
+ * WealthGenie uses a 7-Factor Composite Scoring Model (ranging from 0 to 100 points):
  * 
- * 1. Age (0–40 points): Younger investors have more decades ahead of them. If the 
- *    market crashes tomorrow, they have time to wait for a recovery before needing
- *    the money. Thus: Younger = Higher Risk Score.
- * 
+ * 1. Age (0–40 points): Younger investors have more time ahead of them.
  * 2. Annual Income (0–40 points): Higher earners have a larger financial cushion.
- *    If an emergency occurs, they can cover it from their current cash flow rather than
- *    being forced to sell investments at a loss. Thus: Higher Income = Higher Risk Score.
- * 
- * 3. Investment Horizon (0–20 points): How long will the money stay invested? 
- *    If you need the money in 2 years, you cannot afford a market crash (low risk). 
- *    If you need it in 20 years, short-term crashes don't matter because the market
- *    historically trends upwards over long periods. Thus: Longer Horizon = Higher Risk Score.
- * 
- * We also subtract penalties for high debt levels or dependents, giving us a highly
- * personalized, mathematically balanced risk score. This avoids the "cliff-edge"
- * problem where a ₹1 income difference shifts you from Moderate to Conservative.
+ * 3. Investment Horizon (0–20 points): Longer horizon = higher risk capacity.
+ * 4. Dependents Penalty: Deducts points based on number of financial dependents.
+ * 5. Savings Ratio Penalty: Deducts points if monthly savings ratio is dangerously low.
+ * 6. Debt Burden Penalty: Deducts points based on monthly DTI (Debt-to-Income) ratio.
+ * 7. Liquidity Capacity Bonus: Adds points for available lump sum capital or property proceeds.
+ *
+ * Note: Experience years factor was retired (WG-014) and is not part of active scoring.
  */
 
 const RISK_PROFILES = {

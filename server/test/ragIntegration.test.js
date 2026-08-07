@@ -161,4 +161,29 @@ describe('Phase 1 Architecture Truth — RAG Chat Integration Tests', () => {
       assert.notEqual(body.provider, 'rag', 'Non-factual conversational turn should NOT be routed to RAG');
     });
   });
+
+  it('WG-024: ConversationHistory save succeeds for RAG response without enum ValidationError', async () => {
+    // Construct a real ConversationHistory Mongoose document instance
+    const doc = new ConversationHistory({
+      userId: mockUserId,
+      session_id: 'rag-test-session-001',
+      messages: [
+        {
+          role: 'user',
+          content: 'What is 80C limit?',
+          timestamp: new Date(),
+        },
+        {
+          role: 'assistant',
+          content: '₹1.5 Lakhs limit under Section 80C.',
+          timestamp: new Date(),
+          metadata: { tokens_used: 45, model_version: 'v3' }
+        }
+      ]
+    });
+
+    // Validate the document directly against Mongoose schema
+    const validationError = doc.validateSync();
+    assert.equal(validationError, undefined, 'RAG path message persistence must pass Mongoose schema validation without error');
+  });
 });

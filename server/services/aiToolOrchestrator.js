@@ -130,4 +130,66 @@ export class AIToolOrchestrator {
       retriesUsed: maxRetries,
     };
   }
+
+  /**
+   * Executes a multi-hop agentic loop driven by a planner function.
+   *
+   * @param {Function} plannerFn - (history, hopIndex) => Promise<{ responseText, toolCalls, isFinal }>
+   * @param {object} context
+   * @param {number} maxHops
+   * @returns {Promise<{ finalResponse: string, traceHops: Array, executionGraph: object }>}
+   */
+  static async orchestrateLoop(plannerFn, context = {}, maxHops = 4) {
+    const history = [];
+    const traceHops = [];
+    let finalResponse = '';
+    const executionGraph = { nodes: [], edges: [], status: 'SUCCESS' };
+
+    for (let hop = 1; hop <= maxHops; hop++) {
+      const plan = await plannerFn(history, hop);
+      if (!plan) break;
+
+      const toolCalls = plan.toolCalls || [];
+      if (plan.isFinal || toolCalls.length === 0) {
+        finalResponse = plan.responseText || '';
+        traceHops.push({
+          hopIndex: hop,
+          decision: 'FINALIZE',
+          responseText: finalResponse,
+          toolCalls: [],
+        });
+        break;
+      }
+
+      // Execute requested tool calls via orchestrate
+      const stepRes = await this.orchestrate(toolCalls, context);
+      history.push({
+        hopIndex: hop,
+        responseText: plan.responseText,
+        toolCalls: stepRes.toolResults,
+        toolResults: stepRes.toolResults,
+      });
+
+      traceHops.push({
+        hopIndex: hop,
+        decision: 'EXECUTE_TOOLS',
+        responseText: plan.responseText,
+        toolCalls: stepRes.toolResults,
+      });
+
+      executionGraph.nodes.push({ id: `hop-${hop}`, label: plan.responseText });
+
+      if (hop === maxHops) {
+        finalResponse = `Completed multi-hop agent execution after ${maxHops} hops. Final: ${plan.responseText}`;
+        traceHops.push({
+          hopIndex: hop + 1,
+          decision: 'TERMINATE_MAX_HOPS_FORCED_FINAL',
+          responseText: finalResponse,
+          toolCalls: [],
+        });
+      }
+    }
+
+    return { finalResponse, traceHops, executionGraph };
+  }
 }

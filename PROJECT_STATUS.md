@@ -38,7 +38,7 @@
 3. **Mislabeled BERTScore metric**: `compute_bertscore_approx()` was a Jaccard word-overlap function, not BERTScore. Renamed to `compute_lexical_overlap_score()`.
 4. **RAG integration test brittleness**: Test hard-failed when FastAPI ML service was offline. Updated to verify graceful fallback behavior instead.
 5. **MLOps Registry Metrics Sourcing**: `register_model.py` previously read rule-approximation fidelity from `rigor_evaluation_report.json`'s full-dataset audit key instead of `multi_model_benchmark.json`'s test split. Fixed to read test-set accuracy directly (RF: 0.9563, MLP: 0.9560, FT: 0.9705) and hardcoded exact assertions in `test_mlops_registry.py`.
-6. **RAG 429 Unhandled Exception Leak**: Under load testing, when Python FastAPI returned 429 Rate Limited or mock adapters returned non-standard provider keys, Mongoose's `ConversationHistory` provider enum validation threw an unhandled exception that crashed Express with 500 errors. Patched `ConversationHistory.js` provider enum and added regression test in `server/test/ragIntegration.test.js` (error rate dropped from 98.11% to 0.00% post-patch).
+6. **RAG Path Persistence Safety (WG-024)**: RAG conversation turns in `geminiChatService.js` are persisted without attaching a `metadata.provider` key, preventing Mongoose provider enum validation exceptions (`['gemini', 'groq', 'local_fallback']`). Verified via `server/test/ragIntegration.test.js`.
 
 ---
 

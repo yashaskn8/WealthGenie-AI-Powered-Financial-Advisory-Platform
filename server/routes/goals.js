@@ -174,6 +174,17 @@ function _buildChartData(mcResult) {
   }));
 }
 
+async function _syncProfileGoals(profileId, userId) {
+  if (!userId) return;
+  const userGoals = await Goal.find({ userId }, 'goal_name').lean();
+  const goalNames = userGoals.map(g => g.goal_name).filter(Boolean);
+  if (profileId) {
+    await FinancialProfile.updateOne({ _id: profileId }, { $set: { goals: goalNames, lastGoalCreatedAt: new Date() } });
+  } else {
+    await FinancialProfile.updateMany({ userId }, { $set: { goals: goalNames } });
+  }
+}
+
 /**
  * Persist goal with transaction fallback for standalone MongoDB.
  */
@@ -188,13 +199,7 @@ async function _persistGoalWithFallback(goalData, profileId) {
       const goals = await Goal.create([goalData], { session });
       goal = goals[0];
 
-      if (profileId) {
-        await FinancialProfile.updateOne(
-          { _id: profileId },
-          { $set: { lastGoalCreatedAt: new Date() } },
-          { session }
-        );
-      }
+      await _syncProfileGoals(profileId, goalData.userId);
 
       await session.commitTransaction();
     } catch (txErr) {
@@ -221,12 +226,7 @@ async function _persistGoalWithFallback(goalData, profileId) {
 
   if (!goal) {
     goal = await Goal.create(goalData);
-    if (profileId) {
-      await FinancialProfile.updateOne(
-        { _id: profileId },
-        { $set: { lastGoalCreatedAt: new Date() } }
-      );
-    }
+    await _syncProfileGoals(profileId, goalData.userId);
   }
   return goal;
 }
@@ -549,6 +549,7 @@ router.patch('/:goalId', verifyJWT, validate(goalUpdateSchema), asyncHandler(asy
   }
 
   await goal.save();
+  await _syncProfileGoals(goal.profileId, req.user.userId);
   res.json({ success: true, goal });
 }));
 
@@ -567,6 +568,8 @@ router.delete('/:goalId', verifyJWT, asyncHandler(async (req, res) => {
   if (!goal) {
     throw createError(404, `Goal not found for delete: ${goalId}`, 'Goal not found.');
   }
+
+  await _syncProfileGoals(goal.profileId, req.user.userId);
 
   res.json({ deleted: true, goalId });
 }));

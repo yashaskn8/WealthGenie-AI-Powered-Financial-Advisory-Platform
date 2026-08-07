@@ -152,7 +152,7 @@ test('Risk Integration: Conservative→Aggressive profile update produces differ
       body: JSON.stringify({
         ...BASE_PROFILE,
         risk_tolerance: 'Aggressive',
-        version: profile.__v,
+        version: profile.version || 1,
       }),
       headers: { authorization: `Bearer ${token}` },
     });

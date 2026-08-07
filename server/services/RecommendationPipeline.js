@@ -374,9 +374,8 @@ function parseProfile(profile, reconciledRiskStr = null) {
   // Use reconciled risk tier if provided; single source = profile.riskCategory
   const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase();
   const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
-  const goals = Array.isArray(profile.investment_goals)
-    ? profile.investment_goals
-    : (profile.goal_type ? [profile.goal_type] : (profile.goals || []));
+  // WG-021: Canonical single source of truth for goals is profile.goals (Array)
+  const goals = Array.isArray(profile.goals) ? profile.goals : [];
   const taxRegime = profile.taxRegime || profile.regime || 'new';
 
   const hasLumpSum = Boolean(profile.hasLumpSum);

@@ -55,12 +55,16 @@ export class ToolTraceGraph {
   }
 }
 
-export const promptVersion = {
+const promptVersionFields = {
   version: '3.0.0',
   author: 'WealthGenie AI Systems Team',
   creationDate: '2026-07-24',
-  checksum: 'sha256-8a9d10e5f2231b40',
   purpose: 'Profile-grounded, tool-orchestrated AI financial advisory',
+};
+
+export const promptVersion = {
+  ...promptVersionFields,
+  checksum: crypto.createHash('sha256').update(JSON.stringify(promptVersionFields)).digest('hex'),
 };
 
 export const policyVersion = '2026.1.0-SEBI-COMPLIANT';
