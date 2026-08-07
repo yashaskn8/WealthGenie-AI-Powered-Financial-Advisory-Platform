@@ -21,7 +21,7 @@ import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { blacklistToken } from '../config/redis.js';
 import FinancialProfile from '../models/FinancialProfile.js';
-import { withServer, jsonRequest as jsonFetch } from '../test-utils/httpTestUtils.js';
+import { withServer, jsonRequest as jsonFetch, rawRequest } from '../test-utils/httpTestUtils.js';
 
 process.env.JWT_SECRET = 'security-test-secret';
 process.env.NODE_ENV = 'test';
@@ -233,14 +233,17 @@ test('WG-005: POST /api/instruments/rank-wti returns 400 for invalid payload', a
   });
 });
 
-// ── 6. WG-018: GET /api/metrics auth ─────────────────────────────────
+// ── 6. WG-018: GET /api/metrics auth + old path dead ────────────────
 function buildMetricsApp() {
   const app = express();
   app.use(express.json());
   app.use('/api/metrics', metricsRoutes);
+  app.use('/api/chat', chatRoutes);
   app.use(errorHandler);
   return app;
 }
+
+import chatRoutes from '../routes/chatRoutes.js';
 
 test('WG-018: GET /api/metrics returns 401 without auth', async () => {
   await withServer(buildMetricsApp(), async (baseUrl) => {
@@ -250,3 +253,24 @@ test('WG-018: GET /api/metrics returns 401 without auth', async () => {
     assert.equal(response.status, 401, 'metrics endpoint must reject unauthenticated requests');
   });
 });
+
+test('WG-018: GET /api/metrics returns 200 for authenticated request', async () => {
+  const token = signToken(USER_A_ID);
+  await withServer(buildMetricsApp(), async (baseUrl) => {
+    const { response, body } = await jsonFetch(`${baseUrl}/api/metrics`, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+    });
+    assert.equal(response.status, 200, 'metrics endpoint must succeed with valid auth');
+  });
+});
+
+test('WG-018: GET /api/chat/metrics (old path) returns 404 after relocation', async () => {
+  await withServer(buildMetricsApp(), async (baseUrl) => {
+    const response = await rawRequest(`${baseUrl}/api/chat/metrics`, {
+      method: 'GET',
+    });
+    assert.equal(response.status, 404, 'old /api/chat/metrics path must be dead after relocation');
+  });
+});
+
