@@ -372,6 +372,27 @@ test('parseProfile parses numeric fields and applies defaults', () => {
   assert.equal(oldRegime.taxRegime, 'old');
 });
 
+test('WG-026: parseProfile throws in strict mode when required fields are missing', () => {
+  assert.throws(
+    () => parseProfile({}, null, { strict: true }),
+    /Missing or invalid required profile field: age/
+  );
+  assert.throws(
+    () => parseProfile({ age: 30 }, null, { strict: true }),
+    /Missing or invalid required profile field: annualIncome/
+  );
+  assert.throws(
+    () => parseProfile({ age: 30, annualIncome: 600000 }, null, { strict: true }),
+    /Missing or invalid required profile field: savings/
+  );
+
+  // Valid required fields pass in strict mode
+  const valid = parseProfile({ age: 30, annualIncome: 600000, savings: 20000 }, null, { strict: true });
+  assert.equal(valid.age, 30);
+  assert.equal(valid.annualIncome, 600000);
+  assert.equal(valid.savings, 20000);
+});
+
 test('runPipeline handles empty or missing ML confidence scores', () => {
   const profile = {
     age: 32,

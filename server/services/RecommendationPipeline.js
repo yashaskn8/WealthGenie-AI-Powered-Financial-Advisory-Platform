@@ -857,7 +857,7 @@ export function runPipeline(profile, mlResult, options = {}) {
   const { eligible, excluded } = filterEligible(investmentDatabase, normProfile, riskResult.final_score);
 
   // Stage 2: Scoring (using reconciled risk tier string)
-  const p = parseProfile(normProfile, riskResult.final_risk_tier);
+  const p = parseProfile(normProfile, riskResult.final_risk_tier, options);
   const w = deriveWeights(p);
   const scored = eligible.map(inv => computeInstrumentScore(inv, p, w, confScores));
 

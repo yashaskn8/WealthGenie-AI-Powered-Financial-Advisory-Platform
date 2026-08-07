@@ -7,7 +7,7 @@ import { getRiskProfile } from '../services/riskProfiler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import { delCache, redisClient, redisAvailable } from '../config/redis.js';
 import { idempotency } from '../middleware/idempotency.js';
-import { toCamelCase, toSnakeCase } from '../utils/caseConverter.js';
+import { toSnakeCase } from '../utils/caseConverter.js';
 
 const router = Router();
 
