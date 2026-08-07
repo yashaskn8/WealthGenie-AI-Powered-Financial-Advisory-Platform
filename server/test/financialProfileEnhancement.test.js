@@ -42,6 +42,22 @@ describe('Financial Profile Deep Integration Test Suite', () => {
     await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
   });
 
+  it('WG-011: FinancialProfile uses monthlyIncome property and supports virtual income getter', async () => {
+    const doc = new FinancialProfile({
+      userId: TEST_USER_ID,
+      monthlyIncome: 75000,
+      age: 32,
+      savings: 20000,
+      annualIncome: 900000,
+    });
+
+    assert.equal(doc.monthlyIncome, 75000, 'monthlyIncome property should be set');
+    assert.equal(doc.income, 75000, 'income virtual getter should return monthlyIncome');
+
+    doc.income = 85000;
+    assert.equal(doc.monthlyIncome, 85000, 'setting income virtual setter should update monthlyIncome');
+  });
+
   // 1. Malicious Client Zeroing Test
   it('1. Malicious Client Defense — zeros lump_sum_amount when has_lump_sum is false', async () => {
     await withServer(app, async (baseUrl) => {

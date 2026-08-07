@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const financialProfileSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  income: { type: Number, required: true, min: 0 },
+  monthlyIncome: { type: Number, required: true, min: 0 },
   age: { type: Number, required: true, min: 18, max: 80 },
   savings: { type: Number, required: true, min: 0 },
   annualIncome: { type: Number, required: true, min: 0 },
@@ -24,9 +24,9 @@ const financialProfileSchema = new mongoose.Schema({
   emergency_fund_months: { type: Number, default: 0 },
   risk_tolerance: { type: String, enum: ['Conservative', 'Moderate', 'Aggressive'], default: 'Moderate' },
   goal_type: { type: String, enum: ['retirement', 'house purchase', 'education', 'wealth-building'], default: 'wealth-building' },
-  totalCTC: { type: Number, default: function() { return this.annualIncome || (this.income ? this.income * 12 : 600000); } },
-  basicComponent: { type: Number, default: function() { return (this.totalCTC || (this.annualIncome || (this.income ? this.income * 12 : 600000))) * 0.5; } },
-  monthlyTakeHome: { type: Number, default: function() { return this.income || 50000; } },
+  totalCTC: { type: Number, default: function() { return this.annualIncome || (this.monthlyIncome ? this.monthlyIncome * 12 : 600000); } },
+  basicComponent: { type: Number, default: function() { return (this.totalCTC || (this.annualIncome || (this.monthlyIncome ? this.monthlyIncome * 12 : 600000))) * 0.5; } },
+  monthlyTakeHome: { type: Number, default: function() { return this.monthlyIncome || 50000; } },
   soldPropertyAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
   hasLumpSum: { type: Boolean, default: false },
   lumpSumAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
@@ -36,7 +36,13 @@ const financialProfileSchema = new mongoose.Schema({
 }, {
   optimisticConcurrency: true,
   timestamps: false,
+  toObject: { getters: true, virtuals: true },
+  toJSON: { getters: true, virtuals: true },
 });
+
+financialProfileSchema.virtual('income')
+  .get(function() { return this.monthlyIncome; })
+  .set(function(v) { this.monthlyIncome = v; });
 
 financialProfileSchema.index({ userId: 1, createdAt: -1 });
 
