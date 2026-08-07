@@ -218,10 +218,10 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
               <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Total CTC</span>
               <strong style={{ color: '#38bdf8' }}>₹{Number(totalCTC || 0).toLocaleString('en-IN')}/yr</strong>
             </div>
-            <div>
+            {/* <div>
               <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Basic Salary</span>
               <strong style={{ color: '#f1f5f9' }}>₹{Number(basicComponent || 0).toLocaleString('en-IN')}/yr</strong>
-            </div>
+            </div> */}
             <div>
               <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Take-Home</span>
               <strong style={{ color: '#4ade80' }}>₹{Number(monthlyTakeHome || 0).toLocaleString('en-IN')}/mo</strong>
@@ -255,7 +255,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                   />
                 </div>
               </div>
-              <div className="pf-field">
+              {/* <div className="pf-field">
                 <label>Basic Salary Component (Annual ₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
@@ -269,7 +269,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                     }} 
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Income & Take Home */}
