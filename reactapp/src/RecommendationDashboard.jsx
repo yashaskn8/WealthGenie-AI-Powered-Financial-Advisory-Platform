@@ -30,7 +30,7 @@ const SOURCE_BADGES = {
   local_engine: { label: 'Local estimate', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.08)', border: 'rgba(148, 163, 184, 0.16)' },
 };
 
-const getSourceBadge = (source) => SOURCE_BADGES[source] || null;
+const _getSourceBadge = (source) => SOURCE_BADGES[source] || null;
 
 export const BackendFallbackBanner = ({ notice, onDismiss }) => {
   if (!notice) return null;
@@ -62,22 +62,7 @@ export const BackendFallbackBanner = ({ notice, onDismiss }) => {
   );
 };
 
-const RecommendationSourceBadge = ({ source }) => {
-  const badge = getSourceBadge(source);
-  if (!badge) return null;
-  return (
-    <span
-      data-testid={'recommendation-source-' + source}
-      style={{
-        display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap',
-        background: badge.bg, color: badge.color, border: '1px solid ' + badge.border,
-        borderRadius: 8, padding: '2px 7px', fontSize: '0.62rem', fontWeight: 700, lineHeight: 1.2
-      }}
-    >
-      {badge.label}
-    </span>
-  );
-};
+const RecommendationSourceBadge = () => null;
 
 // Map 5-tier riskCategory to slider value (1-10)
 const riskCategoryToSlider = (cat) => {

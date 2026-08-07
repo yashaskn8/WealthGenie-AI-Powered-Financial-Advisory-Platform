@@ -2223,6 +2223,11 @@ const WHERE_TO_INVEST = {
     "riskLevel": 4,
     "note": "High-growth equity exposure via mid-cap companies. ~22% 5Y CAGR (May 2026). 12.5% LTCG tax above ₹1.25L; 20% STCG.",
     "howToStart": "Invest in zero-commission Direct plans via Groww, Zerodha Coin, or Kuvera.",
+    "subCategories": {
+      "growth_momentum": ["HDFC Mid-Cap Opportunities Fund", "Nippon India Growth Fund"],
+      "diversified_core": ["Kotak Emerging Equity Fund", "SBI Midcap Fund"],
+      "value_quality": ["Axis Midcap Fund", "Mirae Asset Midcap Fund"]
+    },
     "products": [
       {
         "name": "Nippon India Mid-Cap Direct Growth",
@@ -2273,6 +2278,11 @@ const WHERE_TO_INVEST = {
     "riskLevel": 5,
     "note": "Highest potential equity return with proportionally high risk. ~23% 5Y CAGR (May 2026). 12.5% LTCG tax above ₹1.25L; 20% STCG.",
     "howToStart": "Invest in zero-commission Direct plans via Groww, Zerodha Coin, or Kuvera.",
+    "subCategories": {
+      "aggressive_alpha": ["Nippon India Small Cap Fund", "Quant Small Cap Fund"],
+      "diversified_broad": ["HDFC Small Cap Fund", "SBI Small Cap Fund"],
+      "quality_defensive": ["Axis Small Cap Fund", "Kotak Small Cap Fund"]
+    },
     "products": [
       {
         "name": "Nippon India Small-Cap Direct Growth",
@@ -5297,6 +5307,13 @@ const WHERE_TO_INVEST = {
     "riskLevel": 5,
     "note": "Highest return potential with company-specific risk. Requires research and active monitoring.",
     "howToStart": "Open a demat + trading account on Zerodha, Groww, or Angel One. Start with blue-chip large-caps.",
+    "subCategories": {
+      "banking_financial": ["HDFC Bank", "ICICI Bank", "SBI"],
+      "it_technology": ["TCS", "Infosys", "HCL Tech"],
+      "energy_industrial": ["Reliance Industries", "L&T", "NTPC"],
+      "fmcg_consumer": ["Hindustan Unilever", "ITC", "Nestle India"],
+      "pharma_healthcare": ["Sun Pharma", "Cipla", "Dr. Reddy's"]
+    },
     "products": [
       {
         "name": "Direct Stock Investment via Zerodha Kite",
