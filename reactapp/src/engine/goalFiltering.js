@@ -102,7 +102,8 @@ export function filterInstrumentsForGoal(instruments, goalType) {
 // ─── FIX 1: Emergency Fund — dedicated liquid portfolio ───────────
 export function buildEmergencyFundPortfolio(userProfile) {
   const income = Number(userProfile.monthly_income || userProfile.income) || 0;
-  const savings = Number(userProfile.monthly_savings || userProfile.savings) || 0;
+  const inferredSavings = income > 0 ? Math.round(income * 0.25) : 0;
+  const savings = Number(userProfile.monthly_savings || userProfile.savings) || inferredSavings;
   const monthlyExpenses = income - savings;
   const emergencyTarget = monthlyExpenses * 6;
   const monthsToAchieve = Math.ceil(emergencyTarget / (savings || 1));

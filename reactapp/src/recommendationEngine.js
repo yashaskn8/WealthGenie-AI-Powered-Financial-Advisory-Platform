@@ -260,7 +260,8 @@ export function getEligibleInvestments(profile) {
 // ─── MAIN: generateRecommendations ────────────────────────────────
 export function generateRecommendations(userProfile) {
   const { age, monthly_income, monthly_savings, riskCategory, risk_tolerance, investment_goals, investment_horizon } = userProfile;
-  const savings = Number(monthly_savings) || 0;
+  const inferredSavings = Number(monthly_income) > 0 ? Math.round((Number(monthly_income) * (2 / 9)) / 100) * 100 : 0;
+  const savings = Number(monthly_savings) || Number(userProfile.savings) || inferredSavings;
   const primaryGoal = (investment_goals || [])[0] || null;
 
   // FIX 1: Emergency Fund uses dedicated liquid portfolio
