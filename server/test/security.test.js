@@ -17,6 +17,7 @@ import crypto from 'crypto';
 import profileRoutes from '../routes/profile.js';
 import instrumentRoutes from '../routes/instruments.js';
 import metricsRoutes from '../routes/metricsRoutes.js';
+import chatRoutes from '../routes/chatRoutes.js';
 import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { blacklistToken } from '../config/redis.js';
@@ -230,6 +231,9 @@ test('WG-005: POST /api/instruments/rank-wti returns 400 for invalid payload', a
     });
     assert.equal(response.status, 400, 'rank-wti must reject oversized candidates array');
     assert.ok(body.details || body.error, 'Should return validation error details');
+  });
+});
+
 test('WG-005: POST /api/instruments/rank-wti returns 400 for malformed userProfile', async () => {
   const token = signToken(USER_A_ID);
   await withServer(buildInstrumentApp(), async (baseUrl) => {
@@ -276,8 +280,6 @@ function buildMetricsApp() {
   app.use(errorHandler);
   return app;
 }
-
-import chatRoutes from '../routes/chatRoutes.js';
 
 test('WG-018: GET /api/metrics returns 401 without auth', async () => {
   await withServer(buildMetricsApp(), async (baseUrl) => {
