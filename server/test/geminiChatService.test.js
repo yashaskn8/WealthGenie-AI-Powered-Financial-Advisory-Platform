@@ -173,7 +173,7 @@ describe('GenieChat V3 Enterprise Architecture Tests', () => {
     assert.equal(memory.preferenceMemory.taxRegime, 'new');
 
     const formattedPrompt = LayeredMemoryManager.formatForPrompt(memory);
-    assert.match(formattedPrompt, /Investor Age: 32/);
+    assert.match(formattedPrompt, /"age":\s*32/);
   });
 
   it('Phase 6: ExplainabilityEngine produces deterministic non-hallucinated explanations', () => {
