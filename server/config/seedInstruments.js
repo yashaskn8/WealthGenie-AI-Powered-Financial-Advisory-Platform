@@ -17,24 +17,9 @@ import { investmentDatabase } from '../data/investmentDatabase.js';
  * Preserves all metadata fields and adds backward-compatible mappings
  * for legacy queries that rely on `type` being one of the 5 original values.
  */
-function mapToDocument(inv) {
-  // Map the frontend `category` to legacy `type` for backward compatibility
-  // with existing queries that filter by type ∈ ['FD', 'Mutual_Fund', 'ETF', 'Government', 'ELSS']
-  const LEGACY_TYPE_MAP = {
-    'Government':           'Government',
-    'Gold':                 'ETF',
-    'Retirement':           'Government',
-    'Bank Deposits':        'FD',
-    'Debt Mutual Funds':    'Mutual_Fund',
-    'Equity Mutual Funds':  'Mutual_Fund',
-    'ETFs':                 'ETF',
-    'REITs & InvITs':       'ETF',
-    'Bonds & Debentures':   'Government',
-    'Insurance-linked':     'Mutual_Fund',
-    'Direct Equity':        'ETF',
-    'Other':                'Mutual_Fund',
-  };
+import { LEGACY_TYPE_MAP } from './instrumentMapping.js';
 
+function mapToDocument(inv) {
   // Detect ELSS specifically from taxType
   const legacyType = inv.taxType === 'elss'
     ? 'ELSS'
