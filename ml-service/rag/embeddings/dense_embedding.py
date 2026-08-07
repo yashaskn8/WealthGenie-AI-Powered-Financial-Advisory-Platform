@@ -107,12 +107,8 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
         logger.info(f"Loading sentence-transformer model '{self._model_name}'...")
         from sentence_transformers import SentenceTransformer
         self._model = SentenceTransformer(self._model_name)
-        if hasattr(self._model, "get_embedding_dimension"):
-            self._dim: int = int(self._model.get_embedding_dimension())
-        elif hasattr(self._model, "get_sentence_embedding_dimension"):
-            self._dim: int = int(self._model.get_sentence_embedding_dimension())
-        else:
-            self._dim: int = 384
+        dim = getattr(self._model, "get_embedding_dimension", lambda: 384)()
+        self._dim: int = int(dim) if dim is not None else 384
 
         logger.info(
             f"Sentence-transformer model loaded: '{self._model_name}' "
