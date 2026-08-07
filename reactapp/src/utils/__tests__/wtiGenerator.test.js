@@ -189,7 +189,44 @@ describe('WTI Generator & Dynamic Ranking Engine v2', () => {
     expect(ranked[0].sharpeRatioEst).toBeDefined();
     expect(typeof ranked[0].sharpeRatioEst).toBe('number');
   });
+
+  it('15. Zero generic "via Broker" product names exist in WHERE_TO_INVEST database or generated products', () => {
+    const brokerViaRegex = /\bvia\s+(Zerodha|Groww|Angel One|ICICI Direct|Upstox)/i;
+
+    // Check all curated entries in WHERE_TO_INVEST
+    Object.entries(WHERE_TO_INVEST).forEach(([id, entry]) => {
+      if (entry.products) {
+        entry.products.forEach(p => {
+          expect(p.name, `Product in ${id} has generic via broker name: ${p.name}`).not.toMatch(brokerViaRegex);
+        });
+      }
+      if (entry.subCategories) {
+        Object.values(entry.subCategories).forEach(sub => {
+          if (sub.products) {
+            sub.products.forEach(p => {
+              expect(p.name, `Product in subCategory of ${id} has generic via broker name: ${p.name}`).not.toMatch(brokerViaRegex);
+            });
+          }
+        });
+      }
+    });
+
+    // Check generated products from generateWTI
+    const sampleInstruments = [
+      { id: 'gold_etf', name: 'Gold ETF', cat: 'ETF' },
+      { id: 'nifty_50_index_mf', name: 'Nifty 50 Index Fund', cat: 'Mutual Fund' },
+      { id: 'elss_mf', name: 'ELSS Tax Saver', cat: 'Mutual Fund' }
+    ];
+
+    sampleInstruments.forEach(inv => {
+      const generated = generateWTI(inv);
+      generated.products.forEach(p => {
+        expect(p.name, `Generated product for ${inv.id} has generic via broker name: ${p.name}`).not.toMatch(brokerViaRegex);
+      });
+    });
+  });
 });
+
 
 
 

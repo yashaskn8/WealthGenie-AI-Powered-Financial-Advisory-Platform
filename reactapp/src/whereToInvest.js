@@ -16,7 +16,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open via net banking if you already have a savings account, or visit any bank branch / post office with Aadhaar + PAN.",
     "products": [
       {
-        "name": "Public Provident Fund (PPF) via SBI",
+        "name": "SBI Public Provident Fund (PPF)",
         "provider": "State Bank of India",
         "rate": "~7.1% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -26,7 +26,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Public Provident Fund (PPF) via HDFC Bank",
+        "name": "HDFC Bank Public Provident Fund (PPF)",
         "provider": "HDFC Bank",
         "rate": "~7.1% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -36,7 +36,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Public Provident Fund (PPF) via ICICI Bank",
+        "name": "ICICI Bank Public Provident Fund (PPF)",
         "provider": "ICICI Bank",
         "rate": "~7.1% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -45,7 +45,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Public Provident Fund (PPF) via India Post",
+        "name": "India Post Public Provident Fund (PPF)",
         "provider": "India Post",
         "rate": "~7.1% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -55,7 +55,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Public Provident Fund (PPF) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Public Provident Fund (PPF)",
         "provider": "Axis / PNB Bank",
         "rate": "~7.1% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -72,7 +72,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Visit any authorized bank branch or post office with age proof, Aadhaar, PAN, and passport-size photos.",
     "products": [
       {
-        "name": "Senior Citizens Savings Scheme (SCSS) via SBI",
+        "name": "SBI Senior Citizens Savings Scheme (SCSS)",
         "provider": "State Bank of India",
         "rate": "~8.2% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -82,7 +82,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Senior Citizens Savings Scheme (SCSS) via HDFC Bank",
+        "name": "HDFC Bank Senior Citizens Savings Scheme (SCSS)",
         "provider": "HDFC Bank",
         "rate": "~8.2% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -92,7 +92,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Senior Citizens Savings Scheme (SCSS) via ICICI Bank",
+        "name": "ICICI Bank Senior Citizens Savings Scheme (SCSS)",
         "provider": "ICICI Bank",
         "rate": "~8.2% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -101,7 +101,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Senior Citizens Savings Scheme (SCSS) via India Post",
+        "name": "India Post Senior Citizens Savings Scheme (SCSS)",
         "provider": "India Post",
         "rate": "~8.2% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -111,7 +111,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Senior Citizens Savings Scheme (SCSS) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Senior Citizens Savings Scheme (SCSS)",
         "provider": "Axis / PNB Bank",
         "rate": "~8.2% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -128,7 +128,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Visit any authorized bank or post office with girl child's birth certificate, parent's Aadhaar + PAN.",
     "products": [
       {
-        "name": "Sukanya Samriddhi Yojana (SSY) via SBI",
+        "name": "SBI Sukanya Samriddhi Yojana (SSY)",
         "provider": "State Bank of India",
         "rate": "~8.2% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -138,7 +138,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Sukanya Samriddhi Yojana (SSY) via HDFC Bank",
+        "name": "HDFC Bank Sukanya Samriddhi Yojana (SSY)",
         "provider": "HDFC Bank",
         "rate": "~8.2% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -148,7 +148,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Sukanya Samriddhi Yojana (SSY) via ICICI Bank",
+        "name": "ICICI Bank Sukanya Samriddhi Yojana (SSY)",
         "provider": "ICICI Bank",
         "rate": "~8.2% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -157,7 +157,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Sukanya Samriddhi Yojana (SSY) via India Post",
+        "name": "India Post Sukanya Samriddhi Yojana (SSY)",
         "provider": "India Post",
         "rate": "~8.2% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -167,7 +167,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Sukanya Samriddhi Yojana (SSY) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Sukanya Samriddhi Yojana (SSY)",
         "provider": "Axis / PNB Bank",
         "rate": "~8.2% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -184,7 +184,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Apply through any scheduled commercial bank. No demat required. Digital application facilities expanding by Sep 2026.",
     "products": [
       {
-        "name": "RBI Floating Rate Savings Bonds via SBI",
+        "name": "SBI RBI Floating Rate Savings Bonds",
         "provider": "State Bank of India",
         "rate": "~7.83% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -194,7 +194,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "RBI Floating Rate Savings Bonds via HDFC Bank",
+        "name": "HDFC Bank RBI Floating Rate Savings Bonds",
         "provider": "HDFC Bank",
         "rate": "~7.83% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -204,7 +204,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "RBI Floating Rate Savings Bonds via ICICI Bank",
+        "name": "ICICI Bank RBI Floating Rate Savings Bonds",
         "provider": "ICICI Bank",
         "rate": "~7.83% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -213,7 +213,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "RBI Floating Rate Savings Bonds via India Post",
+        "name": "India Post RBI Floating Rate Savings Bonds",
         "provider": "India Post",
         "rate": "~7.83% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -223,7 +223,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "RBI Floating Rate Savings Bonds via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank RBI Floating Rate Savings Bonds",
         "provider": "Axis / PNB Bank",
         "rate": "~7.83% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -240,7 +240,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat + trading account on Zerodha, Groww, or Angel One. Search for 'SGB' or 'SGBAUG29' on the exchange.",
     "products": [
       {
-        "name": "Sovereign Gold Bond (SGB) via Zerodha Kite",
+        "name": "Zerodha Kite Sovereign Gold Bond (SGB)",
         "provider": "Zerodha",
         "rate": "~13% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -249,7 +249,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Sovereign Gold Bond (SGB) via Groww",
+        "name": "Sovereign Gold Bond (RBI Issue)",
         "provider": "Groww",
         "rate": "~13% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -258,7 +258,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Sovereign Gold Bond (SGB) via Angel One",
+        "name": "Sovereign Gold Bond (RBI Issue)",
         "provider": "Angel One",
         "rate": "~13% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -266,7 +266,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹500"
       },
       {
-        "name": "Sovereign Gold Bond (SGB) via ICICI Direct",
+        "name": "Sovereign Gold Bond (RBI Issue)",
         "provider": "ICICI Direct",
         "rate": "~13% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -274,7 +274,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹500"
       },
       {
-        "name": "Sovereign Gold Bond (SGB) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Sovereign Gold Bond (SGB)",
         "provider": "Upstox / Kuvera",
         "rate": "~13% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -290,7 +290,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "National Savings Certificate (NSC) via SBI",
+        "name": "SBI National Savings Certificate (NSC)",
         "provider": "State Bank of India",
         "rate": "~7.7% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -300,7 +300,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "National Savings Certificate (NSC) via HDFC Bank",
+        "name": "HDFC Bank National Savings Certificate (NSC)",
         "provider": "HDFC Bank",
         "rate": "~7.7% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -310,7 +310,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "National Savings Certificate (NSC) via ICICI Bank",
+        "name": "ICICI Bank National Savings Certificate (NSC)",
         "provider": "ICICI Bank",
         "rate": "~7.7% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -319,7 +319,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "National Savings Certificate (NSC) via India Post",
+        "name": "India Post National Savings Certificate (NSC)",
         "provider": "India Post",
         "rate": "~7.7% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -329,7 +329,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "National Savings Certificate (NSC) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank National Savings Certificate (NSC)",
         "provider": "Axis / PNB Bank",
         "rate": "~7.7% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -346,7 +346,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Kisan Vikas Patra (KVP) via SBI",
+        "name": "SBI Kisan Vikas Patra (KVP)",
         "provider": "State Bank of India",
         "rate": "~7.5% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -356,7 +356,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Kisan Vikas Patra (KVP) via HDFC Bank",
+        "name": "HDFC Bank Kisan Vikas Patra (KVP)",
         "provider": "HDFC Bank",
         "rate": "~7.5% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -366,7 +366,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Kisan Vikas Patra (KVP) via ICICI Bank",
+        "name": "ICICI Bank Kisan Vikas Patra (KVP)",
         "provider": "ICICI Bank",
         "rate": "~7.5% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -375,7 +375,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Kisan Vikas Patra (KVP) via India Post",
+        "name": "India Post Kisan Vikas Patra (KVP)",
         "provider": "India Post",
         "rate": "~7.5% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -385,7 +385,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Kisan Vikas Patra (KVP) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Kisan Vikas Patra (KVP)",
         "provider": "Axis / PNB Bank",
         "rate": "~7.5% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -402,7 +402,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Post Office Monthly Income Scheme (POMIS) via SBI",
+        "name": "SBI Post Office Monthly Income Scheme (POMIS)",
         "provider": "State Bank of India",
         "rate": "~7.4% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -412,7 +412,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Post Office Monthly Income Scheme (POMIS) via HDFC Bank",
+        "name": "HDFC Bank Post Office Monthly Income Scheme (POMIS)",
         "provider": "HDFC Bank",
         "rate": "~7.4% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -422,7 +422,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Post Office Monthly Income Scheme (POMIS) via ICICI Bank",
+        "name": "ICICI Bank Post Office Monthly Income Scheme (POMIS)",
         "provider": "ICICI Bank",
         "rate": "~7.4% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -431,7 +431,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Post Office Monthly Income Scheme (POMIS) via India Post",
+        "name": "India Post Post Office Monthly Income Scheme (POMIS)",
         "provider": "India Post",
         "rate": "~7.4% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -441,7 +441,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Post Office Monthly Income Scheme (POMIS) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Post Office Monthly Income Scheme (POMIS)",
         "provider": "Axis / PNB Bank",
         "rate": "~7.4% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -458,7 +458,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Mahila Samman Savings Certificate via SBI",
+        "name": "SBI Mahila Samman Savings Certificate",
         "provider": "State Bank of India",
         "rate": "~7.5% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -468,7 +468,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Mahila Samman Savings Certificate via HDFC Bank",
+        "name": "HDFC Bank Mahila Samman Savings Certificate",
         "provider": "HDFC Bank",
         "rate": "~7.5% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -478,7 +478,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Mahila Samman Savings Certificate via ICICI Bank",
+        "name": "ICICI Bank Mahila Samman Savings Certificate",
         "provider": "ICICI Bank",
         "rate": "~7.5% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -487,7 +487,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Mahila Samman Savings Certificate via India Post",
+        "name": "India Post Mahila Samman Savings Certificate",
         "provider": "India Post",
         "rate": "~7.5% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -497,7 +497,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Mahila Samman Savings Certificate via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Mahila Samman Savings Certificate",
         "provider": "Axis / PNB Bank",
         "rate": "~7.5% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -514,7 +514,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Atal Pension Yojana (APY) via SBI",
+        "name": "SBI Atal Pension Yojana (APY)",
         "provider": "State Bank of India",
         "rate": "~8% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -524,7 +524,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Atal Pension Yojana (APY) via HDFC Bank",
+        "name": "HDFC Bank Atal Pension Yojana (APY)",
         "provider": "HDFC Bank",
         "rate": "~8% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -534,7 +534,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Atal Pension Yojana (APY) via ICICI Bank",
+        "name": "ICICI Bank Atal Pension Yojana (APY)",
         "provider": "ICICI Bank",
         "rate": "~8% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -543,7 +543,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Atal Pension Yojana (APY) via India Post",
+        "name": "India Post Atal Pension Yojana (APY)",
         "provider": "India Post",
         "rate": "~8% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -553,7 +553,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Atal Pension Yojana (APY) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Atal Pension Yojana (APY)",
         "provider": "Axis / PNB Bank",
         "rate": "~8% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -3935,7 +3935,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat + trading account on Zerodha, Groww, or Angel One. Buy units during market hours like stocks.",
     "products": [
       {
-        "name": "Gold ETF via Zerodha Kite",
+        "name": "Zerodha Kite Gold ETF",
         "provider": "Zerodha",
         "rate": "~11% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -3944,7 +3944,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Gold ETF via Groww",
+        "name": "HDFC Gold ETF",
         "provider": "Groww",
         "rate": "~11% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -3953,7 +3953,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Gold ETF via Angel One",
+        "name": "ICICI Prudential Gold ETF",
         "provider": "Angel One",
         "rate": "~11% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -3961,7 +3961,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹500"
       },
       {
-        "name": "Gold ETF via ICICI Direct",
+        "name": "Axis Gold ETF",
         "provider": "ICICI Direct",
         "rate": "~11% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -3969,7 +3969,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹500"
       },
       {
-        "name": "Gold ETF via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Gold ETF",
         "provider": "Upstox / Kuvera",
         "rate": "~11% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -3985,7 +3985,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Gold Mutual Fund via Zerodha Kite",
+        "name": "Zerodha Kite Gold Mutual Fund",
         "provider": "Zerodha",
         "rate": "~10.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -3994,7 +3994,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Gold Mutual Fund via Groww",
+        "name": "HDFC Gold Fund (Direct Growth)",
         "provider": "Groww",
         "rate": "~10.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4003,7 +4003,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Gold Mutual Fund via Angel One",
+        "name": "ICICI Prudential Gold Fund (Direct Growth)",
         "provider": "Angel One",
         "rate": "~10.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4011,7 +4011,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹500"
       },
       {
-        "name": "Gold Mutual Fund via ICICI Direct",
+        "name": "Axis Gold Fund (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~10.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4019,7 +4019,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹500"
       },
       {
-        "name": "Gold Mutual Fund via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Gold Mutual Fund",
         "provider": "Upstox / Kuvera",
         "rate": "~10.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4035,7 +4035,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Sovereign Gold Bond (Secondary Market) via Zerodha Kite",
+        "name": "Zerodha Kite Sovereign Gold Bond (Secondary Market)",
         "provider": "Zerodha",
         "rate": "~12% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4044,7 +4044,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Sovereign Gold Bond (Secondary Market) via Groww",
+        "name": "Sovereign Gold Bond Secondary Tranche (Groww)",
         "provider": "Groww",
         "rate": "~12% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4053,7 +4053,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Sovereign Gold Bond (Secondary Market) via Angel One",
+        "name": "Sovereign Gold Bond Secondary Tranche (Angel One)",
         "provider": "Angel One",
         "rate": "~12% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4061,7 +4061,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Sovereign Gold Bond (Secondary Market) via ICICI Direct",
+        "name": "Sovereign Gold Bond Secondary Tranche (ICICI Direct)",
         "provider": "ICICI Direct",
         "rate": "~12% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4069,7 +4069,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Sovereign Gold Bond (Secondary Market) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Sovereign Gold Bond (Secondary Market)",
         "provider": "Upstox / Kuvera",
         "rate": "~12% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4085,7 +4085,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Embassy Office Parks REIT and purchase units.",
     "products": [
       {
-        "name": "Embassy Office Parks REIT via Zerodha Kite",
+        "name": "Zerodha Kite Embassy Office Parks REIT",
         "provider": "Zerodha",
         "rate": "~9.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4094,7 +4094,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Embassy Office Parks REIT via Groww",
+        "name": "Embassy Office Parks REIT (Direct Plan)",
         "provider": "Groww",
         "rate": "~9.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4103,7 +4103,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Embassy Office Parks REIT via Angel One",
+        "name": "Embassy Office Parks REIT (Direct Plan)",
         "provider": "Angel One",
         "rate": "~9.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4111,7 +4111,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Embassy Office Parks REIT via ICICI Direct",
+        "name": "Embassy Office Parks REIT (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~9.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4119,7 +4119,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Embassy Office Parks REIT via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Embassy Office Parks REIT",
         "provider": "Upstox / Kuvera",
         "rate": "~9.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4135,7 +4135,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Mindspace Business Parks REIT and purchase units.",
     "products": [
       {
-        "name": "Mindspace Business Parks REIT via Zerodha Kite",
+        "name": "Zerodha Kite Mindspace Business Parks REIT",
         "provider": "Zerodha",
         "rate": "~9.25% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4144,7 +4144,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Mindspace Business Parks REIT via Groww",
+        "name": "Mindspace Business Parks REIT (Direct Plan)",
         "provider": "Groww",
         "rate": "~9.25% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4153,7 +4153,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Mindspace Business Parks REIT via Angel One",
+        "name": "Mindspace Business Parks REIT (Direct Plan)",
         "provider": "Angel One",
         "rate": "~9.25% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4161,7 +4161,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Mindspace Business Parks REIT via ICICI Direct",
+        "name": "Mindspace Business Parks REIT (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~9.25% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4169,7 +4169,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Mindspace Business Parks REIT via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Mindspace Business Parks REIT",
         "provider": "Upstox / Kuvera",
         "rate": "~9.25% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4185,7 +4185,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Brookfield India Real Estate Trust and purchase units.",
     "products": [
       {
-        "name": "Brookfield India Real Estate Trust via Zerodha Kite",
+        "name": "Zerodha Kite Brookfield India Real Estate Trust",
         "provider": "Zerodha",
         "rate": "~9.75% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4194,7 +4194,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Brookfield India Real Estate Trust via Groww",
+        "name": "Brookfield India Real Estate Trust (Direct Plan)",
         "provider": "Groww",
         "rate": "~9.75% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4203,7 +4203,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Brookfield India Real Estate Trust via Angel One",
+        "name": "Brookfield India Real Estate Trust (Direct Plan)",
         "provider": "Angel One",
         "rate": "~9.75% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4211,7 +4211,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Brookfield India Real Estate Trust via ICICI Direct",
+        "name": "Brookfield India Real Estate Trust (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~9.75% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4219,7 +4219,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Brookfield India Real Estate Trust via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Brookfield India Real Estate Trust",
         "provider": "Upstox / Kuvera",
         "rate": "~9.75% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4235,7 +4235,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Nexus Select Trust REIT and purchase units.",
     "products": [
       {
-        "name": "Nexus Select Trust REIT via Zerodha Kite",
+        "name": "Zerodha Kite Nexus Select Trust REIT",
         "provider": "Zerodha",
         "rate": "~10.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4244,7 +4244,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Nexus Select Trust REIT via Groww",
+        "name": "Nexus Select Trust REIT (Direct Plan)",
         "provider": "Groww",
         "rate": "~10.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4253,7 +4253,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Nexus Select Trust REIT via Angel One",
+        "name": "Nexus Select Trust REIT (Direct Plan)",
         "provider": "Angel One",
         "rate": "~10.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4261,7 +4261,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Nexus Select Trust REIT via ICICI Direct",
+        "name": "Nexus Select Trust REIT (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~10.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4269,7 +4269,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Nexus Select Trust REIT via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Nexus Select Trust REIT",
         "provider": "Upstox / Kuvera",
         "rate": "~10.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4285,7 +4285,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of India Grid Trust InvIT and purchase units.",
     "products": [
       {
-        "name": "India Grid Trust InvIT via Zerodha Kite",
+        "name": "Zerodha Kite India Grid Trust InvIT",
         "provider": "Zerodha",
         "rate": "~11.25% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4294,7 +4294,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "India Grid Trust InvIT via Groww",
+        "name": "India Grid Trust InvIT (Direct Plan)",
         "provider": "Groww",
         "rate": "~11.25% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4303,7 +4303,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "India Grid Trust InvIT via Angel One",
+        "name": "India Grid Trust InvIT (Direct Plan)",
         "provider": "Angel One",
         "rate": "~11.25% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4311,7 +4311,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "India Grid Trust InvIT via ICICI Direct",
+        "name": "India Grid Trust InvIT (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~11.25% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4319,7 +4319,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "India Grid Trust InvIT via Upstox / Kuvera",
+        "name": "Upstox / Kuvera India Grid Trust InvIT",
         "provider": "Upstox / Kuvera",
         "rate": "~11.25% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4335,7 +4335,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of PowerGrid Infrastructure Investment Trust and purchase units.",
     "products": [
       {
-        "name": "PowerGrid Infrastructure Investment Trust via Zerodha Kite",
+        "name": "Zerodha Kite PowerGrid Infrastructure Investment Trust",
         "provider": "Zerodha",
         "rate": "~10.75% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4344,7 +4344,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "PowerGrid Infrastructure Investment Trust via Groww",
+        "name": "PowerGrid Infrastructure Investment Trust (Direct Plan)",
         "provider": "Groww",
         "rate": "~10.75% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4353,7 +4353,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "PowerGrid Infrastructure Investment Trust via Angel One",
+        "name": "PowerGrid Infrastructure Investment Trust (Direct Plan)",
         "provider": "Angel One",
         "rate": "~10.75% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4361,7 +4361,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "PowerGrid Infrastructure Investment Trust via ICICI Direct",
+        "name": "PowerGrid Infrastructure Investment Trust (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~10.75% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4369,7 +4369,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "PowerGrid Infrastructure Investment Trust via Upstox / Kuvera",
+        "name": "Upstox / Kuvera PowerGrid Infrastructure Investment Trust",
         "provider": "Upstox / Kuvera",
         "rate": "~10.75% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4385,7 +4385,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "AAA Rated Corporate Bond via Zerodha Kite",
+        "name": "Zerodha Kite AAA Rated Corporate Bond",
         "provider": "Zerodha",
         "rate": "~8.15% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4394,7 +4394,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "AAA Rated Corporate Bond via Groww",
+        "name": "AAA Rated Corporate Bond (Direct Plan)",
         "provider": "Groww",
         "rate": "~8.15% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4403,7 +4403,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "AAA Rated Corporate Bond via Angel One",
+        "name": "AAA Rated Corporate Bond (Direct Plan)",
         "provider": "Angel One",
         "rate": "~8.15% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4411,7 +4411,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "AAA Rated Corporate Bond via ICICI Direct",
+        "name": "AAA Rated Corporate Bond (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~8.15% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4419,7 +4419,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "AAA Rated Corporate Bond via Upstox / Kuvera",
+        "name": "Upstox / Kuvera AAA Rated Corporate Bond",
         "provider": "Upstox / Kuvera",
         "rate": "~8.15% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4435,7 +4435,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "AA Rated Corporate Bond via Zerodha Kite",
+        "name": "Zerodha Kite AA Rated Corporate Bond",
         "provider": "Zerodha",
         "rate": "~8.9% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4444,7 +4444,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "AA Rated Corporate Bond via Groww",
+        "name": "AA Rated Corporate Bond (Direct Plan)",
         "provider": "Groww",
         "rate": "~8.9% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4453,7 +4453,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "AA Rated Corporate Bond via Angel One",
+        "name": "AA Rated Corporate Bond (Direct Plan)",
         "provider": "Angel One",
         "rate": "~8.9% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4461,7 +4461,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "AA Rated Corporate Bond via ICICI Direct",
+        "name": "AA Rated Corporate Bond (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~8.9% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4469,7 +4469,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "AA Rated Corporate Bond via Upstox / Kuvera",
+        "name": "Upstox / Kuvera AA Rated Corporate Bond",
         "provider": "Upstox / Kuvera",
         "rate": "~8.9% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4485,7 +4485,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "PFC/REC Tax-Free Bonds via Zerodha Kite",
+        "name": "Zerodha Kite PFC/REC Tax-Free Bonds",
         "provider": "Zerodha",
         "rate": "~5.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4494,7 +4494,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "PFC/REC Tax-Free Bonds via Groww",
+        "name": "PFC/REC Tax-Free Bonds (Direct Plan)",
         "provider": "Groww",
         "rate": "~5.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4503,7 +4503,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "PFC/REC Tax-Free Bonds via Angel One",
+        "name": "PFC/REC Tax-Free Bonds (Direct Plan)",
         "provider": "Angel One",
         "rate": "~5.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4511,7 +4511,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "PFC/REC Tax-Free Bonds via ICICI Direct",
+        "name": "PFC/REC Tax-Free Bonds (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~5.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4519,7 +4519,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "PFC/REC Tax-Free Bonds via Upstox / Kuvera",
+        "name": "Upstox / Kuvera PFC/REC Tax-Free Bonds",
         "provider": "Upstox / Kuvera",
         "rate": "~5.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4535,7 +4535,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Bharat Bond Debt Fund via Zerodha Kite",
+        "name": "Zerodha Kite Bharat Bond Debt Fund",
         "provider": "Zerodha",
         "rate": "~7.3% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4544,7 +4544,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Bharat Bond Debt Fund via Groww",
+        "name": "Bharat Bond Debt Fund (Direct Plan)",
         "provider": "Groww",
         "rate": "~7.3% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4553,7 +4553,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Bharat Bond Debt Fund via Angel One",
+        "name": "Bharat Bond Debt Fund (Direct Plan)",
         "provider": "Angel One",
         "rate": "~7.3% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4561,7 +4561,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Bharat Bond Debt Fund via ICICI Direct",
+        "name": "Bharat Bond Debt Fund (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~7.3% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4569,7 +4569,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Bharat Bond Debt Fund via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Bharat Bond Debt Fund",
         "provider": "Upstox / Kuvera",
         "rate": "~7.3% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4585,7 +4585,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Government Security (G-Sec) via Zerodha Kite",
+        "name": "Zerodha Kite Government Security (G-Sec)",
         "provider": "Zerodha",
         "rate": "~7.25% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4594,7 +4594,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Government Security (G-Sec) via Groww",
+        "name": "Government Security (G-Sec) (Direct Plan)",
         "provider": "Groww",
         "rate": "~7.25% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4603,7 +4603,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Government Security (G-Sec) via Angel One",
+        "name": "Government Security (G-Sec) (Direct Plan)",
         "provider": "Angel One",
         "rate": "~7.25% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4611,7 +4611,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "Government Security (G-Sec) via ICICI Direct",
+        "name": "Government Security (G-Sec) (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~7.25% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4619,7 +4619,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "Government Security (G-Sec) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Government Security (G-Sec)",
         "provider": "Upstox / Kuvera",
         "rate": "~7.25% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4635,7 +4635,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Municipal Bonds via Zerodha Kite",
+        "name": "Zerodha Kite Municipal Bonds",
         "provider": "Zerodha",
         "rate": "~8.25% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4644,7 +4644,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Municipal Bonds via Groww",
+        "name": "Municipal Bonds (Direct Plan)",
         "provider": "Groww",
         "rate": "~8.25% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4653,7 +4653,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Municipal Bonds via Angel One",
+        "name": "Municipal Bonds (Direct Plan)",
         "provider": "Angel One",
         "rate": "~8.25% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4661,7 +4661,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "Municipal Bonds via ICICI Direct",
+        "name": "Municipal Bonds (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~8.25% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4669,7 +4669,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "Municipal Bonds via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Municipal Bonds",
         "provider": "Upstox / Kuvera",
         "rate": "~8.25% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4685,7 +4685,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "54EC Capital Gains Bonds via Zerodha Kite",
+        "name": "Zerodha Kite 54EC Capital Gains Bonds",
         "provider": "Zerodha",
         "rate": "~5.25% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4694,7 +4694,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "54EC Capital Gains Bonds via Groww",
+        "name": "54EC Capital Gains Bonds (Direct Plan)",
         "provider": "Groww",
         "rate": "~5.25% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4703,7 +4703,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "54EC Capital Gains Bonds via Angel One",
+        "name": "54EC Capital Gains Bonds (Direct Plan)",
         "provider": "Angel One",
         "rate": "~5.25% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4711,7 +4711,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹20000"
       },
       {
-        "name": "54EC Capital Gains Bonds via ICICI Direct",
+        "name": "54EC Capital Gains Bonds (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~5.25% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4719,7 +4719,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹20000"
       },
       {
-        "name": "54EC Capital Gains Bonds via Upstox / Kuvera",
+        "name": "Upstox / Kuvera 54EC Capital Gains Bonds",
         "provider": "Upstox / Kuvera",
         "rate": "~5.25% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -4735,7 +4735,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Register on enps.nsdl.com with Aadhaar + PAN. Choose a Pension Fund Manager and asset allocation.",
     "products": [
       {
-        "name": "National Pension System (NPS) via SBI",
+        "name": "SBI National Pension System (NPS)",
         "provider": "State Bank of India",
         "rate": "~10.5% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -4745,7 +4745,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "National Pension System (NPS) via HDFC Bank",
+        "name": "HDFC Bank National Pension System (NPS)",
         "provider": "HDFC Bank",
         "rate": "~10.5% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -4755,7 +4755,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "National Pension System (NPS) via ICICI Bank",
+        "name": "ICICI Bank National Pension System (NPS)",
         "provider": "ICICI Bank",
         "rate": "~10.5% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -4764,7 +4764,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "National Pension System (NPS) via India Post",
+        "name": "India Post National Pension System (NPS)",
         "provider": "India Post",
         "rate": "~10.5% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -4774,7 +4774,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "National Pension System (NPS) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank National Pension System (NPS)",
         "provider": "Axis / PNB Bank",
         "rate": "~10.5% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -4791,7 +4791,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "NPS Tier-II Account via SBI",
+        "name": "SBI NPS Tier-II Account",
         "provider": "State Bank of India",
         "rate": "~9.75% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -4801,7 +4801,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "NPS Tier-II Account via HDFC Bank",
+        "name": "HDFC Bank NPS Tier-II Account",
         "provider": "HDFC Bank",
         "rate": "~9.75% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -4811,7 +4811,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "NPS Tier-II Account via ICICI Bank",
+        "name": "ICICI Bank NPS Tier-II Account",
         "provider": "ICICI Bank",
         "rate": "~9.75% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -4820,7 +4820,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "NPS Tier-II Account via India Post",
+        "name": "India Post NPS Tier-II Account",
         "provider": "India Post",
         "rate": "~9.75% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -4830,7 +4830,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "NPS Tier-II Account via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank NPS Tier-II Account",
         "provider": "Axis / PNB Bank",
         "rate": "~9.75% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -4847,7 +4847,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Employee Provident Fund (EPF) via SBI",
+        "name": "SBI Employee Provident Fund (EPF)",
         "provider": "State Bank of India",
         "rate": "~8.15% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -4857,7 +4857,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Employee Provident Fund (EPF) via HDFC Bank",
+        "name": "HDFC Bank Employee Provident Fund (EPF)",
         "provider": "HDFC Bank",
         "rate": "~8.15% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -4867,7 +4867,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Employee Provident Fund (EPF) via ICICI Bank",
+        "name": "ICICI Bank Employee Provident Fund (EPF)",
         "provider": "ICICI Bank",
         "rate": "~8.15% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -4876,7 +4876,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Employee Provident Fund (EPF) via India Post",
+        "name": "India Post Employee Provident Fund (EPF)",
         "provider": "India Post",
         "rate": "~8.15% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -4886,7 +4886,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Employee Provident Fund (EPF) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Employee Provident Fund (EPF)",
         "provider": "Axis / PNB Bank",
         "rate": "~8.15% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -4903,7 +4903,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an account at any authorized commercial bank or post office using Aadhaar and PAN verification.",
     "products": [
       {
-        "name": "Voluntary Provident Fund (VPF) via SBI",
+        "name": "SBI Voluntary Provident Fund (VPF)",
         "provider": "State Bank of India",
         "rate": "~8.15% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -4913,7 +4913,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Voluntary Provident Fund (VPF) via HDFC Bank",
+        "name": "HDFC Bank Voluntary Provident Fund (VPF)",
         "provider": "HDFC Bank",
         "rate": "~8.15% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -4923,7 +4923,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Voluntary Provident Fund (VPF) via ICICI Bank",
+        "name": "ICICI Bank Voluntary Provident Fund (VPF)",
         "provider": "ICICI Bank",
         "rate": "~8.15% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -4932,7 +4932,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Voluntary Provident Fund (VPF) via India Post",
+        "name": "India Post Voluntary Provident Fund (VPF)",
         "provider": "India Post",
         "rate": "~8.15% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -4942,7 +4942,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Voluntary Provident Fund (VPF) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Voluntary Provident Fund (VPF)",
         "provider": "Axis / PNB Bank",
         "rate": "~8.15% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -4959,7 +4959,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Unit Linked Insurance Plan via Zerodha Kite",
+        "name": "Zerodha Kite Unit Linked Insurance Plan",
         "provider": "Zerodha",
         "rate": "~10.25% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -4968,7 +4968,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Unit Linked Insurance Plan via Groww",
+        "name": "HDFC Life Unit Linked Insurance Plan",
         "provider": "Groww",
         "rate": "~10.25% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -4977,7 +4977,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Unit Linked Insurance Plan via Angel One",
+        "name": "ICICI Prudential Life Unit Linked Insurance Plan",
         "provider": "Angel One",
         "rate": "~10.25% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -4985,7 +4985,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹2000"
       },
       {
-        "name": "Unit Linked Insurance Plan via ICICI Direct",
+        "name": "Max Life Unit Linked Insurance Plan",
         "provider": "ICICI Direct",
         "rate": "~10.25% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -4993,7 +4993,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹2000"
       },
       {
-        "name": "Unit Linked Insurance Plan via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Unit Linked Insurance Plan",
         "provider": "Upstox / Kuvera",
         "rate": "~10.25% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5009,7 +5009,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Endowment Insurance Policy via Zerodha Kite",
+        "name": "Zerodha Kite Endowment Insurance Policy",
         "provider": "Zerodha",
         "rate": "~5.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5018,7 +5018,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Endowment Insurance Policy via Groww",
+        "name": "HDFC Life Endowment Insurance Policy",
         "provider": "Groww",
         "rate": "~5.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5027,7 +5027,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Endowment Insurance Policy via Angel One",
+        "name": "ICICI Prudential Life Endowment Insurance Policy",
         "provider": "Angel One",
         "rate": "~5.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5035,7 +5035,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹2000"
       },
       {
-        "name": "Endowment Insurance Policy via ICICI Direct",
+        "name": "Max Life Endowment Insurance Policy",
         "provider": "ICICI Direct",
         "rate": "~5.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5043,7 +5043,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹2000"
       },
       {
-        "name": "Endowment Insurance Policy via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Endowment Insurance Policy",
         "provider": "Upstox / Kuvera",
         "rate": "~5.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5059,7 +5059,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Term Insurance + Mutual Fund via Zerodha Kite",
+        "name": "Zerodha Kite Term Insurance + Mutual Fund",
         "provider": "Zerodha",
         "rate": "~12.75% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5068,7 +5068,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Term Insurance + Mutual Fund via Groww",
+        "name": "HDFC Term Insurance + Fund (Direct Growth)",
         "provider": "Groww",
         "rate": "~12.75% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5077,7 +5077,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Term Insurance + Mutual Fund via Angel One",
+        "name": "ICICI Prudential Term Insurance + Fund (Direct Growth)",
         "provider": "Angel One",
         "rate": "~12.75% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5085,7 +5085,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹2000"
       },
       {
-        "name": "Term Insurance + Mutual Fund via ICICI Direct",
+        "name": "Axis Term Insurance + Fund (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~12.75% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5093,7 +5093,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹2000"
       },
       {
-        "name": "Term Insurance + Mutual Fund via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Term Insurance + Mutual Fund",
         "provider": "Upstox / Kuvera",
         "rate": "~12.75% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5109,7 +5109,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Nifty 50 Blue-Chip Stocks and purchase units.",
     "products": [
       {
-        "name": "Nifty 50 Blue-Chip Stocks via Zerodha Kite",
+        "name": "Zerodha Kite Nifty 50 Blue-Chip Stocks",
         "provider": "Zerodha",
         "rate": "~14% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5118,7 +5118,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Nifty 50 Blue-Chip Stocks via Groww",
+        "name": "HDFC Nifty 50 Blue-Chip Stocks (Direct Growth)",
         "provider": "Groww",
         "rate": "~14% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5127,7 +5127,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Nifty 50 Blue-Chip Stocks via Angel One",
+        "name": "ICICI Prudential Nifty 50 Blue-Chip Stocks (Direct Growth)",
         "provider": "Angel One",
         "rate": "~14% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5135,7 +5135,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹3000"
       },
       {
-        "name": "Nifty 50 Blue-Chip Stocks via ICICI Direct",
+        "name": "Axis Nifty 50 Blue-Chip Stocks (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~14% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5143,7 +5143,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹3000"
       },
       {
-        "name": "Nifty 50 Blue-Chip Stocks via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Nifty 50 Blue-Chip Stocks",
         "provider": "Upstox / Kuvera",
         "rate": "~14% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5159,7 +5159,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Large Cap Stocks and purchase units.",
     "products": [
       {
-        "name": "Large Cap Stocks via Zerodha Kite",
+        "name": "Zerodha Kite Large Cap Stocks",
         "provider": "Zerodha",
         "rate": "~14.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5168,7 +5168,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Large Cap Stocks via Groww",
+        "name": "HDFC Large Cap Stocks (Direct Growth)",
         "provider": "Groww",
         "rate": "~14.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5177,7 +5177,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Large Cap Stocks via Angel One",
+        "name": "ICICI Prudential Large Cap Stocks (Direct Growth)",
         "provider": "Angel One",
         "rate": "~14.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5185,7 +5185,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹3000"
       },
       {
-        "name": "Large Cap Stocks via ICICI Direct",
+        "name": "Axis Large Cap Stocks (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~14.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5193,7 +5193,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹3000"
       },
       {
-        "name": "Large Cap Stocks via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Large Cap Stocks",
         "provider": "Upstox / Kuvera",
         "rate": "~14.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5209,7 +5209,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Mid Cap Growth Stocks and purchase units.",
     "products": [
       {
-        "name": "Mid Cap Growth Stocks via Zerodha Kite",
+        "name": "Zerodha Kite Mid Cap Growth Stocks",
         "provider": "Zerodha",
         "rate": "~16.75% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5218,7 +5218,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Mid Cap Growth Stocks via Groww",
+        "name": "HDFC Mid Cap Growth Stocks (Direct Growth)",
         "provider": "Groww",
         "rate": "~16.75% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5227,7 +5227,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Mid Cap Growth Stocks via Angel One",
+        "name": "ICICI Prudential Mid Cap Growth Stocks (Direct Growth)",
         "provider": "Angel One",
         "rate": "~16.75% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5235,7 +5235,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Mid Cap Growth Stocks via ICICI Direct",
+        "name": "Axis Mid Cap Growth Stocks (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~16.75% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5243,7 +5243,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Mid Cap Growth Stocks via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Mid Cap Growth Stocks",
         "provider": "Upstox / Kuvera",
         "rate": "~16.75% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5259,7 +5259,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open a demat and trading account with a discount broker. Search for the ticker symbol of Small Cap High-Beta Stocks and purchase units.",
     "products": [
       {
-        "name": "Small Cap High-Beta Stocks via Zerodha Kite",
+        "name": "Zerodha Kite Small Cap High-Beta Stocks",
         "provider": "Zerodha",
         "rate": "~15% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5268,7 +5268,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Small Cap High-Beta Stocks via Groww",
+        "name": "HDFC Small Cap High-Beta Stocks (Direct Growth)",
         "provider": "Groww",
         "rate": "~15% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5277,7 +5277,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Small Cap High-Beta Stocks via Angel One",
+        "name": "ICICI Prudential Small Cap High-Beta Stocks (Direct Growth)",
         "provider": "Angel One",
         "rate": "~15% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5285,7 +5285,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Small Cap High-Beta Stocks via ICICI Direct",
+        "name": "Axis Small Cap High-Beta Stocks (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~15% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5293,7 +5293,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Small Cap High-Beta Stocks via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Small Cap High-Beta Stocks",
         "provider": "Upstox / Kuvera",
         "rate": "~15% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5316,7 +5316,7 @@ const WHERE_TO_INVEST = {
     },
     "products": [
       {
-        "name": "Direct Stock Investment via Zerodha Kite",
+        "name": "Zerodha Kite Direct Stock Investment",
         "provider": "Zerodha",
         "rate": "~15% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5325,7 +5325,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Direct Stock Investment via Groww",
+        "name": "HDFC Direct Stock Investment (Direct Growth)",
         "provider": "Groww",
         "rate": "~15% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5334,7 +5334,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Direct Stock Investment via Angel One",
+        "name": "ICICI Prudential Direct Stock Investment (Direct Growth)",
         "provider": "Angel One",
         "rate": "~15% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5342,7 +5342,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Direct Stock Investment via ICICI Direct",
+        "name": "Axis Direct Stock Investment (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~15% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5350,7 +5350,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Direct Stock Investment via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Direct Stock Investment",
         "provider": "Upstox / Kuvera",
         "rate": "~15% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5366,7 +5366,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Arbitrage Mutual Fund via Zerodha Kite",
+        "name": "Zerodha Kite Arbitrage Mutual Fund",
         "provider": "Zerodha",
         "rate": "~7.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5375,7 +5375,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Arbitrage Mutual Fund via Groww",
+        "name": "HDFC Arbitrage Fund (Direct Growth)",
         "provider": "Groww",
         "rate": "~7.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5384,7 +5384,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Arbitrage Mutual Fund via Angel One",
+        "name": "ICICI Prudential Arbitrage Fund (Direct Growth)",
         "provider": "Angel One",
         "rate": "~7.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5392,7 +5392,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Arbitrage Mutual Fund via ICICI Direct",
+        "name": "Axis Arbitrage Fund (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~7.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5400,7 +5400,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Arbitrage Mutual Fund via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Arbitrage Mutual Fund",
         "provider": "Upstox / Kuvera",
         "rate": "~7.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -5416,7 +5416,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Submit a direct mutual fund application on the AMC portal, or transact seamlessly on any popular mutual fund platform.",
     "products": [
       {
-        "name": "Post Office 1-Year Time Deposit via Zerodha Kite",
+        "name": "Zerodha Kite Post Office 1-Year Time Deposit",
         "provider": "Zerodha",
         "rate": "~6.9% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -5425,7 +5425,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Post Office 1-Year Time Deposit via Groww",
+        "name": "HDFC Post Office 1-Year Time Deposit (Direct Growth)",
         "provider": "Groww",
         "rate": "~6.9% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -5434,7 +5434,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Post Office 1-Year Time Deposit via Angel One",
+        "name": "ICICI Prudential Post Office 1-Year Time Deposit (Direct Growth)",
         "provider": "Angel One",
         "rate": "~6.9% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -5442,7 +5442,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Post Office 1-Year Time Deposit via ICICI Direct",
+        "name": "Axis Post Office 1-Year Time Deposit (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~6.9% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -5450,7 +5450,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Post Office 1-Year Time Deposit via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Post Office 1-Year Time Deposit",
         "provider": "Upstox / Kuvera",
         "rate": "~6.9% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -6179,7 +6179,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Register online at rbiretaildirect.org.in using PAN and Aadhaar.",
     "products": [
       {
-        "name": "RBI Retail Direct Gilt Account via SBI",
+        "name": "SBI RBI Retail Direct Gilt Account",
         "provider": "State Bank of India",
         "rate": "~7.15% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -6189,7 +6189,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "RBI Retail Direct Gilt Account via HDFC Bank",
+        "name": "HDFC Bank RBI Retail Direct Gilt Account",
         "provider": "HDFC Bank",
         "rate": "~7.15% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -6199,7 +6199,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "RBI Retail Direct Gilt Account via ICICI Bank",
+        "name": "ICICI Bank RBI Retail Direct Gilt Account",
         "provider": "ICICI Bank",
         "rate": "~7.15% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -6208,7 +6208,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "RBI Retail Direct Gilt Account via India Post",
+        "name": "India Post RBI Retail Direct Gilt Account",
         "provider": "India Post",
         "rate": "~7.15% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -6218,7 +6218,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "RBI Retail Direct Gilt Account via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank RBI Retail Direct Gilt Account",
         "provider": "Axis / PNB Bank",
         "rate": "~7.15% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -6235,7 +6235,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Buy instantly on PhonePe, Paytm, Groww, or Google Pay under Gold section.",
     "products": [
       {
-        "name": "Digital Gold (24K 99.9% Pure) via Zerodha Kite",
+        "name": "Zerodha Kite Digital Gold (24K 99.9% Pure)",
         "provider": "Zerodha",
         "rate": "~11.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -6244,7 +6244,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Digital Gold (24K 99.9% Pure) via Groww",
+        "name": "HDFC Gold ETF",
         "provider": "Groww",
         "rate": "~11.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -6253,7 +6253,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Digital Gold (24K 99.9% Pure) via Angel One",
+        "name": "ICICI Prudential Gold ETF",
         "provider": "Angel One",
         "rate": "~11.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -6261,7 +6261,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹100"
       },
       {
-        "name": "Digital Gold (24K 99.9% Pure) via ICICI Direct",
+        "name": "Axis Gold ETF",
         "provider": "ICICI Direct",
         "rate": "~11.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -6269,7 +6269,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹100"
       },
       {
-        "name": "Digital Gold (24K 99.9% Pure) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Digital Gold (24K 99.9% Pure)",
         "provider": "Upstox / Kuvera",
         "rate": "~11.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -6735,7 +6735,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Bid during weekly RBI auctions on RBI Retail Direct or Zerodha Kite.",
     "products": [
       {
-        "name": "Government Treasury Bills (T-Bills) via SBI",
+        "name": "SBI Government Treasury Bills (T-Bills)",
         "provider": "State Bank of India",
         "rate": "~6.85% p.a.",
         "highlight": "India's largest branch network (22,000+) ensuring seamless access & auto-credit.",
@@ -6745,7 +6745,7 @@ const WHERE_TO_INVEST = {
         "badge": "Most Accessible"
       },
       {
-        "name": "Government Treasury Bills (T-Bills) via HDFC Bank",
+        "name": "HDFC Bank Government Treasury Bills (T-Bills)",
         "provider": "HDFC Bank",
         "rate": "~6.85% p.a.",
         "highlight": "Seamless digital account setup and instant e-statements via NetBanking.",
@@ -6755,7 +6755,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Digital UI"
       },
       {
-        "name": "Government Treasury Bills (T-Bills) via ICICI Bank",
+        "name": "ICICI Bank Government Treasury Bills (T-Bills)",
         "provider": "ICICI Bank",
         "rate": "~6.85% p.a.",
         "highlight": "Quick digital tracking via iMobile Pay app with free tax reports.",
@@ -6764,7 +6764,7 @@ const WHERE_TO_INVEST = {
         "tenure": "Fixed Term"
       },
       {
-        "name": "Government Treasury Bills (T-Bills) via India Post",
+        "name": "India Post Government Treasury Bills (T-Bills)",
         "provider": "India Post",
         "rate": "~6.85% p.a.",
         "highlight": "Available at 1.55 lakh+ post offices nationwide for 100% rural & urban reach.",
@@ -6774,7 +6774,7 @@ const WHERE_TO_INVEST = {
         "badge": "100% Physical Reach"
       },
       {
-        "name": "Government Treasury Bills (T-Bills) via Axis Bank / Punjab National Bank",
+        "name": "Axis / PNB Bank Government Treasury Bills (T-Bills)",
         "provider": "Axis / PNB Bank",
         "rate": "~6.85% p.a.",
         "highlight": "Dedicated government scheme counters and quick processing.",
@@ -6791,7 +6791,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Buy units on NSE/BSE via Zerodha, Groww, or Angel One.",
     "products": [
       {
-        "name": "Infrastructure Investment Trust (InvIT) via Zerodha Kite",
+        "name": "Zerodha Kite Infrastructure Investment Trust (InvIT)",
         "provider": "Zerodha",
         "rate": "~10.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -6800,7 +6800,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Infrastructure Investment Trust (InvIT) via Groww",
+        "name": "Infrastructure Investment Trust (InvIT) (Direct Plan)",
         "provider": "Groww",
         "rate": "~10.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -6809,7 +6809,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Infrastructure Investment Trust (InvIT) via Angel One",
+        "name": "Infrastructure Investment Trust (InvIT) (Direct Plan)",
         "provider": "Angel One",
         "rate": "~10.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -6817,7 +6817,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Infrastructure Investment Trust (InvIT) via ICICI Direct",
+        "name": "Infrastructure Investment Trust (InvIT) (Direct Plan)",
         "provider": "ICICI Direct",
         "rate": "~10.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -6825,7 +6825,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Infrastructure Investment Trust (InvIT) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Infrastructure Investment Trust (InvIT)",
         "provider": "Upstox / Kuvera",
         "rate": "~10.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -6891,7 +6891,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Register on RBI-licensed NBFC-P2P platforms.",
     "products": [
       {
-        "name": "Peer-to-Peer (P2P) Lending via Zerodha Kite",
+        "name": "Zerodha Kite Peer-to-Peer (P2P) Lending",
         "provider": "Zerodha",
         "rate": "~10.5% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -6900,7 +6900,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Peer-to-Peer (P2P) Lending via Groww",
+        "name": "HDFC Peer-to-Peer (P2P) Lending (Direct Growth)",
         "provider": "Groww",
         "rate": "~10.5% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -6909,7 +6909,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Peer-to-Peer (P2P) Lending via Angel One",
+        "name": "ICICI Prudential Peer-to-Peer (P2P) Lending (Direct Growth)",
         "provider": "Angel One",
         "rate": "~10.5% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -6917,7 +6917,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Peer-to-Peer (P2P) Lending via ICICI Direct",
+        "name": "Axis Peer-to-Peer (P2P) Lending (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~10.5% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -6925,7 +6925,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Peer-to-Peer (P2P) Lending via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Peer-to-Peer (P2P) Lending",
         "provider": "Upstox / Kuvera",
         "rate": "~10.5% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -6941,7 +6941,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Connect your broker account (Zerodha, Groww) on Smallcase website/app.",
     "products": [
       {
-        "name": "Smallcase Model Portfolios via Zerodha Kite",
+        "name": "Zerodha Kite Smallcase Model Portfolios",
         "provider": "Zerodha",
         "rate": "~16% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -6950,7 +6950,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Smallcase Model Portfolios via Groww",
+        "name": "HDFC Smallcase Model Portfolios (Direct Growth)",
         "provider": "Groww",
         "rate": "~16% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -6959,7 +6959,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Smallcase Model Portfolios via Angel One",
+        "name": "ICICI Prudential Smallcase Model Portfolios (Direct Growth)",
         "provider": "Angel One",
         "rate": "~16% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -6967,7 +6967,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Smallcase Model Portfolios via ICICI Direct",
+        "name": "Axis Smallcase Model Portfolios (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~16% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -6975,7 +6975,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹5000"
       },
       {
-        "name": "Smallcase Model Portfolios via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Smallcase Model Portfolios",
         "provider": "Upstox / Kuvera",
         "rate": "~16% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -6991,7 +6991,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Buy off-market via specialized unlisted equity platforms.",
     "products": [
       {
-        "name": "Pre-IPO & Unlisted Shares via Zerodha Kite",
+        "name": "Zerodha Kite Pre-IPO & Unlisted Shares",
         "provider": "Zerodha",
         "rate": "~20% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -7000,7 +7000,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Pre-IPO & Unlisted Shares via Groww",
+        "name": "HDFC Pre-IPO & Unlisted Shares (Direct Growth)",
         "provider": "Groww",
         "rate": "~20% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -7009,7 +7009,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Pre-IPO & Unlisted Shares via Angel One",
+        "name": "ICICI Prudential Pre-IPO & Unlisted Shares (Direct Growth)",
         "provider": "Angel One",
         "rate": "~20% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -7017,7 +7017,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹50000"
       },
       {
-        "name": "Pre-IPO & Unlisted Shares via ICICI Direct",
+        "name": "Axis Pre-IPO & Unlisted Shares (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~20% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -7025,7 +7025,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹50000"
       },
       {
-        "name": "Pre-IPO & Unlisted Shares via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Pre-IPO & Unlisted Shares",
         "provider": "Upstox / Kuvera",
         "rate": "~20% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -7041,7 +7041,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Enable MCX commodity segment on your broker app (Zerodha, Angel One).",
     "products": [
       {
-        "name": "MCX Commodity Futures via Zerodha Kite",
+        "name": "Zerodha Kite MCX Commodity Futures",
         "provider": "Zerodha",
         "rate": "~12% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -7050,7 +7050,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "MCX Commodity Futures via Groww",
+        "name": "HDFC MCX Commodity Futures (Direct Growth)",
         "provider": "Groww",
         "rate": "~12% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -7059,7 +7059,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "MCX Commodity Futures via Angel One",
+        "name": "ICICI Prudential MCX Commodity Futures (Direct Growth)",
         "provider": "Angel One",
         "rate": "~12% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -7067,7 +7067,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹25000"
       },
       {
-        "name": "MCX Commodity Futures via ICICI Direct",
+        "name": "Axis MCX Commodity Futures (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~12% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -7075,7 +7075,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹25000"
       },
       {
-        "name": "MCX Commodity Futures via Upstox / Kuvera",
+        "name": "Upstox / Kuvera MCX Commodity Futures",
         "provider": "Upstox / Kuvera",
         "rate": "~12% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -7091,7 +7091,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "F&O segment requires income proof activation on broker apps.",
     "products": [
       {
-        "name": "Futures & Options (F&O) Derivatives via Zerodha Kite",
+        "name": "Zerodha Kite Futures & Options (F&O) Derivatives",
         "provider": "Zerodha",
         "rate": "~0% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -7100,7 +7100,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Futures & Options (F&O) Derivatives via Groww",
+        "name": "HDFC Futures & Options (F&O) Derivatives (Direct Growth)",
         "provider": "Groww",
         "rate": "~0% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -7109,7 +7109,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Futures & Options (F&O) Derivatives via Angel One",
+        "name": "ICICI Prudential Futures & Options (F&O) Derivatives (Direct Growth)",
         "provider": "Angel One",
         "rate": "~0% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -7117,7 +7117,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "Futures & Options (F&O) Derivatives via ICICI Direct",
+        "name": "Axis Futures & Options (F&O) Derivatives (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~0% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -7125,7 +7125,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹10000"
       },
       {
-        "name": "Futures & Options (F&O) Derivatives via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Futures & Options (F&O) Derivatives",
         "provider": "Upstox / Kuvera",
         "rate": "~0% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -7141,7 +7141,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Register on FIU-compliant Indian crypto exchanges with Aadhaar & PAN KYC.",
     "products": [
       {
-        "name": "Cryptocurrency & VDAs (Bitcoin/ETH) via Zerodha Kite",
+        "name": "Zerodha Kite Cryptocurrency & VDAs (Bitcoin/ETH)",
         "provider": "Zerodha",
         "rate": "~15% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -7150,7 +7150,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Cryptocurrency & VDAs (Bitcoin/ETH) via Groww",
+        "name": "HDFC Cryptocurrency & VDAs (Bitcoin/ETH) (Direct Growth)",
         "provider": "Groww",
         "rate": "~15% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -7159,7 +7159,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Cryptocurrency & VDAs (Bitcoin/ETH) via Angel One",
+        "name": "ICICI Prudential Cryptocurrency & VDAs (Bitcoin/ETH) (Direct Growth)",
         "provider": "Angel One",
         "rate": "~15% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -7167,7 +7167,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹100"
       },
       {
-        "name": "Cryptocurrency & VDAs (Bitcoin/ETH) via ICICI Direct",
+        "name": "Axis Cryptocurrency & VDAs (Bitcoin/ETH) (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~15% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -7175,7 +7175,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹100"
       },
       {
-        "name": "Cryptocurrency & VDAs (Bitcoin/ETH) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Cryptocurrency & VDAs (Bitcoin/ETH)",
         "provider": "Upstox / Kuvera",
         "rate": "~15% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
@@ -7791,7 +7791,7 @@ const WHERE_TO_INVEST = {
     "howToStart": "Open an LRS US brokerage account on INDmoney or Vested Finance app.",
     "products": [
       {
-        "name": "Direct US Stocks (Apple, MSFT, Nvidia via LRS) via Zerodha Kite",
+        "name": "Zerodha Kite Direct US Stocks (Apple, MSFT, Nvidia",
         "provider": "Zerodha",
         "rate": "~17% p.a.",
         "highlight": "Zero brokerage on equity delivery investments with India's largest discount broker.",
@@ -7800,7 +7800,7 @@ const WHERE_TO_INVEST = {
         "badge": "Top Discount Broker"
       },
       {
-        "name": "Direct US Stocks (Apple, MSFT, Nvidia via LRS) via Groww",
+        "name": "HDFC Direct US Stocks (Apple, MSFT, Nvidia (Direct Growth)",
         "provider": "Groww",
         "rate": "~17% p.a.",
         "highlight": "Most beginner-friendly UI with instant paperless onboarding.",
@@ -7809,7 +7809,7 @@ const WHERE_TO_INVEST = {
         "badge": "Best Beginner UI"
       },
       {
-        "name": "Direct US Stocks (Apple, MSFT, Nvidia via LRS) via Angel One",
+        "name": "ICICI Prudential Direct US Stocks (Apple, MSFT, Nvidia (Direct Growth)",
         "provider": "Angel One",
         "rate": "~17% p.a.",
         "highlight": "Full service research reports and automated trading tools.",
@@ -7817,7 +7817,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Direct US Stocks (Apple, MSFT, Nvidia via LRS) via ICICI Direct",
+        "name": "Axis Direct US Stocks (Apple, MSFT, Nvidia (Direct Growth)",
         "provider": "ICICI Direct",
         "rate": "~17% p.a.",
         "highlight": "3-in-1 integrated banking + demat + trading account convenience.",
@@ -7825,7 +7825,7 @@ const WHERE_TO_INVEST = {
         "minInvestment": "₹1000"
       },
       {
-        "name": "Direct US Stocks (Apple, MSFT, Nvidia via LRS) via Upstox / Kuvera",
+        "name": "Upstox / Kuvera Direct US Stocks (Apple, MSFT, Nvidia",
         "provider": "Upstox / Kuvera",
         "rate": "~17% p.a.",
         "highlight": "Low fee execution with direct portfolio analytics.",
