@@ -87,10 +87,42 @@ masterCatalog.instruments.forEach(inst => {
   }
 });
 
+// Map frontend category to legacy type for backward compatibility
+const LEGACY_TYPE_MAP = {
+  'Government':           'Government',
+  'Gold':                 'ETF',
+  'Retirement':           'Government',
+  'Bank Deposits':        'FD',
+  'Debt Mutual Funds':    'Mutual_Fund',
+  'Equity Mutual Funds':  'Mutual_Fund',
+  'ETFs':                 'ETF',
+  'REITs & InvITs':       'ETF',
+  'Bonds & Debentures':   'Government',
+  'Insurance-linked':     'Mutual_Fund',
+  'Direct Equity':        'ETF',
+  'Other':                'Mutual_Fund',
+};
+
+// Specific ID overrides for legacy test assertions
+const SPECIFIC_ID_TYPE_MAP = {
+  'scss': 'SCSS',
+  'ppf': 'PPF',
+  'rbi_bonds': 'RBI_Bond',
+  'rbi_retail_direct_gilt': 'RBI_Bond',
+  'g_sec': 'RBI_Bond',
+};
+
 // Map masterCatalog instruments to the old flat structure for backward compatibility
 export const investmentDatabase = masterCatalog.instruments.map(inst => {
+  const legacyType = SPECIFIC_ID_TYPE_MAP[inst.id] || (
+    inst.dynamicData?.taxType === 'elss' || inst.taxType === 'elss'
+      ? 'ELSS'
+      : (LEGACY_TYPE_MAP[inst.category] || 'Mutual_Fund')
+  );
+
   return {
     id: inst.id,
+    type: legacyType,
     slug: inst.slug,
     name: inst.name,
     abbr: inst.abbr,

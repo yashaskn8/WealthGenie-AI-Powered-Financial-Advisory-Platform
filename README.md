@@ -98,9 +98,10 @@ WealthGenie moves beyond simple prompt wrapper scripts to a robust **Agentic Fra
 Built with rigorous ML pipeline standards and empirical evaluation:
 
 - **Tabular Risk Profiling Benchmark**: Trained on 20,000 NAV-derived investor samples across 16 engineered features.
-  - **Random Forest (`model.pkl`)**: 100 trees, max depth 15, yielding **95.63% accuracy**. Powered by **TreeSHAP (`explainer.py`)** for interpretability.
-  - **PyTorch Deep MLP (`FinancialMLP`)**: Feedforward architecture (`64→32` layers, ReLU, BatchNorm, Dropout 0.2) scoring **95.60% accuracy**.
-  - **FT-Transformer (`FT-Transformer`)**: Tabular self-attention transformer (*NeurIPS 2021*) achieving **97.05% accuracy**.
+  - **Random Forest (`model.pkl`)**: 100 trees, max depth 15, yielding **95.63% rule-approximation fidelity**. Powered by **TreeSHAP (`explainer.py`)** for interpretability.
+  - **PyTorch Deep MLP (`FinancialMLP`)**: Feedforward architecture (`64→32` layers, ReLU, BatchNorm, Dropout 0.2) scoring **95.60% rule-approximation fidelity**.
+  - **FT-Transformer (`FT-Transformer`)**: Tabular self-attention transformer (*NeurIPS 2021*) achieving **97.05% rule-approximation fidelity**.
+  - ⚠️ **Rigor Note**: All above metrics measure model fidelity in approximating `label_construction.py` — not independent behavioral prediction. Against an independent CFP suitability benchmark (0.00% formula overlap; term sets manually extracted from source), accuracy drops across all architectures: **Random Forest (25.26%)**, **PyTorch MLP (17.50%)**, and headline model **FT-Transformer (15.83%)**. See [`rigor_evaluation_report.json`](ml-service/model/rigor_evaluation_report.json).
 - **Dense RAG Subsystem**:
   - `SentenceChunker` + `SentenceTransformer` (`all-MiniLM-L6-v2`, 384D embeddings) + Cosine Vector Store.
   - **Heuristic Reranker (`RelevanceScoreReranker`)**: $\text{Score} = 0.5 \cdot \text{Dense} + 0.35 \cdot \text{Keyword} + 0.15 \cdot \text{Title}$.

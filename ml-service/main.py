@@ -133,6 +133,16 @@ from llm.router import llm_router
 app.include_router(rag_router)
 app.include_router(llm_router)
 
+import uuid
+
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    cid = request.headers.get("x-correlation-id") or request.headers.get("x-request-id") or str(uuid.uuid4())
+    request.state.correlation_id = cid
+    response: Response = await call_next(request)
+    response.headers["X-Correlation-ID"] = cid
+    return response
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response: Response = await call_next(request)

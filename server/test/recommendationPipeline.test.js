@@ -88,22 +88,22 @@ test('RecommendationPipeline filterEligible gates by age, income, savings and gi
   ];
 
   // Age boundary check (exact age 24 vs 25 vs 55 vs 56)
-  assert.equal(filterEligible(mockCatalog, { age: 24 }).some(i => i.id === 'min_max_age_fund'), false);
-  assert.equal(filterEligible(mockCatalog, { age: 25 }).some(i => i.id === 'min_max_age_fund'), true);
-  assert.equal(filterEligible(mockCatalog, { age: 55 }).some(i => i.id === 'min_max_age_fund'), true);
-  assert.equal(filterEligible(mockCatalog, { age: 56 }).some(i => i.id === 'min_max_age_fund'), false);
+  assert.equal(filterEligible(mockCatalog, { age: 24 }).eligible.some(i => i.id === 'min_max_age_fund'), false);
+  assert.equal(filterEligible(mockCatalog, { age: 25 }).eligible.some(i => i.id === 'min_max_age_fund'), true);
+  assert.equal(filterEligible(mockCatalog, { age: 55 }).eligible.some(i => i.id === 'min_max_age_fund'), true);
+  assert.equal(filterEligible(mockCatalog, { age: 56 }).eligible.some(i => i.id === 'min_max_age_fund'), false);
 
   // Income boundary check (1,499,999 vs 1,500,000)
-  assert.equal(filterEligible(mockCatalog, { annualIncome: 1499999 }).some(i => i.id === 'high_income_fund'), false);
-  assert.equal(filterEligible(mockCatalog, { annualIncome: 1500000 }).some(i => i.id === 'high_income_fund'), true);
+  assert.equal(filterEligible(mockCatalog, { annualIncome: 1499999 }).eligible.some(i => i.id === 'high_income_fund'), false);
+  assert.equal(filterEligible(mockCatalog, { annualIncome: 1500000 }).eligible.some(i => i.id === 'high_income_fund'), true);
 
   // Savings boundary check (19,999 vs 20,000)
-  assert.equal(filterEligible(mockCatalog, { savings: 19999 }).some(i => i.id === 'high_savings_fund'), false);
-  assert.equal(filterEligible(mockCatalog, { savings: 20000 }).some(i => i.id === 'high_savings_fund'), true);
+  assert.equal(filterEligible(mockCatalog, { savings: 19999 }).eligible.some(i => i.id === 'high_savings_fund'), false);
+  assert.equal(filterEligible(mockCatalog, { savings: 20000 }).eligible.some(i => i.id === 'high_savings_fund'), true);
 
   // Girl child requirement check
-  assert.equal(filterEligible(mockCatalog, { hasGirlChild: false }).some(i => i.id === 'sukanya'), false);
-  assert.equal(filterEligible(mockCatalog, { hasGirlChild: true }).some(i => i.id === 'sukanya'), true);
+  assert.equal(filterEligible(mockCatalog, { hasGirlChild: false }).eligible.some(i => i.id === 'sukanya'), false);
+  assert.equal(filterEligible(mockCatalog, { hasGirlChild: true }).eligible.some(i => i.id === 'sukanya'), true);
 });
 
 test('RecommendationPipeline parseProfile and deriveWeights boundaries', () => {

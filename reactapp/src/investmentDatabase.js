@@ -7,7 +7,7 @@
  * comparison modals, and local recommendation engines.
  */
 
-import masterCatalog from './data/investment_master.json';
+import masterCatalog from './data/investment_master.json' with { type: 'json' };
 
 // ─── TAX INFO LOOKUP ──────────────────────────────────────────────
 export const TAX_INFO = {

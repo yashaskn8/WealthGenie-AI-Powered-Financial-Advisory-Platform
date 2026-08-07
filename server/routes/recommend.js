@@ -19,7 +19,8 @@ function buildProfileHash(profile) {
     age: profile.age,
     income: profile.annualIncome,
     savings: profile.savings,
-    risk: profile.riskCategory,
+    riskCategory: profile.riskCategory,
+    risk_tolerance: profile.risk_tolerance,
     regime: profile.taxRegime,
     horizon: profile.investmentHorizon,
   })).digest('hex').substring(0, 16);
@@ -78,7 +79,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
   // ── Run the metadata-driven RecommendationPipeline ──────────────
   // This replaces the previous hardcoded demographic & tax overrides
   // with a modular pipeline: eligibility → scoring → ranking → diversity
-  const { instruments, confidenceScores } = runPipeline(profile, mlResult);
+  const { instruments, confidenceScores, riskReconciliation } = runPipeline(profile, mlResult);
 
   if (instruments.length === 0) {
     throw createError(502, 'RecommendationPipeline returned no instruments', 'Recommendation engine returned empty results.');
@@ -113,6 +114,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     modelVersion: mlResult.model_version || (mlResult.fallback ? 'rule_fallback' : '2.0'),
   });
 
+  // Section 7 metadata is response-only (not persisted), appended after Recommendation.create()
   const result = {
     recommendationId: rec._id,
     instruments,
@@ -126,6 +128,13 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     portfolio_yield: portfolioYield,
     risk_free_rate: parseFloat((RISK_FREE_RATE * 100).toFixed(2)),
     disclaimer: DISCLAIMER,
+    // Section 7: Risk reconciliation metadata
+    final_risk_tier: riskReconciliation.final_risk_tier,
+    capacity_score: riskReconciliation.capacity_score,
+    preference_score: riskReconciliation.preference_score,
+    reconciliation_note: riskReconciliation.reconciliation_note,
+    advisory_note: riskReconciliation.advisory_note,
+    excluded_due_to_eligibility: riskReconciliation.excluded_due_to_eligibility,
   };
 
   // Cache for 24 hours

@@ -28,6 +28,7 @@ import { getTaxSlab } from './taxEngine.js';
 import { calculatePostTaxReturnSafe } from './postTaxCalculator.js';
 import { INSTRUMENT_PARAMS, RISK_FREE_RATE } from './instrumentConstants.js';
 import { investmentDatabase } from '../data/investmentDatabase.js';
+import { encodeRiskCategory } from './riskProfiler.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // PIPELINE CONFIGURATION — centralized, no magic numbers
@@ -78,6 +79,202 @@ const PIPELINE_CONFIG = Object.freeze({
 });
 
 // ═══════════════════════════════════════════════════════════════════
+// RISK RECONCILIATION ENGINE (Section 3 — Mandatory, never skip)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Derive instrument risk tier from catalog dynamicData.risk.value.
+ * Section 4 CATALOG: 1–2 → 'Low', 3 → 'Medium', 4–5 → 'High'.
+ * Source: investment_master.json — never hardcoded.
+ */
+export function instrumentRiskTier(inv) {
+  const riskValue = inv.dynamicData?.risk?.value ?? inv.riskLevel ?? inv.risk ?? 3;
+  if (riskValue <= 2) return 'Low';
+  if (riskValue === 3) return 'Medium';
+  return 'High';
+}
+
+/**
+ * Section 3 Risk-Reconciliation Algorithm.
+ *
+ * Capacity (C): from riskProfiler.js encodeRiskCategory() + 1 (0–4 → 1–5).
+ * Preference (T): single source = profile.risk_tolerance.
+ *   'Conservative' → 1, 'Moderate' → 3, 'Aggressive' → 5.
+ * final_score = MIN(T, C + 1), clamped [1, 5].
+ *
+ * @param {Object} profile - FinancialProfile document (lean)
+ * @returns {Object} Reconciliation result with final_risk_tier, scores, notes, flags
+ */
+export function reconcileRisk(profile) {
+  const result = {
+    capacity_score: null,
+    preference_score: null,
+    final_score: null,
+    final_risk_tier: '',
+    reconciliation_note: '',
+    advisory_note: '',
+    capacity_missing: false,
+    preference_missing: false,
+  };
+
+  const TIER_NAMES = {
+    1: 'Conservative', 2: 'Conservative-Moderate', 3: 'Moderate',
+    4: 'Moderate-Aggressive', 5: 'Aggressive',
+  };
+
+  // Section 3.1: Map capacity to C ∈ [1,5].
+  // encodeRiskCategory() returns 0–4. The +1 converts to the 1–5 scale
+  // required by the reconciliation algorithm. If encodeRiskCategory's
+  // output range ever changes, this +1 must be revisited.
+  const capacityCategory = profile.riskCategory;
+  let C = null;
+  if (capacityCategory && typeof capacityCategory === 'string' &&
+      ['Conservative', 'Conservative-Moderate', 'Moderate', 'Moderate-Aggressive', 'Aggressive'].includes(capacityCategory)) {
+    C = encodeRiskCategory(capacityCategory) + 1; // 0–4 → 1–5
+  }
+
+  // Section 3.2: Map stated preference to T ∈ [1,5].
+  // Single source of truth: profile.risk_tolerance (Joi-validated, Mongoose-persisted).
+  const PREFERENCE_MAP = { 'Conservative': 1, 'Moderate': 3, 'Aggressive': 5 };
+  const preference = profile.risk_tolerance;
+  let T = null;
+  if (preference && PREFERENCE_MAP[preference] !== undefined) {
+    T = PREFERENCE_MAP[preference];
+  }
+
+  // Section 3.5: If only one of C/T is supplied, use it as final_score
+  if (C === null && T === null) {
+    result.capacity_missing = true;
+    result.preference_missing = true;
+    result.final_score = 3;
+    result.reconciliation_note = 'Both capacity and preference missing. Defaulting to Moderate (tier 3) — flagged, not silent.';
+  } else if (C === null) {
+    result.capacity_missing = true;
+    result.preference_score = T;
+    result.final_score = T;
+    result.reconciliation_note = `Capacity not supplied. Using stated preference (T=${T}) as final score.`;
+  } else if (T === null) {
+    result.preference_missing = true;
+    result.capacity_score = C;
+    result.final_score = C;
+    result.reconciliation_note = `Preference not supplied. Using computed capacity (C=${C}) as final score.`;
+  } else {
+    result.capacity_score = C;
+    result.preference_score = T;
+    // Section 3.3: final_score = MIN(T, C + 1), clamped to [1,5].
+    // Preference can pull DOWN freely. Preference can pull UP by at most +1 past capacity.
+    result.final_score = Math.max(1, Math.min(5, Math.min(T, C + 1)));
+
+    if (T <= C) {
+      result.reconciliation_note = `Preference (T=${T}) pulled tier down from capacity (C=${C}). Final: ${result.final_score}.`;
+    } else if (T > C + 1) {
+      result.reconciliation_note = `Preference (T=${T}) exceeds capacity+1 (C+1=${C + 1}), capped. Final: ${result.final_score}.`;
+    } else {
+      result.reconciliation_note = `Preference (T=${T}) within capacity range (C=${C}). Final: ${result.final_score}.`;
+    }
+
+    // Section 3.4: If |C − T| > 2, populate advisory_note
+    if (Math.abs(C - T) > 2) {
+      result.advisory_note =
+        `Significant mismatch between risk capacity (${capacityCategory}, C=${C}) ` +
+        `and stated preference (${preference}, T=${T}). ` +
+        `Your financial profile suggests ${capacityCategory} risk capacity, ` +
+        `but you selected ${preference} preference. ` +
+        `The engine reconciled to tier ${result.final_score} to protect against over-exposure.`;
+    }
+  }
+
+  result.final_risk_tier = TIER_NAMES[result.final_score] || 'Moderate';
+  return result;
+}
+
+/**
+ * Enforce Section 6 allocation targets by risk tier category (Low/Medium/High).
+ * Section 5 addendum: tier ≥ 4 caps LOW at 20% unless emergency_fund_months < 3.
+ *
+ * @param {Array} instruments - Scored instrument array from pipeline
+ * @param {number} reconciledTier - Final reconciled tier (1–5)
+ * @param {Object} profile - User profile for emergency fund check
+ * @returns {Array} Instruments with allocation_pct and updated allocationWeight
+ */
+function enforceAllocationTargets(instruments, reconciledTier, profile) {
+  if (!instruments.length) return instruments;
+
+  // Section 6 target ranges [min%, max%] by tier
+  const TARGETS = {
+    1: { Low: [65, 80], Medium: [15, 25], High: [0, 10] },
+    2: { Low: [45, 60], Medium: [25, 35], High: [10, 20] },
+    3: { Low: [25, 35], Medium: [30, 40], High: [25, 35] },
+    4: { Low: [10, 20], Medium: [25, 35], High: [45, 55] },
+    5: { Low: [0, 10],  Medium: [20, 30], High: [60, 70] },
+  };
+
+  // Deep copy targets (Section 5 may mutate for emergency fund override)
+  const targets = {};
+  const srcTargets = TARGETS[reconciledTier] || TARGETS[3];
+  for (const k of ['Low', 'Medium', 'High']) targets[k] = [...srcTargets[k]];
+
+  // Section 5: tier ≥ 4 → LOW capped at 20%, UNLESS emergency_fund_months < 3
+  if (reconciledTier >= 4) {
+    const emergencyMonths = Number(profile.emergency_fund_months) || 0;
+    if (emergencyMonths < 3) {
+      targets.Low = [20, 35]; // Override: top up liquid slice first
+    }
+  }
+
+  // Assign tier to each instrument from catalog dynamicData.risk.value
+  instruments.forEach(inv => { inv.tier = instrumentRiskTier(inv); });
+
+  // Group instruments by tier
+  const groups = { Low: [], Medium: [], High: [] };
+  instruments.forEach(inv => { (groups[inv.tier] || groups.Medium).push(inv); });
+
+  // Compute target allocation midpoint per tier (only for populated tiers)
+  const allocs = {};
+  let total = 0;
+  for (const tier of ['Low', 'Medium', 'High']) {
+    if (groups[tier].length > 0) {
+      const [min, max] = targets[tier];
+      allocs[tier] = (min + max) / 2;
+      total += allocs[tier];
+    } else {
+      allocs[tier] = 0;
+    }
+  }
+
+  // Normalize to sum to 100
+  if (total > 0) {
+    for (const tier of ['Low', 'Medium', 'High']) {
+      allocs[tier] = (allocs[tier] / total) * 100;
+    }
+  }
+
+  // Within each tier, distribute proportionally by score
+  instruments.forEach(inv => {
+    const group = groups[inv.tier];
+    const tierAlloc = allocs[inv.tier] || 0;
+    const groupScore = group.reduce((s, i) => s + Math.max(0, i.score || 0), 0);
+    const share = groupScore > 0 ? Math.max(0, inv.score || 0) / groupScore : 1 / group.length;
+    inv.allocation_pct = parseFloat((share * tierAlloc).toFixed(1));
+  });
+
+  // Fix rounding to exactly 100
+  const sum = instruments.reduce((s, i) => s + i.allocation_pct, 0);
+  const residual = parseFloat((100 - sum).toFixed(1));
+  if (Math.abs(residual) > 0.05 && instruments.length > 0) {
+    const maxInst = instruments.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b);
+    maxInst.allocation_pct = parseFloat((maxInst.allocation_pct + residual).toFixed(1));
+  }
+
+  // Update allocationWeight for backward compatibility (0–1 scale)
+  instruments.forEach(inv => {
+    inv.allocationWeight = parseFloat((inv.allocation_pct / 100).toFixed(4));
+  });
+
+  return instruments;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // STAGE 1: ELIGIBILITY FILTERING
 // ═══════════════════════════════════════════════════════════════════
 
@@ -87,40 +284,68 @@ const PIPELINE_CONFIG = Object.freeze({
  * @param {Object} profile - User's financial profile
  * @returns {Array} Eligible instruments
  */
-export function filterEligible(instruments, profile) {
+export function filterEligible(instruments, profile, reconciledTier = null) {
   const age = Number(profile.age) || 30;
-  const annualIncome = Number(profile.annualIncome) || 0;
-  const monthlySavings = Number(profile.savings) || 0;
+  const income = Number(profile.monthly_income || profile.income) || 0;
+  const annualIncome = Number(profile.annualIncome) || (income * 12);
+  const monthlySavings = Number(profile.savings || profile.monthly_savings) || 0;
+  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
+  const excluded = [];
 
-  return instruments.filter(inv => {
+  const eligible = instruments.filter(inv => {
+    // Section 5: Tier ≤ 2 → HARD-EXCLUDE every HIGH-tier instrument
+    if (reconciledTier !== null && reconciledTier <= 2 && instrumentRiskTier(inv) === 'High') {
+      excluded.push({ instrument: inv.name || inv.id, reason: `HIGH-tier instrument hard-excluded for tier ${reconciledTier}` });
+      return false;
+    }
+
     const elig = inv.eligibility;
     if (!elig) return true; // No eligibility rules = universally eligible
 
-    // Age gate
-    if (elig.minAge && age < elig.minAge) return false;
-    if (elig.maxAge && age > elig.maxAge) return false;
+    // Section 5: SCSS → reject unless age ≥ 60 (enforced via minAge in eligibility)
+    if (elig.minAge && age < elig.minAge) {
+      excluded.push({ instrument: inv.name || inv.id, reason: `Age ${age} below minimum ${elig.minAge}` });
+      return false;
+    }
+    if (elig.maxAge !== null && elig.maxAge !== undefined && age > elig.maxAge) {
+      excluded.push({ instrument: inv.name || inv.id, reason: `Age ${age} above maximum ${elig.maxAge}` });
+      return false;
+    }
 
     // Income gate
     if (elig.minAnnualIncome && annualIncome < elig.minAnnualIncome) return false;
 
     // Savings gate
     if (elig.minMonthlySavings && monthlySavings < elig.minMonthlySavings) return false;
+    if (inv.dynamicData?.minMonthlyInvestment && monthlySavings < inv.dynamicData.minMonthlyInvestment) return false;
 
-    // Special: girl child requirement (skip if user doesn't have one)
-    if (elig.hasGirlChild && !profile.hasGirlChild) return false;
-
-    // Risk appetite gating
-    const riskCat = (profile.riskCategory || profile.risk_appetite || '').toLowerCase();
-    const invRisk = inv.dynamicData?.risk?.value || inv.riskLevel || inv.risk || 3;
-    if ((riskCat === 'high' || riskCat === 'aggressive' || riskCat === 'very high') && invRisk <= 2) {
+    // Section 5: Sukanya Samriddhi → reject unless user has a girl child
+    if (elig.hasGirlChild && !profile.hasGirlChild && !profile.has_daughter_under_10) {
+      excluded.push({ instrument: inv.name || inv.id, reason: 'Requires girl child (Sukanya Samriddhi eligibility)' });
       return false;
     }
-    if ((riskCat === 'conservative' || riskCat === 'low' || riskCat === 'very low') && invRisk >= 4) {
-      return false;
+
+    // Section 5: NPS → warn if investment_horizon < (60 − age)
+    if (inv.id === 'nps' && horizon < (60 - age)) {
+      excluded.push({
+        instrument: inv.name || inv.id,
+        reason: `NPS WARNING: horizon ${horizon}y < years to retirement ${60 - age}y. Funds locked until age 60.`,
+        type: 'warning',
+      });
+    }
+
+    // Risk alignment (uses reconciled tier when available, legacy fallback otherwise)
+    if (reconciledTier === null) {
+      const riskCat = (profile.riskCategory || profile.risk || '').toLowerCase();
+      const invRisk = inv.dynamicData?.risk?.value || inv.riskLevel || inv.risk || 3;
+      if ((riskCat === 'high' || riskCat === 'aggressive' || riskCat === 'very high') && invRisk <= 2) return false;
+      if ((riskCat === 'conservative' || riskCat === 'low' || riskCat === 'very low') && invRisk >= 4) return false;
     }
 
     return true;
   });
+
+  return { eligible, excluded };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -131,14 +356,18 @@ export function filterEligible(instruments, profile) {
  * Parse profile into normalized scoring parameters.
  * Reuses backend's getTaxSlab for marginal rate computation.
  */
-function parseProfile(profile) {
+function parseProfile(profile, reconciledRiskStr = null) {
   const age = Number(profile.age) || 30;
-  const annualIncome = Number(profile.annualIncome) || 600000;
-  const savings = Number(profile.savings) || 10000;
-  const risk = (profile.riskCategory || 'Moderate').toLowerCase();
-  const horizon = Number(profile.investmentHorizon) || 10;
-  const goals = profile.goal_type ? [profile.goal_type] : [];
-  const taxRegime = profile.taxRegime || 'new';
+  const income = Number(profile.monthly_income || profile.income) || 0;
+  const annualIncome = Number(profile.annualIncome) || (income > 0 ? income * 12 : 600000);
+  const savings = Number(profile.savings || profile.monthly_savings) || 10000;
+  // Use reconciled risk tier if provided; no risk_appetite in fallback (Section 3 single source)
+  const risk = (reconciledRiskStr || profile.riskCategory || profile.risk || 'Moderate').toLowerCase();
+  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
+  const goals = Array.isArray(profile.investment_goals)
+    ? profile.investment_goals
+    : (profile.goal_type ? [profile.goal_type] : (profile.goals || []));
+  const taxRegime = profile.taxRegime || profile.regime || 'new';
 
   const hasLumpSum = Boolean(profile.hasLumpSum);
   const lumpSumAmount = hasLumpSum ? (Number(profile.lumpSumAmount) || 0) : 0;
@@ -507,11 +736,16 @@ export function runPipeline(profile, mlResult, options = {}) {
   // Normalise ML confidence scores
   const confScores = normaliseConfidenceScores(mlResult.confidence_scores || {});
 
-  // Stage 1: Eligibility
-  const eligible = filterEligible(investmentDatabase, profile);
+  // ── Risk Reconciliation (Section 3) ──────────────────────────────
+  // reconcileRisk() is the authoritative source of the final risk tier.
+  // Its output feeds filterEligible, parseProfile/deriveWeights/scoreRisk.
+  const riskResult = reconcileRisk(profile);
 
-  // Stage 2: Scoring
-  const p = parseProfile(profile);
+  // Stage 1: Eligibility (Section 5 gates, using reconciled tier)
+  const { eligible, excluded } = filterEligible(investmentDatabase, profile, riskResult.final_score);
+
+  // Stage 2: Scoring (using reconciled risk tier string)
+  const p = parseProfile(profile, riskResult.final_risk_tier);
   const w = deriveWeights(p);
   const scored = eligible.map(inv => computeInstrumentScore(inv, p, w, confScores));
 
@@ -521,27 +755,28 @@ export function runPipeline(profile, mlResult, options = {}) {
   // Stage 4: Diversity
   const topPicks = enforceDiversity(ranked, topN, minClasses);
 
-  // Compute allocation weights from scores (normalized to sum to 1.0)
-  const totalScore = topPicks.reduce((s, inv) => s + Math.max(0, inv.score), 0);
-  const instruments = topPicks.map(inv => {
-    const rawWeight = totalScore > 0 ? Math.max(0, inv.score) / totalScore : 1 / topPicks.length;
-    return {
-      name: inv.name,
-      type: inv.backendType,
-      instrumentId: inv.id,
-      nominalReturn: inv.nominalReturn,
-      postTaxReturn: inv.postTaxReturn,
-      effectiveYield: inv.effectiveYield,
-      taxNotes: inv.taxNotes,
-      sharpeRatio: inv.sharpeRatio,
-      expenseRatio: inv.expenseRatio || 0,
-      riskLevel: INSTRUMENT_PARAMS[inv.backendType]?.riskLevel || inv.riskLabel || 'Medium',
-      lockIn: inv.lockIn || 0,
-      tags: INSTRUMENT_PARAMS[inv.backendType]?.tags || [],
-      allocationWeight: parseFloat(rawWeight.toFixed(4)),
-      score: parseFloat(inv.score.toFixed(2)),
-    };
-  });
+  // Stage 5: Enforce Section 6 allocation targets by reconciled tier
+  enforceAllocationTargets(topPicks, riskResult.final_score, profile);
+
+  // Map to output format (allocationWeight set by enforceAllocationTargets)
+  const instruments = topPicks.map(inv => ({
+    name: inv.name,
+    type: inv.backendType,
+    instrumentId: inv.id,
+    nominalReturn: inv.nominalReturn,
+    postTaxReturn: inv.postTaxReturn,
+    effectiveYield: inv.effectiveYield,
+    taxNotes: inv.taxNotes,
+    sharpeRatio: inv.sharpeRatio,
+    expenseRatio: inv.expenseRatio || 0,
+    riskLevel: INSTRUMENT_PARAMS[inv.backendType]?.riskLevel || inv.riskLabel || 'Medium',
+    lockIn: inv.lockIn || 0,
+    tags: INSTRUMENT_PARAMS[inv.backendType]?.tags || [],
+    allocationWeight: inv.allocationWeight,
+    allocation_pct: inv.allocation_pct || 0,
+    tier: inv.tier || 'Medium',
+    score: parseFloat(inv.score.toFixed(2)),
+  }));
 
   // Fix rounding: ensure weights sum to exactly 1.0
   const totalWeight = instruments.reduce((s, i) => s + i.allocationWeight, 0);
@@ -555,7 +790,19 @@ export function runPipeline(profile, mlResult, options = {}) {
     }
   }
 
-  return { instruments, confidenceScores: confScores };
+  // Section 7 metadata (response-only, not persisted — see Recommendation.create() comment in routes/recommend.js)
+  const riskReconciliation = {
+    final_risk_tier: riskResult.final_risk_tier,
+    capacity_score: riskResult.capacity_score,
+    preference_score: riskResult.preference_score,
+    reconciliation_note: riskResult.reconciliation_note,
+    advisory_note: riskResult.advisory_note,
+    excluded_due_to_eligibility: excluded,
+    capacity_missing: riskResult.capacity_missing,
+    preference_missing: riskResult.preference_missing,
+  };
+
+  return { instruments, confidenceScores: confScores, riskReconciliation };
 }
 
 // ── Confidence score normalisation (reused from recommend.js) ────
@@ -741,6 +988,7 @@ export {
   rankInstruments,
   normaliseConfidenceScores,
   INSTRUMENT_KEY_MAP,
+  enforceAllocationTargets,
 };
 
 

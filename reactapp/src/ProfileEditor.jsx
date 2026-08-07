@@ -4,12 +4,13 @@ import { Clock, Banknote, Wallet, Scale, Target, Telescope, Save, Pencil, X, Che
 import * as api from './services/api';
 
 const GOALS_OPTIONS = ['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'];
-const RISK_OPTIONS = ['Low', 'Medium', 'High'];
+
 
 const DEFAULT_PROFILE = {
   age: 32,
   monthly_income: 65000,
   monthly_savings: 12000,
+  // risk_appetite derived from risk_tolerance for backward compat with display components
   risk_appetite: 'Medium',
   investment_goals: ['Retirement', 'Wealth Growth'],
   investment_horizon: 15,
@@ -73,7 +74,8 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
     { key: 'age', label: 'Age', icon: <Clock size={20} color="#94a3b8" />, type: 'number', min: 18, max: 80, help: 'Helps determine investment ratios (100 minus age rule).' },
     { key: 'monthly_income', label: 'Monthly Income', icon: <Banknote size={20} color="#34d399" />, type: 'currency', min: 1000, max: 100000000, help: 'Helps us calculate tax slabs and budget health.' },
     { key: 'monthly_savings', label: 'Investable Amount (SIP)', icon: <Wallet size={20} color="#38bdf8" />, type: 'currency', min: 500, max: 100000000, help: 'How much money you plan to save and invest monthly.' },
-    { key: 'risk_appetite', label: 'Risk Category', icon: <Scale size={20} color="#fbbf24" />, type: 'risk', help: 'Your comfort with short-term market ups and downs.' },
+
+    { key: 'risk_tolerance', label: 'Risk Tolerance', icon: <Scale size={20} color="#fbbf24" />, type: 'tolerance', help: 'Your comfort with short-term market ups and downs. This drives investment mix.' },
     { key: 'taxRegime', label: 'Tax Regime', icon: <Banknote size={20} color="#a78bfa" />, type: 'regime', help: 'Old vs New tax regimes used to estimate post-tax returns.' },
     { key: 'investment_goals', label: 'Investment Goals', icon: <Target size={20} color="#fb7185" />, type: 'goals', help: 'The main reasons why you are building wealth.' },
     { key: 'investment_horizon', label: 'Investment Horizon', icon: <Telescope size={20} color="#a78bfa" />, type: 'slider', min: 1, max: 30, suffix: ' years', help: 'Number of years you plan to keep this money growing.' }
@@ -205,33 +207,7 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
       );
     }
 
-    if (field.type === 'risk') {
-      return (
-        <div style={{ display: 'flex', gap: 8 }}>
-          {RISK_OPTIONS.map(r => (
-            <button
-              key={r}
-              onClick={() => setDraft(prev => ({ ...prev, risk_appetite: r }))}
-              style={{
-                flex: 1,
-                padding: '9px 14px',
-                borderRadius: 10,
-                border: val === r ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
-                background: val === r ? 'linear-gradient(135deg, rgba(56,189,248,0.15), rgba(139,92,246,0.1))' : 'rgba(15,23,42,0.4)',
-                color: val === r ? '#38bdf8' : '#94a3b8',
-                fontWeight: val === r ? 700 : 500,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'all 0.2s',
-              }}
-            >
-              {r === 'Low' ? 'Low (Safety First)' : r === 'Medium' ? 'Medium (Balanced)' : 'High (Aggressive)'}
-            </button>
-          ))}
-        </div>
-      );
-    }
+
 
 
     if (field.type === 'tolerance') {
@@ -395,7 +371,7 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
   };
 
   const basicFields = profileFields.filter(f => ['age', 'monthly_income', 'monthly_savings', 'investment_goals'].includes(f.key));
-  const advancedFields = profileFields.filter(f => ['risk_appetite', 'taxRegime', 'investment_horizon'].includes(f.key));
+  const advancedFields = profileFields.filter(f => ['risk_tolerance', 'taxRegime', 'investment_horizon'].includes(f.key));
 
   return (
     <div style={{ padding: '40px 28px', maxWidth: 960, margin: '0 auto', color: '#fff', position: 'relative' }}>

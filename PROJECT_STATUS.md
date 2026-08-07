@@ -8,12 +8,14 @@
 
 | Component | Evidence | Key Metrics |
 | :--- | :--- | :--- |
-| **Random Forest classifier** | Production-serving `model.pkl` with TreeSHAP explainability | 95.63% accuracy, 0.9144 Macro-F1 |
-| **FT-Transformer benchmark** | [`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json) | 97.05% accuracy, 0.9331 Macro-F1 |
+| **Random Forest classifier** | Production-serving `model.pkl` with TreeSHAP explainability | 95.63% rule-approx. fidelity (independent CFP benchmark: 25.26%) |
+| **FT-Transformer benchmark** | [`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json) | 97.05% rule-approx. fidelity (independent CFP benchmark: 15.83%) |
 | **RAG pipeline** | Live-wired into Express chat via [`intentGate.js`](server/services/intentGate.js) → [`ragClient.js`](server/services/ragClient.js) → FastAPI `/rag/query` | In-domain Recall@4: 96.0%, MRR: 0.9600 |
 | **Embedding ablation study** | [`embedding_ablation.json`](ml-service/reports/embedding_ablation.json) | Semantic vs hash: +2.0% Recall, +0.09 MRR |
 | **Base LLM evaluation** | [`llm_eval_report.json`](ml-service/reports/llm_eval_report.json) | BLEU 0.028, ROUGE-L 0.284, Semantic Sim 0.666 |
 | **Fail-closed auth** | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) | HTTP 500 when `ML_SERVICE_API_KEY` unset in non-local env |
+| **MLOps Registry & Drift** | [`ml-service/model/registry/`](ml-service/model/registry/) | SQLite registry, tamper-evident rollback (SHA-256), PSI feature drift monitor |
+| **Capacity Load Test** | [`load_test_report.md`](load_test_report.md) & [`server/reports/loadtest/`](server/reports/loadtest/) | 3,736–5,537 req/s (Tax Engine), 973 req/s (Instruments DB), 109.4 req/s (Agentic Chat post-patch) |
 | **Docs-sync CI check** | [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
 
 ---
@@ -35,6 +37,8 @@
 2. **Fail-open authentication**: `verify_api_key()` returned `"dev-mode"` when `ML_SERVICE_API_KEY` was unset, silently disabling auth in any environment. Now fails closed (HTTP 500) unless `ENVIRONMENT=local` is explicitly set.
 3. **Mislabeled BERTScore metric**: `compute_bertscore_approx()` was a Jaccard word-overlap function, not BERTScore. Renamed to `compute_lexical_overlap_score()`.
 4. **RAG integration test brittleness**: Test hard-failed when FastAPI ML service was offline. Updated to verify graceful fallback behavior instead.
+5. **MLOps Registry Metrics Sourcing**: `register_model.py` previously read rule-approximation fidelity from `rigor_evaluation_report.json`'s full-dataset audit key instead of `multi_model_benchmark.json`'s test split. Fixed to read test-set accuracy directly (RF: 0.9563, MLP: 0.9560, FT: 0.9705) and hardcoded exact assertions in `test_mlops_registry.py`.
+6. **RAG 429 Unhandled Exception Leak**: Under load testing, when Python FastAPI returned 429 Rate Limited or mock adapters returned non-standard provider keys, Mongoose's `ConversationHistory` provider enum validation threw an unhandled exception that crashed Express with 500 errors. Patched `ConversationHistory.js` provider enum and added regression test in `server/test/ragIntegration.test.js` (error rate dropped from 98.11% to 0.00% post-patch).
 
 ---
 

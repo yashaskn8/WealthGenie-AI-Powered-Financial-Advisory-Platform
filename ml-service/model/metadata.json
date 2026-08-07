@@ -146,5 +146,16 @@
       "p99": 6.682
     }
   },
-  "delta_note": "The accuracy delta measures agreement between the retrained ML model and the new NAV-derived target vs agreement with the legacy heuristic rule. It does NOT measure investment return improvement."
+  "delta_note": "The accuracy delta measures agreement between the retrained ML model and the new NAV-derived target vs agreement with the legacy heuristic rule. It does NOT measure investment return improvement.",
+  "rigor_evaluation": {
+    "metric_interpretation": "Rule-Approximation Fidelity",
+    "note": "test_accuracy (0.9553) measures model fidelity in approximating the label_construction.py formula — NOT independent behavioral prediction. 100% of base features overlap with labeling inputs.",
+    "multi_model_independent_cfp_benchmark_accuracy": {
+      "RandomForest": 0.2526,
+      "PyTorch_FinancialMLP": 0.1750,
+      "FT_Transformer": 0.1583
+    },
+    "independent_benchmark_source": "CFP suitability benchmark (100-minus-age rule + stated tolerance score), zero formula overlap (0.00%) with training labeler",
+    "full_report": "model/rigor_evaluation_report.json"
+  }
 }

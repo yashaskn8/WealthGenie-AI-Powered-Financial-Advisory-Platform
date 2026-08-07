@@ -36,6 +36,11 @@
       "dataset_version": "3.0.0",
       "random_seed": 42
     },
+    "benchmark_rigor_note": {
+      "metric_definition": "Rule-Approximation Fidelity",
+      "explanation": "All test_accuracy metrics in this report (RF: 0.9563, MLP: 0.9560, FT-Transformer: 0.9705) measure the mathematical fidelity of each architecture in learning the deterministic formula in label_construction.py. They do NOT represent independent investor behavior prediction. Against an independent CFP suitability benchmark (zero formula overlap), Random Forest accuracy is 0.2526.",
+      "rigor_report_reference": "model/rigor_evaluation_report.json"
+    },
     "split": {
       "strategy": "stratified",
       "train_pct": 60,
