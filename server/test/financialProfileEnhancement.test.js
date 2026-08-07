@@ -58,6 +58,21 @@ describe('Financial Profile Deep Integration Test Suite', () => {
     assert.equal(doc.monthlyIncome, 85000, 'setting income virtual setter should update monthlyIncome');
   });
 
+  it('WG-013: Disambiguates lumpSumAmount (one-time capital) from monthlySavings (recurring SIP)', async () => {
+    const doc = new FinancialProfile({
+      userId: TEST_USER_ID,
+      monthlyIncome: 100000,
+      age: 30,
+      savings: 25000,
+      annualIncome: 1200000,
+      hasLumpSum: true,
+      lumpSumAmount: 500000,
+    });
+
+    assert.equal(doc.savings, 25000, 'savings represents monthly recurring investment capacity');
+    assert.equal(doc.lumpSumAmount, 500000, 'lumpSumAmount represents one-time capital deployment');
+  });
+
   // 1. Malicious Client Zeroing Test
   it('1. Malicious Client Defense — zeros lump_sum_amount when has_lump_sum is false', async () => {
     await withServer(app, async (baseUrl) => {
