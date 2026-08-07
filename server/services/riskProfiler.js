@@ -141,7 +141,6 @@ export function getRiskProfile(
   const scoreAge = ageScore(safeAge);
   const scoreIncome = incomeScore(safeIncome);
   const scoreHorizon = horizonScore(safeHorizon);
-  const scoreExperience = Math.min(10, safeExperience * 2);
   const penaltyDependents = Math.min(10, safeDependents * 2);
 
   // Savings-to-income ratio penalty: max 15 points
@@ -172,7 +171,7 @@ export function getRiskProfile(
     bonusLiquidity = Math.min(8, Math.round(Math.log10(1 + liquidityRatio * 3) * 5));
   }
 
-  const rawScore = scoreAge + scoreIncome + scoreHorizon + scoreExperience + bonusLiquidity - penaltyDependents - penaltySavings - penaltyDebt;
+  const rawScore = scoreAge + scoreIncome + scoreHorizon + bonusLiquidity - penaltyDependents - penaltySavings - penaltyDebt;
   const score = Math.max(0, Math.min(100, rawScore));
 
   let profileKey;

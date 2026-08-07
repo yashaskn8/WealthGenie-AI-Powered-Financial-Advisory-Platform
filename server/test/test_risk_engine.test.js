@@ -17,6 +17,14 @@ import {
   runPipeline,
 } from '../services/RecommendationPipeline.js';
 
+import { getRiskProfile } from '../services/riskProfiler.js';
+
+test('WG-014: experienceYears parameter does not alter 3-Factor risk score', () => {
+  const scoreDefault = getRiskProfile(30, 600000, 15, 0);
+  const scoreExp = getRiskProfile(30, 600000, 15, 10);
+  assert.equal(scoreDefault.riskScore, scoreExp.riskScore, 'experienceYears parameter must not alter risk score');
+});
+
 // ═══════════════════════════════════════════════════════════════════
 // 1. reconcileRisk: C = T baseline → advisory_note === ''
 // ═══════════════════════════════════════════════════════════════════
