@@ -715,6 +715,56 @@ function computeSharpe(postTaxReturn, backendType) {
   return vol > 0.001 ? parseFloat(((postTaxDecimal - RISK_FREE_RATE) / vol).toFixed(2)) : 0;
 }
 
+/**
+ * Canonical profile normalization.
+ * Consolidates duplicate and overlapping field aliases (income/monthly_income/annualIncome,
+ * savings/monthly_savings, horizon/investment_horizon/investmentHorizon, etc.)
+ * into a single canonical data structure for all pipeline stages.
+ */
+export function normalizeProfile(profile = {}) {
+  const age = Number(profile.age) || 30;
+  const monthly_income = Number(profile.monthly_income || profile.income) || (Number(profile.annualIncome) ? Number(profile.annualIncome) / 12 : 50000);
+  const annualIncome = Number(profile.annualIncome) || (monthly_income * 12);
+  const monthly_savings = Number(profile.monthly_savings || profile.savings) || 10000;
+  const savings = monthly_savings;
+  const investment_horizon = Number(profile.investment_horizon || profile.investmentHorizon || profile.horizon) || 10;
+  const investmentHorizon = investment_horizon;
+  const horizon = investment_horizon;
+  const taxRegime = profile.taxRegime || profile.regime || 'new';
+  const regime = taxRegime;
+  const risk_tolerance = profile.risk_tolerance || 'Moderate';
+  const riskCategory = profile.riskCategory || profile.risk || 'Moderate';
+  const goal_type = profile.goal_type || (Array.isArray(profile.investment_goals) && profile.investment_goals[0]) || 'wealth-building';
+
+  return {
+    ...profile,
+    age,
+    monthly_income,
+    income: monthly_income,
+    annualIncome,
+    monthly_savings,
+    savings,
+    investment_horizon,
+    investmentHorizon,
+    horizon,
+    taxRegime,
+    regime,
+    risk_tolerance,
+    riskCategory,
+    goal_type,
+    liquid_savings: Number(profile.liquid_savings) || 0,
+    existing_debt: Number(profile.existing_debt) || 0,
+    dependents: Number(profile.dependents) || 0,
+    emergency_fund_months: Number(profile.emergency_fund_months) || 0,
+    hasLumpSum: Boolean(profile.hasLumpSum),
+    lumpSumAmount: Number(profile.lumpSumAmount) || 0,
+    soldPropertyAmount: Number(profile.soldPropertyAmount) || 0,
+    totalCTC: Number(profile.totalCTC) || annualIncome,
+    basicComponent: Number(profile.basicComponent) || (annualIncome * 0.5),
+    monthlyTakeHome: Number(profile.monthlyTakeHome) || monthly_income,
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // PUBLIC API — Main Pipeline Entry Point
 // ═══════════════════════════════════════════════════════════════════
@@ -730,6 +780,7 @@ function computeSharpe(postTaxReturn, backendType) {
  * @returns {Object} { instruments: Array, confidenceScores: Object }
  */
 export function runPipeline(profile, mlResult, options = {}) {
+  const normProfile = normalizeProfile(profile);
   const topN = options.topN || PIPELINE_CONFIG.TOP_N;
   const minClasses = options.minAssetClasses || PIPELINE_CONFIG.MIN_ASSET_CLASSES;
 
@@ -739,13 +790,13 @@ export function runPipeline(profile, mlResult, options = {}) {
   // ── Risk Reconciliation (Section 3) ──────────────────────────────
   // reconcileRisk() is the authoritative source of the final risk tier.
   // Its output feeds filterEligible, parseProfile/deriveWeights/scoreRisk.
-  const riskResult = reconcileRisk(profile);
+  const riskResult = reconcileRisk(normProfile);
 
   // Stage 1: Eligibility (Section 5 gates, using reconciled tier)
-  const { eligible, excluded } = filterEligible(investmentDatabase, profile, riskResult.final_score);
+  const { eligible, excluded } = filterEligible(investmentDatabase, normProfile, riskResult.final_score);
 
   // Stage 2: Scoring (using reconciled risk tier string)
-  const p = parseProfile(profile, riskResult.final_risk_tier);
+  const p = parseProfile(normProfile, riskResult.final_risk_tier);
   const w = deriveWeights(p);
   const scored = eligible.map(inv => computeInstrumentScore(inv, p, w, confScores));
 
@@ -756,7 +807,7 @@ export function runPipeline(profile, mlResult, options = {}) {
   const topPicks = enforceDiversity(ranked, topN, minClasses);
 
   // Stage 5: Enforce Section 6 allocation targets by reconciled tier
-  enforceAllocationTargets(topPicks, riskResult.final_score, profile);
+  enforceAllocationTargets(topPicks, riskResult.final_score, normProfile);
 
   // Map to output format (allocationWeight set by enforceAllocationTargets)
   const instruments = topPicks.map(inv => ({

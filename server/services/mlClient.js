@@ -31,7 +31,8 @@ export async function getMLPrediction(profileData, correlationId = null) {
   }
 
   try {
-    const res = await axios.post(`${ML_SERVICE_URL}/predict/enriched`, {
+    const mlEndpoint = process.env.ML_MODEL_ENDPOINT || '/predict/enriched';
+    const res = await axios.post(`${ML_SERVICE_URL}${mlEndpoint}`, {
       age: profileData.age,
       annual_income: profileData.annual_income,
       monthly_savings: profileData.monthly_savings,
