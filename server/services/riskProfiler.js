@@ -26,27 +26,23 @@ const RISK_PROFILES = {
   Aggressive: {
     category: 'Aggressive',
     description: 'High risk tolerance — suited for equity-heavy portfolios with long-term growth focus. Can withstand 30-40% interim drawdowns.',
-    recommendedEquityAllocation: 80,
+    // recommendedEquityAllocation is computed dynamically by getRiskProfile()
   },
   'Moderate-Aggressive': {
     category: 'Moderate-Aggressive',
     description: 'Above-average risk tolerance — balanced toward equity with some debt allocation for stability. Growth-oriented with moderate volatility acceptance.',
-    recommendedEquityAllocation: 65,
   },
   Moderate: {
     category: 'Moderate',
     description: 'Balanced risk approach — equal weight to equity and debt instruments. Seeks steady growth with controlled downside.',
-    recommendedEquityAllocation: 50,
   },
   'Conservative-Moderate': {
     category: 'Conservative-Moderate',
     description: 'Below-average risk tolerance — debt-heavy portfolio with limited equity exposure. Prioritizes capital preservation with modest growth.',
-    recommendedEquityAllocation: 35,
   },
   Conservative: {
     category: 'Conservative',
     description: 'Low risk tolerance — focused on capital preservation through government securities, FDs, and debt funds. Minimal equity exposure.',
-    recommendedEquityAllocation: 20,
   },
 };
 

@@ -363,17 +363,35 @@ export function filterEligible(instruments, profile, reconciledTier = null) {
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Parse profile into normalized scoring parameters.
- * Reuses backend's getTaxSlab for marginal rate computation.
+ * Parse and normalize a raw user profile into the standard shape used by
+ * the recommendation pipeline (deriveWeights, scoreRisk, filterEligible).
+ *
+ * **WG-026 DEFAULT FALLBACK DOCUMENTATION**
+ * Every field below has an explicit default. These are intentional safe
+ * defaults for the recommendation engine — they ensure the pipeline never
+ * crashes on missing data. However, callers should be aware that silent
+ * defaults can mask data quality issues upstream.
+ *
+ * Required fields (should always be present from profile creation):
+ *   - age, annualIncome, savings, riskCategory, investmentHorizon, taxRegime
+ *
+ * Optional/derived fields (legitimately default to 0/false/empty):
+ *   - hasLumpSum, lumpSumAmount, soldPropertyAmount, goals
+ *   - totalCTC (defaults to annualIncome), basicComponent (defaults to 50% of CTC)
+ *   - monthlyTakeHome (defaults to annualIncome / 12)
+ *
+ * @param {Object} profile - Raw profile document from MongoDB
+ * @param {string|null} reconciledRiskStr - Reconciled risk tier from risk engine (overrides profile.riskCategory)
+ * @returns {Object} Normalized profile for pipeline consumption
  */
 function parseProfile(profile, reconciledRiskStr = null) {
-  const age = Number(profile.age) || 30;
+  const age = Number(profile.age) || 30;                                        // Default: 30 years
   const income = Number(profile.monthly_income || profile.income) || 0;
-  const annualIncome = Number(profile.annualIncome) || (income > 0 ? income * 12 : 600000);
-  const savings = Number(profile.savings || profile.monthly_savings) || 10000;
+  const annualIncome = Number(profile.annualIncome) || (income > 0 ? income * 12 : 600000); // Default: ₹6L
+  const savings = Number(profile.savings || profile.monthly_savings) || 10000;  // Default: ₹10K/month
   // Use reconciled risk tier if provided; single source = profile.riskCategory
-  const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase();
-  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10;
+  const risk = (reconciledRiskStr || profile.riskCategory || 'Moderate').toLowerCase(); // Default: Moderate
+  const horizon = Number(profile.investmentHorizon || profile.investment_horizon || profile.horizon) || 10; // Default: 10 years
   // WG-021: Canonical source is profile.goals, but fall back to investment_goals/goal_type
   // for profiles created via onboarding (ProfileEditor) where goals.js sync hasn't run
   const goals = (Array.isArray(profile.goals) && profile.goals.length > 0)
@@ -381,14 +399,14 @@ function parseProfile(profile, reconciledRiskStr = null) {
     : (Array.isArray(profile.investment_goals) && profile.investment_goals.length > 0)
       ? profile.investment_goals
       : (profile.goal_type && profile.goal_type !== 'wealth-building' ? [profile.goal_type] : []);
-  const taxRegime = profile.taxRegime || profile.regime || 'new';
+  const taxRegime = profile.taxRegime || profile.regime || 'new';               // Default: new regime
 
-  const hasLumpSum = Boolean(profile.hasLumpSum);
-  const lumpSumAmount = hasLumpSum ? (Number(profile.lumpSumAmount) || 0) : 0;
-  const soldPropertyAmount = Number(profile.soldPropertyAmount) || 0;
-  const totalCTC = Number(profile.totalCTC) || annualIncome;
-  const basicComponent = Number(profile.basicComponent) || (totalCTC * 0.5);
-  const monthlyTakeHome = Number(profile.monthlyTakeHome) || (annualIncome / 12);
+  const hasLumpSum = Boolean(profile.hasLumpSum);                               // Default: false (optional)
+  const lumpSumAmount = hasLumpSum ? (Number(profile.lumpSumAmount) || 0) : 0;  // Default: 0 (optional)
+  const soldPropertyAmount = Number(profile.soldPropertyAmount) || 0;           // Default: 0 (optional)
+  const totalCTC = Number(profile.totalCTC) || annualIncome;                    // Default: annualIncome (derived)
+  const basicComponent = Number(profile.basicComponent) || (totalCTC * 0.5);    // Default: 50% of CTC (derived)
+  const monthlyTakeHome = Number(profile.monthlyTakeHome) || (annualIncome / 12); // Default: annualIncome/12 (derived)
 
   // Re-use backend tax slab calculator passing basicComponent for 80CCD(2) employer NPS accuracy
   const mr = getTaxSlab(annualIncome, taxRegime, { basicSalary: basicComponent });

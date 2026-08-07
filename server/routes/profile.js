@@ -7,6 +7,7 @@ import { getRiskProfile } from '../services/riskProfiler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import { delCache, redisClient, redisAvailable } from '../config/redis.js';
 import { idempotency } from '../middleware/idempotency.js';
+import { toCamelCase, toSnakeCase } from '../utils/caseConverter.js';
 
 const router = Router();
 
@@ -125,6 +126,7 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     soldPropertyAmount: safeSoldPropertyAmount,
     hasLumpSum: safeHasLumpSum,
     lumpSumAmount: safeLumpSumAmount,
+    oneTimeInvestableAmount: safeLumpSumAmount,
   });
 
   // Invalidate ALL chatbot system prompt caches for this user
@@ -226,6 +228,7 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
     riskDescription: riskProfile.description,
     recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
     investableAmount,
+    oneTimeInvestableAmount: safeLumpSumAmount,
   };
   if (incomingGoalsPut !== undefined) {
     updateFields.goals = incomingGoalsPut;
@@ -276,7 +279,8 @@ export function formatProfileResponse(profile, extra = {}) {
     annual_income: p.annualIncome,
     investable_amount: p.investableAmount || p.savings,
     investable_amount_monthly: p.savings,
-    investable_amount_onetime: p.lumpSumAmount || 0,
+    investable_amount_onetime: p.oneTimeInvestableAmount !== undefined ? p.oneTimeInvestableAmount : (p.lumpSumAmount || 0),
+    oneTimeInvestableAmount: p.oneTimeInvestableAmount !== undefined ? p.oneTimeInvestableAmount : (p.lumpSumAmount || 0),
     total_ctc: p.totalCTC,
     basic_component: p.basicComponent,
     monthly_take_home: p.monthlyTakeHome,

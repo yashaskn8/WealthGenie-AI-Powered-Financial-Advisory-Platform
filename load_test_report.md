@@ -42,16 +42,16 @@ All metrics below are derived directly from committed raw JSON output files in [
 
 | Scenario | Concurrency | p50 (ms) | p95 (ms) | p99 (ms) | Throughput (req/s) | Error Rate | Raw Output File & Status Codes |
 |---|---|---|---|---|---|---|---|
-| Scenario 1 (Read-Heavy / GET /api/instruments) | 10 | 48.0 | 66.0 | 73.0 | 199.0 | **0.00%** | [scenario1_read_heavy_c10.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario1_read_heavy_c10.json) — 5969x HTTP 200 |
-| Scenario 1 (Read-Heavy / GET /api/instruments) | 50 | 63.0 | 306.0 | 494.0 | 600.2 | **0.00%** | [scenario1_read_heavy_c50.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario1_read_heavy_c50.json) — 18005x HTTP 200 |
-| Scenario 1 (Read-Heavy / GET /api/instruments) | 100 | 79.0 | 244.0 | 267.0 | 973.7 | **0.00%** | [scenario1_read_heavy_c100.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario1_read_heavy_c100.json) — 29212x HTTP 200 |
-| Scenario 2 (Compute-Heavy / GET /api/tax/compare) | 10 | 2.0 | 4.0 | 5.0 | 3606.5 | **0.00%** | [scenario2_compute_heavy_c10.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario2_compute_heavy_c10.json) — 108174x HTTP 200 |
-| Scenario 2 (Compute-Heavy / GET /api/tax/compare) | 50 | 12.0 | 19.0 | 21.0 | 3809.4 | **0.00%** | [scenario2_compute_heavy_c50.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario2_compute_heavy_c50.json) — 114264x HTTP 200 |
-| Scenario 2 (Compute-Heavy / GET /api/tax/compare) | 100 | 25.0 | 36.0 | 41.0 | 3736.7 | **0.00%** | [scenario2_compute_heavy_c100.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario2_compute_heavy_c100.json) — 112088x HTTP 200 |
-| Scenario 3 (Agentic LLM / POST /api/chat/message) | 10 | 90.0 | 155.0 | 245.0 | 105.7 | **98.11%** | [scenario3_agentic_llm_c10.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario3_agentic_llm_c10.json) — 60x HTTP 200, 3110x HTTP 500 |
-| Scenario 3 (Agentic LLM / POST /api/chat/message) | 50 | 264.0 | 474.0 | 512.0 | 188.5 | **100.00%** | [scenario3_agentic_llm_c50.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario3_agentic_llm_c50.json) — 5656x HTTP 500 |
-| Scenario 3 (Agentic LLM / POST /api/chat/message) | 100 | 506.0 | 844.0 | 874.0 | 193.6 | **99.14%** | [scenario3_agentic_llm_c100.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario3_agentic_llm_c100.json) — 50x HTTP 200, 5757x HTTP 500 |
-| Scenario 4 (Stress Ceiling / GET /api/tax/compare) | 200 | 35.0 | 43.0 | 54.0 | 5537.7 | **0.00%** | [scenario4_stress_c200.json](file:///C:/Users/prana/OneDrive/Desktop/final wealthgenie/server/reports/loadtest/scenario4_stress_c200.json) — 166115x HTTP 200 |
+| Scenario 1 (Read-Heavy / GET /api/instruments) | 10 | 48.0 | 66.0 | 73.0 | 199.0 | **0.00%** | [scenario1_read_heavy_c10.json](server/reports/loadtest/scenario1_read_heavy_c10.json) — 5969x HTTP 200 |
+| Scenario 1 (Read-Heavy / GET /api/instruments) | 50 | 63.0 | 306.0 | 494.0 | 600.2 | **0.00%** | [scenario1_read_heavy_c50.json](server/reports/loadtest/scenario1_read_heavy_c50.json) — 18005x HTTP 200 |
+| Scenario 1 (Read-Heavy / GET /api/instruments) | 100 | 79.0 | 244.0 | 267.0 | 973.7 | **0.00%** | [scenario1_read_heavy_c100.json](server/reports/loadtest/scenario1_read_heavy_c100.json) — 29212x HTTP 200 |
+| Scenario 2 (Compute-Heavy / GET /api/tax/compare) | 10 | 2.0 | 4.0 | 5.0 | 3606.5 | **0.00%** | [scenario2_compute_heavy_c10.json](server/reports/loadtest/scenario2_compute_heavy_c10.json) — 108174x HTTP 200 |
+| Scenario 2 (Compute-Heavy / GET /api/tax/compare) | 50 | 12.0 | 19.0 | 21.0 | 3809.4 | **0.00%** | [scenario2_compute_heavy_c50.json](server/reports/loadtest/scenario2_compute_heavy_c50.json) — 114264x HTTP 200 |
+| Scenario 2 (Compute-Heavy / GET /api/tax/compare) | 100 | 25.0 | 36.0 | 41.0 | 3736.7 | **0.00%** | [scenario2_compute_heavy_c100.json](server/reports/loadtest/scenario2_compute_heavy_c100.json) — 112088x HTTP 200 |
+| Scenario 3 (Agentic LLM / POST /api/chat/message) | 10 | 90.0 | 155.0 | 245.0 | 105.7 | **98.11%** | [scenario3_agentic_llm_c10.json](server/reports/loadtest/scenario3_agentic_llm_c10.json) — 60x HTTP 200, 3110x HTTP 500 |
+| Scenario 3 (Agentic LLM / POST /api/chat/message) | 50 | 264.0 | 474.0 | 512.0 | 188.5 | **100.00%** | [scenario3_agentic_llm_c50.json](server/reports/loadtest/scenario3_agentic_llm_c50.json) — 5656x HTTP 500 |
+| Scenario 3 (Agentic LLM / POST /api/chat/message) | 100 | 506.0 | 844.0 | 874.0 | 193.6 | **99.14%** | [scenario3_agentic_llm_c100.json](server/reports/loadtest/scenario3_agentic_llm_c100.json) — 50x HTTP 200, 5757x HTTP 500 |
+| Scenario 4 (Stress Ceiling / GET /api/tax/compare) | 200 | 35.0 | 43.0 | 54.0 | 5537.7 | **0.00%** | [scenario4_stress_c200.json](server/reports/loadtest/scenario4_stress_c200.json) — 166115x HTTP 200 |
 
 
 ---

@@ -35,6 +35,8 @@ const financialProfileSchema = new mongoose.Schema({
   soldPropertyAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
   hasLumpSum: { type: Boolean, default: false },
   lumpSumAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
+  /** One-time investable capital derived from available lump sum (WG-013) */
+  oneTimeInvestableAmount: { type: Number, default: 0, min: 0 },
   lastGoalCreatedAt: { type: Date },
   version: { type: Number, default: 1 },
   createdAt: { type: Date, default: Date.now },
@@ -62,6 +64,11 @@ financialProfileSchema.virtual('effectiveTaxRate')
 financialProfileSchema.virtual('existing_debt')
   .get(function() { return this.existing_debt_emi_ratio_pct; })
   .set(function(v) { this.existing_debt_emi_ratio_pct = v; });
+
+// Virtual getter/setter for one-time investable capital (WG-013)
+financialProfileSchema.virtual('investable_amount_onetime')
+  .get(function() { return this.oneTimeInvestableAmount; })
+  .set(function(v) { this.oneTimeInvestableAmount = v; });
 
 financialProfileSchema.index({ userId: 1, createdAt: -1 });
 

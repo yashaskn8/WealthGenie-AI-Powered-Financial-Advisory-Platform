@@ -96,7 +96,7 @@ const staticParams = {
   'G-Sec':      { nominalRate: 7.2,   volatility: 0.01,   expenseRatio: 0.0,    riskLevel: 'Very Low',   lockIn: 0,  name: 'Government Security',      tags: ['Sovereign', 'Gilt'] },
   PPF:          { nominalRate: 7.1,   volatility: 0.003,  expenseRatio: 0.0,    riskLevel: 'Very Low',   lockIn: 15, name: 'Public Provident Fund',    tags: ['EEE', 'Tax Free', '80C'] },
   NPS:          { nominalRate: 10.5,  volatility: 0.12,   expenseRatio: 0.0001, riskLevel: 'Medium',     lockIn: 60, name: 'National Pension System',  tags: ['Retirement', '80CCD'] },
-  Gold:         { nominalRate: 10.0,  volatility: 0.15,   expenseRatio: 0.005,  riskLevel: 'Medium',     lockIn: 0,  name: 'Gold ETF',                 tags: ['Hedge', 'Inflation'] },
+  Gold:         { nominalRate: 10.0,  volatility: 0.15,   expenseRatio: 0.005,  riskLevel: 'Medium',     lockIn: 0,  name: 'Gold (Commodity)',          assetClass: 'Commodity', tags: ['Hedge', 'Inflation'] },
   SGB:          { nominalRate: 12.5,  volatility: 0.14,   expenseRatio: 0.0,    riskLevel: 'Low-Medium', lockIn: 8,  name: 'Sovereign Gold Bond',      tags: ['Gold', 'Tax Exempt'] },
   Liquid_MF:    { nominalRate: 7.0,   volatility: 0.005,  expenseRatio: 0.0025, riskLevel: 'Low',        lockIn: 0,  name: 'Liquid Mutual Fund',       tags: ['Emergency Fund', 'T+1'] },
   Arbitrage_MF: { nominalRate: 7.5,   volatility: 0.02,   expenseRatio: 0.0035, riskLevel: 'Low',        lockIn: 0,  name: 'Arbitrage Mutual Fund',    tags: ['Low Volatility', 'Equity Taxed'] },
