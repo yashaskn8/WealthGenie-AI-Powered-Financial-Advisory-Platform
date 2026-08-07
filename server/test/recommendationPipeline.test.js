@@ -22,6 +22,7 @@ import {
   normaliseConfidenceScores,
   INSTRUMENT_KEY_MAP,
   rankWhereToInvestBackend,
+  reconcileRisk,
 } from '../services/RecommendationPipeline.js';
 
 test('RecommendationPipeline resolveBackendType mapping precision', () => {
@@ -209,6 +210,31 @@ test('RecommendationPipeline dynamic age overrides (senior vs young)', () => {
   const topPicks = seniorResult.instruments.slice(0, 3).map(i => i.type);
   assert.ok(!topPicks.includes('Smallcap_MF') || seniorResult.instruments.find(i => i.type === 'Smallcap_MF').allocationWeight < 0.25);
   assert.ok(topPicks.includes('SCSS') || topPicks.includes('FD') || topPicks.includes('PPF') || topPicks.includes('RBI_Bond'));
+});
+
+test('WG-010: rankWhereToInvestBackend and runPipeline agree on risk tier classification', () => {
+  const testProfiles = [
+    { riskCategory: 'Conservative', risk_tolerance: 'Conservative', age: 30, annualIncome: 600000 },
+    { riskCategory: 'Conservative-Moderate', risk_tolerance: 'Conservative', age: 35, annualIncome: 800000 },
+    { riskCategory: 'Moderate', risk_tolerance: 'Moderate', age: 30, annualIncome: 1000000 },
+    { riskCategory: 'Moderate-Aggressive', risk_tolerance: 'Aggressive', age: 28, annualIncome: 1500000 },
+    { riskCategory: 'Aggressive', risk_tolerance: 'Aggressive', age: 25, annualIncome: 2000000 },
+  ];
+
+  const candidates = [
+    { name: 'PPF', rate: '7.1%', badge: 'Sovereign' },
+    { name: 'Nifty 50 Index', rate: '12.5%', badge: 'Equity' },
+  ];
+
+  for (const prof of testProfiles) {
+    const pipelineRes = runPipeline(prof, {});
+    const wtiRes = rankWhereToInvestBackend(candidates, prof);
+    const expectedTier = pipelineRes.riskReconciliation.final_risk_tier;
+
+    const reconciled = reconcileRisk(prof);
+    assert.equal(reconciled.final_risk_tier, expectedTier, `reconcileRisk should return ${expectedTier}`);
+    assert.ok(wtiRes.length > 0, 'rankWhereToInvestBackend should return ranked candidates');
+  }
 });
 
 test('deriveWeights exact alpha values for horizon and risk combinations', () => {

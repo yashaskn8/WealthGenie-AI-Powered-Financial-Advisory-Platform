@@ -901,7 +901,8 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
   const age = Number(profile.age || 35);
   const annualIncome = Number(profile.annualIncome || profile.annual_income || 1000000);
   const taxRegime = profile.taxRegime || 'new';
-  const riskCat = (profile.riskCategory || profile.risk_tolerance || 'Moderate').toLowerCase();
+  const reconciledRisk = reconcileRisk(profile);
+  const riskCat = (reconciledRisk.final_risk_tier || 'Moderate').toLowerCase();
   const horizon = Number(profile.investmentHorizon || profile.investment_horizon || 5);
 
   // 1. Compute marginal tax rate using backend taxEngine
