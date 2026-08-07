@@ -144,7 +144,7 @@ test('Security: user B cannot modify user A profile via IDOR', async () => {
       body: JSON.stringify({
         ...VALID_PROFILE_BODY,
         monthly_income: 120000,
-        version: profileA.__v,
+        version: profileA.version || 1,
       }),
       headers: { authorization: `Bearer ${tokenB}` },
     });
@@ -308,5 +308,98 @@ test('WG-018: GET /api/chat/metrics (old path) returns 404 after relocation', as
     });
     assert.equal(response.status, 404, 'old /api/chat/metrics path must be dead after relocation');
   });
+});
+
+// ── 7. WG-003, WG-007, WG-025: In-Place Mutation, Canonical Response, and OCC ──
+test('WG-003: PUT /api/profile/:profileId updates existing profile in-place', async () => {
+  await mongoose.connect(TEST_DB_URI);
+  try {
+    await FinancialProfile.deleteMany({ userId: USER_A_ID });
+    const token = signToken(USER_A_ID);
+    await withServer(buildApp(), async (baseUrl) => {
+      const { response: postRes, body: postBody } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+        method: 'POST',
+        body: JSON.stringify(VALID_PROFILE_BODY),
+        headers: { authorization: `Bearer ${token}` },
+      });
+      assert.equal(postRes.status, 201);
+      const profileId = postBody.profileId;
+
+      const { response: putRes, body: putBody } = await jsonFetch(`${baseUrl}/api/profile/${profileId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...VALID_PROFILE_BODY, monthly_income: 95000, version: postBody.version || 1 }),
+        headers: { authorization: `Bearer ${token}` },
+      });
+      assert.equal(putRes.status, 200, 'PUT /api/profile/:profileId should succeed with valid version');
+      assert.equal(putBody.profileId, profileId, 'profileId must remain unchanged');
+      assert.equal(putBody.version, (postBody.version || 1) + 1, 'version must increment by 1');
+
+      const count = await FinancialProfile.countDocuments({ userId: USER_A_ID });
+      assert.equal(count, 1, 'Should update existing profile in-place without creating a new document');
+    });
+  } finally {
+    await FinancialProfile.deleteMany({ userId: USER_A_ID });
+    await mongoose.disconnect();
+  }
+});
+
+test('WG-007: POST /build and PUT /:profileId return identical key sets', async () => {
+  await mongoose.connect(TEST_DB_URI);
+  try {
+    const token = signToken(USER_A_ID);
+    await withServer(buildApp(), async (baseUrl) => {
+      const { body: postBody } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+        method: 'POST',
+        body: JSON.stringify(VALID_PROFILE_BODY),
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      const { body: putBody } = await jsonFetch(`${baseUrl}/api/profile/${postBody.profileId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...VALID_PROFILE_BODY, version: postBody.version }),
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      const postKeys = Object.keys(postBody).sort();
+      const putKeys = Object.keys(putBody).sort();
+      assert.deepEqual(postKeys, putKeys, 'POST and PUT response shapes must match key-for-key');
+    });
+  } finally {
+    await FinancialProfile.deleteMany({ userId: USER_A_ID });
+    await mongoose.disconnect();
+  }
+});
+
+test('WG-025: PUT /api/profile/:profileId requires version and returns 409 Conflict on version mismatch', async () => {
+  await mongoose.connect(TEST_DB_URI);
+  try {
+    const token = signToken(USER_A_ID);
+    await withServer(buildApp(), async (baseUrl) => {
+      const { body: postBody } = await jsonFetch(`${baseUrl}/api/profile/build`, {
+        method: 'POST',
+        body: JSON.stringify(VALID_PROFILE_BODY),
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      // Omitting version should fail validation (400)
+      const { response: noVersionRes } = await jsonFetch(`${baseUrl}/api/profile/${postBody.profileId}`, {
+        method: 'PUT',
+        body: JSON.stringify(VALID_PROFILE_BODY),
+        headers: { authorization: `Bearer ${token}` },
+      });
+      assert.equal(noVersionRes.status, 400, 'Omitting version on PUT must be rejected with 400');
+
+      // Stale version should return 409 Conflict
+      const { response: mismatchRes } = await jsonFetch(`${baseUrl}/api/profile/${postBody.profileId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...VALID_PROFILE_BODY, version: 999 }),
+        headers: { authorization: `Bearer ${token}` },
+      });
+      assert.equal(mismatchRes.status, 409, 'Version mismatch must return 409 Conflict');
+    });
+  } finally {
+    await FinancialProfile.deleteMany({ userId: USER_A_ID });
+    await mongoose.disconnect();
+  }
 });
 

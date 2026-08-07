@@ -123,6 +123,10 @@ export async function buildProfile(
   });
 }
 
+export async function updateProfile(profileId, payload) {
+  return request('PUT', `/profile/${profileId}`, payload);
+}
+
 // ─── RECOMMENDATIONS ─────────────────────────────────────
 export async function getRecommendations(profileId) {
   return request('POST', '/recommend', { profileId });

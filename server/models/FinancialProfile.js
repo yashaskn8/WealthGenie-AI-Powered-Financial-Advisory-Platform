@@ -31,6 +31,7 @@ const financialProfileSchema = new mongoose.Schema({
   hasLumpSum: { type: Boolean, default: false },
   lumpSumAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
   lastGoalCreatedAt: { type: Date },
+  version: { type: Number, default: 1 },
   createdAt: { type: Date, default: Date.now },
 }, {
   optimisticConcurrency: true,

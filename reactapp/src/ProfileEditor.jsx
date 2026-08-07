@@ -133,11 +133,38 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
 
     setIsSaving(true);
     try {
-      const response = await api.buildProfile(
-        numIncome, numAge, numSavings, draft.taxRegime || 'new', draft.investment_horizon || 15,
-        numLiquid, numDebt, numDeps, numEf, draft.risk_tolerance || 'Moderate', draft.goal_type || 'wealth-building'
-      );
-      onProfileUpdate({ ...draft, profileId: response.profileId || draft.profileId || null });
+      const profileId = userProfile?._id || userProfile?.profileId || draft.profileId || draft._id;
+      let response;
+      const payload = {
+        monthly_income: numIncome,
+        age: numAge,
+        monthly_savings: numSavings,
+        regime: draft.taxRegime || 'new',
+        investment_horizon: draft.investment_horizon || 15,
+        liquid_savings: numLiquid,
+        existing_debt: numDebt,
+        dependents: numDeps,
+        emergency_fund_months: numEf,
+        risk_tolerance: draft.risk_tolerance || 'Moderate',
+        goal_type: draft.goal_type || 'wealth-building',
+        total_ctc: draft.total_ctc || (numIncome * 12),
+        basic_component: draft.basic_component || ((draft.total_ctc || (numIncome * 12)) * 0.5),
+        monthly_take_home: draft.monthly_take_home || numIncome,
+        sold_property_amount: draft.sold_property_amount || 0,
+        has_lump_sum: Boolean(draft.has_lump_sum),
+        lump_sum_amount: draft.has_lump_sum ? (draft.lump_sum_amount || 0) : 0,
+        version: draft.version || 1,
+      };
+
+      if (profileId) {
+        response = await api.updateProfile(profileId, payload);
+      } else {
+        response = await api.buildProfile(
+          numIncome, numAge, numSavings, draft.taxRegime || 'new', draft.investment_horizon || 15,
+          numLiquid, numDebt, numDeps, numEf, draft.risk_tolerance || 'Moderate', draft.goal_type || 'wealth-building'
+        );
+      }
+      onProfileUpdate({ ...draft, ...(response || {}), profileId: response?.profileId || profileId || null, version: response?.version || (draft.version || 1) + 1 });
       setIsEditing(false);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 2500);

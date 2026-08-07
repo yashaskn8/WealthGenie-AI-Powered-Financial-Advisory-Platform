@@ -104,6 +104,13 @@ export const profileSchema = Joi.object({
   return value;
 });
 
+export const updateProfileSchema = profileSchema.keys({
+  version: Joi.number().integer().min(1).required().messages({
+    'any.required': 'version is required for profile updates',
+    'number.min': 'version must be at least 1',
+  }),
+});
+
 // ── Recommendation Schema ──────────────────────────────────────────
 export const recommendSchema = Joi.object({
   profileId: objectId.required()

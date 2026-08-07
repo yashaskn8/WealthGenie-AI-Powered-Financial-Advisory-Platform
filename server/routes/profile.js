@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyJWT } from '../middleware/authMiddleware.js';
 import { asyncHandler, createError } from '../middleware/errorHandler.js';
-import { validate, profileSchema } from '../validation/schemas.js';
+import { validate, profileSchema, updateProfileSchema } from '../validation/schemas.js';
 import { computeTax, getTaxSlab, compareTaxRegimes } from '../services/taxEngine.js';
 import { getRiskProfile } from '../services/riskProfiler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
@@ -133,47 +133,29 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     console.warn('[Profile] Cache invalidation failed (non-critical):', redisErr.message);
   }
 
-  res.status(201).json({
-    profileId: profile._id,
-    taxSlab: marginalRate,
-    effectiveTaxRate: taxResult.effectiveRate,
-    taxDetails: taxResult,
-    taxComparison,
-    riskCategory: riskProfile.category,
-    riskScore: riskProfile.riskScore,
-    riskDescription: riskProfile.description,
-    recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
-    annual_income: annualIncome,
-    investable_amount: investableAmount,
-    investable_amount_monthly: monthly_savings,
-    investable_amount_onetime: safeLumpSumAmount,
-    total_ctc: safeTotalCTC,
-    basic_component: safeBasicComponent,
-    monthly_take_home: safeMonthlyTakeHome,
-    sold_property_amount: safeSoldPropertyAmount,
-    has_lump_sum: safeHasLumpSum,
-    lump_sum_amount: safeLumpSumAmount,
-  });
+  res.status(201).json(formatProfileResponse(profile, { taxResult, taxComparison }));
 }));
 
 /**
  * PUT /api/profile/:profileId [Protected]
- * Updates a financial profile with optimistic concurrency control (OCC).
+ * Updates a financial profile in-place with optimistic concurrency control (OCC).
  */
-router.put('/:profileId', verifyJWT, validate(profileSchema), asyncHandler(async (req, res) => {
+router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler(async (req, res) => {
   const { profileId } = req.params;
   const expectedVersion = req.body.version;
 
-  const profile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId });
-  if (!profile) {
+  const existingProfile = await FinancialProfile.findOne({ _id: profileId, userId: req.user.userId });
+  if (!existingProfile) {
     throw createError(404, 'Profile not found or access denied', 'Profile not found.');
   }
 
-  // 1. Fail-fast version check
-  if (expectedVersion !== undefined && profile.__v !== expectedVersion) {
+  const currentVersion = existingProfile.version || 1;
+  if (currentVersion !== expectedVersion) {
     return res.status(409).json({
       error: 'Conflict',
-      message: 'Version conflict. Document has been modified concurrently by another process.'
+      message: 'Version conflict. Document has been modified concurrently by another process.',
+      currentVersion,
+      expectedVersion,
     });
   }
 
@@ -185,68 +167,104 @@ router.put('/:profileId', verifyJWT, validate(profileSchema), asyncHandler(async
     has_lump_sum, lump_sum_amount
   } = req.body;
 
-  const safeTotalCTC = Number(total_ctc) || (monthly_income * 12);
+  const annualIncome = monthly_income * 12;
+  const safeTotalCTC = Number(total_ctc) || annualIncome;
   const safeBasicComponent = Number(basic_component) || (safeTotalCTC * 0.5);
   const safeMonthlyTakeHome = Number(monthly_take_home) || monthly_income;
   const safeSoldPropertyAmount = Number(sold_property_amount) || 0;
   const safeHasLumpSum = Boolean(has_lump_sum);
   const safeLumpSumAmount = safeHasLumpSum ? (Number(lump_sum_amount) || 0) : 0;
+  const taxRegime = regime || 'new';
 
-  // Apply edits
-  profile.income = monthly_income;
-  profile.age = age;
-  profile.savings = monthly_savings;
-  profile.annualIncome = monthly_income * 12;
-  profile.taxRegime = regime || 'new';
-  profile.investmentHorizon = investment_horizon;
-  profile.liquid_savings = liquid_savings || 0;
-  profile.existing_debt = existing_debt || 0;
-  profile.dependents = dependents || 0;
-  profile.emergency_fund_months = emergency_fund_months || 0;
-  profile.risk_tolerance = risk_tolerance || 'Moderate';
-  profile.goal_type = goal_type || 'wealth-building';
-  profile.totalCTC = safeTotalCTC;
-  profile.basicComponent = safeBasicComponent;
-  profile.monthlyTakeHome = safeMonthlyTakeHome;
-  profile.soldPropertyAmount = safeSoldPropertyAmount;
-  profile.hasLumpSum = safeHasLumpSum;
-  profile.lumpSumAmount = safeLumpSumAmount;
-
-  // Recompute tax & risk profile
   const taxDeductions = { basicSalary: safeBasicComponent };
-  const taxResult = computeTax(profile.annualIncome, profile.taxRegime, taxDeductions);
-  const marginalRate = getTaxSlab(profile.annualIncome, profile.taxRegime, taxDeductions);
-  const monthlyIncomeVal = profile.annualIncome / 12;
-  const impliedMonthlyDebtVal = monthlyIncomeVal > 0 ? ((Number(profile.existing_debt || 0) / 100) * monthlyIncomeVal) : 0;
+  const taxResult = computeTax(annualIncome, taxRegime, taxDeductions);
+  const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions);
+  const monthlyIncomeVal = monthly_income;
+  const impliedMonthlyDebtVal = monthlyIncomeVal > 0 ? ((Number(existing_debt || 0) / 100) * monthlyIncomeVal) : 0;
   const riskProfile = getRiskProfile(
-    age, profile.annualIncome, investment_horizon, 0, profile.dependents || 0,
+    age, annualIncome, investment_horizon, 0, dependents || 0,
     monthly_savings, impliedMonthlyDebtVal, safeLumpSumAmount, safeSoldPropertyAmount
   );
 
-  profile.taxSlab = marginalRate;
-  profile.effectiveTaxRate = taxResult.effectiveRate;
-  profile.riskCategory = riskProfile.category;
-  profile.riskScore = riskProfile.riskScore;
-  profile.riskDescription = riskProfile.description;
-  profile.recommendedEquityAllocation = riskProfile.recommendedEquityAllocation;
-  profile.investableAmount = monthly_savings;
+  const investableAmount = monthly_savings;
 
-  try {
-    await profile.save();
-  } catch (err) {
-    if (err.name === 'VersionError') {
-      return res.status(409).json({
-        error: 'Conflict',
-        message: 'Version conflict. Document has been modified concurrently.'
-      });
-    }
-    throw err;
+  const updatedProfile = await FinancialProfile.findOneAndUpdate(
+    { _id: profileId, userId: req.user.userId, version: expectedVersion },
+    {
+      $set: {
+        income: monthly_income,
+        age,
+        savings: monthly_savings,
+        annualIncome,
+        taxRegime,
+        investmentHorizon: investment_horizon,
+        liquid_savings: liquid_savings || 0,
+        existing_debt: existing_debt || 0,
+        dependents: dependents || 0,
+        emergency_fund_months: emergency_fund_months || 0,
+        risk_tolerance: risk_tolerance || 'Moderate',
+        goal_type: goal_type || 'wealth-building',
+        totalCTC: safeTotalCTC,
+        basicComponent: safeBasicComponent,
+        monthlyTakeHome: safeMonthlyTakeHome,
+        soldPropertyAmount: safeSoldPropertyAmount,
+        hasLumpSum: safeHasLumpSum,
+        lumpSumAmount: safeLumpSumAmount,
+        taxSlab: marginalRate,
+        effectiveTaxRate: taxResult.effectiveRate,
+        riskCategory: riskProfile.category,
+        riskScore: riskProfile.riskScore,
+        riskDescription: riskProfile.description,
+        recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
+        investableAmount,
+      },
+      $inc: { version: 1 },
+    },
+    { new: true }
+  );
+
+  if (!updatedProfile) {
+    return res.status(409).json({
+      error: 'Conflict',
+      message: 'Version conflict. Document has been modified concurrently by another process.',
+    });
   }
 
-  res.json({
-    status: 'success',
-    profile
-  });
+  // Invalidate ALL chatbot system prompt caches for this user
+  try {
+    const prefix = `chat:sysprompt_v3:${req.user.userId}:`;
+    await delCache(prefix + updatedProfile._id);
+  } catch (redisErr) {
+    console.warn('[Profile Update] Cache invalidation failed (non-critical):', redisErr.message);
+  }
+
+  res.status(200).json(formatProfileResponse(updatedProfile, { taxResult }));
 }));
+
+export function formatProfileResponse(profile, extra = {}) {
+  const p = profile.toObject ? profile.toObject() : profile;
+  return {
+    profileId: p._id,
+    version: p.version || 1,
+    taxSlab: p.taxSlab,
+    effectiveTaxRate: p.effectiveTaxRate,
+    taxDetails: extra.taxResult || null,
+    taxComparison: extra.taxComparison || null,
+    riskCategory: p.riskCategory,
+    riskScore: p.riskScore,
+    riskDescription: p.riskDescription,
+    recommendedEquityAllocation: p.recommendedEquityAllocation,
+    annual_income: p.annualIncome,
+    investable_amount: p.investableAmount || p.savings,
+    investable_amount_monthly: p.savings,
+    investable_amount_onetime: p.lumpSumAmount || 0,
+    total_ctc: p.totalCTC,
+    basic_component: p.basicComponent,
+    monthly_take_home: p.monthlyTakeHome,
+    sold_property_amount: p.soldPropertyAmount,
+    has_lump_sum: p.hasLumpSum,
+    lump_sum_amount: p.lumpSumAmount,
+  };
+}
 
 export default router;
