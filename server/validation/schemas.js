@@ -66,7 +66,9 @@ export const profileSchema = Joi.object({
   investment_horizon: Joi.number().integer().min(1).max(40).default(15),
   liquid_savings: Joi.number().min(0).max(1000000000).required()
     .messages({ 'number.min': 'Liquid savings must be a positive number' }),
-  existing_debt: Joi.number().min(0).max(100).required()
+  existing_debt_emi_ratio_pct: Joi.number().min(0).max(100).optional()
+    .messages({ 'number.min': 'Existing debt EMI burden must be between 0 and 100%' }),
+  existing_debt: Joi.number().min(0).max(100).optional()
     .messages({ 'number.min': 'Existing debt EMI burden must be between 0 and 100%' }),
   dependents: Joi.number().integer().min(0).max(15).required()
     .messages({ 'number.min': 'Dependents must be at least 0' }),

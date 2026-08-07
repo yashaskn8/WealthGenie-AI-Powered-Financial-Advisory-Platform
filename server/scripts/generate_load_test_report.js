@@ -103,7 +103,7 @@ function generateReport(postPatchData = null) {
 ### Tooling Audit Findings
 - **Status of Existing Tooling**: \`server/package.json\` listed \`"loadtest": "node scripts/loadtest.js"\` in its scripts block and \`autocannon\` in \`devDependencies\`.
 - **Finding**: \`autocannon\` was not yet installed in \`node_modules\`, and \`server/scripts/loadtest.js\` did not exist in the repository (an unmaintained script entry).
-- **Remediation**: Installed \`autocannon\` (\`v8.0.0\`) and created [loadtest.js](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/scripts/loadtest.js) to automate 30-second benchmark scenarios across 10, 50, 100, and 200 concurrent connections, saving raw un-truncated JSON outputs for every run.
+- **Remediation**: Installed \`autocannon\` (\`v8.0.0\`) and created [loadtest.js](server/scripts/loadtest.js) to automate 30-second benchmark scenarios across 10, 50, 100, and 200 concurrent connections, saving raw un-truncated JSON outputs for every run.
 
 ---
 
@@ -120,7 +120,7 @@ function generateReport(postPatchData = null) {
 
 ## 3. Benchmark Results Table
 
-All metrics below are derived directly from committed raw JSON output files in [server/reports/loadtest/](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/). Error rates count all HTTP non-2xx responses (including HTTP 500s and 429s) as failures per standard load-testing definitions.
+All metrics below are derived directly from committed raw JSON output files in [server/reports/loadtest/](server/reports/loadtest/). Error rates count all HTTP non-2xx responses (including HTTP 500s and 429s) as failures per standard load-testing definitions.
 
 | Scenario | Concurrency | p50 (ms) | p95 (ms) | p99 (ms) | Throughput (req/s) | Error Rate | Raw Output File & Status Codes |
 |---|---|---|---|---|---|---|---|
@@ -153,17 +153,17 @@ RAG returns HTTP 429 → Triggers fallback path → Fallback attempts conversati
 ## 5. Raw Tool Output Files
 
 All raw JSON output files produced by \`autocannon\` are committed in the repository:
-- [loadtest_summary_manifest.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/loadtest_summary_manifest.json)
-- [scenario1_read_heavy_c10.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario1_read_heavy_c10.json)
-- [scenario1_read_heavy_c50.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario1_read_heavy_c50.json)
-- [scenario1_read_heavy_c100.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario1_read_heavy_c100.json)
-- [scenario2_compute_heavy_c10.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario2_compute_heavy_c10.json)
-- [scenario2_compute_heavy_c50.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario2_compute_heavy_c50.json)
-- [scenario2_compute_heavy_c100.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario2_compute_heavy_c100.json)
-- [scenario3_agentic_llm_c10.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario3_agentic_llm_c10.json)
-- [scenario3_agentic_llm_c50.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario3_agentic_llm_c50.json)
-- [scenario3_agentic_llm_c100.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario3_agentic_llm_c100.json)
-- [scenario4_stress_c200.json](file:///c:/Users/prana/OneDrive/Desktop/final%20wealthgenie/server/reports/loadtest/scenario4_stress_c200.json)
+- [loadtest_summary_manifest.json](server/reports/loadtest/loadtest_summary_manifest.json)
+- [scenario1_read_heavy_c10.json](server/reports/loadtest/scenario1_read_heavy_c10.json)
+- [scenario1_read_heavy_c50.json](server/reports/loadtest/scenario1_read_heavy_c50.json)
+- [scenario1_read_heavy_c100.json](server/reports/loadtest/scenario1_read_heavy_c100.json)
+- [scenario2_compute_heavy_c10.json](server/reports/loadtest/scenario2_compute_heavy_c10.json)
+- [scenario2_compute_heavy_c50.json](server/reports/loadtest/scenario2_compute_heavy_c50.json)
+- [scenario2_compute_heavy_c100.json](server/reports/loadtest/scenario2_compute_heavy_c100.json)
+- [scenario3_agentic_llm_c10.json](server/reports/loadtest/scenario3_agentic_llm_c10.json)
+- [scenario3_agentic_llm_c50.json](server/reports/loadtest/scenario3_agentic_llm_c50.json)
+- [scenario3_agentic_llm_c100.json](server/reports/loadtest/scenario3_agentic_llm_c100.json)
+- [scenario4_stress_c200.json](server/reports/loadtest/scenario4_stress_c200.json)
 `;
 
   fs.writeFileSync(ROOT_REPORT_PATH, markdownContent);

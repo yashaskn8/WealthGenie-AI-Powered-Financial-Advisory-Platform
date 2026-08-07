@@ -20,7 +20,11 @@ const recommendationSchema = new mongoose.Schema({
   profileId: { type: mongoose.Schema.Types.ObjectId, ref: 'FinancialProfile', required: true },
   instruments: [instrumentDetailSchema],
   advisoryText: { type: String },
-  confidenceScores: { type: mongoose.Schema.Types.Mixed },
+  confidenceScores: {
+    type: Map,
+    of: { type: Number, min: 0, max: 1 },
+    default: {},
+  },
   mlFallback: { type: Boolean, default: false },
   modelVersion: { type: String, default: '1.0' },
   generatedAt: { type: Date, default: Date.now },

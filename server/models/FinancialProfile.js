@@ -21,7 +21,8 @@ const financialProfileSchema = new mongoose.Schema({
   investableAmount: { type: Number, min: 0 },
   investmentHorizon: { type: Number, min: 1, max: 40, default: 15 },
   liquid_savings: { type: Number, default: 0 },
-  existing_debt: { type: Number, default: 0, min: 0, max: 100 },
+  /** Existing debt EMI burden as a percentage of monthly income (0.0 to 100.0%) */
+  existing_debt_emi_ratio_pct: { type: Number, default: 0, min: 0, max: 100 },
   dependents: { type: Number, default: 0 },
   emergency_fund_months: { type: Number, default: 0 },
   risk_tolerance: { type: String, enum: ['Conservative', 'Moderate', 'Aggressive'], default: 'Moderate' },
@@ -56,6 +57,11 @@ financialProfileSchema.virtual('taxSlab')
 financialProfileSchema.virtual('effectiveTaxRate')
   .get(function() { return this.effectiveTaxRatePercent; })
   .set(function(v) { this.effectiveTaxRatePercent = v; });
+
+// Backwards-compatible virtual getter/setter for renamed debt field (WG-029)
+financialProfileSchema.virtual('existing_debt')
+  .get(function() { return this.existing_debt_emi_ratio_pct; })
+  .set(function(v) { this.existing_debt_emi_ratio_pct = v; });
 
 financialProfileSchema.index({ userId: 1, createdAt: -1 });
 

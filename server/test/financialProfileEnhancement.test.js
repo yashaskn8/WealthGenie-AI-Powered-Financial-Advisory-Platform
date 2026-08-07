@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 import FinancialProfile from '../models/FinancialProfile.js';
+import Recommendation from '../models/Recommendation.js';
 import profileRouter from '../routes/profile.js';
 import recommendRouter from '../routes/recommend.js';
 import { getRiskProfile } from '../services/riskProfiler.js';
@@ -322,5 +323,43 @@ describe('Financial Profile Deep Integration Test Suite', () => {
       assert.ok(dbDoc, 'Document must exist in MongoDB');
       assert.deepEqual(dbDoc.goals, ['Retirement', 'Home Purchase'], 'FinancialProfile.goals must be populated from investment_goals payload');
     });
+  });
+
+  // 9. WG-028 Recommendation Mongoose confidenceScores Schema Test
+  it('9. WG-028: Recommendation Mongoose confidenceScores schema validates map values and rejects invalid entries', () => {
+    const validDoc = new Recommendation({
+      userId: new mongoose.Types.ObjectId(),
+      profileId: new mongoose.Types.ObjectId(),
+      confidenceScores: { PPF: 0.95, FD: 0.85 },
+    });
+    const validErr = validDoc.validateSync();
+    assert.equal(validErr, undefined, 'Valid confidenceScores map must pass validation without error');
+
+    const invalidDoc = new Recommendation({
+      userId: new mongoose.Types.ObjectId(),
+      profileId: new mongoose.Types.ObjectId(),
+      confidenceScores: { PPF: 1.5 }, // INVALID: > 1.0
+    });
+    const invalidErr = invalidDoc.validateSync();
+    assert.ok(invalidErr, 'Invalid confidenceScores map (> 1.0) must fail Mongoose validation');
+    assert.ok(invalidErr.errors['confidenceScores.PPF'], 'Error path must target confidenceScores.PPF');
+  });
+
+  // 10. WG-029 existing_debt_emi_ratio_pct Renaming & Virtual Getter Test
+  it('10. WG-029: FinancialProfile model supports existing_debt_emi_ratio_pct and backward-compatible existing_debt virtual getter/setter', () => {
+    const doc = new FinancialProfile({
+      userId: new mongoose.Types.ObjectId(),
+      monthlyIncome: 100000,
+      age: 30,
+      savings: 30000,
+      annualIncome: 1200000,
+      existing_debt_emi_ratio_pct: 15,
+    });
+
+    assert.equal(doc.existing_debt_emi_ratio_pct, 15, 'existing_debt_emi_ratio_pct field must be set directly');
+    assert.equal(doc.existing_debt, 15, 'existing_debt virtual getter must return existing_debt_emi_ratio_pct');
+
+    doc.existing_debt = 25;
+    assert.equal(doc.existing_debt_emi_ratio_pct, 25, 'existing_debt virtual setter must update existing_debt_emi_ratio_pct');
   });
 });

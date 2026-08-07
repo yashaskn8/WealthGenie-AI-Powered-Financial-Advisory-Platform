@@ -17,9 +17,10 @@ function hasUsablePrediction(result) {
 
 export async function getMLPrediction(profileData, correlationId = null) {
   // ── Backward Compatibility Check ──
+  const debtVal = profileData.existing_debt_emi_ratio_pct !== undefined ? profileData.existing_debt_emi_ratio_pct : profileData.existing_debt;
   const isProfileIncomplete = 
     profileData.liquid_savings === undefined || profileData.liquid_savings === null ||
-    profileData.existing_debt === undefined || profileData.existing_debt === null ||
+    debtVal === undefined || debtVal === null ||
     profileData.dependents === undefined || profileData.dependents === null ||
     profileData.emergency_fund_months === undefined || profileData.emergency_fund_months === null ||
     profileData.risk_tolerance === undefined || profileData.risk_tolerance === null ||
@@ -38,7 +39,8 @@ export async function getMLPrediction(profileData, correlationId = null) {
       monthly_savings: profileData.monthly_savings,
       risk_category: profileData.risk_category,
       liquid_savings: profileData.liquid_savings,
-      existing_debt: profileData.existing_debt,
+      existing_debt: debtVal,
+      existing_debt_emi_ratio_pct: debtVal,
       dependents: profileData.dependents,
       emergency_fund_months: profileData.emergency_fund_months,
       risk_tolerance: profileData.risk_tolerance,

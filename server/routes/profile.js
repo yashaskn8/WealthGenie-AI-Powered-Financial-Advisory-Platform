@@ -66,9 +66,11 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
   const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions);
   const taxComparison = compareTaxRegimes(annualIncome, taxDeductions);
 
+  const safeExistingDebt = Number(req.body.existing_debt_emi_ratio_pct !== undefined ? req.body.existing_debt_emi_ratio_pct : (req.body.existing_debt || 0));
+
   // Compute risk profile incorporating available lump sum & property sale liquidity
   const monthlyIncome = annualIncome / 12;
-  const impliedMonthlyDebt = monthlyIncome > 0 ? ((Number(existing_debt || 0) / 100) * monthlyIncome) : 0;
+  const impliedMonthlyDebt = monthlyIncome > 0 ? ((safeExistingDebt / 100) * monthlyIncome) : 0;
   const riskProfile = getRiskProfile(
     age, annualIncome, investment_horizon, 0, dependents || 0,
     monthly_savings, impliedMonthlyDebt, safeLumpSumAmount, safeSoldPropertyAmount
@@ -185,7 +187,8 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
   const taxResult = computeTax(annualIncome, taxRegime, taxDeductions);
   const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions);
   const monthlyIncomeVal = monthly_income;
-  const impliedMonthlyDebtVal = monthlyIncomeVal > 0 ? ((Number(existing_debt || 0) / 100) * monthlyIncomeVal) : 0;
+  const safeExistingDebtPut = Number(req.body.existing_debt_emi_ratio_pct !== undefined ? req.body.existing_debt_emi_ratio_pct : (req.body.existing_debt || 0));
+  const impliedMonthlyDebtVal = monthlyIncomeVal > 0 ? ((safeExistingDebtPut / 100) * monthlyIncomeVal) : 0;
   const riskProfile = getRiskProfile(
     age, annualIncome, investment_horizon, 0, dependents || 0,
     monthly_savings, impliedMonthlyDebtVal, safeLumpSumAmount, safeSoldPropertyAmount
@@ -205,7 +208,7 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
     taxRegime,
     investmentHorizon: investment_horizon,
     liquid_savings: liquid_savings || 0,
-    existing_debt: existing_debt || 0,
+    existing_debt_emi_ratio_pct: safeExistingDebtPut,
     dependents: dependents || 0,
     emergency_fund_months: emergency_fund_months || 0,
     risk_tolerance: risk_tolerance || 'Moderate',
