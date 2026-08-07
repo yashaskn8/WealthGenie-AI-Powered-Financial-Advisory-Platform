@@ -126,7 +126,7 @@ export function getRiskProfile(
   experienceYears = 0,
   dependents = 0,
   monthlySavings = null,
-  monthlyDebtPayment = 0,
+  monthlyDebtPaymentInr = 0,
   lumpSumAmount = 0,
   soldPropertyAmount = 0
 ) {
@@ -156,16 +156,8 @@ export function getRiskProfile(
 
   // Debt-to-income ratio penalty: max 15 points (triggered if EMI > 30% of gross monthly income)
   let penaltyDebt = 0;
-  if (monthlyDebtPayment !== null && monthlyDebtPayment !== undefined) {
-    let safeDebt = Math.max(0, Number(monthlyDebtPayment) || 0);
-    // Unit normalization: if safeDebt is passed directly as an EMI burden percentage (0-100%) rather than ₹ EMI,
-    // convert it to implied monthly ₹ EMI based on safeIncome.
-    if (safeDebt > 0 && safeDebt <= 100 && safeIncome > 12000) {
-      const rawRatio = (safeDebt * 12) / safeIncome;
-      if (rawRatio < 0.01) {
-        safeDebt = (safeDebt / 100) * (safeIncome / 12);
-      }
-    }
+  if (monthlyDebtPaymentInr !== null && monthlyDebtPaymentInr !== undefined) {
+    const safeDebt = Math.max(0, Number(monthlyDebtPaymentInr) || 0);
     const debtRatio = safeIncome > 0 ? (safeDebt * 12) / safeIncome : 0;
     if (debtRatio > 0.30) {
       penaltyDebt = Math.min(15, (debtRatio - 0.30) * 50);

@@ -95,27 +95,19 @@ test.after(async () => {
 // 1. Debt Penalty Unit Normalization Unit Tests
 // ═══════════════════════════════════════════════════════════════════
 
-test('Audit Fix 1.2: Debt penalty triggers correctly when passed as percentage or monthly ₹ EMI', () => {
+test('WG-006: Debt penalty triggers correctly based on monthly ₹ EMI without magnitude-based misfire', () => {
   const annualIncome = 600000; // 50,000 / month
 
   // Baseline: zero debt (0% EMI burden)
   const baseline = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 0);
 
-  // 20% EMI burden (below 30% penalty threshold) → zero penalty
-  const lowDebtPercentage = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 20);
-  assert.equal(lowDebtPercentage.riskScore, baseline.riskScore, 'Debt <= 30% should incur zero penalty');
-
-  // 50% EMI burden passed as percentage (50) → penalty = (0.50 - 0.30) * 50 = 10 points
-  const highDebtPercentage = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 50);
-  assert.equal(highDebtPercentage.riskScore, baseline.riskScore - 10, '50% debt burden should subtract exactly 10 points');
+  // WG-006 audit worked example: monthly_income=50000, existing_debt=0.1 (₹50/month EMI)
+  const lowDebtInr = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 50);
+  assert.equal(lowDebtInr.riskScore, baseline.riskScore, '0.1% EMI burden (₹50/mo) should incur ~0 penalty');
 
   // 50% EMI burden passed as rupee amount (25,000/month) → penalty = 10 points
   const highDebtRupees = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 25000);
   assert.equal(highDebtRupees.riskScore, baseline.riskScore - 10, '25,000 ₹/mo debt (50%) should subtract exactly 10 points');
-
-  // 60% EMI burden passed as percentage (60) → max penalty = 15 points
-  const maxDebtPercentage = getRiskProfile(30, annualIncome, 15, 0, 0, 10000, 60);
-  assert.equal(maxDebtPercentage.riskScore, baseline.riskScore - 15, '60% debt burden should subtract max 15 points');
 });
 
 // ═══════════════════════════════════════════════════════════════════
