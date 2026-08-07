@@ -690,9 +690,76 @@ test('WG-001: scoreRisk differentiates low-risk (PPF, value=1) vs high-risk (ELS
   assert.ok(scoreElssAgg < scorePpfAgg, 'ELSS should have better (lower penalty) risk score for aggressive user');
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// WG-004 END-TO-END: computedWeights must flow through runPipeline
+// ═══════════════════════════════════════════════════════════════════
 
+test('WG-004: runPipeline returns computedWeights object with all 7 weight dimensions', () => {
+  const profile = {
+    age: 30, annualIncome: 1200000, savings: 20000,
+    riskCategory: 'Moderate', investmentHorizon: 10,
+    taxRegime: 'new',
+  };
+  const result = runPipeline(profile, {});
 
+  // computedWeights must be present in the return object
+  assert.ok(result.computedWeights, 'runPipeline must return computedWeights');
+  assert.equal(typeof result.computedWeights, 'object');
 
+  // All 7 Greek-letter weight dimensions must be present and numeric
+  const requiredKeys = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta'];
+  for (const key of requiredKeys) {
+    assert.ok(key in result.computedWeights, `computedWeights must include ${key}`);
+    assert.equal(typeof result.computedWeights[key], 'number', `${key} must be a number`);
+    assert.ok(result.computedWeights[key] >= PIPELINE_CONFIG.WEIGHT_FLOOR, `${key} must be >= WEIGHT_FLOOR`);
+    assert.ok(result.computedWeights[key] <= PIPELINE_CONFIG.WEIGHT_CEIL, `${key} must be <= WEIGHT_CEIL`);
+  }
+});
+
+test('WG-004: runPipeline computedWeights are profile-differentiated, not flat defaults', () => {
+  // Profile A: aggressive young investor with long horizon and goals
+  const profileA = {
+    age: 25, annualIncome: 2000000, savings: 40000,
+    riskCategory: 'Aggressive', investmentHorizon: 20,
+    taxRegime: 'old', investment_goals: ['Retirement', 'Wealth Growth'],
+  };
+  // Profile B: conservative senior with short horizon and no goals
+  const profileB = {
+    age: 55, annualIncome: 800000, savings: 5000,
+    riskCategory: 'Conservative', investmentHorizon: 3,
+    taxRegime: 'new', investment_goals: [],
+  };
+
+  const resultA = runPipeline(profileA, {});
+  const resultB = runPipeline(profileB, {});
+
+  const wA = resultA.computedWeights;
+  const wB = resultB.computedWeights;
+
+  // Neither set of weights should be the flat {alpha:1,...} default
+  const isFlat = (w) => Object.values(w).every(v => v === 1.0);
+  assert.ok(!isFlat(wA), 'Profile A weights must not be flat 1.0 defaults');
+  assert.ok(!isFlat(wB), 'Profile B weights must not be flat 1.0 defaults');
+
+  // The two profiles must produce meaningfully different weights
+  // At minimum alpha (growth) and beta (risk) should differ
+  assert.notEqual(wA.alpha, wB.alpha,
+    'Aggressive long-horizon alpha must differ from conservative short-horizon alpha');
+  assert.notEqual(wA.beta, wB.beta,
+    'Young aggressive beta must differ from senior conservative beta');
+
+  // Aggressive long-horizon → higher alpha (growth appetite)
+  assert.ok(wA.alpha > wB.alpha,
+    `Aggressive 20yr alpha (${wA.alpha}) must exceed conservative 3yr alpha (${wB.alpha})`);
+
+  // Senior conservative → higher beta (risk aversion)
+  assert.ok(wB.beta > wA.beta,
+    `Senior conservative beta (${wB.beta}) must exceed young aggressive beta (${wA.beta})`);
+
+  // Goals present → higher epsilon
+  assert.ok(wA.epsilon > wB.epsilon,
+    `Profile with goals epsilon (${wA.epsilon}) must exceed no-goals epsilon (${wB.epsilon})`);
+});
 
 
 

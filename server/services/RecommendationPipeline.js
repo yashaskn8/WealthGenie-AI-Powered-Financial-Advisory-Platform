@@ -863,7 +863,7 @@ export function runPipeline(profile, mlResult, options = {}) {
     preference_missing: riskResult.preference_missing,
   };
 
-  return { instruments, confidenceScores: confScores, riskReconciliation };
+  return { instruments, confidenceScores: confScores, riskReconciliation, computedWeights: w };
 }
 
 // ── Confidence score normalisation (reused from recommend.js) ────

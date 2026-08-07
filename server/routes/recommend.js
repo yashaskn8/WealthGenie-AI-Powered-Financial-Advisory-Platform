@@ -87,7 +87,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
   // ── Run the metadata-driven RecommendationPipeline ──────────────
   // This replaces the previous hardcoded demographic & tax overrides
   // with a modular pipeline: eligibility → scoring → ranking → diversity
-  const { instruments, confidenceScores, riskReconciliation } = runPipeline(profile, mlResult);
+  const { instruments, confidenceScores, riskReconciliation, computedWeights } = runPipeline(profile, mlResult);
 
   if (instruments.length === 0) {
     throw createError(502, 'RecommendationPipeline returned no instruments', 'Recommendation engine returned empty results.');
@@ -143,6 +143,9 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     reconciliation_note: riskReconciliation.reconciliation_note,
     advisory_note: riskReconciliation.advisory_note,
     excluded_due_to_eligibility: riskReconciliation.excluded_due_to_eligibility,
+    // WG-004: Attach backend-computed scoring weights so the frontend can use
+    // profile-aware weights instead of falling back to flat {alpha:1,...} defaults.
+    computed_weights: computedWeights,
   };
 
   // Cache for 24 hours

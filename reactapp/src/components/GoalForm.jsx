@@ -237,16 +237,29 @@ export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
             </div>
             <div>
               <label style={labelStyle}>Goal Importance (Priority)</label>
-              <select 
-                value={priority} 
-                onChange={e => setPriority(e.target.value)}
-                style={{ ...inputStyle, height: '42px' }}
-              >
-                <option value="Critical">Critical</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                {['Critical', 'High', 'Medium', 'Low'].map(p => {
+                  const isActive = priority === p;
+                  const colors = { Critical: '#ef4444', High: '#f97316', Medium: '#0ea5e9', Low: '#64748b' };
+                  const c = colors[p];
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPriority(p)}
+                      style={{
+                        background: isActive ? `${c}25` : 'rgba(15, 23, 42, 0.6)',
+                        border: `1px solid ${isActive ? c : 'rgba(255,255,255,0.08)'}`,
+                        borderRadius: 10, padding: '10px 4px', color: isActive ? c : '#94a3b8',
+                        fontSize: '0.78rem', fontWeight: isActive ? 800 : 500, cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

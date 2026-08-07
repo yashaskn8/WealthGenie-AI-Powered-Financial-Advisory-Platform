@@ -251,13 +251,72 @@ function computeCostPenalty(inv) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// LOCAL WEIGHT DERIVATION — mirrors backend RecommendationPipeline.deriveWeights()
+// This is the single-source-of-truth fallback when the backend has not supplied
+// computedWeights via the API response. Any changes here MUST be mirrored in
+// server/services/RecommendationPipeline.js deriveWeights().
+// ═══════════════════════════════════════════════════════════════════
+const _WEIGHT_FLOOR = 0.5;
+const _WEIGHT_CEIL  = 3.0;
+
+function _deriveWeightsLocal(p, rawProfile) {
+  const clamp = (v) => Math.max(_WEIGHT_FLOOR, Math.min(_WEIGHT_CEIL, v));
+
+  // α — Return: long horizon + high risk + lump sum → prioritize growth
+  let alpha = 1.0;
+  if (p.horizon >= 15) alpha += 0.5;
+  if (p.horizon >= 20) alpha += 0.3;
+  if (p.risk === 'aggressive' || p.risk === 'moderate-aggressive') alpha += 0.5;
+  else if (p.risk === 'conservative') alpha -= 0.3;
+  const hasLump = rawProfile?.hasLumpSum || rawProfile?.has_lump_sum;
+  const lumpAmt = Number(rawProfile?.lumpSumAmount || rawProfile?.lump_sum_amount) || 0;
+  if (hasLump && lumpAmt > 0) alpha += 0.3;
+
+  // β — Risk: older age + low risk → penalize risky instruments
+  let beta = 1.0;
+  if (p.age >= 50) beta += 0.8;
+  else if (p.age >= 40) beta += 0.4;
+  if (p.risk === 'conservative') beta += 0.8;
+  else if (p.risk === 'aggressive') beta -= 0.4;
+
+  // γ — Tax: high slab → penalize slab-taxed instruments
+  let gamma = p.mr > 0 ? (p.mr / 0.312) * 1.5 : 0;
+
+  // δ — Liquidity: reduced stress if user has lump sum capital
+  let delta = 0.8;
+  const emergencyCover = p.annualIncome > 0 ? (p.savings * 12 / p.annualIncome) : 0;
+  if (emergencyCover < 0.2) delta += 0.6;
+  if (hasLump && lumpAmt > 0) delta = Math.max(0.5, delta - 0.2);
+
+  // ε — Goal alignment
+  let epsilon = p.goals.length > 0 ? 1.2 : 0.5;
+
+  // ζ — Horizon match
+  let zeta = 1.0;
+  if (p.horizon <= 3) zeta += 0.5;
+  if (p.horizon >= 20) zeta += 0.3;
+
+  // η — Cost
+  let eta = 0.5;
+  if (p.horizon >= 10) eta += 0.3;
+  if (p.horizon >= 20) eta += 0.4;
+
+  return {
+    alpha: clamp(alpha), beta: clamp(beta), gamma: clamp(gamma),
+    delta: clamp(delta), epsilon: clamp(epsilon), zeta: clamp(zeta), eta: clamp(eta),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // MAIN SCORING FUNCTION — backward-compatible signature
 // ═══════════════════════════════════════════════════════════════════
 export function computeScore(inv, profile) {
   const p = parseProfile(profile);
-  const w = profile?.computedWeights || {
-    alpha: 1.0, beta: 1.0, gamma: 1.0, delta: 1.0, epsilon: 1.0, zeta: 1.0, eta: 1.0
-  };
+  // WG-004: Use backend-supplied weights when available (API-driven path),
+  // otherwise derive them locally using the same algorithm as the backend's
+  // RecommendationPipeline.deriveWeights(). This replaces the prior silent
+  // fallback to flat {alpha:1,...} which ignored all profile dimensions.
+  const w = profile?.computedWeights || _deriveWeightsLocal(p, profile);
 
   // Reuse existing tax computation
   const { postTaxRate } = computePostTaxReturn(inv, p.annualSavings, p.annualIncome, profile);

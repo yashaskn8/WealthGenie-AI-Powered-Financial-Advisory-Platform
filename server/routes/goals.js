@@ -1,3 +1,4 @@
+/* eslint complexity: ["error", 25] */
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { verifyJWT, isOwner, isValidObjectId } from '../middleware/authMiddleware.js';
@@ -76,38 +77,32 @@ async function generateGoalAdvice(goal, profile, userMonthlySavings) {
 }
 
 /**
- * POST /api/goals/create [Protected]
- * Create a new financial goal with automated SIP computation and Monte Carlo analysis.
+ * Resolve the user's financial profile — first from explicit profileId, then latest.
  */
-router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHandler(async (req, res) => {
-  const { goal_name, target_amount, target_date, current_savings, profileId, priority } = req.body;
-
-  // Validate profileId ownership if provided
-  let profile = null;
+async function _resolveProfile(profileId, userId) {
   if (profileId) {
     if (!isValidObjectId(profileId)) {
       throw createError(400, 'Invalid profileId in goal create', 'Invalid profile ID.');
     }
-    profile = await FinancialProfile.findById(profileId).lean();
+    const profile = await FinancialProfile.findById(profileId).lean();
     if (!profile) {
       throw createError(404, `Profile not found for goal create: ${profileId}`, 'Profile not found.');
     }
-    if (!isOwner(profile, req.user.userId)) {
+    if (!isOwner(profile, userId)) {
       throw createError(403, `Unauthorized goal-profile access: ${profileId}`, 'Access denied.');
     }
+    return profile;
   }
+  return FinancialProfile.findOne({ userId }).sort({ createdAt: -1 }).lean();
+}
 
-  // Fall back to latest profile
-  if (!profile) {
-    profile = await FinancialProfile.findOne({ userId: req.user.userId })
-      .sort({ createdAt: -1 }).lean();
-  }
-
-  // Calculate years remaining with invariant checks
+/**
+ * Compute years remaining from target date, with validation.
+ */
+function _computeYearsRemaining(target_date) {
   const targetDateObj = new Date(target_date);
   const now = new Date();
 
-  // Invariant: target_date must be at least 6 months in the future
   const sixMonthsFromNow = new Date();
   sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
   if (targetDateObj < sixMonthsFromNow) {
@@ -117,7 +112,135 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
     );
   }
 
-  // Duplicate goal name check - prevent data confusion
+  const msRemaining = targetDateObj - now;
+  const rawYears = msRemaining / (365.25 * 24 * 60 * 60 * 1000);
+  const yearsRemaining = Math.max(0.5, Math.floor(rawYears * 4) / 4);
+
+  if (!Number.isFinite(yearsRemaining)) {
+    throw createError(400, `Invalid target_date produced NaN years: ${target_date}`, 'Invalid target date.');
+  }
+  return { targetDateObj, yearsRemaining };
+}
+
+/**
+ * Compute post-tax return rate for the given instrument + profile.
+ */
+async function _computePostTaxRate(instrument, vol, profile, yearsRemaining) {
+  let postTaxRate = vol.mean;
+  if (profile) {
+    try {
+      const { calculatePostTaxReturn } = await import('../services/postTaxCalculator.js');
+      const ptResult = calculatePostTaxReturn(
+        instrument, vol.mean,
+        profile.annualIncome || (profile.income * 12),
+        yearsRemaining, profile.taxRegime || 'new'
+      );
+      postTaxRate = ptResult.postTaxReturn;
+    } catch (_) {
+      // Fallback to pre-tax if post-tax calc fails
+    }
+  }
+  return postTaxRate;
+}
+
+/**
+ * Validate Monte Carlo invariants and clamp out-of-bounds probability.
+ */
+function _validateMcResult(mcResult) {
+  if (mcResult.goal_probability !== null) {
+    if (!Number.isFinite(mcResult.goal_probability) || mcResult.goal_probability < 0 || mcResult.goal_probability > 1) {
+      console.error(`[Goals INVARIANT] goal_probability out of bounds: ${mcResult.goal_probability}. Clamping.`);
+      mcResult.goal_probability = Math.max(0, Math.min(1, mcResult.goal_probability || 0));
+    }
+  }
+  const lastIdx = mcResult.p50.length - 1;
+  if (lastIdx >= 0 && mcResult.p10[lastIdx] > mcResult.p90[lastIdx]) {
+    console.error('[Goals INVARIANT] p10 > p90 - Monte Carlo band inversion detected.');
+  }
+  return lastIdx;
+}
+
+/**
+ * Build Recharts-compatible chart data array from MC result.
+ */
+function _buildChartData(mcResult) {
+  return mcResult.years_array.map((yr, i) => ({
+    year: yr,
+    p10: mcResult.p10[i],
+    p25: mcResult.p25[i],
+    p50: mcResult.p50[i],
+    p75: mcResult.p75[i],
+    p90: mcResult.p90[i],
+  }));
+}
+
+/**
+ * Persist goal with transaction fallback for standalone MongoDB.
+ */
+async function _persistGoalWithFallback(goalData, profileId) {
+  let goal = null;
+
+  try {
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      const goals = await Goal.create([goalData], { session });
+      goal = goals[0];
+
+      if (profileId) {
+        await FinancialProfile.updateOne(
+          { _id: profileId },
+          { $set: { lastGoalCreatedAt: new Date() } },
+          { session }
+        );
+      }
+
+      await session.commitTransaction();
+    } catch (txErr) {
+      try { await session.abortTransaction(); } catch (_) { /* already aborted */ }
+
+      const msg = txErr.message || '';
+      if (msg.includes('Transaction numbers are only allowed on a replica set') ||
+          msg.includes('transaction') && msg.includes('not supported')) {
+        console.warn('[Goals] Transactions not supported — falling back to sequential writes.');
+        goal = null;
+      } else {
+        throw txErr;
+      }
+    } finally {
+      session.endSession();
+    }
+  } catch (sessionErr) {
+    const msg = sessionErr.message || '';
+    if (!msg.includes('replica set') && !msg.includes('not supported') && !msg.includes('session')) {
+      throw sessionErr;
+    }
+    console.warn('[Goals] Session not available — falling back to sequential writes.');
+  }
+
+  if (!goal) {
+    goal = await Goal.create(goalData);
+    if (profileId) {
+      await FinancialProfile.updateOne(
+        { _id: profileId },
+        { $set: { lastGoalCreatedAt: new Date() } }
+      );
+    }
+  }
+  return goal;
+}
+
+/**
+ * POST /api/goals/create [Protected]
+ * Create a new financial goal with automated SIP computation and Monte Carlo analysis.
+ */
+router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHandler(async (req, res) => {
+  const { goal_name, target_amount, target_date, current_savings, profileId, priority } = req.body;
+
+  const profile = await _resolveProfile(profileId, req.user.userId);
+
+  // Duplicate goal name check
   const existingGoal = await Goal.findOne({
     userId: req.user.userId,
     goal_name: { $regex: new RegExp(`^${goal_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
@@ -129,14 +252,7 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
     );
   }
 
-  const msRemaining = targetDateObj - now;
-  const rawYears = msRemaining / (365.25 * 24 * 60 * 60 * 1000);
-  const yearsRemaining = Math.max(0.5, Math.floor(rawYears * 4) / 4);
-
-  // Guard: if yearsRemaining is somehow NaN (invalid date), reject
-  if (!Number.isFinite(yearsRemaining)) {
-    throw createError(400, `Invalid target_date produced NaN years: ${target_date}`, 'Invalid target date.');
-  }
+  const { targetDateObj, yearsRemaining } = _computeYearsRemaining(target_date);
 
   // Find the user's latest recommendation
   let latestRec = null;
@@ -150,38 +266,19 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
   }
   const recommendedInstrument = latestRec?.instruments?.[0]?.type || 'Equity_MF';
 
-  // Get volatility params for the recommended instrument
   const vol = getInstrumentVolatility(recommendedInstrument);
-
-  // Compute post-tax adjusted rate if profile is available
-  let postTaxRate = vol.mean;
-  if (profile) {
-    try {
-      const { calculatePostTaxReturn } = await import('../services/postTaxCalculator.js');
-      const ptResult = calculatePostTaxReturn(
-        recommendedInstrument, vol.mean,
-        profile.annualIncome || (profile.income * 12),
-        yearsRemaining, profile.taxRegime || 'new'
-      );
-      postTaxRate = ptResult.postTaxReturn;
-    } catch (_) {
-      // Fallback to pre-tax if post-tax calc fails
-    }
-  }
+  const postTaxRate = await _computePostTaxRate(recommendedInstrument, vol, profile, yearsRemaining);
 
   // Compute inflation-adjusted target amount (default inflation: 5%)
-  const inflationRate = 0.05;
-  const inflationAdjustedTarget = Math.round(target_amount * Math.pow(1 + inflationRate, yearsRemaining));
+  const inflationAdjustedTarget = Math.round(target_amount * Math.pow(1.05, yearsRemaining));
 
-  // Factor in user's lump sum capital if available
+  // Factor in user's lump sum capital
   const lumpSumCapital = (profile && profile.hasLumpSum) ? (profile.lumpSumAmount || 0) : 0;
   const totalUpfrontSavings = (current_savings || 0) + lumpSumCapital;
 
-  // Compute required monthly SIP using reverse formula with POST-TAX rate against inflation-adjusted target
   const rawSIP = reverseSIP(inflationAdjustedTarget, postTaxRate, yearsRemaining, totalUpfrontSavings);
   const requiredSIP = Math.max(500, Math.round(Number.isFinite(rawSIP) ? rawSIP : 5000));
 
-  // Run Monte Carlo with the required SIP and POST-TAX rate against inflation-adjusted target
   const mcResult = runMonteCarloWithGoal({
     monthlyInvestment: requiredSIP,
     postTaxAnnualReturn: postTaxRate,
@@ -192,52 +289,22 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
     currentSavings: totalUpfrontSavings,
   });
 
-  // Self-check invariants on Monte Carlo output
-  if (mcResult.goal_probability !== null) {
-    if (!Number.isFinite(mcResult.goal_probability) || mcResult.goal_probability < 0 || mcResult.goal_probability > 1) {
-      console.error(`[Goals INVARIANT] goal_probability out of bounds: ${mcResult.goal_probability}. Clamping.`);
-      mcResult.goal_probability = Math.max(0, Math.min(1, mcResult.goal_probability || 0));
-    }
-  }
-  const lastIdx = mcResult.p50.length - 1;
-  if (lastIdx >= 0 && mcResult.p10[lastIdx] > mcResult.p90[lastIdx]) {
-    console.error('[Goals INVARIANT] p10 > p90 - Monte Carlo band inversion detected.');
-  }
+  const lastIdx = _validateMcResult(mcResult);
+  const chartData = _buildChartData(mcResult);
 
-  // Determine status using PROBABILITY-BASED classification
   const userMonthlySavings = profile?.savings || 10000;
   const gap = requiredSIP - userMonthlySavings;
   const status = _determineGoalStatus(mcResult.goal_probability, gap, userMonthlySavings);
 
-  // Generate Gemini advice for this goal
-  const goalForAdvice = {
-    goal_name,
-    target_amount,
-    target_date: targetDateObj,
-    recommended_sip: requiredSIP,
-    recommended_instrument: recommendedInstrument,
-    status,
-  };
-  const geminiAdvice = await generateGoalAdvice(goalForAdvice, profile, userMonthlySavings);
+  const geminiAdvice = await generateGoalAdvice({
+    goal_name, target_amount, target_date: targetDateObj,
+    recommended_sip: requiredSIP, recommended_instrument: recommendedInstrument, status,
+  }, profile, userMonthlySavings);
 
-  // Build Recharts chart data
-  const chartData = mcResult.years_array.map((yr, i) => ({
-    year: yr,
-    p10: mcResult.p10[i],
-    p25: mcResult.p25[i],
-    p50: mcResult.p50[i],
-    p75: mcResult.p75[i],
-    p90: mcResult.p90[i],
-  }));
-
-  // Mongoose transaction wrapper for multi-document writes (Goal + FinancialProfile).
-  // Gracefully degrades to sequential writes if MongoDB doesn't support transactions
-  // (standalone mode without replica set).
   const goalData = {
     userId: req.user.userId,
     profileId: profile?._id,
-    goal_name,
-    target_amount,
+    goal_name, target_amount,
     inflation_adjusted_target: inflationAdjustedTarget,
     target_date: targetDateObj,
     current_savings: current_savings || 0,
@@ -248,12 +315,9 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
     status,
     priority: priority || 'Medium',
     monte_carlo_summary: {
-      p10: mcResult.p10[lastIdx],
-      p25: mcResult.p25[lastIdx],
-      p50: mcResult.p50[lastIdx],
-      p75: mcResult.p75[lastIdx],
-      p90: mcResult.p90[lastIdx],
-      simulations_run: mcResult.simulations_run,
+      p10: mcResult.p10[lastIdx], p25: mcResult.p25[lastIdx],
+      p50: mcResult.p50[lastIdx], p75: mcResult.p75[lastIdx],
+      p90: mcResult.p90[lastIdx], simulations_run: mcResult.simulations_run,
     },
     chart_data: chartData,
     mc_computed_at: new Date(),
@@ -261,67 +325,10 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
     gemini_advice: geminiAdvice,
   };
 
-  let goal = null;
-  let usedTransaction = false;
-
+  let goal;
   try {
-  try {
-    // Attempt transactional write
-    const session = await mongoose.startSession();
-    try {
-      session.startTransaction();
-
-      const goals = await Goal.create([goalData], { session });
-      goal = goals[0];
-
-      if (profile?._id) {
-        await FinancialProfile.updateOne(
-          { _id: profile._id },
-          { $set: { lastGoalCreatedAt: new Date() } },
-          { session }
-        );
-      }
-
-      await session.commitTransaction();
-      usedTransaction = true;
-    } catch (txErr) {
-      try { await session.abortTransaction(); } catch (_) { /* already aborted */ }
-
-      // If transactions aren't supported (standalone MongoDB), fall back
-      const msg = txErr.message || '';
-      if (msg.includes('Transaction numbers are only allowed on a replica set') ||
-          msg.includes('transaction') && msg.includes('not supported')) {
-        console.warn('[Goals] Transactions not supported — falling back to sequential writes.');
-        goal = null; // reset, will create below
-      } else {
-        throw txErr; // real error, propagate
-      }
-    } finally {
-      session.endSession();
-    }
-  } catch (sessionErr) {
-    // startSession itself can fail on very old drivers — fall back
-    const msg = sessionErr.message || '';
-    if (!msg.includes('replica set') && !msg.includes('not supported') && !msg.includes('session')) {
-      throw sessionErr;
-    }
-    console.warn('[Goals] Session not available — falling back to sequential writes.');
-  }
-
-  // Fallback: sequential writes (no atomicity guarantee, but functional)
-  if (!goal) {
-    goal = await Goal.create(goalData);
-    if (profile?._id) {
-      await FinancialProfile.updateOne(
-        { _id: profile._id },
-        { $set: { lastGoalCreatedAt: new Date() } }
-      );
-    }
-  }
+    goal = await _persistGoalWithFallback(goalData, profile?._id);
   } catch (createErr) {
-    // Handle race condition: two concurrent requests both passed the findOne
-    // duplicate check, but the unique compound index on {userId, goal_name}
-    // rejected the second insert with a duplicate key error.
     if (createErr.code === 11000) {
       throw createError(409,
         `Concurrent duplicate goal name: "${goal_name}" for user ${req.user.userId}`,
@@ -332,10 +339,12 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
   }
 
   res.status(201).json({
-    goalId: goal._id,
-    ...goal.toObject(),
-    chartData,
-    years_remaining: yearsRemaining,
+    goal: {
+      goalId: goal._id,
+      ...goal.toObject(),
+      chartData,
+      years_remaining: yearsRemaining,
+    },
   });
 }));
 
@@ -407,22 +416,8 @@ router.get('/', verifyJWT, asyncHandler(async (req, res) => {
     } else {
       // Cache is stale or missing - run Monte Carlo and update DB
       const vol = getInstrumentVolatility(g.recommended_instrument || 'Equity_MF');
-      
-      let postTaxRate = vol.mean;
       const profile = await findOwnedProfileById(g.profileId, req.user.userId);
-      if (profile) {
-        try {
-          const { calculatePostTaxReturn } = await import('../services/postTaxCalculator.js');
-          const ptResult = calculatePostTaxReturn(
-            g.recommended_instrument || 'Equity_MF', vol.mean,
-            profile.annualIncome || (profile.income * 12),
-            yearsRemaining, profile.taxRegime || 'new'
-          );
-          postTaxRate = ptResult.postTaxReturn;
-        } catch (err) {
-          console.warn('[Goals] Failed to calculate post-tax return during Monte Carlo:', err.message);
-        }
-      }
+      const postTaxRate = await _computePostTaxRate(g.recommended_instrument || 'Equity_MF', vol, profile, yearsRemaining);
       
       const targetAmt = g.inflation_adjusted_target || g.target_amount;
       const mcResult = runMonteCarloWithGoal({
@@ -435,14 +430,8 @@ router.get('/', verifyJWT, asyncHandler(async (req, res) => {
         currentSavings: g.current_savings || 0,
       });
 
-      chartData = mcResult.years_array.map((yr, i) => ({
-        year: yr,
-        p10: mcResult.p10[i],
-        p25: mcResult.p25[i],
-        p50: mcResult.p50[i],
-        p75: mcResult.p75[i],
-        p90: mcResult.p90[i],
-      }));
+      chartData = _buildChartData(mcResult);
+      const lastIdx = mcResult.p50.length - 1;
 
       // Cache it back to database asynchronously (don't block the request)
       Goal.findOneAndUpdate({ _id: g._id, userId: req.user.userId }, {
@@ -451,12 +440,9 @@ router.get('/', verifyJWT, asyncHandler(async (req, res) => {
         years_remaining: yearsRemaining,
         probability_of_success: mcResult.goal_probability,
         monte_carlo_summary: {
-          p10: mcResult.p10[mcResult.p10.length - 1],
-          p25: mcResult.p25[mcResult.p25.length - 1],
-          p50: mcResult.p50[mcResult.p50.length - 1],
-          p75: mcResult.p75[mcResult.p75.length - 1],
-          p90: mcResult.p90[mcResult.p90.length - 1],
-          simulations_run: mcResult.simulations_run,
+          p10: mcResult.p10[lastIdx], p25: mcResult.p25[lastIdx],
+          p50: mcResult.p50[lastIdx], p75: mcResult.p75[lastIdx],
+          p90: mcResult.p90[lastIdx], simulations_run: mcResult.simulations_run,
         }
       }).catch(err => console.error('[Goals Cache] Failed to write cache to DB:', err.message));
     }
@@ -522,30 +508,14 @@ router.patch('/:goalId', verifyJWT, validate(goalUpdateSchema), asyncHandler(asy
     const profile = await findOwnedProfileById(goal.profileId, req.user.userId) ||
                     await FinancialProfile.findOne({ userId: req.user.userId }).sort({ createdAt: -1 }).lean();
     
-    const targetDateObj = new Date(goal.target_date);
     const now = new Date();
-    const msRemaining = targetDateObj - now;
-    const rawYears = msRemaining / (365.25 * 24 * 60 * 60 * 1000);
-    const yearsRemaining = Math.max(0.5, Math.floor(rawYears * 4) / 4);
+    const msRemaining = new Date(goal.target_date) - now;
+    const yearsRemaining = Math.max(0.5, Math.floor((msRemaining / (365.25 * 24 * 60 * 60 * 1000)) * 4) / 4);
 
     const vol = getInstrumentVolatility(goal.recommended_instrument || 'Equity_MF');
-    let postTaxRate = vol.mean;
-    if (profile) {
-      try {
-        const { calculatePostTaxReturn } = await import('../services/postTaxCalculator.js');
-        const ptResult = calculatePostTaxReturn(
-          goal.recommended_instrument || 'Equity_MF', vol.mean,
-          profile.annualIncome || (profile.income * 12),
-          yearsRemaining, profile.taxRegime || 'new'
-        );
-        postTaxRate = ptResult.postTaxReturn;
-      } catch (err) {
-        console.warn('[Goals] Failed to calculate post-tax return during goal initialization:', err.message);
-      }
-    }
+    const postTaxRate = await _computePostTaxRate(goal.recommended_instrument || 'Equity_MF', vol, profile, yearsRemaining);
 
-    const inflationRate = 0.05;
-    const inflationAdjustedTarget = Math.round(goal.target_amount * Math.pow(1 + inflationRate, yearsRemaining));
+    const inflationAdjustedTarget = Math.round(goal.target_amount * Math.pow(1.05, yearsRemaining));
     goal.inflation_adjusted_target = inflationAdjustedTarget;
 
     const rawSIP = reverseSIP(inflationAdjustedTarget, postTaxRate, yearsRemaining, goal.current_savings);
@@ -566,31 +536,15 @@ router.patch('/:goalId', verifyJWT, validate(goalUpdateSchema), asyncHandler(asy
     
     const lastIdx = mcResult.p50.length - 1;
     goal.monte_carlo_summary = {
-      p10: mcResult.p10[lastIdx],
-      p25: mcResult.p25[lastIdx],
-      p50: mcResult.p50[lastIdx],
-      p75: mcResult.p75[lastIdx],
-      p90: mcResult.p90[lastIdx],
-      simulations_run: mcResult.simulations_run,
+      p10: mcResult.p10[lastIdx], p25: mcResult.p25[lastIdx],
+      p50: mcResult.p50[lastIdx], p75: mcResult.p75[lastIdx],
+      p90: mcResult.p90[lastIdx], simulations_run: mcResult.simulations_run,
     };
 
-    // Cache chart data
-    const chartData = mcResult.years_array.map((yr, i) => ({
-      year: yr,
-      p10: mcResult.p10[i],
-      p25: mcResult.p25[i],
-      p50: mcResult.p50[i],
-      p75: mcResult.p75[i],
-      p90: mcResult.p90[i],
-    }));
-    goal.chart_data = chartData;
+    goal.chart_data = _buildChartData(mcResult);
     goal.mc_computed_at = new Date();
     goal.years_remaining = yearsRemaining;
-
-    if (mcResult.goal_probability >= 0.65) goal.status = 'on_track';
-    else if (mcResult.goal_probability >= 0.35) goal.status = 'at_risk';
-    else goal.status = 'off_track';
-
+    goal.status = _determineGoalStatus(mcResult.goal_probability, goal.gap_amount, profile?.savings || 10000);
     goal.gemini_advice = await generateGoalAdvice(goal, profile, profile?.savings || 10000);
   }
 
