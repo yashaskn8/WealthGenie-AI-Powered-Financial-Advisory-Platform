@@ -340,7 +340,7 @@ const CURATED_REASONS = {
     `They invest in extremely short-term debt papers (maturity ≤ 91 days) with sovereign or AAA rating, minimizing both credit and interest rate risk.`,
     `Gains are taxed at your income slab rate of ${fmtPct(p.mr)}, but the post-tax yield remains superior to a standard bank savings account.`,
   ],
-  sukanya: (inv, p) => [
+  sukanya: (inv, _p) => [
     `SSY offers the highest guaranteed EEE return at ${inv.rate}% p.a. — better than PPF and entirely tax-free.`,
     `If you have a daughter under 10, this is the single most efficient government scheme available for her education or marriage.`,
     `The 21-year lock-in matches the long-term nature of the goal.`,
@@ -350,7 +350,7 @@ const CURATED_REASONS = {
     `With your savings of ₹${p.savings.toLocaleString('en-IN')}/month, the 7-year lock-in is manageable within your ${p.horizon}-year horizon.`,
     `Interest is taxable at your ${fmtPct(p.mr)} slab rate, but the pre-tax yield still exceeds most alternatives.`,
   ],
-  sgb: (inv, p) => [
+  sgb: (_inv, _p) => [
     `Sovereign Gold Bonds are the most tax-efficient gold instrument available. Capital gains at 8-year maturity are completely exempt under Section 47(viic), and you additionally earn 2.5% annual interest on the face value.`,
     `This makes the effective post-tax return significantly better than Gold ETF for long-horizon investors.`,
     `The ₹${(480000).toLocaleString('en-IN')} annual investment cap limits exposure. Ideal as 5–10% of portfolio.`,

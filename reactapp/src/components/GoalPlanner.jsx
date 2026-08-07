@@ -18,7 +18,7 @@ const formatINR = (value) => {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
 };
 
-const GoalPlanner = ({ profile }) => {
+const GoalPlanner = ({ profile: _profile }) => {
   const [goals, setGoals] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -13,7 +13,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
   const [showBreakdown, setShowBreakdown] = useState(true);
 
   // 1. Calculate Marginal Tax Rate
-  const { marginalRate, effectiveRate } = useMemo(() => {
+  const { marginalRate, effectiveRate: _effectiveRate } = useMemo(() => {
     if (!profile) return { marginalRate: 0, effectiveRate: 0 };
     const annualIncome = (profile.monthly_income || 0) * 12;
     const mr = getMarginalRate(annualIncome, regime);
@@ -76,7 +76,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
     const totalTax = (tax + surcharge) * 1.04;
     const er = annualIncome > 0 ? (totalTax / annualIncome) : 0;
     return { marginalRate: mr, effectiveRate: er };
-  }, [profile?.monthly_income, regime]);
+  }, [profile, regime]);
 
   // 2. Map recommendations to Post-Tax Metrics
   const postTaxData = useMemo(() => {

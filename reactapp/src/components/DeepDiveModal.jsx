@@ -6,7 +6,6 @@
  */
 import React, { useState, useMemo } from 'react';
 import { X, MapPin, Info, Shield, History as HistoryIcon, IndianRupee, Flame, Calculator as CalcIcon, AlertTriangle } from 'lucide-react';
-import { formatINR } from '../utils/indianNumberFormat';
 import { calculateSIPFutureValue } from '../utils/sipCalculator';
 import { investmentDatabase } from '../investmentDatabase';
 import JargonTooltip from './JargonTooltip';
@@ -75,20 +74,20 @@ const DeepDiveModal = ({ isOpen, onClose, investment, onSelectInvestment, allRec
     const cat = investment ? (investment.category || investment.cat || '').toLowerCase() : '';
     const name = investment ? (investment.name || investment.abbr || '').toLowerCase() : '';
 
-    let yearMin = 1, yearMax = 30;
-    if (name.includes('ppf')) { yearMin = 15; yearMax = 30; }
-    else if (name.includes('scss')) { yearMin = 5; yearMax = 8; }
-    else if (name.includes('sukanya') || name.includes('ssy')) { yearMin = 15; yearMax = 21; }
-    else if (name.includes('nps')) { yearMin = 10; yearMax = 40; }
-    else if (name.includes('rbi') && name.includes('bond')) { yearMin = 7; yearMax = 7; }
-    else if (name.includes('pmvvy')) { yearMin = 10; yearMax = 10; }
-    else if (name.includes('fd') || name.includes('fixed deposit')) { yearMin = 1; yearMax = 10; }
-    else if (name.includes('liquid')) { yearMin = 1; yearMax = 3; }
-    else if (name.includes('sgb') || name.includes('gold bond')) { yearMin = 5; yearMax = 8; }
-    else if (name.includes('elss')) { yearMin = 3; yearMax = 25; }
-    else if (cat.includes('equity')) { yearMin = 3; yearMax = 30; }
-    else if (cat.includes('hybrid')) { yearMin = 3; yearMax = 25; }
-    else if (cat.includes('debt') || cat.includes('deposit') || cat.includes('bond')) { yearMin = 1; yearMax = 10; }
+    let _yearMin = 1, yearMax = 30;
+    if (name.includes('ppf')) { _yearMin = 15; yearMax = 30; }
+    else if (name.includes('scss')) { _yearMin = 5; yearMax = 8; }
+    else if (name.includes('sukanya') || name.includes('ssy')) { _yearMin = 15; yearMax = 21; }
+    else if (name.includes('nps')) { _yearMin = 10; yearMax = 40; }
+    else if (name.includes('rbi') && name.includes('bond')) { _yearMin = 7; yearMax = 7; }
+    else if (name.includes('pmvvy')) { _yearMin = 10; yearMax = 10; }
+    else if (name.includes('fd') || name.includes('fixed deposit')) { _yearMin = 1; yearMax = 10; }
+    else if (name.includes('liquid')) { _yearMin = 1; yearMax = 3; }
+    else if (name.includes('sgb') || name.includes('gold bond')) { _yearMin = 5; yearMax = 8; }
+    else if (name.includes('elss')) { _yearMin = 3; yearMax = 25; }
+    else if (cat.includes('equity')) { _yearMin = 3; yearMax = 30; }
+    else if (cat.includes('hybrid')) { _yearMin = 3; yearMax = 25; }
+    else if (cat.includes('debt') || cat.includes('deposit') || cat.includes('bond')) { _yearMin = 1; yearMax = 10; }
 
     const sliderRetMin = Math.max(1, Math.floor(retMin - 2));
     const sliderRetMax = Math.min(30, Math.ceil(retMax + 2));

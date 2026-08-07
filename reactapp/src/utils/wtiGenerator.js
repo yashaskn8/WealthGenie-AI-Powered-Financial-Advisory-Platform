@@ -491,7 +491,7 @@ export function rankWhereToInvest(candidates = [], userProfile = {}, riskPrefere
       'Most Accessible': 4, 'Highest EEE Rate': 10, 'Widest Access': 4,
       'Highest PSU Rate': 6, 'Highest Rate': 6,
       'PSU Banking': 4, 'Retail Leader': 4, 'Top InvIT Yield': 6,
-      'No Demat Needed': 4, 'Most Liquid': 12,
+      'No Demat Needed': 4,
       'Largest AMC': 6, 'Official Service': 6,
       'Bond Specialist': 4, 'Highly Curated': 4,
     };

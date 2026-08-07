@@ -123,24 +123,24 @@ test('OCC: PUT /api/profile/:id with stale version returns 409 Conflict', async 
     const profileId = createBody.profileId;
     assert.ok(profileId, 'profileId must be returned');
 
-    // 2. First update — should succeed (version 0 → 1)
+    // 2. First update — should succeed (version 1 → 2)
     const { response: update1Res, body: update1Body } = await jsonFetch(
       `${baseUrl}/api/profile/${profileId}`,
       {
         method: 'PUT',
-        body: JSON.stringify({ ...VALID_PROFILE_BODY, monthly_income: 90000, monthly_savings: 25000, version: 0 }),
+        body: JSON.stringify({ ...VALID_PROFILE_BODY, monthly_income: 90000, monthly_savings: 25000, version: createBody.version }),
         headers: { authorization: `Bearer ${token}` },
       }
     );
 
     assert.equal(update1Res.status, 200, `First update failed: ${JSON.stringify(update1Body)}`);
 
-    // 3. Second update with STALE version 0 — should get 409
+    // 3. Second update with STALE version (version 1) — should get 409
     const { response: update2Res, body: update2Body } = await jsonFetch(
       `${baseUrl}/api/profile/${profileId}`,
       {
         method: 'PUT',
-        body: JSON.stringify({ ...VALID_PROFILE_BODY, monthly_income: 100000, monthly_savings: 30000, version: 0 }),
+        body: JSON.stringify({ ...VALID_PROFILE_BODY, monthly_income: 100000, monthly_savings: 30000, version: createBody.version }),
         headers: { authorization: `Bearer ${token}` },
       }
     );

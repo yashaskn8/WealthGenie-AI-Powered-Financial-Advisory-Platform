@@ -94,7 +94,7 @@ function getTaxRuleLabel(inv) {
   return { label: 'Estimated at 20%', color: '#94a3b8' };
 }
 
-const CalculatorTab = ({ inv, calcAmount, setCalcAmount, calcYears, setCalcYears, calcReturn, setCalcReturn, calcBounds, calcMode, maturityValue, totalInvested, estimatedReturns, postTaxValue: parentPostTax, realMaturityValue }) => {
+const CalculatorTab = ({ inv, calcAmount, setCalcAmount, calcYears, setCalcYears, calcReturn, setCalcReturn, calcBounds, calcMode: _calcMode, maturityValue, totalInvested, estimatedReturns, postTaxValue: _parentPostTax, realMaturityValue }) => {
   // Recompute post-tax with improved accuracy
   const postTaxValue = useMemo(() => computePostTax(inv, estimatedReturns, maturityValue), [inv, estimatedReturns, maturityValue]);
   const taxRule = useMemo(() => getTaxRuleLabel(inv), [inv]);

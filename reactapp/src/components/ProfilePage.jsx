@@ -5,7 +5,7 @@ import * as api from '../services/api';
 
 const PROFILE_STORAGE_KEY = 'wealthgenie_user_profile';
 
-const ProfilePage = ({ onCompleteProfile, children }) => {
+const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
   // Try to load saved profile from localStorage, scoped to the current user
   const savedProfile = useMemo(() => {
     try {

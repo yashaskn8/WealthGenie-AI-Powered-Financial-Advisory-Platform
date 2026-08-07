@@ -1,6 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
+/* global global */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeAll } from 'vitest';

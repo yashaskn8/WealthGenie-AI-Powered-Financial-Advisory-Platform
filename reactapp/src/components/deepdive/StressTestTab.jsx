@@ -57,7 +57,7 @@ const StressTestTab = ({ inv, stressTestAmount, setStressTestAmount }) => {
                              name.includes('small cap') || 
                              id === 'direct_equity';
 
-    const isLargeEquity = (cat.includes('equity') || cat.includes('etf') || id.includes('nifty') || id.includes('index') || name.includes('index') || name.includes('etf') || name.includes('hybrid') || name.includes('elss')) && !isMidSmallEquity;
+    const _isLargeEquity = (cat.includes('equity') || cat.includes('etf') || id.includes('nifty') || id.includes('index') || name.includes('index') || name.includes('etf') || name.includes('hybrid') || name.includes('elss')) && !isMidSmallEquity;
 
     if (isGuaranteed) {
       return {

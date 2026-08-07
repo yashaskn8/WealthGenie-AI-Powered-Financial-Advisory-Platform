@@ -119,7 +119,7 @@ test('Authorization: User B cannot UPDATE User A profile (PUT /api/profile/:id)'
       body: JSON.stringify({
         monthly_income: 999999, age: 30, monthly_savings: 15000, investment_horizon: 10,
         regime: 'new', liquid_savings: 100000, existing_debt: 0, dependents: 0,
-        emergency_fund_months: 6, risk_tolerance: 'Moderate', goal_type: 'wealth-building',
+        emergency_fund_months: 6, risk_tolerance: 'Moderate', goal_type: 'wealth-building', version: 1,
       }),
     });
     assert.ok(

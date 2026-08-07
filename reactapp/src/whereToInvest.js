@@ -8016,38 +8016,6 @@ const WHERE_TO_INVEST = {
         "minInvestment": "1 Unit"
       }
     ]
-  },
-  "midcap_mf": {
-    "title": "Where to Invest in Mid Cap Mutual Funds",
-    "riskLevel": 4,
-    "note": "Mid Cap Mutual Funds invest in companies ranked 101-250 by market capitalization.",
-    "subCategories": {
-      "growth_momentum": ["HDFC Mid-Cap Opportunities Fund", "Nippon India Growth Fund"],
-      "diversified_core": ["Kotak Emerging Equity Fund", "SBI Midcap Fund"],
-      "value_quality": ["Axis Midcap Fund", "Mirae Asset Midcap Fund"]
-    }
-  },
-  "smallcap_mf": {
-    "title": "Where to Invest in Small Cap Mutual Funds",
-    "riskLevel": 5,
-    "note": "Small Cap Mutual Funds invest in companies ranked 251st onwards by market cap.",
-    "subCategories": {
-      "aggressive_alpha": ["Nippon India Small Cap Fund", "Quant Small Cap Fund"],
-      "diversified_broad": ["HDFC Small Cap Fund", "SBI Small Cap Fund"],
-      "quality_defensive": ["Axis Small Cap Fund", "Kotak Small Cap Fund"]
-    }
-  },
-  "direct_equity": {
-    "title": "Where to Invest in Direct Equity Stocks",
-    "riskLevel": 5,
-    "note": "Direct equity stock investments in bluechip and growth companies.",
-    "subCategories": {
-      "banking_financial": ["HDFC Bank", "ICICI Bank", "SBI"],
-      "it_technology": ["TCS", "Infosys", "HCL Tech"],
-      "energy_industrial": ["Reliance Industries", "L&T", "NTPC"],
-      "fmcg_consumer": ["Hindustan Unilever", "ITC", "Nestle India"],
-      "pharma_healthcare": ["Sun Pharma", "Cipla", "Dr. Reddy's"]
-    }
   }
 };
 

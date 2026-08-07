@@ -103,9 +103,9 @@ const riskValueToLabel = (v) => {
 const RecommendationDashboard = ({ userProfile, recommendations: propRecommendations, onExploreAll, onRebalance, onNavigate, onLearnMore, isLoading: isLoadingProp, explanation, fallbackNotice, onDismissFallbackNotice }) => {
   const defaultHorizon = userProfile?.investment_horizon || 15;
   const [horizon, setHorizon] = useState(defaultHorizon);
-  const [initialCapital, setInitialCapital] = useState(Number(userProfile?.existing_savings) || 0);
-  const [stepUpPct, setStepUpPct] = useState(10);
-  const [inflationAdjusted, setInflationAdjusted] = useState(false);
+  const [initialCapital, _setInitialCapital] = useState(Number(userProfile?.existing_savings) || 0);
+  const [stepUpPct, _setStepUpPct] = useState(10);
+  const [inflationAdjusted, _setInflationAdjusted] = useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
@@ -362,7 +362,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
     };
   }, [recommendations]);
 
-  const benchMarkData = useMemo(() => {
+  const _benchMarkData = useMemo(() => {
     // Compute user's weighted portfolio CAGR from recommendations
     let weightedReturn = 0;
     if (recommendations && recommendations.length > 0 && currentMonthly > 0) {

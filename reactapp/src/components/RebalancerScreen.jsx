@@ -75,7 +75,7 @@ const AnimatedCurrency = ({ value, duration = 800 }) => {
     };
 
     requestAnimationFrame(animate);
-  }, [value, duration]);
+  }, [value, duration, displayValue]);
 
   return <>{formatINR(displayValue)}</>;
 };
@@ -244,7 +244,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
   const [projectionData, setProjectionData] = useState(null);
   const [projectionError, setProjectionError] = useState(null);
 
-  const fetchProjections = useCallback(async (currentAllocs) => {
+  const fetchProjections = useCallback(async (_currentAllocs) => {
     try {
       setLoadingProjection(true);
       setProjectionError(null);
@@ -533,7 +533,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
         const goals = await api.getGoals();
         if (Array.isArray(goals)) setUserGoals(goals);
         else if (goals?.goals) setUserGoals(goals.goals);
-      } catch (e) {
+      } catch {
         // Goals not available — fallback milestones will be used
       }
     };
@@ -719,7 +719,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
     } else {
       return Math.max(0, Math.round(100 - Math.abs(equityPct - 50) * 1.5));
     }
-  }, [allocations, recs, profile, horizon]);
+  }, [allocations, recs, horizon]);
 
   const affordabilityScore = useMemo(() => {
     const income = Number(profile?.monthly_income) || 60000;
@@ -740,7 +740,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
     return Math.min(100, Math.max(0, Math.round(composite)));
   }, [score, riskScore, goalScore, affordabilityScore]);
 
-  const statusColor = score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const _statusColor = score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
   const matchColor = recommendationMatch >= 90 ? '#10b981' : recommendationMatch >= 75 ? '#f59e0b' : '#ef4444';
 
   /**

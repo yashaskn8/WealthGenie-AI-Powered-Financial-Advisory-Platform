@@ -412,12 +412,12 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
                     )}
                     {product.profileMatchTag && (
                       <span className="wti-badge" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', borderColor: 'rgba(34, 197, 94, 0.4)' }}>
-                        {product.profileMatchTag.replace(/^[⚡✓📍]\s*/, '')}
+                        {product.profileMatchTag.replace(/^[⚡✓📍]\s*/u, '')}
                       </span>
                     )}
                     {product.investmentRoute && (
                       <span className="wti-badge" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
-                        {product.investmentRoute.replace(/^[⚡✓📍]\s*/, '')}
+                        {product.investmentRoute.replace(/^[⚡✓📍]\s*/u, '')}
                       </span>
                     )}
                   </div>
