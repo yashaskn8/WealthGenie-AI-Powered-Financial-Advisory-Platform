@@ -8,6 +8,7 @@ import Goal from '../models/Goal.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import Recommendation from '../models/Recommendation.js';
 import { reverseSIP, runMonteCarloWithGoal, getInstrumentVolatility } from '../services/monteCarloEngine.js';
+import { buildCovarianceMatrix, portfolioReturn, portfolioVol } from '../services/portfolioEngine.js';
 import { getGoalAdvisory } from '../services/geminiService.js';
 import { idempotency } from '../middleware/idempotency.js';
 
@@ -144,6 +145,79 @@ async function _computePostTaxRate(instrument, vol, profile, yearsRemaining) {
 }
 
 /**
+ * Helper to convert percentage-scale return (e.g. 10.3%) to decimal scale (e.g. 0.103)
+ */
+const _toDecimalRate = (r) => {
+  const num = Number(r) || 0;
+  return Math.abs(num) > 1.0 ? num / 100 : num;
+};
+
+/**
+ * Compute blended portfolio expected return and covariance-based volatility
+ * across all recommended instruments for a user (always returns DECIMAL scale rates e.g. 0.103).
+ */
+async function _getBlendedPortfolioMetrics(userId, profileId, fallbackInstrument = 'Equity_MF', overrideRec = null) {
+  let latestRec = overrideRec;
+  if (!latestRec) {
+    try {
+      if (profileId && isValidObjectId(profileId)) {
+        latestRec = await Recommendation.findOne({ userId, profileId }).sort({ generatedAt: -1 }).lean();
+      }
+      if (!latestRec && userId && isValidObjectId(userId)) {
+        latestRec = await Recommendation.findOne({ userId }).sort({ generatedAt: -1 }).lean();
+      }
+    } catch (_) {
+      // Fall back gracefully if DB query fails or invalid ID passed
+    }
+  }
+
+  const instruments = latestRec?.instruments;
+  if (!Array.isArray(instruments) || instruments.length === 0) {
+    const vol = getInstrumentVolatility(fallbackInstrument);
+    return {
+      postTaxReturn: vol.mean, // decimal scale e.g. 0.12
+      volatility: vol.stdDev,
+      primaryInstrument: fallbackInstrument,
+    };
+  }
+
+  const valid = instruments.filter(i => (i.type || i.backendType) && Number(i.allocationWeight) > 0);
+  if (valid.length === 0) {
+    const primary = instruments[0]?.type || fallbackInstrument;
+    const vol = getInstrumentVolatility(primary);
+    return {
+      postTaxReturn: instruments[0]?.postTaxReturn ? _toDecimalRate(instruments[0].postTaxReturn) : vol.mean,
+      volatility: vol.stdDev,
+      primaryInstrument: primary,
+    };
+  }
+
+  const totalWeight = valid.reduce((sum, i) => sum + Number(i.allocationWeight), 0);
+  const weights = valid.map(i => Number(i.allocationWeight) / totalWeight);
+
+  const returnsDecimal = valid.map(i => _toDecimalRate(i.postTaxReturn || 10.0));
+
+  const assetKeys = valid.map(i => i.type || i.backendType);
+
+  const blendedReturnDecimal = parseFloat(portfolioReturn(weights, returnsDecimal).toFixed(4));
+
+  let blendedVolDecimal;
+  try {
+    const { matrix: cov } = buildCovarianceMatrix(assetKeys);
+    blendedVolDecimal = Math.max(0.005, parseFloat(portfolioVol(cov, weights).toFixed(4)));
+  } catch (_) {
+    const fallbackVol = getInstrumentVolatility(valid[0]?.type || fallbackInstrument);
+    blendedVolDecimal = fallbackVol.stdDev;
+  }
+
+  return {
+    postTaxReturn: blendedReturnDecimal, // decimal scale e.g. 0.103 for 10.3%
+    volatility: blendedVolDecimal,
+    primaryInstrument: valid[0]?.type || fallbackInstrument,
+  };
+}
+
+/**
  * Validate Monte Carlo invariants and clamp out-of-bounds probability.
  */
 function _validateMcResult(mcResult) {
@@ -254,20 +328,8 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
 
   const { targetDateObj, yearsRemaining } = _computeYearsRemaining(target_date);
 
-  // Find the user's latest recommendation
-  let latestRec = null;
-  if (profile?._id) {
-    latestRec = await Recommendation.findOne({ userId: req.user.userId, profileId: profile._id })
-      .sort({ generatedAt: -1 }).lean();
-  }
-  if (!latestRec) {
-    latestRec = await Recommendation.findOne({ userId: req.user.userId })
-      .sort({ generatedAt: -1 }).lean();
-  }
-  const recommendedInstrument = latestRec?.instruments?.[0]?.type || 'Equity_MF';
-
-  const vol = getInstrumentVolatility(recommendedInstrument);
-  const postTaxRate = await _computePostTaxRate(recommendedInstrument, vol, profile, yearsRemaining);
+  const { postTaxReturn: postTaxRate, volatility: annualVol, primaryInstrument: recommendedInstrument } =
+    await _getBlendedPortfolioMetrics(req.user.userId, profile?._id);
 
   // Compute inflation-adjusted target amount (default inflation: 5%)
   const inflationAdjustedTarget = Math.round(target_amount * Math.pow(1.05, yearsRemaining));
@@ -282,7 +344,7 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
   const mcResult = runMonteCarloWithGoal({
     monthlyInvestment: requiredSIP,
     postTaxAnnualReturn: postTaxRate,
-    annualVolatility: vol.stdDev,
+    annualVolatility: annualVol,
     years: yearsRemaining,
     simulations: 5000,
     targetAmount: inflationAdjustedTarget,
@@ -415,15 +477,14 @@ router.get('/', verifyJWT, asyncHandler(async (req, res) => {
       }));
     } else {
       // Cache is stale or missing - run Monte Carlo and update DB
-      const vol = getInstrumentVolatility(g.recommended_instrument || 'Equity_MF');
-      const profile = await findOwnedProfileById(g.profileId, req.user.userId);
-      const postTaxRate = await _computePostTaxRate(g.recommended_instrument || 'Equity_MF', vol, profile, yearsRemaining);
+      const { postTaxReturn: postTaxRate, volatility: annualVol } =
+        await _getBlendedPortfolioMetrics(req.user.userId, g.profileId, g.recommended_instrument || 'Equity_MF');
       
       const targetAmt = g.inflation_adjusted_target || g.target_amount;
       const mcResult = runMonteCarloWithGoal({
         monthlyInvestment: g.recommended_sip || 5000,
         postTaxAnnualReturn: postTaxRate,
-        annualVolatility: vol.stdDev,
+        annualVolatility: annualVol,
         years: yearsRemaining,
         simulations: 2000,
         targetAmount: targetAmt,
@@ -512,8 +573,8 @@ router.patch('/:goalId', verifyJWT, validate(goalUpdateSchema), asyncHandler(asy
     const msRemaining = new Date(goal.target_date) - now;
     const yearsRemaining = Math.max(0.5, Math.floor((msRemaining / (365.25 * 24 * 60 * 60 * 1000)) * 4) / 4);
 
-    const vol = getInstrumentVolatility(goal.recommended_instrument || 'Equity_MF');
-    const postTaxRate = await _computePostTaxRate(goal.recommended_instrument || 'Equity_MF', vol, profile, yearsRemaining);
+    const { postTaxReturn: postTaxRate, volatility: annualVol } =
+      await _getBlendedPortfolioMetrics(req.user.userId, goal.profileId, goal.recommended_instrument || 'Equity_MF');
 
     const inflationAdjustedTarget = Math.round(goal.target_amount * Math.pow(1.05, yearsRemaining));
     goal.inflation_adjusted_target = inflationAdjustedTarget;
@@ -524,7 +585,7 @@ router.patch('/:goalId', verifyJWT, validate(goalUpdateSchema), asyncHandler(asy
     const mcResult = runMonteCarloWithGoal({
       monthlyInvestment: goal.recommended_sip,
       postTaxAnnualReturn: postTaxRate,
-      annualVolatility: vol.stdDev,
+      annualVolatility: annualVol,
       years: yearsRemaining,
       simulations: 2000,
       targetAmount: inflationAdjustedTarget,
@@ -574,5 +635,6 @@ router.delete('/:goalId', verifyJWT, asyncHandler(async (req, res) => {
   res.json({ deleted: true, goalId });
 }));
 
+export { _getBlendedPortfolioMetrics };
 export default router;
 
