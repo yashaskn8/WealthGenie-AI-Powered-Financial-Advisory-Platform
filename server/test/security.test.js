@@ -319,7 +319,7 @@ test('WG-018: GET /api/chat/metrics (old path) returns 404 after relocation', as
 
 // ── 7. WG-003, WG-007, WG-025: In-Place Mutation, Canonical Response, and OCC ──
 test('WG-003: PUT /api/profile/:profileId updates existing profile in-place', async () => {
-  await mongoose.connect(TEST_DB_URI);
+  await ensureDb();
   try {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
     const token = signToken(USER_A_ID);
@@ -347,11 +347,12 @@ test('WG-003: PUT /api/profile/:profileId updates existing profile in-place', as
   } finally {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
     await mongoose.disconnect();
+    dbConnected = false;
   }
 });
 
 test('WG-007: POST /build and PUT /:profileId return identical key sets', async () => {
-  await mongoose.connect(TEST_DB_URI);
+  await ensureDb();
   try {
     const token = signToken(USER_A_ID);
     await withServer(buildApp(), async (baseUrl) => {
@@ -374,11 +375,12 @@ test('WG-007: POST /build and PUT /:profileId return identical key sets', async 
   } finally {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
     await mongoose.disconnect();
+    dbConnected = false;
   }
 });
 
 test('WG-025: PUT /api/profile/:profileId requires version and returns 409 Conflict on version mismatch', async () => {
-  await mongoose.connect(TEST_DB_URI);
+  await ensureDb();
   try {
     const token = signToken(USER_A_ID);
     await withServer(buildApp(), async (baseUrl) => {
@@ -407,6 +409,6 @@ test('WG-025: PUT /api/profile/:profileId requires version and returns 409 Confl
   } finally {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
     await mongoose.disconnect();
+    dbConnected = false;
   }
 });
-
