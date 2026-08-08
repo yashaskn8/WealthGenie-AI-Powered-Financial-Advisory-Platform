@@ -29,11 +29,13 @@ import { calculatePostTaxReturnSafe } from './postTaxCalculator.js';
 import { INSTRUMENT_PARAMS, RISK_FREE_RATE } from './instrumentConstants.js';
 import { investmentDatabase } from '../data/investmentDatabase.js';
 import { encodeRiskCategory } from './riskProfiler.js';
+import { optimisePortfolio } from './portfolioEngine.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // PIPELINE CONFIGURATION — centralized, no magic numbers
 // ═══════════════════════════════════════════════════════════════════
-const PIPELINE_CONFIG = Object.freeze({
+const PIPELINE_CONFIG = {
+  USE_OPTIMIZER: true,
   TOP_N: 5,
   MIN_ASSET_CLASSES: 3,
 
@@ -76,7 +78,7 @@ const PIPELINE_CONFIG = Object.freeze({
 
   // ML confidence integration
   ML_BOOST_WEIGHT: 25,        // points per 1.0 confidence (scaled)
-});
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // RISK RECONCILIATION ENGINE (Section 3 — Mandatory, never skip)
@@ -199,15 +201,10 @@ export function reconcileRisk(profile) {
 }
 
 /**
- * Enforce Section 6 allocation targets by risk tier category (Low/Medium/High).
- * Section 5 addendum: tier ≥ 4 caps LOW at 20% unless emergency_fund_months < 3.
- *
- * @param {Array} instruments - Scored instrument array from pipeline
- * @param {number} reconciledTier - Final reconciled tier (1–5)
- * @param {Object} profile - User profile for emergency fund check
- * @returns {Array} Instruments with allocation_pct and updated allocationWeight
+ * Original tier-midpoint heuristic allocation implementation.
+ * Used when PIPELINE_CONFIG.USE_OPTIMIZER is false or as fallback on optimizer failure.
  */
-function enforceAllocationTargets(instruments, reconciledTier, profile) {
+function enforceAllocationTargetsHeuristic(instruments, reconciledTier, profile) {
   if (!instruments.length) return instruments;
 
   // Section 6 target ranges [min%, max%] by tier
@@ -282,6 +279,159 @@ function enforceAllocationTargets(instruments, reconciledTier, profile) {
   });
 
   return instruments;
+}
+
+/**
+ * Enforce Section 6 allocation targets by risk tier category (Low/Medium/High)
+ * using Max-Sharpe mean-variance optimization from portfolioEngine.js,
+ * clamped to regulatory risk-tier guardrails.
+ *
+ * @param {Array} instruments - Scored instrument array from pipeline
+ * @param {number} reconciledTier - Final reconciled tier (1–5)
+ * @param {Object} profile - User profile for emergency fund check
+ * @returns {Array} Instruments with allocation_pct and updated allocationWeight
+ */
+function enforceAllocationTargets(instruments, reconciledTier, profile) {
+  if (!instruments || !instruments.length) return instruments;
+
+  if (!PIPELINE_CONFIG.USE_OPTIMIZER) {
+    return enforceAllocationTargetsHeuristic(instruments, reconciledTier, profile);
+  }
+
+  try {
+    // 1. Collect unique asset classes (backendType) in stable first-seen order
+    const assetClassGroups = new Map();
+    for (const inv of instruments) {
+      const key = inv.backendType || resolveBackendType(inv);
+      if (!assetClassGroups.has(key)) {
+        assetClassGroups.set(key, []);
+      }
+      assetClassGroups.get(key).push(inv);
+    }
+    const uniqueAssetKeys = Array.from(assetClassGroups.keys());
+
+    // 2. Compute score-weighted average postTaxReturn per unique asset class
+    // Convert percentage-scale postTaxReturn (e.g. 7.1%) to decimal scale (0.071) for portfolioEngine.js compatibility, matching routes/portfolio.js
+    const toDecimalReturn = (r) => {
+      const num = Number(r) || 0;
+      return Math.abs(num) > 1.0 ? num / 100 : num;
+    };
+
+    const postTaxReturns = uniqueAssetKeys.map(key => {
+      const group = assetClassGroups.get(key);
+      const totalScore = group.reduce((sum, inv) => sum + Math.max(0, inv.score || 0), 0);
+      if (totalScore > 0) {
+        return group.reduce((sum, inv) => sum + Math.max(0, inv.score || 0) * toDecimalReturn(inv.postTaxReturn), 0) / totalScore;
+      }
+      const simpleSum = group.reduce((sum, inv) => sum + toDecimalReturn(inv.postTaxReturn), 0);
+      return simpleSum / group.length;
+    });
+
+    // 3. Run Max-Sharpe portfolio optimizer
+    const optResult = optimisePortfolio(uniqueAssetKeys, postTaxReturns, 'max_sharpe');
+    const optWeights = optResult?.weights || {};
+
+    // 4. Distribute each asset class's optimizer weight down to individual instruments proportionally by score
+    instruments.forEach(inv => {
+      const key = inv.backendType || resolveBackendType(inv);
+      const group = assetClassGroups.get(key) || [inv];
+      const classWeightDecimal = Number(optWeights[key]) || 0;
+      const groupScore = group.reduce((s, i) => s + Math.max(0, i.score || 0), 0);
+      const share = groupScore > 0 ? Math.max(0, inv.score || 0) / groupScore : 1 / group.length;
+      inv.rawOptimizerPct = share * classWeightDecimal * 100;
+    });
+
+    // 5. Enforce risk-tier guardrails (Section 6 TARGETS + Section 5 emergency override)
+    const TARGETS = {
+      1: { Low: [65, 80], Medium: [15, 25], High: [0, 10] },
+      2: { Low: [45, 60], Medium: [25, 35], High: [10, 20] },
+      3: { Low: [25, 35], Medium: [30, 40], High: [25, 35] },
+      4: { Low: [10, 20], Medium: [25, 35], High: [45, 55] },
+      5: { Low: [0, 10],  Medium: [20, 30], High: [60, 70] },
+    };
+
+    const targets = {};
+    const srcTargets = TARGETS[reconciledTier] || TARGETS[3];
+    for (const k of ['Low', 'Medium', 'High']) targets[k] = [...srcTargets[k]];
+
+    if (reconciledTier >= 4) {
+      const emergencyMonths = Number(profile?.emergency_fund_months) || 0;
+      if (emergencyMonths < 3) {
+        targets.Low = [20, 35];
+      }
+    }
+
+    instruments.forEach(inv => { inv.tier = instrumentRiskTier(inv); });
+
+    const tierGroups = { Low: [], Medium: [], High: [] };
+    instruments.forEach(inv => { (tierGroups[inv.tier] || tierGroups.Medium).push(inv); });
+
+    const rawTierTotals = {};
+    for (const tier of ['Low', 'Medium', 'High']) {
+      rawTierTotals[tier] = tierGroups[tier].reduce((sum, inv) => sum + (inv.rawOptimizerPct || 0), 0);
+    }
+
+    const clampedTierTotals = {};
+    let totalClampedTarget = 0;
+    for (const tier of ['Low', 'Medium', 'High']) {
+      if (tierGroups[tier].length > 0) {
+        const [min, max] = targets[tier];
+        const clamped = Math.max(min, Math.min(max, rawTierTotals[tier]));
+        clampedTierTotals[tier] = clamped;
+        totalClampedTarget += clamped;
+      } else {
+        clampedTierTotals[tier] = 0;
+      }
+    }
+
+    if (totalClampedTarget > 0) {
+      for (const tier of ['Low', 'Medium', 'High']) {
+        if (tierGroups[tier].length > 0) {
+          clampedTierTotals[tier] = (clampedTierTotals[tier] / totalClampedTarget) * 100;
+        }
+      }
+    }
+
+    for (const tier of ['Low', 'Medium', 'High']) {
+      const group = tierGroups[tier];
+      if (!group || group.length === 0) continue;
+      const targetTierPct = clampedTierTotals[tier] || 0;
+      const currentTierPct = rawTierTotals[tier] || 0;
+
+      if (currentTierPct > 0) {
+        group.forEach(inv => {
+          inv.allocation_pct = Math.max(0, (inv.rawOptimizerPct / currentTierPct) * targetTierPct);
+        });
+      } else {
+        const groupScore = group.reduce((s, i) => s + Math.max(0, i.score || 0), 0);
+        group.forEach(inv => {
+          const share = groupScore > 0 ? Math.max(0, inv.score || 0) / groupScore : 1 / group.length;
+          inv.allocation_pct = Math.max(0, share * targetTierPct);
+        });
+      }
+    }
+
+    instruments.forEach(inv => {
+      inv.allocation_pct = parseFloat(Math.max(0, inv.allocation_pct || 0).toFixed(1));
+      delete inv.rawOptimizerPct;
+    });
+
+    const sumPct = parseFloat(instruments.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+    const residual = parseFloat((100 - sumPct).toFixed(1));
+    if (Math.abs(residual) > 0.05 && instruments.length > 0) {
+      const maxInst = instruments.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b);
+      maxInst.allocation_pct = parseFloat(Math.max(0, maxInst.allocation_pct + residual).toFixed(1));
+    }
+
+    instruments.forEach(inv => {
+      inv.allocationWeight = parseFloat((inv.allocation_pct / 100).toFixed(4));
+    });
+
+    return instruments;
+  } catch (err) {
+    console.warn('[RecommendationPipeline] Portfolio optimizer failed:', err.message, instruments.map(i => i.backendType || i.id));
+    return enforceAllocationTargetsHeuristic(instruments, reconciledTier, profile);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1118,6 +1268,7 @@ export {
   normaliseConfidenceScores,
   INSTRUMENT_KEY_MAP,
   enforceAllocationTargets,
+  enforceAllocationTargetsHeuristic,
 };
 
 

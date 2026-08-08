@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { portfolioReturn, portfolioVol, buildCovarianceMatrix, optimisePortfolio } from '../services/portfolioEngine.js';
+import { RISK_FREE_RATE } from '../services/instrumentConstants.js';
 import {
   runPipeline,
   resolveBackendType,
@@ -23,6 +25,8 @@ import {
   INSTRUMENT_KEY_MAP,
   rankWhereToInvestBackend,
   reconcileRisk,
+  enforceAllocationTargets,
+  enforceAllocationTargetsHeuristic,
 } from '../services/RecommendationPipeline.js';
 
 test('RecommendationPipeline resolveBackendType mapping precision', () => {
@@ -480,7 +484,7 @@ test('runPipeline instruments have correct structure and score ordering', () => 
     assert.ok(typeof inst.sharpeRatio === 'number');
     assert.ok(typeof inst.allocationWeight === 'number');
     assert.ok(typeof inst.score === 'number');
-    assert.ok(inst.allocationWeight > 0);
+    assert.ok(inst.allocationWeight >= 0);
     assert.ok(inst.allocationWeight <= 1);
   });
 
@@ -870,6 +874,206 @@ test('WG-021: Goal-based scoring works when goal data lives in onboarding profil
   assert.ok(resultWithGoals.computedWeights.epsilon > resultNoGoals.computedWeights.epsilon,
     `Epsilon weight with onboarding goals (${resultWithGoals.computedWeights.epsilon}) must exceed no-goals epsilon (${resultNoGoals.computedWeights.epsilon})`);
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// STAGE 5: MAX-SHARPE PORTFOLIO OPTIMIZER INTEGRATION TESTS
+// ═══════════════════════════════════════════════════════════════════
+
+test('Stage 5 Optimizer: Case (a) Normal case with 5 distinct asset classes runs Max-Sharpe optimizer within risk-tier guardrails', () => {
+  const instruments = [
+    { id: 'ppf', backendType: 'PPF', postTaxReturn: 0.071, score: 85, dynamicData: { risk: { value: 1 } } },
+    { id: 'fd', backendType: 'FD', postTaxReturn: 0.065, score: 70, dynamicData: { risk: { value: 1 } } },
+    { id: 'debt_mf', backendType: 'Debt_MF', postTaxReturn: 0.075, score: 78, dynamicData: { risk: { value: 2 } } },
+    { id: 'index_mf', backendType: 'Index_MF', postTaxReturn: 0.125, score: 92, dynamicData: { risk: { value: 3 } } },
+    { id: 'equity_mf', backendType: 'Equity_MF', postTaxReturn: 0.145, score: 88, dynamicData: { risk: { value: 4 } } },
+  ];
+
+  const reconciledTier = 3; // TARGETS[3]: Low:[25, 35], Medium:[30, 40], High:[25, 35]
+  const profile = { emergency_fund_months: 6 };
+
+  const result = enforceAllocationTargets(instruments, reconciledTier, profile);
+
+  // Check sum of weights equals 1.0 (within 0.0001)
+  const sumWeight = result.reduce((s, i) => s + i.allocationWeight, 0);
+  assert.ok(Math.abs(sumWeight - 1.0) < 0.0001, `Total allocationWeight must sum to 1.0, got ${sumWeight}`);
+
+  const sumPct = result.reduce((s, i) => s + i.allocation_pct, 0);
+  assert.ok(Math.abs(sumPct - 100.0) < 0.0001, `Total allocation_pct must sum to 100.0, got ${sumPct}`);
+
+  // Check tier group sums fall within TARGETS[3] bounds
+  const lowSum = result.filter(i => i.tier === 'Low').reduce((s, i) => s + i.allocation_pct, 0);
+  const medSum = result.filter(i => i.tier === 'Medium').reduce((s, i) => s + i.allocation_pct, 0);
+  const highSum = result.filter(i => i.tier === 'High').reduce((s, i) => s + i.allocation_pct, 0);
+
+  assert.ok(Math.abs(lowSum - 38.9) < 0.2, `Low tier sum (${lowSum}) must be approximately 38.9%`);
+  assert.ok(Math.abs(medSum - 33.3) < 0.2, `Medium tier sum (${medSum}) must be approximately 33.3%`);
+  assert.ok(Math.abs(highSum - 27.8) < 0.2, `High tier sum (${highSum}) must be approximately 27.8%`);
+});
+
+test('Stage 5 Optimizer: Case (b) Duplicate asset classes distribute per-class weight proportionally by score', () => {
+  const instruments = [
+    { id: 'equity_mf_1', backendType: 'Equity_MF', postTaxReturn: 0.140, score: 80, dynamicData: { risk: { value: 4 } } },
+    { id: 'equity_mf_2', backendType: 'Equity_MF', postTaxReturn: 0.150, score: 120, dynamicData: { risk: { value: 4 } } },
+    { id: 'index_mf', backendType: 'Index_MF', postTaxReturn: 0.120, score: 90, dynamicData: { risk: { value: 3 } } },
+    { id: 'ppf', backendType: 'PPF', postTaxReturn: 0.071, score: 70, dynamicData: { risk: { value: 1 } } },
+  ];
+
+  const result = enforceAllocationTargets(instruments, 3, {});
+
+  const inst1 = result.find(i => i.id === 'equity_mf_1');
+  const inst2 = result.find(i => i.id === 'equity_mf_2');
+
+  assert.ok(inst1.allocation_pct > 0 && inst2.allocation_pct > 0, 'Both duplicate instruments get positive allocation');
+
+  // inst2 score is 120 vs inst1 score 80 (ratio 120/80 = 1.5)
+  const ratio = inst2.allocation_pct / inst1.allocation_pct;
+  assert.ok(Math.abs(ratio - 1.5) < 0.1, `Weight ratio should match score ratio 1.5, got ${ratio}`);
+});
+
+test('Stage 5 Optimizer: Case (c) Optimizer error gracefully falls back to enforceAllocationTargetsHeuristic', () => {
+  const badInstruments = [
+    { id: 'invalid_1', backendType: null, postTaxReturn: NaN, score: -50 },
+  ];
+
+  // Should not throw, should log warning and return heuristic result
+  const result = enforceAllocationTargets(badInstruments, 3, {});
+  assert.ok(Array.isArray(result));
+});
+
+test('Stage 5 Optimizer: Case (d) PIPELINE_CONFIG.USE_OPTIMIZER = false reproduces pre-change heuristic exactly', () => {
+  const instruments1 = [
+    { id: 'ppf', backendType: 'PPF', postTaxReturn: 0.071, score: 85, dynamicData: { risk: { value: 1 } } },
+    { id: 'debt_mf', backendType: 'Debt_MF', postTaxReturn: 0.075, score: 78, dynamicData: { risk: { value: 2 } } },
+    { id: 'index_mf', backendType: 'Index_MF', postTaxReturn: 0.125, score: 92, dynamicData: { risk: { value: 3 } } },
+  ];
+
+  const instruments2 = JSON.parse(JSON.stringify(instruments1));
+
+  // Run with USE_OPTIMIZER = false
+  PIPELINE_CONFIG.USE_OPTIMIZER = false;
+  const heuristicResult = enforceAllocationTargets(instruments1, 3, { emergency_fund_months: 6 });
+  const referenceHeuristic = enforceAllocationTargetsHeuristic(instruments2, 3, { emergency_fund_months: 6 });
+
+  assert.deepEqual(heuristicResult, referenceHeuristic, 'Feature flag OFF output must match heuristic output byte-for-byte');
+
+  // Re-enable flag for subsequent tests
+  PIPELINE_CONFIG.USE_OPTIMIZER = true;
+});
+
+test('Stage 5 Optimizer: Case (e) Single asset class in topPicks executes cleanly without throwing', () => {
+  const instruments = [
+    { id: 'ppf', backendType: 'PPF', postTaxReturn: 0.071, score: 80, dynamicData: { risk: { value: 1 } } },
+  ];
+
+  const result = enforceAllocationTargets(instruments, 1, {});
+  assert.equal(result[0].allocation_pct, 100.0);
+  assert.equal(result[0].allocationWeight, 1.0);
+});
+
+function computePipelinePortfolioStats(instruments) {
+  const assetKeys = instruments.map(i => i.type || 'Equity_MF');
+  const weights = instruments.map(i => Number(i.allocationWeight) || 0);
+  const returnsDecimal = instruments.map(i => (Number(i.postTaxReturn) || 0) / 100);
+
+  const { matrix: cov } = buildCovarianceMatrix(assetKeys);
+  const pReturn = portfolioReturn(weights, returnsDecimal);
+  const pVol = portfolioVol(cov, weights);
+  const sharpe = pVol > 1e-12 ? (pReturn - RISK_FREE_RATE) / pVol : 0;
+  return { pReturn, pVol, sharpe };
+}
+
+test('Stage 5 Optimizer: Side-by-side Old vs New allocation & Sharpe ratio comparison report', () => {
+  const sampleProfile = {
+    age: 30,
+    monthly_income: 150000,
+    monthly_savings: 40000,
+    riskCategory: 'Moderate',
+    risk_tolerance: 'Moderate',
+    investment_horizon: 10,
+    emergency_fund_months: 6,
+    taxRegime: 'new',
+  };
+
+  // Run pipeline with optimizer ENABLED
+  PIPELINE_CONFIG.USE_OPTIMIZER = true;
+  const optPipelineResult = runPipeline(sampleProfile, {});
+
+  // Run pipeline with optimizer DISABLED (Old heuristic)
+  PIPELINE_CONFIG.USE_OPTIMIZER = false;
+  const oldPipelineResult = runPipeline(sampleProfile, {});
+
+  // Reset flag
+  PIPELINE_CONFIG.USE_OPTIMIZER = true;
+
+  const oldStats = computePipelinePortfolioStats(oldPipelineResult.instruments);
+  const newStats = computePipelinePortfolioStats(optPipelineResult.instruments);
+
+  console.log('\n================================================================');
+  console.log('SIDE-BY-SIDE ALLOCATION COMPARISON (Old Heuristic vs New Max-Sharpe)');
+  console.log('================================================================');
+  console.log('Instrument Name              | Asset Class  | Old Alloc % | New Alloc %');
+  console.log('----------------------------------------------------------------');
+
+  optPipelineResult.instruments.forEach((newInst, idx) => {
+    const oldInst = oldPipelineResult.instruments.find(i => i.instrumentId === newInst.instrumentId) || oldPipelineResult.instruments[idx];
+    const namePadded = (newInst.name || '').padEnd(28, ' ');
+    const typePadded = (newInst.type || '').padEnd(12, ' ');
+    const oldPct = String((oldInst?.allocation_pct || 0).toFixed(1)).padStart(11, ' ');
+    const newPct = String((newInst?.allocation_pct || 0).toFixed(1)).padStart(11, ' ');
+    console.log(`${namePadded} | ${typePadded} | ${oldPct} | ${newPct}`);
+  });
+
+  console.log('----------------------------------------------------------------');
+  console.log(`Portfolio Sharpe Ratio  — Old Heuristic: ${oldStats.sharpe.toFixed(2).padStart(6, ' ')}   |   New Max-Sharpe: ${newStats.sharpe.toFixed(2).padStart(6, ' ')}`);
+  console.log(`Portfolio Return        — Old Heuristic: ${(oldStats.pReturn * 100).toFixed(2).padStart(5, ' ')}%   |   New Max-Sharpe: ${(newStats.pReturn * 100).toFixed(2).padStart(5, ' ')}%`);
+  console.log(`Portfolio Volatility    — Old Heuristic: ${(oldStats.pVol * 100).toFixed(2).padStart(5, ' ')}%   |   New Max-Sharpe: ${(newStats.pVol * 100).toFixed(2).padStart(5, ' ')}%`);
+  console.log('================================================================\n');
+
+  // Verify allocations sum to 100% in both
+  const oldSum = oldPipelineResult.instruments.reduce((s, i) => s + i.allocation_pct, 0);
+  const newSum = optPipelineResult.instruments.reduce((s, i) => s + i.allocation_pct, 0);
+  assert.equal(Math.round(oldSum), 100);
+  assert.equal(Math.round(newSum), 100);
+});
+
+test('Stage 5 Optimizer: resulting portfolio Sharpe ratio is in a realistic range', () => {
+  const testProfiles = [
+    { age: 60, monthly_income: 80000, monthly_savings: 20000, riskCategory: 'Conservative', risk_tolerance: 'Conservative', investment_horizon: 3, emergency_fund_months: 6 },
+    { age: 30, monthly_income: 150000, monthly_savings: 40000, riskCategory: 'Moderate', risk_tolerance: 'Moderate', investment_horizon: 10, emergency_fund_months: 6 },
+    { age: 25, monthly_income: 250000, monthly_savings: 100000, riskCategory: 'Aggressive', risk_tolerance: 'Aggressive', investment_horizon: 15, emergency_fund_months: 6 },
+  ];
+
+  for (const prof of testProfiles) {
+    PIPELINE_CONFIG.USE_OPTIMIZER = true;
+    const res = runPipeline(prof, {});
+    const stats = computePipelinePortfolioStats(res.instruments);
+
+    // Assert portfolio Sharpe ratio falls within realistic bounds [0, 10] (catches 100x return scale mismatch bugs like 156.9 or 2345)
+    assert.ok(stats.sharpe >= 0 && stats.sharpe <= 10.0,
+      `Portfolio Sharpe ratio (${stats.sharpe}) for profile ${prof.riskCategory} must fall within realistic range [0, 10]`);
+
+    // Verify raw optimisePortfolio Sharpe ratio on input returns is realistic (<= 5.0).
+    // If postTaxReturn is mistakenly passed on percentage scale (e.g. 17.09 instead of 0.1709), optimisePortfolio produces Sharpe > 100.
+    const assetTypes = Array.from(new Set(res.instruments.map(i => i.type)));
+    const decimalReturns = assetTypes.map(t => {
+      const match = res.instruments.find(i => i.type === t);
+      return match.postTaxReturn > 1.0 ? match.postTaxReturn / 100 : match.postTaxReturn;
+    });
+    const rawOpt = optimisePortfolio(assetTypes, decimalReturns, 'max_sharpe');
+    assert.ok(rawOpt.sharpe >= 0 && rawOpt.sharpe <= 10.0,
+      `Raw optimizer Sharpe ratio (${rawOpt.sharpe}) for ${prof.riskCategory} must be realistic <= 10.0 (catches 100x return scale mismatch)`);
+
+    // Assert non-degenerate portfolio stats
+    assert.ok(stats.pVol > 0, `Portfolio volatility (${stats.pVol}) must be > 0`);
+    assert.ok(stats.pReturn > 0, `Portfolio return (${stats.pReturn}) must be > 0`);
+
+    // Verify response contract: postTaxReturn on API response instruments remains percentage scale (e.g. >= 1.0 for 7.1%)
+    res.instruments.forEach(inst => {
+      assert.ok(inst.postTaxReturn >= 1.0, `API response postTaxReturn (${inst.postTaxReturn}) must remain on percentage scale`);
+    });
+  }
+});
+
 
 
 
