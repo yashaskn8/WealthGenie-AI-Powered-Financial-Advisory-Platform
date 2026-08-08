@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { portfolioReturn, portfolioVol, buildCovarianceMatrix, optimisePortfolio } from '../services/portfolioEngine.js';
@@ -243,7 +244,8 @@ test('WG-010: rankWhereToInvestBackend and runPipeline agree on risk tier classi
 
 test('WG-004: scoringEngine.js exports deriveWeights for parity and computeScore respects backend weights', async () => {
   const path = await import('node:path');
-  const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
+  const scoringEnginePath = path.resolve(__dirname, '../../reactapp/src/engine/scoringEngine.js');
   const scoringEngine = await import(`file://${scoringEnginePath}`);
   assert.equal(typeof scoringEngine.deriveWeights, 'function', 'scoringEngine.js must export deriveWeights');
   assert.equal(typeof scoringEngine.computeScore, 'function', 'scoringEngine.js must export computeScore');
@@ -800,7 +802,8 @@ test('WG-004: runPipeline computedWeights are profile-differentiated, not flat d
 
 test('WG-004 CROSS-BOUNDARY: scoringEngine computeScore consumes API computed_weights payload', async () => {
   const path = await import('node:path');
-  const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
+  const scoringEnginePath = path.resolve(__dirname, '../../reactapp/src/engine/scoringEngine.js');
   const { computeScore } = await import(`file://${scoringEnginePath}`);
 
   // Construct a valid dummy investment instrument
@@ -831,7 +834,8 @@ test('WG-004 CROSS-BOUNDARY: scoringEngine computeScore consumes API computed_we
 
 test('WG-004 PARITY: Backend deriveWeights and Frontend deriveWeights produce identical results', async () => {
   const path = await import('node:path');
-  const scoringEnginePath = path.resolve(process.cwd(), '../reactapp/src/engine/scoringEngine.js');
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
+  const scoringEnginePath = path.resolve(__dirname, '../../reactapp/src/engine/scoringEngine.js');
   const frontendModule = await import(`file://${scoringEnginePath}`);
   const frontendDeriveWeights = frontendModule.deriveWeights;
 
