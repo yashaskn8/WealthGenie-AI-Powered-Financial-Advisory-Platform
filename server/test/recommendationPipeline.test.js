@@ -1146,21 +1146,27 @@ test('Live Market Data Integration: updateLiveParam reflects in computeInstrumen
 });
 
 test('WTI Backend Ranking: catalog risk lookup and keyword parity alignment', () => {
+  // Disambiguation candidate pair: identical display name and rate, but one has a catalog id ('sgb' -> catalog riskLevel 2 -> WTI 3)
+  // while the other has an unmapped id (-> falls back to default keyword risk 5).
+  // This proves catalog lookup is executing by item.id, independent of string matching.
   const candidates = [
-    { id: 'ppf', name: 'Public Provident Fund', rate: '7.1%', badge: '100% Sovereign' },
-    { id: 'smallcap_mf', name: 'Nippon India Small Cap', rate: '22.0%', badge: 'Highest Returns' },
+    { id: 'sgb', name: 'Custom Synthetic Sovereign Asset', rate: '7.1%' },
+    { id: 'custom_unmapped_asset', name: 'Custom Synthetic Sovereign Asset', rate: '7.1%' },
     { id: 'reit_custom', name: 'Embassy Office Parks REIT', rate: '8.5%' },
     { id: 'pharma_custom', name: 'Pharma Sectoral Fund', rate: '16.0%' },
   ];
 
-  // 1. Conservative user (userRiskNum = 2): PPF (catalog risk 1 -> WTI scale 1) must rank #1 over smallcap_mf (catalog risk 5 -> WTI scale 9)
+  // 1. Conservative user (userRiskNum = 2):
   const conservativeProfile = { age: 55, annualIncome: 800000, riskCategory: 'Conservative', investmentHorizon: 5 };
   const conservativeRanked = rankWhereToInvestBackend(candidates, conservativeProfile);
 
-  assert.equal(conservativeRanked[0].id, 'ppf', 'PPF (catalog risk 1) must rank #1 for Conservative user');
+  // Prove catalog lookup by item.id is active: sgb (catalog riskLevel 2 -> WTI 3) MUST outrank unmapped asset (default risk 5), despite identical name & rate
+  const sgbItem = conservativeRanked.find(i => i.id === 'sgb');
+  const unmappedItem = conservativeRanked.find(i => i.id === 'custom_unmapped_asset');
+  assert.ok(sgbItem._score > unmappedItem._score + 15, 'Catalog lookup by item.id must add 18-point risk alignment bonus over keyword default for identical synthetic candidate text');
   assert.ok(
-    conservativeRanked.findIndex(i => i.id === 'ppf') < conservativeRanked.findIndex(i => i.id === 'smallcap_mf'),
-    'PPF must outrank Small Cap MF for Conservative profile'
+    conservativeRanked.findIndex(i => i.id === 'sgb') < conservativeRanked.findIndex(i => i.id === 'custom_unmapped_asset'),
+    'Catalog-matched sgb (riskLevel 2 -> WTI 3) must outrank identical-named unmapped item (default risk 5)'
   );
 
   // Verify keyword fallback matching: reit_custom (keyword reit -> WTI scale 4) vs pharma_custom (keyword pharma -> WTI scale 7)
@@ -1168,11 +1174,11 @@ test('WTI Backend Ranking: catalog risk lookup and keyword parity alignment', ()
   const pharmaItem = conservativeRanked.find(i => i.id === 'pharma_custom');
   assert.ok(reitItem._score > pharmaItem._score, 'REIT (keyword risk 4) must score higher than Pharma (keyword risk 7) for Conservative user');
 
-  // 2. Aggressive user (userRiskNum = 8): Smallcap MF (catalog risk 5 -> WTI scale 9) must rank #1
+  // 2. Aggressive user (userRiskNum = 8): Pharma (keyword risk 7) must rank #1 over REIT (keyword risk 4) & SGB (catalog risk 2 -> WTI 3)
   const aggressiveProfile = { age: 25, annualIncome: 2000000, riskCategory: 'Aggressive', investmentHorizon: 15 };
   const aggressiveRanked = rankWhereToInvestBackend(candidates, aggressiveProfile);
 
-  assert.equal(aggressiveRanked[0].id, 'smallcap_mf', 'Small Cap MF (catalog risk 5 -> WTI scale 9) must rank #1 for Aggressive user');
+  assert.equal(aggressiveRanked[0].id, 'pharma_custom', 'Pharma Sectoral (keyword risk 7) must rank #1 for Aggressive user');
 });
 
 
