@@ -68,6 +68,18 @@ I conducted an ablation study comparing the lightweight hash-based n-gram bucket
    - **Problem**: Architecture claims in documentation could silently drift from backend code implementation.
    - **Fix**: Created [`scripts/check_docs_sync.js`](scripts/check_docs_sync.js) which statically inspects `server/services/geminiChatService.js`, `server/services/ragClient.js`, and `ml-service/main.py` to enforce that docs match code logic before CI passes.
 
+5. **Recommendation Engine Architectural Gaps (WG-030)**
+   - **Problem**: Three untracked gaps in the recommendation and ranking pipelines, none of which appeared in PROJECT_STATUS.md, RESEARCH_LOG.md, or the WG-XXX ticket history:
+     - **(a) Dead CONCENTRATION_CAPS**: `CONCENTRATION_CAPS` (Smallcap ≤15%, Direct Equity ≤20%, SGB ≤10%, NPS ≤25%, etc.) were declared in `investmentDatabase.js` but never imported or enforced anywhere. `enforceAllocationTargets` only clamped at the tier level (Low/Medium/High), not per-instrument. Empirically confirmed: an aggressive profile produced 85.6% allocated to a single Mid Cap stock, vs a 20% policy cap.
+     - **(b) Disconnected Live Market Data**: `getLiveInstrumentParams()` populated the `INSTRUMENT_PARAMS` Proxy cache but was never called from `POST /api/recommend` or consumed by `computeInstrumentScore()`. Return scoring always used static catalog `expectedReturn` values, regardless of live market conditions.
+     - **(c) WTI Risk-Inference Mismatch**: `rankWhereToInvestBackend()` used a hardcoded default `productRisk = 5` for all candidates, never looking up the authoritative `investmentDatabase` catalog `riskLevel` (1–5 scale). This caused the backend "Where to Invest" ranking to diverge from the frontend's `wtiGenerator.js` keyword-based risk classification.
+   - **Fix**: 
+     - **(a)** Added `applyConcentrationCaps()` helper to `RecommendationPipeline.js`, wired into all three Stage 5 exit paths (optimizer-success, optimizer-catch→heuristic, and heuristic). Implements iterative excess redistribution with an all-capped proportional fallback.
+     - **(b)** `POST /api/recommend` now awaits `getLiveInstrumentParams().catch(() => {})` before `runPipeline()`. `computeInstrumentScore()` reads `INSTRUMENT_PARAMS[backendType]?.nominalRate` when present (falling back to `inv.expectedReturn || inv.rate || 7.0`).
+     - **(c)** `rankWhereToInvestBackend()` now looks up `item.id` in the `investmentDatabase` catalog, converts catalog `riskLevel` (1–5) to WTI scale (1–9) via `1 + (catalogRisk - 1) * 2`, and falls back to keyword matching aligned with `reactapp/src/utils/wtiGenerator.js`.
+   - **Commits**: `4d58720`, `97d97e6`, `1833833`.
+   - **Verification**: 41/41 unit tests in `recommendationPipeline.test.js` (including synthetic identical-name candidate pair proving catalog lookup executes by `item.id`), 5/5 tests in `proofCriticalAuditFixes.test.js` (including 2 HTTP wire integration tests exercising Express→Joi→pipeline→response for both endpoints).
+
 ---
 
 ## 4. What Is Explicitly Out of Scope Right Now

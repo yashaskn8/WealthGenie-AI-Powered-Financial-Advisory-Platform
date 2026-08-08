@@ -13,6 +13,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import profileRoutes from '../routes/profile.js';
 import recommendRoutes from '../routes/recommend.js';
+import instrumentRoutes from '../routes/instruments.js';
 import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
@@ -41,6 +42,7 @@ function buildApp() {
   app.use(express.json());
   app.use('/api/profile', profileRoutes);
   app.use('/api/recommend', recommendRoutes);
+  app.use('/api/instruments', instrumentRoutes);
   app.use(errorHandler);
   return app;
 }
@@ -226,4 +228,86 @@ test('Audit Fix 1.1: POST /api/profile/build rate limit is actually awaited and 
     redisModule.setRedisAvailable(false);
     redisModule.setRedisClient(null);
   }
+});
+
+// ── WG-030 HTTP Wire Integration Tests ─────────────────────────────
+
+test('WG-030 HTTP Wire: POST /api/recommend response enforces CONCENTRATION_CAPS over Express wire', async () => {
+  await ensureDb();
+
+  const userId = new mongoose.Types.ObjectId().toString();
+  const token = signToken(userId);
+
+  // Seed aggressive FinancialProfile document in MongoDB
+  const profile = await FinancialProfile.create({
+    userId,
+    monthlyIncome: 200000,
+    annualIncome: 2400000,
+    age: 28,
+    savings: 80000,
+    riskCategory: 'Aggressive',
+    investmentHorizon: 20,
+    taxRegime: 'new',
+  });
+
+  try {
+    await withServer(async (baseUrl) => {
+      const { response, body } = await jsonFetch(`${baseUrl}/api/recommend`, {
+        method: 'POST',
+        body: JSON.stringify({ profileId: profile._id }),
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      assert.equal(response.status, 200, `POST /api/recommend should succeed with 200, got ${response.status}`);
+      assert.ok(Array.isArray(body.instruments), 'Response body must contain instruments array');
+
+      // Verify CONCENTRATION_CAPS over Express HTTP wire
+      const smallcapInst = body.instruments.find(i => i.instrumentId === 'smallcap_mf' || i.type === 'Smallcap_MF');
+      const equityInst = body.instruments.find(i => i.instrumentId === 'direct_equity' || i.type === 'Equity_MF');
+
+      if (smallcapInst) {
+        assert.ok(smallcapInst.allocation_pct <= 15.0, `HTTP response smallcap_mf allocation (${smallcapInst.allocation_pct}%) must not exceed 15% concentration cap`);
+      }
+      if (equityInst) {
+        assert.ok(equityInst.allocation_pct <= 20.0, `HTTP response direct_equity allocation (${equityInst.allocation_pct}%) must not exceed 20% concentration cap`);
+      }
+
+      // Verify sum of allocation_pct over HTTP wire equals 100.0%
+      const totalPct = parseFloat(body.instruments.reduce((s, i) => s + (i.allocation_pct || 0), 0).toFixed(1));
+      assert.equal(totalPct, 100.0, `HTTP response total allocation_pct (${totalPct}%) must equal 100%`);
+    });
+  } finally {
+    await FinancialProfile.deleteMany({ userId });
+  }
+});
+
+test('WG-030 HTTP Wire: POST /api/instruments/rank-wti reflects catalog risk ordering through Joi schema validation', async () => {
+  const token = signToken();
+
+  const candidates = [
+    { id: 'sgb', name: 'Custom Synthetic Sovereign Asset', rate: '7.1%' },
+    { id: 'custom_unmapped_asset', name: 'Custom Synthetic Sovereign Asset', rate: '7.1%' },
+    { id: 'reit_custom', name: 'Embassy Office Parks REIT', rate: '8.5%' },
+    { id: 'pharma_custom', name: 'Pharma Sectoral Fund', rate: '16.0%' },
+  ];
+
+  await withServer(async (baseUrl) => {
+    const { response, body } = await jsonFetch(`${baseUrl}/api/instruments/rank-wti`, {
+      method: 'POST',
+      body: JSON.stringify({
+        candidates,
+        userProfile: { age: 55, annualIncome: 800000, riskCategory: 'Conservative', investment_horizon: 5 },
+        options: { regimeApplied: false },
+      }),
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    assert.equal(response.status, 200, `POST /api/instruments/rank-wti should succeed with 200, got ${response.status}`);
+    assert.ok(Array.isArray(body.products), 'Response body must contain products array');
+
+    // Verify Joi-stripped payload over Express wire uses server-side catalog lookup: sgb (catalog risk 2 -> WTI 3) outranks unmapped (default risk 5)
+    const sgbItem = body.products.find(i => i.id === 'sgb');
+    const unmappedItem = body.products.find(i => i.id === 'custom_unmapped_asset');
+    assert.ok(sgbItem._score > unmappedItem._score + 15, 'Express HTTP wire response must reflect server-side catalog risk lookup by item.id');
+  });
 });
