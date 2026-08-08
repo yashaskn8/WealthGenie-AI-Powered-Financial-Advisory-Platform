@@ -127,12 +127,12 @@ test('Security: user B cannot modify user A profile via IDOR', async () => {
   // Create profile A directly in DB
   const profileA = await FinancialProfile.create({
     userId: USER_A_ID,
-    income: 80000,
+    monthlyIncome: 80000,
     age: 30,
     savings: 20000,
     annualIncome: 960000,
-    taxSlab: 0.1,
-    effectiveTaxRate: 5.2,
+    taxSlabDecimal: 0.1,
+    effectiveTaxRatePercent: 5.2,
     taxRegime: 'new',
     riskCategory: 'Moderate',
     riskScore: 50,
@@ -161,7 +161,7 @@ test('Security: user B cannot modify user A profile via IDOR', async () => {
 
     // Verify DB remains unchanged
     const doc = await FinancialProfile.findById(profileA._id).lean();
-    assert.equal(doc.income, 80000, 'Profile A income must not be updated by User B');
+    assert.equal(doc.monthlyIncome, 80000, 'Profile A monthlyIncome must not be updated by User B');
   });
 });
 
