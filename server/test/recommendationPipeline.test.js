@@ -1108,14 +1108,28 @@ test('Stage 5 Concentration Caps: clamps smallcap_mf and direct_equity to policy
 });
 
 test('Stage 5 Concentration Caps: handles all-capped fallback gracefully when all instruments hit caps', () => {
+  // Test all-capped fallback branch where all instruments exceed concentration caps (smallcap cap 15, sgb cap 10)
   const mockInstruments = [
-    { id: 'smallcap_mf', score: 90, tier: 'High', backendType: 'Smallcap_MF', allocation_pct: 50 },
-    { id: 'sgb', score: 85, tier: 'Medium', backendType: 'Gold', allocation_pct: 50 },
+    { id: 'smallcap_mf', score: 90, tier: 'High', backendType: 'Smallcap_MF', allocation_pct: 60 },
+    { id: 'sgb', score: 85, tier: 'Medium', backendType: 'Gold', allocation_pct: 40 },
   ];
 
-  const result = enforceAllocationTargets(mockInstruments, 4, { emergency_fund_months: 6 });
-  const totalSum = parseFloat(result.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
-  assert.equal(totalSum, 100.0, `All-capped portfolio total sum (${totalSum}%) must normalize to 100%`);
+  // Temporarily force PIPELINE_CONFIG.USE_OPTIMIZER = false to exercise enforceAllocationTargetsHeuristic & applyConcentrationCaps directly
+  const origOpt = PIPELINE_CONFIG.USE_OPTIMIZER;
+  PIPELINE_CONFIG.USE_OPTIMIZER = false;
+  try {
+    const result = enforceAllocationTargets(mockInstruments, 4, { emergency_fund_months: 6 });
+    const smallcap = result.find(i => i.id === 'smallcap_mf');
+    const sgb = result.find(i => i.id === 'sgb');
+
+    // Caps sum to 15 + 10 = 25. Proportional scaling: smallcap gets 15/25 = 60%, sgb gets 10/25 = 40%
+    assert.equal(smallcap.allocation_pct, 60.0, 'smallcap_mf should scale to 60% of all-capped total');
+    assert.equal(sgb.allocation_pct, 40.0, 'sgb should scale to 40% of all-capped total');
+    const totalSum = parseFloat(result.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+    assert.equal(totalSum, 100.0, `All-capped portfolio total sum (${totalSum}%) must normalize to 100%`);
+  } finally {
+    PIPELINE_CONFIG.USE_OPTIMIZER = origOpt;
+  }
 });
 
 test('Live Market Data Integration: updateLiveParam reflects in computeInstrumentScore', () => {
@@ -1133,17 +1147,32 @@ test('Live Market Data Integration: updateLiveParam reflects in computeInstrumen
 
 test('WTI Backend Ranking: catalog risk lookup and keyword parity alignment', () => {
   const candidates = [
-    { id: 'ppf', name: 'Public Provident Fund', rate: '7.1%' },
-    { id: 'smallcap_mf', name: 'Nippon India Small Cap', rate: '22.0%' },
+    { id: 'ppf', name: 'Public Provident Fund', rate: '7.1%', badge: '100% Sovereign' },
+    { id: 'smallcap_mf', name: 'Nippon India Small Cap', rate: '22.0%', badge: 'Highest Returns' },
     { id: 'reit_custom', name: 'Embassy Office Parks REIT', rate: '8.5%' },
     { id: 'pharma_custom', name: 'Pharma Sectoral Fund', rate: '16.0%' },
   ];
 
-  const profile = { age: 30, annualIncome: 1000000, riskCategory: 'Moderate', investmentHorizon: 10 };
-  const ranked = rankWhereToInvestBackend(candidates, profile);
+  // 1. Conservative user (userRiskNum = 2): PPF (catalog risk 1 -> WTI scale 1) must rank #1 over smallcap_mf (catalog risk 5 -> WTI scale 9)
+  const conservativeProfile = { age: 55, annualIncome: 800000, riskCategory: 'Conservative', investmentHorizon: 5 };
+  const conservativeRanked = rankWhereToInvestBackend(candidates, conservativeProfile);
 
-  assert.ok(ranked.length === 4, 'rankWhereToInvestBackend should rank all 4 candidates');
-  assert.ok(ranked[0]._score > 0, 'Ranked items must have positive scores');
+  assert.equal(conservativeRanked[0].id, 'ppf', 'PPF (catalog risk 1) must rank #1 for Conservative user');
+  assert.ok(
+    conservativeRanked.findIndex(i => i.id === 'ppf') < conservativeRanked.findIndex(i => i.id === 'smallcap_mf'),
+    'PPF must outrank Small Cap MF for Conservative profile'
+  );
+
+  // Verify keyword fallback matching: reit_custom (keyword reit -> WTI scale 4) vs pharma_custom (keyword pharma -> WTI scale 7)
+  const reitItem = conservativeRanked.find(i => i.id === 'reit_custom');
+  const pharmaItem = conservativeRanked.find(i => i.id === 'pharma_custom');
+  assert.ok(reitItem._score > pharmaItem._score, 'REIT (keyword risk 4) must score higher than Pharma (keyword risk 7) for Conservative user');
+
+  // 2. Aggressive user (userRiskNum = 8): Smallcap MF (catalog risk 5 -> WTI scale 9) must rank #1
+  const aggressiveProfile = { age: 25, annualIncome: 2000000, riskCategory: 'Aggressive', investmentHorizon: 15 };
+  const aggressiveRanked = rankWhereToInvestBackend(candidates, aggressiveProfile);
+
+  assert.equal(aggressiveRanked[0].id, 'smallcap_mf', 'Small Cap MF (catalog risk 5 -> WTI scale 9) must rank #1 for Aggressive user');
 });
 
 
