@@ -8,6 +8,7 @@ import { getMLPrediction } from '../services/mlClient.js';
 import { getTaxSlab } from '../services/taxEngine.js';
 import { generateAdvisory } from '../services/geminiService.js';
 import { runPipeline } from '../services/RecommendationPipeline.js';
+import { getLiveInstrumentParams } from '../services/marketDataService.js';
 import crypto from 'crypto';
 import { getCache, setCache, delCache } from '../config/redis.js';
 import { RISK_FREE_RATE, DISCLAIMER } from '../services/instrumentConstants.js';
@@ -87,6 +88,9 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
   // ── Run the metadata-driven RecommendationPipeline ──────────────
   // This replaces the previous hardcoded demographic & tax overrides
   // with a modular pipeline: eligibility → scoring → ranking → diversity
+  // Refresh live market data before running pipeline
+  await getLiveInstrumentParams().catch(() => {});
+
   const { instruments, confidenceScores, riskReconciliation, computedWeights } = runPipeline(profile, mlResult);
 
   if (instruments.length === 0) {

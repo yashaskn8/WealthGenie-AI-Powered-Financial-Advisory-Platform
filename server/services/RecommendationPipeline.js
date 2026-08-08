@@ -27,9 +27,10 @@
 import { getTaxSlab } from './taxEngine.js';
 import { calculatePostTaxReturnSafe } from './postTaxCalculator.js';
 import { INSTRUMENT_PARAMS, RISK_FREE_RATE } from './instrumentConstants.js';
-import { investmentDatabase } from '../data/investmentDatabase.js';
+import { investmentDatabase, CONCENTRATION_CAPS } from '../data/investmentDatabase.js';
 import { encodeRiskCategory } from './riskProfiler.js';
 import { optimisePortfolio } from './portfolioEngine.js';
+import { getLiveInstrumentParams } from './marketDataService.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // PIPELINE CONFIGURATION — centralized, no magic numbers
@@ -278,6 +279,81 @@ function enforceAllocationTargetsHeuristic(instruments, reconciledTier, profile)
     inv.allocationWeight = parseFloat((inv.allocation_pct / 100).toFixed(4));
   });
 
+  return applyConcentrationCaps(instruments);
+}
+
+/**
+ * Enforce per-instrument concentration caps defined in CONCENTRATION_CAPS.
+ * Clamps instrument weight exceeding maxPct and redistributes excess proportionally
+ * to un-capped instruments. If all instruments reach their caps, excess is scaled
+ * proportionally relative to caps as a fallback, ensuring total weight sums to 100.0%.
+ */
+function applyConcentrationCaps(instruments) {
+  if (!instruments || instruments.length === 0) return instruments;
+
+  let iterations = 0;
+  const maxIterations = 10;
+
+  while (iterations < maxIterations) {
+    iterations++;
+    let currentExcess = 0;
+    const roomInstruments = [];
+
+    instruments.forEach(inv => {
+      const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
+      if (cap !== undefined && inv.allocation_pct > cap + 0.001) {
+        currentExcess += inv.allocation_pct - cap;
+        inv.allocation_pct = cap;
+      } else if (cap === undefined || inv.allocation_pct < cap - 0.001) {
+        roomInstruments.push(inv);
+      }
+    });
+
+    if (currentExcess <= 0.01) break;
+
+    if (roomInstruments.length > 0) {
+      const totalRoomWeight = roomInstruments.reduce((s, i) => s + Math.max(1, i.allocation_pct || i.score || 1), 0);
+      roomInstruments.forEach(inv => {
+        const share = Math.max(1, inv.allocation_pct || inv.score || 1) / totalRoomWeight;
+        inv.allocation_pct += currentExcess * share;
+      });
+    } else {
+      // All-capped fallback: scale capped weights proportionally to caps
+      const totalCapsSum = instruments.reduce((sum, inv) => {
+        const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
+        return sum + (cap !== undefined ? cap : 100);
+      }, 0);
+
+      if (totalCapsSum > 0) {
+        instruments.forEach(inv => {
+          const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
+          const weightCap = cap !== undefined ? cap : 100;
+          inv.allocation_pct = (weightCap / totalCapsSum) * 100;
+        });
+      }
+      break;
+    }
+  }
+
+  // Ensure exact 100.0% sum normalization
+  const finalSum = instruments.reduce((s, i) => s + i.allocation_pct, 0);
+  const residual = parseFloat((100 - finalSum).toFixed(1));
+  if (Math.abs(residual) > 0.05 && instruments.length > 0) {
+    const eligibleForResidual = instruments.filter(inv => {
+      const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
+      return cap === undefined || inv.allocation_pct + residual <= cap + 0.01;
+    });
+    const targetInst = eligibleForResidual.length > 0
+      ? eligibleForResidual.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b)
+      : instruments.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b);
+    targetInst.allocation_pct = parseFloat(Math.max(0, targetInst.allocation_pct + residual).toFixed(1));
+  }
+
+  instruments.forEach(inv => {
+    inv.allocation_pct = parseFloat(Math.max(0, inv.allocation_pct).toFixed(1));
+    inv.allocationWeight = parseFloat((inv.allocation_pct / 100).toFixed(4));
+  });
+
   return instruments;
 }
 
@@ -427,7 +503,7 @@ function enforceAllocationTargets(instruments, reconciledTier, profile) {
       inv.allocationWeight = parseFloat((inv.allocation_pct / 100).toFixed(4));
     });
 
-    return instruments;
+    return applyConcentrationCaps(instruments);
   } catch (err) {
     console.warn('[RecommendationPipeline] Portfolio optimizer failed:', err.message, instruments.map(i => i.backendType || i.id));
     return enforceAllocationTargetsHeuristic(instruments, reconciledTier, profile);
@@ -735,8 +811,9 @@ function scoreCost(inv) {
  */
 function computeInstrumentScore(inv, p, w, confScores) {
   // Use backend's existing post-tax calculator via instrumentConstants
-  const rate = inv.expectedReturn || inv.rate || 7.0;
   const backendType = resolveBackendType(inv);
+  const rate = INSTRUMENT_PARAMS[backendType]?.nominalRate 
+    ?? (inv.expectedReturn || inv.rate || 7.0);
   const postTax = calculatePostTaxReturnSafe(
     backendType, rate / 100,
     p.annualIncome,
@@ -1011,6 +1088,11 @@ export function runPipeline(profile, mlResult, options = {}) {
   const topN = options.topN || PIPELINE_CONFIG.TOP_N;
   const minClasses = options.minAssetClasses || PIPELINE_CONFIG.MIN_ASSET_CLASSES;
 
+  // Trigger live market data sync (fire-and-forget for sync callers)
+  try {
+    getLiveInstrumentParams().catch(() => {});
+  } catch (_) {}
+
   // Normalise ML confidence scores
   const confScores = normaliseConfidenceScores(mlResult.confidence_scores || {});
 
@@ -1067,6 +1149,7 @@ export function runPipeline(profile, mlResult, options = {}) {
       instruments[maxIdx].allocationWeight = parseFloat((instruments[maxIdx].allocationWeight + residual).toFixed(4));
     }
   }
+
 
   // Section 7 metadata (response-only, not persisted — see Recommendation.create() comment in routes/recommend.js)
   const riskReconciliation = {
@@ -1146,16 +1229,23 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
     const rateMatch = String(item.rate || '').match(/(\d+\.?\d*)/);
     const nominalRate = rateMatch ? parseFloat(rateMatch[1]) : 0;
 
-    // Infer risk score
+    // Infer risk score: first try server-side authoritative catalog lookup using item.id
+    const catalogInst = investmentDatabase.find(c => c.id === item.id);
     let productRisk = 5;
-    if (nameLower.includes('t-bill') || nameLower.includes('overnight') || badge === '100% Sovereign') productRisk = 1;
-    else if (nameLower.includes('ppf') || nameLower.includes('scss') || nameLower.includes('rbi') || nameLower.includes('gilt') || badge.includes('Sovereign') || nameLower.includes('fd') || nameLower.includes('liquid')) productRisk = 2;
-    else if (nameLower.includes('bond') || nameLower.includes('debt') || nameLower.includes('reit') || nameLower.includes('invit')) productRisk = 3;
-    else if (nameLower.includes('balanced') || nameLower.includes('nps') || nameLower.includes('elss')) productRisk = 4;
-    else if (nameLower.includes('nifty 50') || nameLower.includes('index') || nameLower.includes('bluechip') || nameLower.includes('large cap')) productRisk = 5;
-    else if (nameLower.includes('flexi') || nameLower.includes('multi cap') || nameLower.includes('value') || nameLower.includes('contra')) productRisk = 6;
-    else if (nameLower.includes('mid cap') || nameLower.includes('sector') || nameLower.includes('pharma') || nameLower.includes('defence') || nameLower.includes('banking') || nameLower.includes('it ')) productRisk = 7;
-    else if (nameLower.includes('small cap') || nameLower.includes('quant') || highlightLower.includes('momentum')) productRisk = 8;
+    if (catalogInst && typeof catalogInst.riskLevel === 'number') {
+      // Map catalog 1-5 scale -> WTI 1-9 scale (1->1, 2->3, 3->5, 4->7, 5->9)
+      productRisk = 1 + (catalogInst.riskLevel - 1) * 2;
+    } else {
+      // Fallback keyword matching aligned with frontend wtiGenerator.js
+      if (nameLower.includes('t-bill') || nameLower.includes('overnight') || badge === '100% Sovereign') productRisk = 1;
+      else if (nameLower.includes('ppf') || nameLower.includes('scss') || nameLower.includes('rbi') || nameLower.includes('gilt') || badge.includes('Sovereign') || badge.includes('Govt Sponsored') || badge.includes('Official 54EC') || nameLower.includes('sovereign gold') || nameLower.includes('fd') || nameLower.includes('liquid') || nameLower.includes('short term') || badge.includes('CRISIL AAA') || nameLower.includes('aaa')) productRisk = 2;
+      else if (nameLower.includes('bond') || nameLower.includes('debt') || nameLower.includes('corporate bond') || badge.includes('Tax-Free') || nameLower.includes('gold etf') || nameLower.includes('gold fund') || nameLower.includes('sgb') || (nameLower.includes('gold') && !nameLower.includes('small'))) productRisk = 3;
+      else if (nameLower.includes('silver') || nameLower.includes('commodity') || nameLower.includes('reit') || nameLower.includes('invit') || nameLower.includes('balanced') || nameLower.includes('hybrid') || nameLower.includes('nps') || nameLower.includes('pension') || nameLower.includes('arbitrage') || nameLower.includes('elss')) productRisk = 4;
+      else if (nameLower.includes('dividend yield') || nameLower.includes('dividend') || badge.includes('Best Dividend') || nameLower.includes('nifty 50') || nameLower.includes('index') || nameLower.includes('bluechip') || nameLower.includes('blue-chip') || nameLower.includes('large cap') || nameLower.includes('large-cap') || nameLower.includes('s&p 500')) productRisk = 5;
+      else if (nameLower.includes('flexi') || nameLower.includes('multi cap') || nameLower.includes('value') || nameLower.includes('contra') || nameLower.includes('large & mid') || nameLower.includes('large and mid') || nameLower.includes('focused')) productRisk = 6;
+      else if (nameLower.includes('mid cap') || nameLower.includes('midcap') || nameLower.includes('mid-cap') || nameLower.includes('sector') || nameLower.includes('pharma') || nameLower.includes('defence') || nameLower.includes('banking') || nameLower.includes('infra') || nameLower.includes('it ') || nameLower.includes('technology') || nameLower.includes('consumption') || nameLower.includes('nasdaq')) productRisk = 7;
+      else if (nameLower.includes('small cap') || nameLower.includes('smallcap') || nameLower.includes('small-cap') || nameLower.includes('quant') || highlightLower.includes('momentum') || highlightLower.includes('aggressive')) productRisk = 8;
+    }
 
     // Risk delta penalty/bonus
     const riskDelta = Math.abs(productRisk - userRiskNum);

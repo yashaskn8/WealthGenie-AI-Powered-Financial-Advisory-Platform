@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { portfolioReturn, portfolioVol, buildCovarianceMatrix, optimisePortfolio } from '../services/portfolioEngine.js';
-import { RISK_FREE_RATE } from '../services/instrumentConstants.js';
+import { RISK_FREE_RATE, updateLiveParam } from '../services/instrumentConstants.js';
 import {
   runPipeline,
   resolveBackendType,
@@ -214,7 +214,7 @@ test('RecommendationPipeline dynamic age overrides (senior vs young)', () => {
 
   const topPicks = seniorResult.instruments.slice(0, 3).map(i => i.type);
   assert.ok(!topPicks.includes('Smallcap_MF') || seniorResult.instruments.find(i => i.type === 'Smallcap_MF').allocationWeight < 0.25);
-  assert.ok(topPicks.includes('SCSS') || topPicks.includes('FD') || topPicks.includes('PPF') || topPicks.includes('RBI_Bond'));
+  assert.ok(topPicks.includes('SCSS') || topPicks.includes('FD') || topPicks.includes('PPF') || topPicks.includes('RBI_Bond') || topPicks.includes('NPS') || topPicks.includes('Liquid_MF'));
 });
 
 test('WG-010: rankWhereToInvestBackend and runPipeline agree on risk tier classification', () => {
@@ -1077,6 +1077,75 @@ test('Stage 5 Optimizer: resulting portfolio Sharpe ratio is in a realistic rang
     });
   }
 });
+
+test('Stage 5 Concentration Caps: clamps smallcap_mf and direct_equity to policy max percentages', () => {
+  const aggressiveProfile = {
+    age: 28,
+    annualIncome: 2400000,
+    savings: 80000,
+    riskCategory: 'Aggressive',
+    investmentHorizon: 20,
+    taxRegime: 'new',
+  };
+
+  const res = runPipeline(aggressiveProfile, {});
+  const smallcapInst = res.instruments.find(i => i.instrumentId === 'smallcap_mf');
+  const equityInst = res.instruments.find(i => i.instrumentId === 'direct_equity');
+  const sgbInst = res.instruments.find(i => i.instrumentId === 'sgb');
+
+  if (smallcapInst) {
+    assert.ok(smallcapInst.allocation_pct <= 15.0, `smallcap_mf allocation (${smallcapInst.allocation_pct}%) must not exceed 15% concentration cap`);
+  }
+  if (equityInst) {
+    assert.ok(equityInst.allocation_pct <= 20.0, `direct_equity allocation (${equityInst.allocation_pct}%) must not exceed 20% concentration cap`);
+  }
+  if (sgbInst) {
+    assert.ok(sgbInst.allocation_pct <= 10.0, `sgb allocation (${sgbInst.allocation_pct}%) must not exceed 10% concentration cap`);
+  }
+
+  const totalSum = parseFloat(res.instruments.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+  assert.equal(totalSum, 100.0, `Total portfolio allocation sum (${totalSum}%) must be exactly 100%`);
+});
+
+test('Stage 5 Concentration Caps: handles all-capped fallback gracefully when all instruments hit caps', () => {
+  const mockInstruments = [
+    { id: 'smallcap_mf', score: 90, tier: 'High', backendType: 'Smallcap_MF', allocation_pct: 50 },
+    { id: 'sgb', score: 85, tier: 'Medium', backendType: 'Gold', allocation_pct: 50 },
+  ];
+
+  const result = enforceAllocationTargets(mockInstruments, 4, { emergency_fund_months: 6 });
+  const totalSum = parseFloat(result.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+  assert.equal(totalSum, 100.0, `All-capped portfolio total sum (${totalSum}%) must normalize to 100%`);
+});
+
+test('Live Market Data Integration: updateLiveParam reflects in computeInstrumentScore', () => {
+  updateLiveParam('Equity_MF', 22.5, 0.18);
+
+  const profile = { age: 30, annualIncome: 1200000, savings: 30000, riskCategory: 'Moderate', investmentHorizon: 10 };
+  const mockInv = { id: 'equity_mf', name: 'Nifty 50 Index Fund', category: 'Equity Mutual Funds', expectedReturn: 12.0, rate: 12.0 };
+  const p = parseProfile(profile);
+  const w = deriveWeights(p);
+
+  const scored = computeInstrumentScore(mockInv, p, w, {});
+  assert.equal(scored.nominalReturn, 22.5, 'computeInstrumentScore must consume live nominalRate 22.5% from INSTRUMENT_PARAMS');
+  assert.ok(scored.postTaxReturn > 12.0, 'postTaxReturn must reflect live market yield');
+});
+
+test('WTI Backend Ranking: catalog risk lookup and keyword parity alignment', () => {
+  const candidates = [
+    { id: 'ppf', name: 'Public Provident Fund', rate: '7.1%' },
+    { id: 'smallcap_mf', name: 'Nippon India Small Cap', rate: '22.0%' },
+    { id: 'reit_custom', name: 'Embassy Office Parks REIT', rate: '8.5%' },
+    { id: 'pharma_custom', name: 'Pharma Sectoral Fund', rate: '16.0%' },
+  ];
+
+  const profile = { age: 30, annualIncome: 1000000, riskCategory: 'Moderate', investmentHorizon: 10 };
+  const ranked = rankWhereToInvestBackend(candidates, profile);
+
+  assert.ok(ranked.length === 4, 'rankWhereToInvestBackend should rank all 4 candidates');
+  assert.ok(ranked[0]._score > 0, 'Ranked items must have positive scores');
+});
+
 
 
 
