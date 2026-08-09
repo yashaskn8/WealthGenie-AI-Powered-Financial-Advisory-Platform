@@ -19,12 +19,12 @@
  *     - Tax slab computation from taxEngine.js
  *
  *   It does NOT duplicate the frontend scoring engine. Instead it reuses
- *   the existing backend tax infrastructure (getTaxSlab, calculatePostTaxReturnSafe)
+ *   the existing backend tax infrastructure (getEffectiveMarginalRate, calculatePostTaxReturnSafe)
  *   and adds only the metadata-driven scoring logic required for independent
  *   backend recommendations.
  */
 
-import { getTaxSlab } from './taxEngine.js';
+import { getEffectiveMarginalRate } from './taxEngine.js';
 import { calculatePostTaxReturnSafe } from './postTaxCalculator.js';
 import { INSTRUMENT_PARAMS, RISK_FREE_RATE } from './instrumentConstants.js';
 import { investmentDatabase, CONCENTRATION_CAPS } from '../data/investmentDatabase.js';
@@ -655,8 +655,8 @@ function parseProfile(profile, reconciledRiskStr = null, options = {}) {
   const basicComponent = Number(profile.basicComponent) || (totalCTC * 0.5);
   const monthlyTakeHome = Number(profile.monthlyTakeHome) || (annualIncome / 12);
 
-  // Re-use backend tax slab calculator passing basicComponent for 80CCD(2) employer NPS accuracy
-  const mr = getTaxSlab(annualIncome, taxRegime, { basicSalary: basicComponent });
+  // Re-use backend tax slab calculator passing basicComponent for 80CCD(2) employer NPS accuracy (rebate-aware)
+  const mr = getEffectiveMarginalRate(annualIncome, taxRegime, { basicSalary: basicComponent }, 'salary');
 
   return {
     age, annualIncome, savings, risk, horizon, goals, taxRegime, mr,
@@ -1205,8 +1205,8 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
   const riskCat = (reconciledRisk.final_risk_tier || 'Moderate').toLowerCase();
   const horizon = Number(profile.investmentHorizon || profile.investment_horizon || 5);
 
-  // 1. Compute marginal tax rate using backend taxEngine
-  const marginalRate = getTaxSlab(annualIncome, taxRegime);
+  // 1. Compute marginal tax rate using backend taxEngine (rebate-aware)
+  const marginalRate = getEffectiveMarginalRate(annualIncome, taxRegime, {}, 'salary');
 
   // 2. Fetch macro regime tilts if regime simulation is requested
   const regimeTilts = regimeApplied ? getRegimeTilts(regimeKey) : {};
@@ -1232,9 +1232,10 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
     // Infer risk score: first try server-side authoritative catalog lookup using item.id
     const catalogInst = investmentDatabase.find(c => c.id === item.id);
     let productRisk = 5;
-    if (catalogInst && typeof catalogInst.riskLevel === 'number') {
+    const catalogRiskValue = catalogInst?.dynamicData?.risk?.value;
+    if (typeof catalogRiskValue === 'number') {
       // Map catalog 1-5 scale -> WTI 1-9 scale (1->1, 2->3, 3->5, 4->7, 5->9)
-      productRisk = 1 + (catalogInst.riskLevel - 1) * 2;
+      productRisk = 1 + (catalogRiskValue - 1) * 2;
     } else {
       // Fallback keyword matching aligned with frontend wtiGenerator.js
       if (nameLower.includes('t-bill') || nameLower.includes('overnight') || badge === '100% Sovereign') productRisk = 1;
@@ -1265,7 +1266,7 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
 
     // Backend post-tax yield calculation
     const isEEE = badge.includes('EEE') || badge.includes('54EC') || badge.includes('100% Tax-Free') || nameLower.includes('ppf') || nameLower.includes('sukanya');
-    const isSlabTaxed = highlightLower.includes('slab rate') || nameLower.includes('fd') || nameLower.includes('scss') || nameLower.includes('rbi');
+    const isSlabTaxed = highlightLower.includes('slab rate') || nameLower.includes('fd') || nameLower.includes('fixed deposit') || nameLower.includes('scss') || nameLower.includes('rbi');
     
     let taxEffectRate = 0.125;
     if (isEEE) taxEffectRate = 0;

@@ -1181,6 +1181,52 @@ test('WTI Backend Ranking: catalog risk lookup and keyword parity alignment', ()
   assert.equal(aggressiveRanked[0].id, 'pharma_custom', 'Pharma Sectoral (keyword risk 7) must rank #1 for Aggressive user');
 });
 
+test('WG-039: Section 87A rebate awareness in runPipeline weights (gamma equals WEIGHT_FLOOR for ₹10L new regime income)', () => {
+  const profile = {
+    age: 30,
+    annual_income: 1000000,
+    monthly_income: 83333.33,
+    monthly_savings: 20000,
+    taxRegime: 'new',
+    investment_horizon: 10,
+    risk_tolerance: 'Moderate',
+  };
+
+  const result = runPipeline(profile, {});
+  assert.ok(result.computedWeights, 'Pipeline result must include computedWeights');
+  assert.equal(result.computedWeights.gamma, PIPELINE_CONFIG.WEIGHT_FLOOR, 'gamma (tax weight) for ₹10L income under new regime must equal WEIGHT_FLOOR (0.5) because 87A rebate makes marginal rate 0');
+});
+
+test('WG-039: rankWhereToInvestBackend calculates 7.0% post-tax yield and null taxSavingsNote for ₹10L FD under 87A rebate', () => {
+  const profile = {
+    age: 30,
+    annual_income: 1000000,
+    taxRegime: 'new',
+    riskCategory: 'Moderate',
+  };
+  const candidates = [
+    { id: 'fd', name: 'Fixed Deposit (Bank)', rate: '7.0%', type: 'FD' },
+  ];
+
+  const ranked = rankWhereToInvestBackend(candidates, profile);
+  assert.equal(ranked.length, 1);
+  const fdItem = ranked[0];
+  assert.equal(fdItem.postTaxYieldVal, 7.0, 'postTaxYieldVal must be 7.0 for a 7% FD when income is ₹10L under new regime (0% tax drag)');
+  assert.equal(fdItem.taxSavingsNote || null, null, 'taxSavingsNote must be null when tax drag is 0');
+});
+
+test('WG-039: rankWhereToInvestBackend uses catalog dynamicData.risk.value over keyword inference', () => {
+  const profile = { age: 30, annual_income: 1000000, riskCategory: 'Aggressive' };
+  const candidates = [
+    { id: 'direct_equity', name: 'bluechip largecap equity', rate: '12.0%' },
+  ];
+
+  const ranked = rankWhereToInvestBackend(candidates, profile);
+  assert.equal(ranked.length, 1);
+  assert.ok(ranked[0]._score >= 70, `Catalog risk.value=5 (WTI 9) should give high score for Aggressive user, got ${ranked[0]._score}`);
+});
+
+
 
 
 
