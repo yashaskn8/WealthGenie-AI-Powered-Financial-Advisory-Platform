@@ -465,191 +465,212 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
           box-shadow: 0 0 12px rgba(56, 189, 248, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
         }
       `}</style>
-      <div className="dashboard-container" style={{maxWidth: 1600, margin: '0 auto'}}>
+        <div className="dashboard-container" style={{maxWidth: 1600, margin: '0 auto'}}>
         
-        <div className="dashboard-header" style={{position: 'relative', paddingBottom: 20, marginBottom: 6}}>
-          <div className="dashboard-title-group">
-            <span className="dashboard-subtitle">YOUR PERSONAL SAVINGS & INVESTMENT PLAN</span>
-            <h1 className="dashboard-title" style={{fontSize: '1.8rem'}}>
-              Your Personal Wealth Plan <span style={{ 
-                background: 'linear-gradient(135deg, #38bdf8, #818cf8)', 
-                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' 
-              }}>{userProfile?.name ? `for ${userProfile.name}` : ''}</span>
-            </h1>
-          </div>
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-            <div style={{ 
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(10, 16, 30, 0.7)', backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(255,255,255,0.06)', 
-              padding: '6px 14px', borderRadius: 20, fontSize: '0.72rem', color: '#94a3b8'
-            }}>
-              <span style={{width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'pulseDot 2s ease-in-out infinite'}} />
-              Age {userProfile?.age || '--'} · {userProfile?.riskCategory || userProfile?.risk_tolerance || 'Moderate'} Risk · {(userProfile?.investment_goals || ['Retirement']).join(' + ')}
+        {/* ─── UNIFIED EXECUTIVE DASHBOARD HEADER & PROFILE BANNER ─── */}
+        <div className="dashboard-header-wrapper" style={{ marginBottom: 18 }}>
+          {/* Top Title Bar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            paddingBottom: 14, flexWrap: 'wrap', gap: 12
+          }}>
+            <div>
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '1.2px', textTransform: 'uppercase' }}>
+                YOUR PERSONAL SAVINGS & INVESTMENT PLAN
+              </span>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#f8fafc', margin: '2px 0 0 0', letterSpacing: '-0.5px' }}>
+                Your Personal Wealth Plan{' '}
+                {userProfile?.name && (
+                  <span style={{ 
+                    background: 'linear-gradient(135deg, #38bdf8, #818cf8)', 
+                    WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' 
+                  }}>
+                    for {userProfile.name}
+                  </span>
+                )}
+              </h1>
             </div>
-            <span className="last-updated">
-               {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </span>
-          </div>
-          {/* Gradient divider */}
-          <div style={{position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(56,189,248,0.15), rgba(139,92,246,0.1), transparent)'}} />
-        </div>
 
-
-        <BackendFallbackBanner notice={fallbackNotice} onDismiss={onDismissFallbackNotice} />
-
-        {/* ─── ELEVATED FINANCIAL PROFILE BANNER AT START AFTER LOGIN ─── */}
-        {(() => {
-          const monthlyIncome = Number(userProfile?.monthly_income) || (userProfile?.annual_income ? userProfile.annual_income / 12 : 65000);
-          const monthlySavings = Number(userProfile?.monthly_savings) || 12000;
-          const savingsRate = monthlyIncome > 0 ? ((monthlySavings / monthlyIncome) * 100).toFixed(0) : '18';
-          const annualIncomeLakhs = (monthlyIncome * 12 / 100000).toFixed(1);
-
-          return (
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.88) 100%)',
-              backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(56, 189, 248, 0.22)',
-              borderLeft: '4px solid #38bdf8',
-              borderRadius: 16,
-              padding: '14px 22px',
-              marginBottom: 18,
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justify: 'space-between',
-              flexWrap: 'wrap',
-              gap: 16
-            }}>
-              {/* Ambient Background Glow */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
-                position: 'absolute', top: -40, right: -40, width: 180, height: 180,
-                background: 'radial-gradient(circle, rgba(56, 189, 248, 0.12), transparent 70%)',
-                pointerEvents: 'none'
-              }} />
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '6px 14px', borderRadius: 20, fontSize: '0.72rem', color: '#94a3b8'
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block', boxShadow: '0 0 8px #4ade80' }} />
+                <span>{userProfile?.riskCategory || userProfile?.risk_tolerance || 'Moderate'} Risk</span>
+                <span style={{ opacity: 0.4 }}>•</span>
+                <span>{(userProfile?.investment_goals || ['Retirement']).join(' + ')}</span>
+              </div>
+              <span style={{
+                background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255, 255, 255, 0.06)',
+                padding: '6px 12px', borderRadius: 12, fontSize: '0.72rem', color: '#64748b', fontWeight: 600
+              }}>
+                {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
 
-              {/* Left Group: Avatar + Name + Regime Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, zIndex: 1 }}>
+          <BackendFallbackBanner notice={fallbackNotice} onDismiss={onDismissFallbackNotice} />
+
+          {/* ─── ELEVATED FINANCIAL PROFILE GLASS CARD ─── */}
+          {(() => {
+            const monthlyIncome = Number(userProfile?.monthly_income) || (userProfile?.annual_income ? userProfile.annual_income / 12 : 65000);
+            const monthlySavings = Number(userProfile?.monthly_savings) || 12000;
+            const savingsRate = monthlyIncome > 0 ? ((monthlySavings / monthlyIncome) * 100).toFixed(0) : '18';
+            const annualIncomeLakhs = (monthlyIncome * 12 / 100000).toFixed(1);
+            const regimeText = userProfile?.taxRegime || userProfile?.tax_regime ? `${(userProfile.taxRegime || userProfile.tax_regime).toUpperCase()} REGIME` : 'NEW REGIME';
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderLeft: '4px solid #38bdf8',
+                borderRadius: 16,
+                padding: '12px 20px',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'nowrap'
+              }}>
+                {/* Background Ambient Glow */}
                 <div style={{
-                  width: 42, height: 42, borderRadius: 12,
-                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(129, 140, 248, 0.18))',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#38bdf8', flexShrink: 0,
-                  boxShadow: '0 4px 16px rgba(56, 189, 248, 0.15)'
-                }}>
-                  <User size={20} />
+                  position: 'absolute', top: -50, right: -50, width: 220, height: 220,
+                  background: 'radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%)',
+                  pointerEvents: 'none'
+                }} />
+
+                {/* Left: User Identity */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, zIndex: 1 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(129, 140, 248, 0.2))',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#38bdf8', flexShrink: 0,
+                    boxShadow: '0 4px 14px rgba(56, 189, 248, 0.2)'
+                  }}>
+                    <User size={19} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
+                        {userProfile?.name || 'Investor Financial Profile'}
+                      </h3>
+                      <span style={{
+                        fontSize: '0.58rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
+                        background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)',
+                        padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase', whiteSpace: 'nowrap'
+                      }}>
+                        {regimeText}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.3px' }}>
-                      {userProfile?.name || 'Investor Financial Profile'}
-                    </h3>
-                    <span style={{
-                      fontSize: '0.62rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px',
-                      background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)',
-                      padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase'
-                    }}>
-                      {userProfile?.taxRegime || userProfile?.tax_regime ? `${(userProfile.taxRegime || userProfile.tax_regime).toUpperCase()} REGIME` : 'NEW REGIME'}
+
+                {/* Center: Metric Chips Bar (Single Non-Wrapping Line) */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  flexWrap: 'nowrap', zIndex: 1, overflowX: 'auto',
+                  padding: '2px 0', scrollbarWidth: 'none'
+                }}>
+                  {/* Age */}
+                  <div style={{
+                    background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                    whiteSpace: 'nowrap', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                  }}>
+                    <Calendar size={13} color="#94a3b8" />
+                    <span style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Age</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f1f5f9' }}>{userProfile?.age || 35}</span>
+                  </div>
+
+                  {/* Income */}
+                  <div style={{
+                    background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.22)',
+                    borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                    whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(56, 189, 248, 0.08)'
+                  }}>
+                    <Wallet size={13} color="#38bdf8" />
+                    <span style={{ fontSize: '0.58rem', color: '#38bdf8', opacity: 0.85, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Income</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#38bdf8' }}>₹{annualIncomeLakhs}L/yr</span>
+                  </div>
+
+                  {/* Savings */}
+                  <div style={{
+                    background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.22)',
+                    borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                    whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(34, 197, 94, 0.08)'
+                  }}>
+                    <PiggyBank size={13} color="#4ade80" />
+                    <span style={{ fontSize: '0.58rem', color: '#4ade80', opacity: 0.85, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Savings</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4ade80' }}>
+                      ₹{monthlySavings.toLocaleString()} <span style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 700 }}>({savingsRate}%)</span>
                     </span>
                   </div>
-                </div>
-              </div>
 
-              {/* Middle Group: Sleek Micro Metric Chips with Lucide Icons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, justifyContent: 'center', zIndex: 1 }}>
-                {/* Age */}
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.09)',
-                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
-                }}>
-                  <Calendar size={13} color="#94a3b8" />
-                  <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Age</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f1f5f9' }}>{userProfile?.age || 35}</span>
-                </div>
-
-                {/* Income */}
-                <div style={{
-                  background: 'rgba(56, 189, 248, 0.06)', border: '1px solid rgba(56, 189, 248, 0.18)',
-                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: '0 2px 8px rgba(56, 189, 248, 0.08)'
-                }}>
-                  <Wallet size={13} color="#38bdf8" />
-                  <span style={{ fontSize: '0.6rem', color: '#38bdf8', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Income</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8' }}>₹{annualIncomeLakhs}L/yr</span>
-                </div>
-
-                {/* Savings */}
-                <div style={{
-                  background: 'rgba(34, 197, 94, 0.06)', border: '1px solid rgba(34, 197, 94, 0.18)',
-                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.08)'
-                }}>
-                  <PiggyBank size={13} color="#4ade80" />
-                  <span style={{ fontSize: '0.6rem', color: '#4ade80', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Savings</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#4ade80' }}>₹{monthlySavings.toLocaleString()} <span style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 700 }}>({savingsRate}%)</span></span>
-                </div>
-
-                {/* Horizon */}
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.06)', border: '1px solid rgba(139, 92, 246, 0.18)',
-                  borderRadius: 12, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: '0 2px 8px rgba(139, 92, 246, 0.08)'
-                }}>
-                  <Clock size={13} color="#818cf8" />
-                  <span style={{ fontSize: '0.6rem', color: '#818cf8', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Horizon</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#818cf8' }}>{horizon} Yrs</span>
-                </div>
-              </div>
-
-              {/* Right Group: Risk Comfort Badge + Edit Profile Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, zIndex: 1 }}>
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                  padding: '6px 14px', borderRadius: 12, textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Risk Comfort</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69' }}>
-                    {derivedRiskLabel}
+                  {/* Horizon */}
+                  <div style={{
+                    background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.22)',
+                    borderRadius: 10, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                    whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(139, 92, 246, 0.08)'
+                  }}>
+                    <Clock size={13} color="#818cf8" />
+                    <span style={{ fontSize: '0.58rem', color: '#818cf8', opacity: 0.85, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Horizon</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#818cf8' }}>{horizon} Yrs</span>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onNavigate && onNavigate('profile')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '9px 16px', borderRadius: 12,
-                    background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-                    color: '#0f172a', fontWeight: 800, fontSize: '0.8rem',
-                    border: 'none', cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(56, 189, 248, 0.28)',
-                    transition: 'all 0.2s ease', letterSpacing: '-0.2px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <Edit3 size={15} />
-                  Edit Profile
-                </button>
+                {/* Right: Risk Level & Action Button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, zIndex: 1 }}>
+                  <div style={{
+                    background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.09)',
+                    padding: '5px 12px', borderRadius: 10, textAlign: 'center', whiteSpace: 'nowrap'
+                  }}>
+                    <div style={{ fontSize: '0.55rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Risk Comfort</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: derivedRiskLabel === 'High' ? '#f43f5e' : derivedRiskLabel === 'Low' ? '#22c55e' : '#dfbd69' }}>
+                      {derivedRiskLabel}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onNavigate && onNavigate('profile')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 15px', borderRadius: 10,
+                      background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
+                      color: '#0f172a', fontWeight: 800, fontSize: '0.78rem',
+                      border: 'none', cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(56, 189, 248, 0.28)',
+                      transition: 'all 0.2s ease', letterSpacing: '-0.2px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <Edit3 size={14} />
+                    Edit Profile
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
+        </div>
 
-
-
-
-
-        {/* ELIGIBILITY NOTICE */}
+        {/* ELIGIBILITY NOTICE BAR */}
         {excludedCount > 0 && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
-            background: isEmergencyFundGoal ? 'rgba(34, 197, 94, 0.04)' : 'rgba(56, 189, 248, 0.04)',
-            border: `1px solid ${isEmergencyFundGoal ? 'rgba(34, 197, 94, 0.12)' : 'rgba(56, 189, 248, 0.1)'}`,
-            borderRadius: 12, marginBottom: 14, fontSize: '0.78rem', color: '#94a3b8'
+            display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
+            background: isEmergencyFundGoal ? 'rgba(34, 197, 94, 0.05)' : 'rgba(56, 189, 248, 0.05)',
+            border: `1px solid ${isEmergencyFundGoal ? 'rgba(34, 197, 94, 0.2)' : 'rgba(56, 189, 248, 0.2)'}`,
+            borderRadius: 12, marginBottom: 16, fontSize: '0.78rem', color: '#94a3b8',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)'
           }}>
             <Info size={16} color={isEmergencyFundGoal ? '#22c55e' : '#38bdf8'} style={{ flexShrink: 0 }} />
             <span>
