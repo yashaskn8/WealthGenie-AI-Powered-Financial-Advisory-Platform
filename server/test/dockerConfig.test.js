@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 test('WG-009: Dockerfiles for server, reactapp, ml-service and root docker-compose.yml exist and are non-empty', () => {
-  const rootDir = path.resolve(process.cwd(), '..');
+  const rootDir = fs.existsSync(path.join(process.cwd(), 'docker-compose.yml'))
+    ? process.cwd()
+    : path.resolve(process.cwd(), '..');
   
   const dockerFiles = [
     path.join(rootDir, 'server', 'Dockerfile'),

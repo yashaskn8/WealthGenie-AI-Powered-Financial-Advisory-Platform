@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
-import { Rocket, Umbrella, Home, GraduationCap, Shield, Car, Sparkles } from 'lucide-react';
+import { Rocket, Umbrella, Home, GraduationCap, Shield, Car, Sparkles, TrendingUp, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { GOAL_TYPES } from '../config/goalCatalog';
 
-const GOAL_PRESETS = [
-  { label: 'Retirement', Icon: Umbrella, color: '#f59e0b' },
-  { label: 'Home Purchase', Icon: Home, color: '#38bdf8' },
-  { label: 'Child Education', Icon: GraduationCap, color: '#8b5cf6' },
-  { label: 'Emergency Fund', Icon: Shield, color: '#10b981' },
-  { label: 'Vehicle', Icon: Car, color: '#f43f5e' },
-  { label: 'Custom', Icon: Sparkles, color: '#94a3b8' },
-];
+const ICON_MAP = {
+  Umbrella,
+  Home,
+  GraduationCap,
+  Shield,
+  Car,
+  Sparkles,
+  TrendingUp,
+  FileText,
+};
+
+// Derive GoalForm presets from unified catalog (excluding wealth_growth and tax_saving)
+const GOAL_PRESETS = GOAL_TYPES
+  .filter(g => g.id !== 'wealth_growth' && g.id !== 'tax_saving')
+  .map(g => ({
+    label: g.label,
+    Icon: ICON_MAP[g.Icon] || Sparkles,
+    color: g.color,
+  }));
 
 export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
   const [formStep, setFormStep] = useState(1);

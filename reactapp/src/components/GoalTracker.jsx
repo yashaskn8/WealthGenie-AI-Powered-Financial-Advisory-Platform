@@ -1,13 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Palmtree, Diamond, FileText, Shield, TrendingUp, AlertTriangle, CheckCircle, Clock, Zap, IndianRupee, ArrowRight, Lightbulb, Wallet, Save, Sparkles, RefreshCw, Layers, Trash2 } from 'lucide-react';
+import { Target, Palmtree, Diamond, FileText, Shield, TrendingUp, AlertTriangle, CheckCircle, Clock, Zap, IndianRupee, ArrowRight, Lightbulb, Wallet, Save, Sparkles, RefreshCw, Layers, Trash2, Umbrella, Home, GraduationCap, Car } from 'lucide-react';
 import { formatINR } from '../utils/indianNumberFormat';
 import { calculateSIPFutureValue } from '../utils/sipCalculator';
 import api from '../services/api';
 import JargonTooltip from './JargonTooltip';
 import './GoalTracker.css';
+import { GOAL_TYPES, getGoalTypeByLabel, hexToRgb } from '../config/goalCatalog';
 
-/* ─── Smart defaults computed from actual profile ────────────────── */
+const ICON_MAP = {
+  Umbrella,
+  Home,
+  GraduationCap,
+  Shield,
+  Car,
+  Sparkles,
+  TrendingUp,
+  FileText,
+  Palmtree,
+  Diamond,
+  Target,
+};
+
+/* ─── Smart defaults computed from actual profile & unified GOAL_TYPES catalog ─── */
 function computeSmartDefaults(profile) {
   const income = Number(profile?.monthly_income) || 50000;
   const savings = Number(profile?.monthly_savings) || 10000;
@@ -18,58 +33,52 @@ function computeSmartDefaults(profile) {
   const retirementAge = 60;
   const yearsToRetire = Math.max(5, retirementAge - age);
 
-  const retirementTarget = Math.round(monthlyExpenses * 12 * 25 * Math.pow(1.06, yearsToRetire) / 100000) * 100000;
+  const quickStartGoals = GOAL_TYPES.filter(g => g.quickStartEligible);
+  const defaults = {};
 
-  return {
-    'Retirement': {
-      target: retirementTarget,
-      currentSaved: 0, 
-      icon: Palmtree,
-      themeColor: '#0ea5e9', // Cyan
-      themeColorRGB: '14, 165, 233',
-      returnRate: 12,
-      yearsToGoal: yearsToRetire,
-      description: `Build ${formatShort(retirementTarget)} fund (roughly 25 times your annual expenses) by age ${retirementAge}`,
-      tip: `Based on your ₹${monthlyExpenses.toLocaleString('en-IN')}/mo expenses, you need about 25 times your annual expenses saved for a comfortable retirement.`,
-      priority: 'High',
-    },
-    'Wealth Growth': {
-      target: Math.round(annualIncome * 5 / 100000) * 100000,
+  quickStartGoals.forEach(g => {
+    let target = 1000000;
+    let yearsToGoal = horizon;
+    let description = '';
+    let tip = g.tip || '';
+
+    if (g.id === 'retirement') {
+      yearsToGoal = g.computeYearsToGoal ? g.computeYearsToGoal(age) : yearsToRetire;
+      target = g.computeTarget ? g.computeTarget(monthlyExpenses, yearsToRetire) : 25 * annualIncome;
+      description = `Build ${formatShort(target)} fund (roughly 25 times your annual expenses) by age ${retirementAge}`;
+      tip = `Based on your ₹${monthlyExpenses.toLocaleString('en-IN')}/mo expenses, you need about 25 times your annual expenses saved for a comfortable retirement.`;
+    } else if (g.id === 'wealth_growth') {
+      yearsToGoal = g.computeYearsToGoal ? g.computeYearsToGoal(horizon) : Math.min(horizon, 10);
+      target = g.computeTarget ? g.computeTarget(annualIncome) : annualIncome * 5;
+      description = `Accumulate 5× annual income (₹${(annualIncome * 5 / 100000).toFixed(0)}L) in ${yearsToGoal} years`;
+      tip = 'A common wealth milestone is 5× your annual income in liquid investments.';
+    } else if (g.id === 'tax_saving') {
+      yearsToGoal = g.defaultYearsToGoal || 1;
+      target = g.computeTarget ? g.computeTarget() : 150000;
+      description = <span>Save tax on up to ₹1.5 Lakhs under <JargonTooltip term="Section 80C">Section 80C</JargonTooltip></span>;
+      tip = <span><JargonTooltip term="ELSS">ELSS</JargonTooltip> (tax-saving equity funds) has the shortest 3-year lock-in period compared to other options.</span>;
+    } else if (g.id === 'emergency_fund') {
+      yearsToGoal = g.defaultYearsToGoal || 1.5;
+      target = g.computeTarget ? g.computeTarget(monthlyExpenses) : monthlyExpenses * 6;
+      description = `Build a ₹${(monthlyExpenses * 6 / 100000).toFixed(1)}L safety net (6 months of expenses)`;
+      tip = <span>Keep in <JargonTooltip term="Debt Fund">liquid mutual funds</JargonTooltip> or a savings account. Must be accessible within 24 hours.</span>;
+    }
+
+    defaults[g.label] = {
+      target,
       currentSaved: 0,
-      icon: Diamond,
-      themeColor: '#a855f7', // Purple
-      themeColorRGB: '168, 85, 247',
-      returnRate: 11,
-      yearsToGoal: Math.min(horizon, 10),
-      description: `Accumulate 5× annual income (₹${(annualIncome * 5 / 100000).toFixed(0)}L) in ${Math.min(horizon, 10)} years`,
-      tip: 'A common wealth milestone is 5× your annual income in liquid investments.',
-      priority: 'Medium',
-    },
-    'Tax Saving': {
-      target: 150000,
-      currentSaved: 0,
-      icon: FileText,
-      themeColor: '#f43f5e', // Rose
-      themeColorRGB: '244, 63, 94',
-      returnRate: 10,
-      yearsToGoal: 1,
-      description: <span>Save tax on up to ₹1.5 Lakhs under <JargonTooltip term="Section 80C">Section 80C</JargonTooltip></span>,
-      tip: <span><JargonTooltip term="ELSS">ELSS</JargonTooltip> (tax-saving equity funds) has the shortest 3-year lock-in period compared to other options.</span>,
-      priority: 'Low',
-    },
-    'Emergency Fund': {
-      target: Math.round(monthlyExpenses * 6 / 10000) * 10000,
-      currentSaved: 0,
-      icon: Shield,
-      themeColor: '#10b981', // Emerald
-      themeColorRGB: '16, 185, 129',
-      returnRate: 7,
-      yearsToGoal: 1.5,
-      description: `Build a ₹${(monthlyExpenses * 6 / 100000).toFixed(1)}L safety net (6 months of expenses)`,
-      tip: <span>Keep in <JargonTooltip term="Debt Fund">liquid mutual funds</JargonTooltip> or a savings account. Must be accessible within 24 hours.</span>,
-      priority: 'Critical',
-    },
-  };
+      icon: ICON_MAP[g.Icon] || Target,
+      themeColor: g.color,
+      themeColorRGB: g.themeColorRGB || hexToRgb(g.color),
+      returnRate: g.returnRate,
+      yearsToGoal,
+      description,
+      tip,
+      priority: g.defaultPriority || 'Medium',
+    };
+  });
+
+  return defaults;
 }
 
 function formatShort(val) {
@@ -503,14 +512,24 @@ const GoalTracker = ({ profile, recommendations }) => {
         horizon: g.years_remaining || horizon,
         returnRate: 11,
         // Match icon/theme from presets, or default
-        defaults: smartDefaults[g.goal_name] || {
-          icon: Target,
-          themeColor: '#0ea5e9',
-          themeColorRGB: '14, 165, 233',
-          description: `Custom goal targeted in ${Math.round(g.years_remaining || horizon)}y`,
-          tip: 'Create structured savings plans to meet targets.',
-          priority: g.priority || 'Medium',
-        }
+        defaults: smartDefaults[g.goal_name] || (() => {
+          const cat = getGoalTypeByLabel(g.goal_name);
+          return cat ? {
+            icon: ICON_MAP[cat.Icon] || Target,
+            themeColor: cat.color,
+            themeColorRGB: cat.themeColorRGB || hexToRgb(cat.color),
+            description: `Custom goal targeted in ${Math.round(g.years_remaining || horizon)}y`,
+            tip: 'Create structured savings plans to meet targets.',
+            priority: g.priority || 'Medium',
+          } : {
+            icon: Target,
+            themeColor: '#0ea5e9',
+            themeColorRGB: '14, 165, 233',
+            description: `Custom goal targeted in ${Math.round(g.years_remaining || horizon)}y`,
+            tip: 'Create structured savings plans to meet targets.',
+            priority: g.priority || 'Medium',
+          };
+        })()
       }));
     } else {
       // Local fallback
@@ -522,7 +541,28 @@ const GoalTracker = ({ profile, recommendations }) => {
         key: g,
         horizon: smartDefaults[g]?.yearsToGoal || (g === 'Emergency Fund' ? Math.min(2, horizon) : horizon),
         returnRate: smartDefaults[g]?.returnRate || 10,
-        defaults: smartDefaults[g] || { icon: Target, themeColor: '#6366f1', themeColorRGB: '99, 102, 241', description: '', tip: '', yearsToGoal: horizon, returnRate: 10, priority: 'Medium' }
+        defaults: smartDefaults[g] || (() => {
+          const cat = getGoalTypeByLabel(g);
+          return cat ? {
+            icon: ICON_MAP[cat.Icon] || Target,
+            themeColor: cat.color,
+            themeColorRGB: cat.themeColorRGB || hexToRgb(cat.color),
+            description: '',
+            tip: '',
+            yearsToGoal: horizon,
+            returnRate: cat.returnRate || 10,
+            priority: cat.defaultPriority || 'Medium',
+          } : {
+            icon: Target,
+            themeColor: '#6366f1',
+            themeColorRGB: '99, 102, 241',
+            description: '',
+            tip: '',
+            yearsToGoal: horizon,
+            returnRate: 10,
+            priority: 'Medium',
+          };
+        })()
       }));
     }
   }, [showDbGoals, dbGoals, profile, smartDefaults, horizon]);
