@@ -5,6 +5,7 @@ import SebiDisclaimer from './SebiDisclaimer';
 import api from '../services/api';
 import GoalForm from './GoalForm';
 import GoalDetailPane from './GoalDetailPane';
+import { submitGoal } from '../utils/goalSubmission';
 
 const STATUS_CONFIG = {
   on_track:  { color: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', label: 'ON TRACK',  icon: CheckCircle, glow: 'rgba(16, 185, 129, 0.4)' },
@@ -104,23 +105,19 @@ const GoalPlanner = ({ profile: _profile }) => {
   const handleSubmitGoal = async (goalData) => {
     setLoading(true);
     try {
-      const res = await api.createGoal({
-        goal_name: goalData.goalName,
-        target_amount: goalData.targetAmount,
-        target_date: goalData.targetDate,
-        current_savings: goalData.currentSavings,
-        priority: goalData.priority,
-      });
+      const res = await submitGoal(api, goalData);
 
-      if (res.goal) {
+      if (res.success && res.goal) {
         setGoals(prev => [...prev, res.goal]);
         setSelectedGoal(res.goal);
         const gid = res.goal._id || res.goal.goalId;
         setSimulatedSips(prev => ({ ...prev, [gid]: res.goal.recommended_sip }));
         setShowForm(false);
+      } else if (!res.success) {
+        alert('Failed to save goal: ' + res.error);
       }
     } catch (err) {
-      alert('Failed to save goal: ' + err.message);
+      alert('Failed to save goal: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import api from '../services/api';
 import JargonTooltip from './JargonTooltip';
 import './GoalTracker.css';
 import { GOAL_TYPES, getGoalTypeByLabel, hexToRgb } from '../config/goalCatalog';
+import { submitGoal } from '../utils/goalSubmission';
 
 const ICON_MAP = {
   Umbrella,
@@ -457,18 +458,19 @@ const GoalTracker = ({ profile, recommendations }) => {
         const targetDate = new Date();
         targetDate.setMonth(targetDate.getMonth() + Math.round(def.yearsToGoal * 12));
         
-        try {
-          await api.createGoal({
-            goal_name: key,
-            target_amount: def.target,
-            target_date: targetDate.toISOString().split('T')[0],
-            current_savings: def.currentSaved,
-            profileId: profile?._id || profile?.profileId,
-            priority: def.priority || 'Medium',
-          });
+        const res = await submitGoal(api, {
+          goalName: key,
+          targetAmount: def.target,
+          targetDate,
+          currentSavings: def.currentSaved,
+          profileId: profile?._id || profile?.profileId,
+          priority: def.priority || 'Medium',
+        });
+
+        if (res.success) {
           results.succeeded.push(key);
-        } catch (err) {
-          results.failed.push({ key, message: err.message || 'Unknown error' });
+        } else {
+          results.failed.push({ key, message: res.error });
         }
       }
     } finally {
