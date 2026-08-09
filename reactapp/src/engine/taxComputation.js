@@ -5,47 +5,66 @@
  * Contains marginal rate computation, equity LTCG estimation,
  * and post-tax return calculation for all instrument tax types.
  *
- * ⚠️  WARNING (WG-038): getMarginalRate() does NOT implement Section 87A
- * rebate (₹0 tax for new-regime taxable income ≤ ₹12,00,000) or the
- * marginal relief zone above that threshold. It returns a non-zero slab
- * rate for incomes that actually owe zero tax under the new regime.
+ * ℹ️ WG-043: getMarginalRate() is a client-side port of
+ * server/services/taxEngine.js's getEffectiveMarginalRate(). It is kept in
+ * sync manually so that synchronous client-side UI features (AllocationPlanner,
+ * RecommendationDashboard, UserContext, App) produce identical tax drag results
+ * to the backend without asynchronous API round-trips.
  *
- * DO NOT use this module's functions for any user-facing tax-drag number.
- * PostTaxAnalysis.jsx has been rewired (WG-038) to use the backend's
- * calculatePostTaxReturnSafe() via POST /api/tax/post-tax-return/batch,
- * which correctly implements rebate + marginal relief + surcharge + cess.
- *
- * These functions are retained ONLY because scoringEngine.js,
- * recommendationEngine.js, and goalFiltering.js depend on them for
- * synchronous real-time scoring that cannot trivially be async API calls.
- * See WG-039 (follow-up) for full elimination plan.
+ * ⚠️ MAINTENANCE RISK: Any future changes to server/services/taxEngine.js's
+ * tax computation logic (e.g. Union Budget slab/rebate updates) MUST be
+ * manually mirrored here as well to avoid client/backend calculation drift.
  */
 
-// ─── MARGINAL RATE (New Regime default) ───────────────────────────
-// Must apply standard deduction BEFORE slab lookup to match backend.
-// FY2025-26: New regime ₹75K deduction, Old regime ₹50K deduction.
-export function getMarginalRate(annualIncome, regime = 'new') {
-  const standardDeduction = regime === 'new' ? 75000 : 50000;
-  const taxableIncome = Math.max(0, annualIncome - standardDeduction);
+function calculateTaxFromSlabs(taxableIncome, slabs) {
+  let tax = 0;
+  for (const slab of slabs) {
+    if (taxableIncome <= slab.min) break;
+    const taxableInSlab = Math.min(taxableIncome, slab.max) - slab.min;
+    tax += taxableInSlab * slab.rate;
+  }
+  return tax;
+}
 
-  let rate = 0;
-  if (regime === 'old') {
-    if (taxableIncome > 1000000) rate = 0.30;
-    else if (taxableIncome > 500000)  rate = 0.20;
-    else if (taxableIncome > 250000)  rate = 0.05;
+function computeTaxLiability(annualIncome, regime = 'new') {
+  let safeIncome = annualIncome;
+  if (!Number.isFinite(safeIncome) || safeIncome < 0) safeIncome = 0;
+  const safeRegime = regime === 'old' ? 'old' : 'new';
+  const standardDeduction = safeRegime === 'new' ? 75000 : 50000;
+  const taxableIncome = Math.max(0, safeIncome - standardDeduction);
+
+  const slabs = safeRegime === 'new' ? [
+    { min: 0, max: 400000, rate: 0 },
+    { min: 400000, max: 800000, rate: 0.05 },
+    { min: 800000, max: 1200000, rate: 0.10 },
+    { min: 1200000, max: 1600000, rate: 0.15 },
+    { min: 1600000, max: 2000000, rate: 0.20 },
+    { min: 2000000, max: 2400000, rate: 0.25 },
+    { min: 2400000, max: Infinity, rate: 0.30 },
+  ] : [
+    { min: 0, max: 250000, rate: 0 },
+    { min: 250000, max: 500000, rate: 0.05 },
+    { min: 500000, max: 1000000, rate: 0.20 },
+    { min: 1000000, max: Infinity, rate: 0.30 },
+  ];
+
+  let taxBeforeCess = calculateTaxFromSlabs(taxableIncome, slabs);
+  const rebateLimit = safeRegime === 'new' ? 1200000 : 500000;
+
+  if (taxableIncome <= rebateLimit) {
+    taxBeforeCess = 0;
   } else {
-    // New regime FY2025-26 slabs (on taxable income after ₹75K deduction)
-    if (taxableIncome > 2400000) rate = 0.30;
-    else if (taxableIncome > 2000000) rate = 0.25;
-    else if (taxableIncome > 1600000) rate = 0.20;
-    else if (taxableIncome > 1200000) rate = 0.15;
-    else if (taxableIncome > 800000)  rate = 0.10;
-    else if (taxableIncome > 400000)  rate = 0.05;
+    // Marginal relief for Section 87A: tax cannot exceed excess over rebate limit
+    const excessOverLimit = taxableIncome - rebateLimit;
+    if (taxBeforeCess > excessOverLimit) {
+      taxBeforeCess = excessOverLimit;
+    }
   }
 
+  // Surcharge
   let surchargeRate = 0;
   if (taxableIncome > 5000000) {
-    if (regime === 'new') {
+    if (safeRegime === 'new') {
       if (taxableIncome <= 10000000) surchargeRate = 0.10;
       else if (taxableIncome <= 20000000) surchargeRate = 0.15;
       else surchargeRate = 0.25;
@@ -56,8 +75,52 @@ export function getMarginalRate(annualIncome, regime = 'new') {
       else surchargeRate = 0.37;
     }
   }
+  const surcharge = taxBeforeCess * surchargeRate;
 
-  return rate * (1 + surchargeRate) * 1.04;
+  // Surcharge marginal relief
+  let relief = 0;
+  if (taxableIncome > 5000000) {
+    const SURCHARGE_THRESHOLDS = safeRegime === 'new'
+      ? [5000000, 10000000, 20000000]
+      : [5000000, 10000000, 20000000, 50000000];
+    let threshold = 5000000;
+    for (const t of SURCHARGE_THRESHOLDS) {
+      if (taxableIncome > t) threshold = t;
+    }
+    const baseTaxAtThreshold = calculateTaxFromSlabs(threshold, slabs);
+    let thresholdSurchargeRate = 0;
+    if (threshold === 10000000) thresholdSurchargeRate = 0.10;
+    else if (threshold === 20000000) thresholdSurchargeRate = 0.15;
+    else if (threshold === 50000000 && safeRegime === 'old') thresholdSurchargeRate = 0.25;
+
+    const taxAtThreshold = baseTaxAtThreshold * (1 + thresholdSurchargeRate);
+    const totalActual = taxBeforeCess + surcharge;
+    const incomeGain = taxableIncome - threshold;
+    const maxAllowedTax = taxAtThreshold + incomeGain;
+    relief = totalActual > maxAllowedTax ? totalActual - maxAllowedTax : 0;
+    relief = Math.round(relief);
+  }
+
+  const taxAfterSurcharge = taxBeforeCess + surcharge - relief;
+  const cess = taxAfterSurcharge * 0.04;
+  return Math.round(taxAfterSurcharge + cess);
+}
+
+// ─── MARGINAL RATE (Client-Side Port of taxEngine.js getEffectiveMarginalRate) ───
+export function getMarginalRate(annualIncome, regime = 'new') {
+  const actualTax = computeTaxLiability(annualIncome, regime);
+  if (actualTax === 0) return 0;
+
+  const delta = 10000;
+  const highIncome = annualIncome + delta;
+  const lowIncome = Math.max(0, annualIncome - delta);
+  const highTax = computeTaxLiability(highIncome, regime);
+  const lowTax = computeTaxLiability(lowIncome, regime);
+  const deltaIncome = highIncome - lowIncome;
+  if (deltaIncome <= 0) return 0;
+  const deltaTax = highTax - lowTax;
+  const effectiveMarginal = deltaTax / deltaIncome;
+  return parseFloat(Math.max(0, Math.min(effectiveMarginal, 0.45)).toFixed(4));
 }
 
 export function estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears) {
