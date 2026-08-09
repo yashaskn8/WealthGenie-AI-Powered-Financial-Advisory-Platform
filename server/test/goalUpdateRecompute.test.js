@@ -1,0 +1,267 @@
+/**
+ * server/test/goalUpdateRecompute.test.js — Numeric Correctness Audit Suite (WG-037)
+ * Verifies mathematical recomputation logic for PATCH /api/goals/:goalId
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import express from 'express';
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+import goalRoutes from '../routes/goals.js';
+import { enforceJsonContentType } from '../middleware/contentType.js';
+import { errorHandler } from '../middleware/errorHandler.js';
+import { withServer, jsonRequest } from '../test-utils/httpTestUtils.js';
+import Goal from '../models/Goal.js';
+import FinancialProfile from '../models/FinancialProfile.js';
+
+const testSecret = ['wg037', 'test', 'jwt', 'secret', 'key'].join('-');
+process.env.JWT_SECRET = process.env.JWT_SECRET || testSecret;
+const JWT_SECRET = process.env.JWT_SECRET;
+process.env.NODE_ENV = 'test';
+
+let mongoServer = null;
+let dbConnected = false;
+const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
+
+function signToken(userId = TEST_USER_ID) {
+  return jwt.sign(
+    { userId, email: 'wg037-test@example.com', jti: crypto.randomUUID() },
+    JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+}
+
+function buildTestApp() {
+  const app = express();
+  app.use(enforceJsonContentType);
+  app.use(express.json());
+  app.use('/api/goals', goalRoutes);
+  app.use(errorHandler);
+  return app;
+}
+
+async function ensureDb() {
+  if (dbConnected) return;
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
+  }
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(mongoServer.getUri());
+  }
+  dbConnected = true;
+}
+
+test.after(async () => {
+  try {
+    if (dbConnected) {
+      await Goal.deleteMany({ userId: TEST_USER_ID });
+      await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
+      await mongoose.disconnect();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
+  } catch (_) {}
+});
+
+test('WG-037 Scenario (a): POST /create goal with known target_amount and target_date', async () => {
+  await ensureDb();
+  const token = signToken();
+  const app = buildTestApp();
+
+  // Create a target_date exactly 10 years in the future
+  const targetDateObj = new Date();
+  targetDateObj.setFullYear(targetDateObj.getFullYear() + 10);
+  const targetDateStr = targetDateObj.toISOString().split('T')[0];
+
+  const createPayload = {
+    goal_name: 'Retirement Corpus 2036',
+    target_amount: 1000000, // ₹10 Lakhs
+    target_date: targetDateStr,
+    current_savings: 100000, // ₹1 Lakh
+    priority: 'High',
+  };
+
+  await withServer(app, async (baseUrl) => {
+    const { response, body } = await jsonRequest(`${baseUrl}/api/goals/create`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(createPayload),
+    });
+
+    assert.equal(response.status, 201, `POST /create failed with status ${response.status}`);
+    assert.ok(body.goal, 'Response must include created goal object');
+    assert.equal(body.goal.goal_name, 'Retirement Corpus 2036');
+    assert.equal(body.goal.target_amount, 1000000);
+    assert.ok(body.goal.inflation_adjusted_target > 1000000, 'Inflation target must be greater than initial target_amount');
+    assert.ok(body.goal.recommended_sip > 0, 'Recommended SIP must be positive');
+  });
+});
+
+test('WG-037 Scenario (b): PATCH target_amount recomputes inflation_adjusted_target using exact route formula', async () => {
+  await ensureDb();
+  const token = signToken();
+  const app = buildTestApp();
+
+  const targetDateObj = new Date();
+  targetDateObj.setFullYear(targetDateObj.getFullYear() + 10);
+  const targetDateStr = targetDateObj.toISOString().split('T')[0];
+
+  await withServer(app, async (baseUrl) => {
+    // 1. Create initial goal
+    const { response: createRes, body: createBody } = await jsonRequest(`${baseUrl}/api/goals/create`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        goal_name: 'Home Downpayment 2036',
+        target_amount: 1000000,
+        target_date: targetDateStr,
+        current_savings: 100000,
+        priority: 'High',
+      }),
+    });
+    assert.equal(createRes.status, 201);
+    const createdGoal = createBody.goal;
+
+    // 2. PATCH target_amount to 2,000,000
+    const newTargetAmount = 2000000;
+    const { response: patchRes, body: patchBody } = await jsonRequest(`${baseUrl}/api/goals/${createdGoal._id}`, {
+      method: 'PATCH',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({ target_amount: newTargetAmount }),
+    });
+
+    assert.equal(patchRes.status, 200, `PATCH failed with status ${patchRes.status}`);
+    assert.ok(patchBody.success, 'PATCH response must indicate success');
+
+    const updatedGoal = patchBody.goal;
+    assert.equal(updatedGoal.target_amount, newTargetAmount);
+
+    // Compute expected inflation_adjusted_target using exact PATCH handler formula:
+    // const now = new Date();
+    // const msRemaining = new Date(goal.target_date) - now;
+    // const yearsRemaining = Math.max(0.5, Math.floor((msRemaining / (365.25 * 24 * 60 * 60 * 1000)) * 4) / 4);
+    // const inflationAdjustedTarget = Math.round(goal.target_amount * Math.pow(1.05, yearsRemaining));
+    const now = new Date();
+    const msRemaining = new Date(createdGoal.target_date) - now;
+    const expectedYearsRemaining = Math.max(0.5, Math.floor((msRemaining / (365.25 * 24 * 60 * 60 * 1000)) * 4) / 4);
+    const expectedInflationTarget = Math.round(newTargetAmount * Math.pow(1.05, expectedYearsRemaining));
+
+    assert.equal(
+      updatedGoal.inflation_adjusted_target,
+      expectedInflationTarget,
+      `PATCH inflation_adjusted_target (${updatedGoal.inflation_adjusted_target}) must match exact formula calculation (${expectedInflationTarget})`
+    );
+  });
+});
+
+test('WG-037 Scenario (c): PATCH current_savings reduces/maintains SIP and leaves inflation_adjusted_target unchanged', async () => {
+  await ensureDb();
+  const token = signToken();
+  const app = buildTestApp();
+
+  const targetDateObj = new Date();
+  targetDateObj.setFullYear(targetDateObj.getFullYear() + 10);
+  const targetDateStr = targetDateObj.toISOString().split('T')[0];
+
+  await withServer(app, async (baseUrl) => {
+    // 1. Create goal
+    const { response: createRes, body: createBody } = await jsonRequest(`${baseUrl}/api/goals/create`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        goal_name: 'Child Education 2036',
+        target_amount: 1500000,
+        target_date: targetDateStr,
+        current_savings: 50000,
+        priority: 'High',
+      }),
+    });
+    assert.equal(createRes.status, 201);
+    const initialGoal = createBody.goal;
+
+    const initialInflationTarget = initialGoal.inflation_adjusted_target;
+    const initialSip = initialGoal.recommended_sip;
+
+    // 2. PATCH current_savings from 50,000 to 400,000 (higher savings)
+    const { response: patchRes, body: patchBody } = await jsonRequest(`${baseUrl}/api/goals/${initialGoal._id}`, {
+      method: 'PATCH',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({ current_savings: 400000 }),
+    });
+
+    assert.equal(patchRes.status, 200);
+    const updatedGoal = patchBody.goal;
+
+    assert.equal(updatedGoal.current_savings, 400000);
+    assert.equal(
+      updatedGoal.inflation_adjusted_target,
+      initialInflationTarget,
+      'PATCHing only current_savings must leave inflation_adjusted_target unchanged'
+    );
+    assert.ok(
+      updatedGoal.recommended_sip <= initialSip,
+      `Higher current savings (${updatedGoal.current_savings}) must yield a lower or equal recommended SIP (${updatedGoal.recommended_sip} vs ${initialSip})`
+    );
+  });
+});
+
+test('WG-037 Scenario (d): PATCH priority-only leaves inflation_adjusted_target, recommended_sip, and monte_carlo_summary unchanged', async () => {
+  await ensureDb();
+  const token = signToken();
+  const app = buildTestApp();
+
+  const targetDateObj = new Date();
+  targetDateObj.setFullYear(targetDateObj.getFullYear() + 10);
+  const targetDateStr = targetDateObj.toISOString().split('T')[0];
+
+  await withServer(app, async (baseUrl) => {
+    // 1. Create goal
+    const { response: createRes, body: createBody } = await jsonRequest(`${baseUrl}/api/goals/create`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        goal_name: 'Emergency Fund 2036',
+        target_amount: 500000,
+        target_date: targetDateStr,
+        current_savings: 100000,
+        priority: 'Medium',
+      }),
+    });
+    assert.equal(createRes.status, 201);
+    const initialGoal = createBody.goal;
+
+    // 2. PATCH priority only (priority: 'Low')
+    const { response: patchRes, body: patchBody } = await jsonRequest(`${baseUrl}/api/goals/${initialGoal._id}`, {
+      method: 'PATCH',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({ priority: 'Low' }),
+    });
+
+    assert.equal(patchRes.status, 200);
+    const updatedGoal = patchBody.goal;
+
+    assert.equal(updatedGoal.priority, 'Low');
+    assert.equal(
+      updatedGoal.inflation_adjusted_target,
+      initialGoal.inflation_adjusted_target,
+      'Priority-only PATCH must not alter inflation_adjusted_target'
+    );
+    assert.equal(
+      updatedGoal.recommended_sip,
+      initialGoal.recommended_sip,
+      'Priority-only PATCH must not alter recommended_sip'
+    );
+    assert.equal(
+      updatedGoal.monte_carlo_summary.p50,
+      initialGoal.monte_carlo_summary.p50,
+      'Priority-only PATCH must not recompute monte_carlo_summary'
+    );
+  });
+});
