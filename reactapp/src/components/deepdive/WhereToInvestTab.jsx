@@ -117,7 +117,7 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
   const activeRegime = activeRegimeKey ? MACRO_REGIME_CONFIGS[activeRegimeKey] : null;
 
   const rawProducts = (subCategoryMap && activeSubTab) ? subCategoryMap[activeSubTab] : wtiData.products;
-  const products = rankWhereToInvest(rawProducts || [], userProfile, userRisk, { regimeApplied, activeRegime, sortBy });
+  const products = rankWhereToInvest(rawProducts || [], userProfile, userRisk, { regimeApplied, activeRegime, sortBy, instrumentRiskLevel: wtiData.riskLevel });
 
   const level = Math.max(0, Math.min(5, (wtiData.riskLevel || 1) - 1));
   const risk = RISK_LEVELS[level];

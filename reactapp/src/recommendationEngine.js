@@ -258,7 +258,7 @@ export function getEligibleInvestments(profile) {
 }
 
 export function generateRecommendations(userProfile) {
-  const { age, monthly_income, monthly_savings, riskCategory, risk_tolerance, goals, investment_horizon } = userProfile;
+  const { age, monthly_income, monthly_savings, riskCategory, risk_tolerance, investment_horizon } = userProfile;
   const userGoals = Array.isArray(userProfile?.goals) ? userProfile.goals : (userProfile?.investment_goals || []);
   const inferredSavings = Number(monthly_income) > 0 ? Math.round((Number(monthly_income) * (2 / 9)) / 100) * 100 : 0;
   const savings = Number(monthly_savings) || Number(userProfile.savings) || inferredSavings;

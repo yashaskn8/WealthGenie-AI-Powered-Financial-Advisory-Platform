@@ -120,6 +120,22 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
       alert('Please enter a lump sum investment amount greater than 0 when "Has Lump Sum" is enabled.');
       return;
     }
+    if (isNaN(numLiquid) || numLiquid < 0) {
+      alert('Liquid savings must be 0 or a positive number.');
+      return;
+    }
+    if (isNaN(numDebt) || numDebt < 0 || numDebt > 100) {
+      alert('Existing debt EMI must be between 0% and 100% of monthly income.');
+      return;
+    }
+    if (isNaN(numDeps) || numDeps < 0) {
+      alert('Number of dependents must be 0 or a positive number.');
+      return;
+    }
+    if (isNaN(numEf) || numEf < 0) {
+      alert('Emergency fund months must be 0 or a positive number.');
+      return;
+    }
 
     try {
       const response = await api.buildProfile(
@@ -319,6 +335,73 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                     Yes
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Liquid Savings & Debt EMI % */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Liquid Savings (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input 
+                    type="number" 
+                    placeholder="50000" 
+                    value={liquidSavings || ''} 
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      setLiquidSavings(val === '' ? 0 : Number(val));
+                    }} 
+                  />
+                </div>
+              </div>
+              <div className="pf-field">
+                <label>Existing Debt (EMI % of Income)</label>
+                <input 
+                  type="number" 
+                  placeholder="0" 
+                  value={existingDebt || ''} 
+                  onChange={e => {
+                    let val = e.target.value.replace(/^0+/, '');
+                    let num = val === '' ? 0 : Number(val);
+                    if (num > 100) num = 100;
+                    setExistingDebt(num);
+                  }} 
+                  min="0"
+                  max="100"
+                />
+              </div>
+            </div>
+
+            {/* Dependents & Emergency Fund Months */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Dependents</label>
+                <input 
+                  type="number" 
+                  placeholder="0" 
+                  value={dependents || ''} 
+                  onChange={e => {
+                    let val = e.target.value.replace(/^0+/, '');
+                    setDependents(val === '' ? 0 : Number(val));
+                  }} 
+                  min="0"
+                  max="20"
+                />
+              </div>
+              <div className="pf-field">
+                <label>Emergency Fund (Months)</label>
+                <input 
+                  type="number" 
+                  placeholder="6" 
+                  value={emergencyFundMonths || ''} 
+                  onChange={e => {
+                    let val = e.target.value.replace(/^0+/, '');
+                    setEmergencyFundMonths(val === '' ? 0 : Number(val));
+                  }} 
+                  min="0"
+                  max="60"
+                />
               </div>
             </div>
 

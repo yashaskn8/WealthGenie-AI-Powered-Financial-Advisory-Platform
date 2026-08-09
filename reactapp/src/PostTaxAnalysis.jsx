@@ -8,24 +8,19 @@ import { formatINR } from './recommendationEngine';
 import { computePostTaxReturnBatch } from './services/api';
 import './PostTaxAnalysis.css';
 
+const INSTRUMENT_TYPE_MAP = {
+  eee: 'PPF', slab: 'FD', ltcg: 'Equity_MF', elss: 'ELSS',
+  nps: 'NPS', sgb: 'SGB',
+};
+
 const PostTaxAnalysis = ({ profile, recommendations }) => {
   const regime = profile?.taxRegime || 'new';
   const inflationRate = 6.0;
   const [showBreakdown, setShowBreakdown] = useState(true);
   const [backendPostTaxResults, setBackendPostTaxResults] = useState(null);
-  const [postTaxLoading, setPostTaxLoading] = useState(false);
-
-  // ── WG-038: Fetch post-tax returns from backend (single source of truth) ──
-  // This replaces the previous client-side computePostTaxReturn() from
-  // engine/taxComputation.js which was missing Section 87A rebate logic.
-  const instrumentTypeMap = {
-    eee: 'PPF', slab: 'FD', ltcg: 'Equity_MF', elss: 'ELSS',
-    nps: 'NPS', sgb: 'SGB',
-  };
 
   useEffect(() => {
     if (!profile || !recommendations || !Array.isArray(recommendations) || recommendations.length === 0) {
-      setBackendPostTaxResults(null);
       return;
     }
     const annualIncome = (profile.monthly_income || 0) * 12;
@@ -36,7 +31,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
     const instruments = recommendations.map(inv => {
       const nominalRate = inv.nominalReturn !== undefined ? inv.nominalReturn : (inv.expectedReturn || inv.rate || 0);
       return {
-        instrumentType: inv.type || instrumentTypeMap[inv.taxType] || 'FD',
+        instrumentType: inv.type || INSTRUMENT_TYPE_MAP[inv.taxType] || 'FD',
         nominalRate: nominalRate / 100,
         holdingYears: horizon,
         monthlySIP: (annualSavings / 12) || 10000,
@@ -44,7 +39,6 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
     });
 
     let cancelled = false;
-    setPostTaxLoading(true);
 
     computePostTaxReturnBatch(instruments, annualIncome, regime, age)
       .then(data => {
@@ -53,8 +47,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
       .catch(err => {
         console.error('[PostTaxAnalysis] Backend post-tax-return/batch failed:', err);
         if (!cancelled) setBackendPostTaxResults(null);
-      })
-      .finally(() => { if (!cancelled) setPostTaxLoading(false); });
+      });
 
     return () => { cancelled = true; };
   }, [profile, recommendations, regime]);
@@ -200,7 +193,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
         realReturn,
       };
     });
-  }, [recommendations, profile, regime, backendPostTaxResults]);
+  }, [recommendations, profile, backendPostTaxResults]);
 
   const totalTaxDragRupees = useMemo(() => {
     return postTaxData.reduce((sum, d) => sum + d.taxDetails.taxDragWealth, 0);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Banknote, Wallet, Scale, Target, Telescope, Save, Pencil, X, Check } from 'lucide-react';
+import { Clock, Banknote, Wallet, Scale, Target, Telescope, Save, Pencil, X, Check, Users, CreditCard, ShieldCheck, PiggyBank } from 'lucide-react';
 import * as api from './services/api';
 
 const GOALS_OPTIONS = ['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'];
@@ -76,7 +76,12 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
     { key: 'risk_tolerance', label: 'Risk Tolerance', icon: <Scale size={20} color="#fbbf24" />, type: 'tolerance', help: 'Your comfort with short-term market ups and downs. This drives investment mix.' },
     { key: 'taxRegime', label: 'Tax Regime', icon: <Banknote size={20} color="#a78bfa" />, type: 'regime', help: 'Old vs New tax regimes used to estimate post-tax returns.' },
     { key: 'investment_goals', label: 'Investment Goals', icon: <Target size={20} color="#fb7185" />, type: 'goals', help: 'The main reasons why you are building wealth.' },
-    { key: 'investment_horizon', label: 'Investment Horizon', icon: <Telescope size={20} color="#a78bfa" />, type: 'slider', min: 1, max: 30, suffix: ' years', help: 'Number of years you plan to keep this money growing.' }
+    { key: 'investment_horizon', label: 'Investment Horizon', icon: <Telescope size={20} color="#a78bfa" />, type: 'slider', min: 1, max: 30, suffix: ' years', help: 'Number of years you plan to keep this money growing.' },
+
+    { key: 'liquid_savings', label: 'Liquid Savings', icon: <PiggyBank size={20} color="#34d399" />, type: 'currency', min: 0, max: 1000000000, help: 'Savings held in liquid accounts or bank balances.' },
+    { key: 'existing_debt', label: 'Existing Debt (EMI % of Income)', icon: <CreditCard size={20} color="#f87171" />, type: 'number', min: 0, max: 100, suffix: '%', help: 'Monthly debt EMI commitments as a percentage of income.' },
+    { key: 'dependents', label: 'Dependents', icon: <Users size={20} color="#fbbf24" />, type: 'number', min: 0, max: 20, help: 'Number of financial dependents (spouse, children, parents).' },
+    { key: 'emergency_fund_months', label: 'Emergency Fund (Months)', icon: <ShieldCheck size={20} color="#38bdf8" />, type: 'number', min: 0, max: 60, suffix: ' months', help: 'Months of living expenses saved for emergencies.' }
   ];
 
   const handleEdit = () => {

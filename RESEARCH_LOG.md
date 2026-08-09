@@ -91,3 +91,15 @@ I conducted an ablation study comparing the lightweight hash-based n-gram bucket
 2. **Computer Vision / VLM (Vision-Language Models)**
    - **Status**: Out of scope.
    - **Reason**: The WealthGenie platform is designed strictly for tabular investor suitability classification, text-based financial RAG, and regulatory advisory. Image processing and vision capabilities are not relevant to the problem domain.
+
+---
+
+## 5. Architecture Notes
+
+### Server-Side WTI Ranking Endpoint (`POST /api/instruments/rank-wti`)
+
+The backend exposes `rankWhereToInvestBackend()` from `server/services/RecommendationPipeline.js` at `POST /api/instruments/rank-wti`. This endpoint incorporates tax-regime-aware ranking (Section 87A rebate logic) and macro-regime tilts that go beyond what the client-side `wtiGenerator.js` engine computes.
+
+**Current status**: This endpoint is **intentionally not called by the frontend**. The client app uses `reactapp/src/utils/wtiGenerator.js` (`rankWhereToInvest()`) for all "Where to Invest" product ranking. The server-side endpoint exists as a secondary API-only path for potential external integrations or future backend-driven ranking scenarios.
+
+**Decision**: This is a deliberate architectural split, not a bug. The client engine was updated (Aug 2026) to accept `instrumentRiskLevel` from the catalog to align with the same catalog-risk-aware approach used server-side, eliminating the keyword-inference drift that previously existed. If future requirements call for server-side WTI ranking in the UI (e.g. to leverage 87A rebate logic), this endpoint is ready to be wired in.

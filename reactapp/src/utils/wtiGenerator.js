@@ -155,12 +155,19 @@ function _inferProductRisk(nameLower, highlightLower, badge) {
  * @param {Array} candidates - Product candidates array
  * @param {Object} userProfile - Full user profile (risk, age, income, slab, horizon, budget, goal)
  * @param {String} riskPreference - Fallback risk preference
- * @param {Object} options - { regimeApplied: boolean, activeRegime: Object, sortBy: 'score'|'postTaxYield'|'expense'|'aum' }
+ * @param {Object} options - { regimeApplied: boolean, activeRegime: Object, sortBy: 'score'|'postTaxYield'|'expense'|'aum', instrumentRiskLevel: number (1-5 catalog scale) }
  */
 export function rankWhereToInvest(candidates = [], userProfile = {}, riskPreference = 'Moderate', options = {}) {
   if (!Array.isArray(candidates) || candidates.length === 0) return [];
 
-  const { regimeApplied = false, activeRegime = null, sortBy = 'score' } = options;
+  const { regimeApplied = false, activeRegime = null, sortBy = 'score', instrumentRiskLevel = null } = options;
+
+  // When the instrument's authoritative catalog risk level (1–5) is provided,
+  // map it to the internal 1–9 graduated scale using the same formula as
+  // server-side rankWhereToInvestBackend: 1 + (catalogRisk - 1) * 2
+  const catalogRiskMapped = (instrumentRiskLevel != null && instrumentRiskLevel >= 1 && instrumentRiskLevel <= 5)
+    ? 1 + (instrumentRiskLevel - 1) * 2
+    : null;
 
   // ── Extract & normalize profile dimensions ──────────────────────
   const risk = userProfile?.risk_tolerance || userProfile?.riskCategory || riskPreference || 'Moderate';
@@ -198,7 +205,8 @@ export function rankWhereToInvest(candidates = [], userProfile = {}, riskPrefere
     const lockYears = _parseLockYears(item.tenure);
     const aumCr = _parseAUM(item.highlight);
     const expRatio = _parseExpenseRatio(item.highlight);
-    const productRisk = _inferProductRisk(nameLower, highlightLower, badge);
+    // Use authoritative catalog risk when available, fall back to keyword inference
+    const productRisk = catalogRiskMapped != null ? catalogRiskMapped : _inferProductRisk(nameLower, highlightLower, badge);
 
     // ═══════════════════════════════════════════════════════════════
     // 1. RISK ALIGNMENT (graduated: -30 to +25)
