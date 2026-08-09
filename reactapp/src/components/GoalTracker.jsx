@@ -422,6 +422,7 @@ const GoalTracker = ({ profile, recommendations }) => {
   const [dbGoals, setDbGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [bootstrapResult, setBootstrapResult] = useState(null);
 
   const horizon = profile?.investment_horizon || 15;
   const totalSavings = Number(profile?.monthly_savings) || 0;
@@ -446,29 +447,62 @@ const GoalTracker = ({ profile, recommendations }) => {
 
   const handleInitializeDefaults = async () => {
     setIsInitializing(true);
+    setBootstrapResult(null);
+    const results = { succeeded: [], failed: [] };
+    const defaultKeys = Object.keys(smartDefaults);
+
     try {
-      const defaultKeys = Object.keys(smartDefaults);
       for (const key of defaultKeys) {
         const def = smartDefaults[key];
         const targetDate = new Date();
         targetDate.setMonth(targetDate.getMonth() + Math.round(def.yearsToGoal * 12));
         
-        await api.createGoal({
-          goal_name: key,
-          target_amount: def.target,
-          target_date: targetDate.toISOString().split('T')[0],
-          current_savings: def.currentSaved,
-          profileId: profile?._id || profile?.profileId,
-          priority: def.priority || 'Medium',
-        });
+        try {
+          await api.createGoal({
+            goal_name: key,
+            target_amount: def.target,
+            target_date: targetDate.toISOString().split('T')[0],
+            current_savings: def.currentSaved,
+            profileId: profile?._id || profile?.profileId,
+            priority: def.priority || 'Medium',
+          });
+          results.succeeded.push(key);
+        } catch (err) {
+          results.failed.push({ key, message: err.message || 'Unknown error' });
+        }
       }
-      // Re-fetch list
-      const fresh = await api.getGoals();
-      setDbGoals(fresh.goals || []);
-    } catch (err) {
-      alert("Failed to bootstrap default portfolio: " + (err.message || "Unknown error"));
     } finally {
+      // ALWAYS refresh dbGoals after the loop, regardless of partial failure
+      try {
+        const fresh = await api.getGoals();
+        setDbGoals(fresh.goals || []);
+      } catch (e) {
+        console.error("Failed to refresh goals after bootstrap:", e);
+      }
       setIsInitializing(false);
+
+      const total = defaultKeys.length;
+      if (results.failed.length > 0) {
+        if (results.succeeded.length > 0) {
+          const failedDetails = results.failed.map(f => `${f.key} (${f.message})`).join(', ');
+          setBootstrapResult({
+            type: 'partial',
+            message: `Created ${results.succeeded.length} of ${total} goals. Skipped: ${failedDetails}`,
+            succeeded: results.succeeded,
+            failed: results.failed,
+          });
+        } else {
+          const firstReason = results.failed[0]?.message || 'Unknown error';
+          setBootstrapResult({
+            type: 'total_failure',
+            message: `Couldn't create any goals: ${firstReason}`,
+            succeeded: [],
+            failed: results.failed,
+          });
+        }
+      } else {
+        setBootstrapResult(null);
+      }
     }
   };
 
@@ -682,6 +716,64 @@ const GoalTracker = ({ profile, recommendations }) => {
         </p>
         <div className="gt-header-divider" />
       </motion.div>
+
+      {/* Partial / Total Bootstrap Result Banner */}
+      {bootstrapResult && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="gt-bootstrap-result-banner"
+          style={{
+            background: bootstrapResult.type === 'partial' 
+              ? 'rgba(245, 158, 11, 0.15)' 
+              : 'rgba(239, 68, 68, 0.15)',
+            border: `1px solid ${bootstrapResult.type === 'partial' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+            borderRadius: 16,
+            padding: '16px 20px',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+            <AlertTriangle 
+              size={20} 
+              color={bootstrapResult.type === 'partial' ? '#f59e0b' : '#ef4444'} 
+              style={{ flexShrink: 0 }} 
+            />
+            <span style={{ 
+              color: '#f8fafc', 
+              fontSize: '0.9rem', 
+              fontWeight: 600, 
+              lineHeight: 1.4 
+            }}>
+              {bootstrapResult.message}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBootstrapResult(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              padding: '4px 8px',
+              borderRadius: 8,
+              lineHeight: 1,
+            }}
+            title="Dismiss notification"
+          >
+            ✕
+          </button>
+        </motion.div>
+      )}
 
       {/* Bootstrap Defaults Banner */}
       {!showDbGoals && (
