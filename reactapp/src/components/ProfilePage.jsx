@@ -1,9 +1,4 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { 
-  User, Sparkles, TrendingUp, Wallet, PiggyBank, Calendar, 
-  Shield, ShieldCheck, Scale, Zap, Landmark, DollarSign, 
-  Target, Compass, ArrowRight, Check 
-} from 'lucide-react';
 import profileImg from '../assets/gen_4k_nobull.png';
 import * as api from '../services/api';
 
@@ -89,15 +84,15 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
     // ── Frontend validation (catch errors before API call) ──
     const numAge = Number(age);
-    const numIncome = Number(monthlyIncome);
+    const numIncome = Number(monthlyIncome || monthlyTakeHome);
     const numSavings = Number(monthlySavings);
     const numLiquid = Number(liquidSavings);
     const numDebt = Number(existingDebt);
     const numDeps = Number(dependents);
     const numEf = Number(emergencyFundMonths);
-    const numCTC = Number(totalCTC);
-    const numBasic = Number(basicComponent);
-    const numTakeHome = Number(monthlyTakeHome);
+    const numTakeHome = Number(monthlyTakeHome || monthlyIncome);
+    const numCTC = totalCTC ? Number(totalCTC) : numTakeHome * 12;
+    const numBasic = basicComponent ? Number(basicComponent) : Math.round(numCTC * 0.5);
     const numPropSale = Number(soldPropertyAmount);
     const numLumpSum = Number(lumpSumAmount);
 
@@ -105,32 +100,16 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
       alert('Please enter a valid age between 18 and 80.');
       return;
     }
-    if (!numIncome || isNaN(numIncome) || numIncome < 1000 || numIncome > 100000000) {
-      alert('Monthly income must be between ₹1,000 and ₹10,00,00,000 (10 Crores).');
+    if (!numTakeHome || isNaN(numTakeHome) || numTakeHome < 1000 || numTakeHome > 100000000) {
+      alert('Monthly take-home salary must be between ₹1,000 and ₹10,00,00,000.');
       return;
     }
     if (!numSavings || isNaN(numSavings) || numSavings < 500 || numSavings > 100000000) {
       alert('Monthly savings must be between ₹500 and ₹10,00,00,000 (10 Crores).');
       return;
     }
-    if (numSavings >= numIncome) {
-      alert('Monthly savings must be less than monthly income.');
-      return;
-    }
-    if (!numCTC || isNaN(numCTC) || numCTC < 100000 || numCTC > 1000000000) {
-      alert('Total CTC must be between ₹1,00,000 and ₹100 Crores.');
-      return;
-    }
-    if (!numBasic || isNaN(numBasic) || numBasic < 20000 || numBasic > numCTC * 0.6) {
-      alert('Basic salary component must be between ₹20,000 and 60% of Total CTC.');
-      return;
-    }
-    if (numBasic < numCTC * 0.2) {
-      alert('Basic salary component must be at least 20% of Total CTC.');
-      return;
-    }
-    if (!numTakeHome || isNaN(numTakeHome) || (numTakeHome * 12 > numCTC)) {
-      alert('Annualized monthly take-home salary cannot exceed Total CTC.');
+    if (numSavings >= numTakeHome) {
+      alert('Monthly savings must be less than monthly take-home salary.');
       return;
     }
     if (isNaN(numPropSale) || numPropSale < 0) {
@@ -197,91 +176,40 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     });
   }
 
-  // Icons mapping for primary goals
-  const goalIcons = {
-    'Retirement': Landmark,
-    'Wealth Growth': TrendingUp,
-    'Tax Saving': ShieldCheck,
-    'Emergency Fund': PiggyBank,
-  };
-
   return (
     <main className="profile-page">
       {/* Form content on the left */}
       <div className="profile-content">
-        <div className="profile-header-meta">
-          <span className="profile-badge-chip">
-            <Sparkles size={13} className="badge-icon-sparkle" /> AI Advisory Onboarding
-          </span>
-          <h1 className="profile-page-title">
-            Create Your <span className="gradient-text">Financial Profile</span>
-          </h1>
-          <p className="profile-page-subtitle">
-            Configure your income, tax parameters, and risk appetite to initialize your personalized wealth engine.
-          </p>
-        </div>
-
+        <h1 className="profile-page-title">
+          Create Your <span className="gradient-text">Financial Profile</span>
+        </h1>
         <div className="profile-form-card">
-          {/* Profile Summary Quick KPI Strip */}
-          <div className="profile-summary-kpi-strip">
-            <div className="kpi-mini-card">
-              <div className="kpi-mini-icon-wrap kpi-icon--blue">
-                <TrendingUp size={15} />
-              </div>
-              <div>
-                <span className="kpi-mini-label">Total CTC</span>
-                <strong className="kpi-mini-val val--ctc">₹{Number(totalCTC || 0).toLocaleString('en-IN')}<span className="kpi-mini-unit">/yr</span></strong>
-              </div>
+          {/* Profile Summary Quick Badge */}
+          <div className="profile-summary-badge">
+            <div>
+              <span className="summary-label">Take-Home</span>
+              <strong className="summary-value take-home">₹{Number(monthlyTakeHome || 0).toLocaleString('en-IN')}/mo</strong>
             </div>
-            <div className="kpi-mini-card">
-              <div className="kpi-mini-icon-wrap kpi-icon--green">
-                <Wallet size={15} />
-              </div>
-              <div>
-                <span className="kpi-mini-label">Take-Home</span>
-                <strong className="kpi-mini-val val--takehome">₹{Number(monthlyTakeHome || 0).toLocaleString('en-IN')}<span className="kpi-mini-unit">/mo</span></strong>
-              </div>
+            <div>
+              <span className="summary-label">Emergency Fund</span>
+              <strong className="summary-value ef">
+                {emergencyFundMonths > 0 ? `${emergencyFundMonths} Months` : '6 Months'}
+              </strong>
             </div>
-            <div className="kpi-mini-card">
-              <div className="kpi-mini-icon-wrap kpi-icon--amber">
-                <DollarSign size={15} />
-              </div>
-              <div>
-                <span className="kpi-mini-label">Lump Sum Capital</span>
-                <strong className={`kpi-mini-val ${hasLumpSum ? 'val--lumpsum' : 'val--none'}`}>
-                  {hasLumpSum ? `₹${Number(lumpSumAmount || 0).toLocaleString('en-IN')}` : 'None'}
-                </strong>
-              </div>
+            <div>
+              <span className="summary-label">Lump Sum Deployment</span>
+              <strong className={`summary-value ${hasLumpSum ? 'lump-active' : 'lump-none'}`}>
+                {hasLumpSum ? `₹${Number(lumpSumAmount || 0).toLocaleString('en-IN')}` : 'None'}
+              </strong>
             </div>
           </div>
 
           <form onSubmit={handleSaveProfile}>
-            {/* CTC & Salary Structure */}
-            <div className="pf-grid-2">
-              <div className="pf-field">
-                <label><TrendingUp size={13} className="field-label-icon" /> Total CTC (Annual ₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input 
-                    type="number" 
-                    placeholder="780000" 
-                    value={totalCTC || ''} 
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      let num = val === '' ? '' : Number(val);
-                      setTotalCTC(num);
-                      if (num && !basicComponent) setBasicComponent(Math.round(num * 0.5));
-                      if (num && !monthlyTakeHome) setMonthlyTakeHome(Math.round(num / 12));
-                    }} 
-                  />
-                </div>
-              </div>
-            </div>
 
             {/* Income & Take Home */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label><Wallet size={13} className="field-label-icon" /> Monthly Take-Home (₹)</label>
+                <label>Monthly Take-Home (₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -298,7 +226,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 </div>
               </div>
               <div className="pf-field">
-                <label><PiggyBank size={13} className="field-label-icon" /> Monthly Savings Capacity (₹)</label>
+                <label>Monthly Savings Capacity (₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -323,7 +251,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             {/* Age & Risk Appetite */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label><Calendar size={13} className="field-label-icon" /> Age (Years)</label>
+                <label>Age</label>
                 <input 
                   type="number" 
                   placeholder="32" 
@@ -337,21 +265,16 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 />
               </div>
               <div className="pf-field">
-                <label><Shield size={13} className="field-label-icon" /> Risk Appetite</label>
+                <label>Risk Tolerance</label>
                 <div className="risk-toggle-group">
-                  {[
-                    { level: 'Conservative', icon: ShieldCheck },
-                    { level: 'Moderate', icon: Scale },
-                    { level: 'Aggressive', icon: Zap }
-                  ].map(({ level, icon: IconComponent }) => (
+                  {['Conservative', 'Moderate', 'Aggressive'].map((level) => (
                     <button
                       key={level}
                       type="button"
                       className={`risk-toggle-btn ${riskTolerance === level ? 'active' : ''}`}
                       onClick={() => setRiskTolerance(level)}
                     >
-                      <IconComponent size={13} className="btn-toggle-icon" />
-                      <span>{level}</span>
+                      {level}
                     </button>
                   ))}
                 </div>
@@ -361,7 +284,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             {/* One-Time Capital & Liquidity */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label><Landmark size={13} className="field-label-icon" /> Sold Property Proceeds (₹)</label>
+                <label>Sold Property Proceeds (₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -376,24 +299,24 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 </div>
               </div>
               <div className="pf-field">
-                <label><DollarSign size={13} className="field-label-icon" /> Has Lump Sum to Invest?</label>
+                <label>Has Lump Sum to Invest?</label>
                 <div className="risk-toggle-group">
                   <button
                     type="button"
-                    className={`risk-toggle-btn ${!hasLumpSum ? 'active active--no' : ''}`}
+                    className={`risk-toggle-btn ${!hasLumpSum ? 'active' : ''}`}
                     onClick={() => {
                       setHasLumpSum(false);
                       setLumpSumAmount(0);
                     }}
                   >
-                    <span>No</span>
+                    No
                   </button>
                   <button
                     type="button"
-                    className={`risk-toggle-btn ${hasLumpSum ? 'active active--yes' : ''}`}
+                    className={`risk-toggle-btn ${hasLumpSum ? 'active' : ''}`}
                     onClick={() => setHasLumpSum(true)}
                   >
-                    <span>Yes</span>
+                    Yes
                   </button>
                 </div>
               </div>
@@ -401,16 +324,24 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
             {/* Conditional Lump Sum Amount & Action button */}
             {hasLumpSum && (
-              <div className="pf-field pf-field-full lump-sum-field-container">
-                <div className="lump-sum-header">
-                  <label><DollarSign size={13} className="field-label-icon" /> Lump Sum Investment Amount (₹)</label>
+              <div className="pf-field pf-field-full" style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <label>Lump Sum Investment Amount (₹)</label>
                   {Number(soldPropertyAmount) > 0 && (
                     <button
                       type="button"
-                      className="btn-use-property-sale"
+                      style={{
+                        background: 'rgba(59, 130, 246, 0.15)',
+                        border: '1px solid rgba(59, 130, 246, 0.4)',
+                        color: '#60a5fa',
+                        padding: '0.25rem 0.6rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
                       onClick={() => setLumpSumAmount(Number(soldPropertyAmount))}
                     >
-                      Use property proceeds (₹{Number(soldPropertyAmount).toLocaleString('en-IN')})
+                      Use my property sale amount (₹{Number(soldPropertyAmount).toLocaleString('en-IN')})
                     </button>
                   )}
                 </div>
@@ -431,35 +362,25 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
             {/* Row 3: Goal Checkboxes */}
             <div className="pf-field pf-field-full">
-              <label><Target size={13} className="field-label-icon" /> Investment Goals</label>
+              <label>Investment Goal</label>
               <div className="goal-checkbox-group">
-                {['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'].map((goal) => {
-                  const GoalIcon = goalIcons[goal] || Target;
-                  const isChecked = investmentGoals.includes(goal);
-                  return (
-                    <label key={goal} className={`goal-card-chip ${isChecked ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleGoal(goal)}
-                      />
-                      <div className="goal-card-content">
-                        <GoalIcon size={15} className="goal-card-icon" />
-                        <span className="goal-label-text">{goal}</span>
-                        {isChecked && <Check size={14} className="goal-card-check-icon" />}
-                      </div>
-                    </label>
-                  );
-                })}
+                {['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'].map((goal) => (
+                  <label key={goal} className="goal-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={investmentGoals.includes(goal)}
+                      onChange={() => toggleGoal(goal)}
+                    />
+                    <span className="goal-checkmark"></span>
+                    <span className="goal-label-text">{goal}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
             {/* Row 4: Horizon Slider */}
             <div className="pf-field pf-field-full">
-              <div className="horizon-header-row">
-                <label><Compass size={13} className="field-label-icon" /> Investment Horizon</label>
-                <span className="horizon-badge-pill">{horizon} {horizon === 1 ? 'Year' : 'Years'}</span>
-              </div>
+              <label>Investment Horizon</label>
               <div className="horizon-slider-container">
                 <input
                   type="range"
@@ -471,17 +392,16 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                   style={{ '--slider-pct': `${((horizon - 1) / 29) * 100}%` }}
                 />
                 <div className="horizon-labels">
-                  <span>1 Year</span>
-                  <span>15 Years</span>
-                  <span>30 Years</span>
+                  <span>1</span>
+                  <span className="horizon-value">{horizon} {horizon === 1 ? 'Year' : 'Years'}</span>
+                  <span>30</span>
                 </div>
               </div>
             </div>
 
+
             <button type="submit" className="btn-save-continue">
-              <Sparkles size={18} className="btn-sparkle-icon" />
-              <span>Save & Launch Advisory Engine</span>
-              <ArrowRight size={18} className="btn-arrow-icon" />
+              Save and Continue
             </button>
           </form>
         </div>
@@ -498,4 +418,3 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 };
 
 export default ProfilePage;
-
