@@ -197,6 +197,31 @@ test('getEffectiveMarginalRate computes exact marginal tax impact of additional 
   assert.equal(rateZero, 0);
 });
 
+test('WG-040: getEffectiveMarginalRate notch artifact fix at Section 87A rebate cliffs', () => {
+  // 1. ₹12,66,000 through ₹12,75,000 (new regime) -> assert === 0 for every value in range
+  const testIncomesNewRegime = [1266000, 1268000, 1270000, 1272000, 1275000];
+  for (const inc of testIncomesNewRegime) {
+    const rate = getEffectiveMarginalRate(inc, 'new');
+    assert.equal(rate, 0, `Income ₹${inc} (new regime) owes ₹0 tax under 87A rebate and must report 0 marginal rate, got ${rate}`);
+  }
+
+  // 2. ₹12,80,000 (new regime) -> assert > 0 (real tax liability starts here, ₹5,200)
+  const rate1280k = getEffectiveMarginalRate(1280000, 'new');
+  assert.ok(rate1280k > 0, `Income ₹12,80,000 (new regime) has real tax liability and must report > 0 marginal rate, got ${rate1280k}`);
+
+  // 3. ₹5,50,000 (old regime) -> assert === 0 (₹0 tax owed under old regime rebate)
+  const rate550kOld = getEffectiveMarginalRate(550000, 'old');
+  assert.equal(rate550kOld, 0, `Income ₹5,50,000 (old regime) owes ₹0 tax under 87A rebate and must report 0 marginal rate, got ${rate550kOld}`);
+
+  // 4. Regression: ₹10,00,000 (new regime) still === 0
+  const rate10L = getEffectiveMarginalRate(1000000, 'new');
+  assert.equal(rate10L, 0, 'Income ₹10,00,000 (new regime) must report 0 marginal rate');
+
+  // 5. Regression: ₹30,00,000 (new regime) returns a normal, non-zero, non-clamped rate
+  const rate30L = getEffectiveMarginalRate(3000000, 'new');
+  assert.ok(rate30L > 0 && rate30L < 0.45, `Income ₹30,00,000 (new regime) must report normal marginal rate (0 < rate < 0.45), got ${rate30L}`);
+});
+
 test('computeTax exact tax amounts at new regime slab boundaries', () => {
   // ₹4L: entirely in 0% slab -> tax = 0 (below rebate too)
   const res4L = computeTax(400_000, 'new', {}, 'business');

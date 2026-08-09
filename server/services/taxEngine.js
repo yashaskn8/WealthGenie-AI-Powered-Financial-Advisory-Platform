@@ -298,6 +298,13 @@ export function compareTaxRegimes(annualIncome, deductions = {}, incomeSource = 
  * Useful for post-tax drag adjustments on future returns.
  */
 export function getEffectiveMarginalRate(annualIncome, regime = 'new', deductions = {}, incomeSource = 'salary', fiscalYear = CURRENT_FY) {
+    // WG-040: If actual liability at this income is already ₹0 (inside a Section 87A
+    // rebate zone), report 0 directly. A finite-difference window straddling the rebate
+    // cliff otherwise produces a spurious, ceiling-clamped rate (up to 0.45) for someone
+    // who owes no tax at all.
+    const actualTax = computeTax(annualIncome, regime, deductions, incomeSource, fiscalYear).taxAmount;
+    if (actualTax === 0) return 0;
+
     const delta = 10000;
     const highIncome = annualIncome + delta;
     const lowIncome = Math.max(0, annualIncome - delta);

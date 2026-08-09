@@ -1226,6 +1226,23 @@ test('WG-039: rankWhereToInvestBackend uses catalog dynamicData.risk.value over 
   assert.ok(ranked[0]._score >= 70, `Catalog risk.value=5 (WTI 9) should give high score for Aggressive user, got ${ranked[0]._score}`);
 });
 
+test('WG-040: runPipeline / deriveWeights gamma equals WEIGHT_FLOOR for ₹12,70,000 new regime income at rebate cliff', () => {
+  const profile = {
+    age: 30,
+    annual_income: 1270000,
+    monthly_income: 1270000 / 12,
+    monthly_savings: 25000,
+    taxRegime: 'new',
+    investment_horizon: 10,
+    risk_tolerance: 'Moderate',
+  };
+
+  const result = runPipeline(profile, {});
+  assert.ok(result.computedWeights, 'Pipeline result must include computedWeights');
+  assert.equal(result.computedWeights.gamma, PIPELINE_CONFIG.WEIGHT_FLOOR, 'gamma (tax weight) for ₹12.7L income under new regime must equal WEIGHT_FLOOR (0.5) because 87A rebate makes marginal rate 0');
+});
+
+
 
 
 
