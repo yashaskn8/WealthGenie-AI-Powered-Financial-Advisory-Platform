@@ -4,6 +4,21 @@
  * Extracted from recommendationEngine.js for maintainability.
  * Contains marginal rate computation, equity LTCG estimation,
  * and post-tax return calculation for all instrument tax types.
+ *
+ * ⚠️  WARNING (WG-038): getMarginalRate() does NOT implement Section 87A
+ * rebate (₹0 tax for new-regime taxable income ≤ ₹12,00,000) or the
+ * marginal relief zone above that threshold. It returns a non-zero slab
+ * rate for incomes that actually owe zero tax under the new regime.
+ *
+ * DO NOT use this module's functions for any user-facing tax-drag number.
+ * PostTaxAnalysis.jsx has been rewired (WG-038) to use the backend's
+ * calculatePostTaxReturnSafe() via POST /api/tax/post-tax-return/batch,
+ * which correctly implements rebate + marginal relief + surcharge + cess.
+ *
+ * These functions are retained ONLY because scoringEngine.js,
+ * recommendationEngine.js, and goalFiltering.js depend on them for
+ * synchronous real-time scoring that cannot trivially be async API calls.
+ * See WG-039 (follow-up) for full elimination plan.
  */
 
 // ─── MARGINAL RATE (New Regime default) ───────────────────────────

@@ -241,6 +241,19 @@ export async function optimisePortfolio(profileId, assets, strategy = 'max_sharp
   });
 }
 
+// ─── POST-TAX RETURN (WG-038: backend single source of truth) ────
+export async function computePostTaxReturn(instrumentType, nominalRate, annualIncome, holdingYears, regime, monthlySIP, userAge) {
+  return request('POST', '/tax/post-tax-return', {
+    instrumentType, nominalRate, annualIncome, holdingYears, regime, monthlySIP, userAge,
+  });
+}
+
+export async function computePostTaxReturnBatch(instruments, annualIncome, regime, userAge) {
+  return request('POST', '/tax/post-tax-return/batch', {
+    instruments, annualIncome, regime, userAge,
+  });
+}
+
 // Default export for convenience
 const api = {
   register, login, setAuthToken, getAuthToken, clearAuthToken,
@@ -249,7 +262,7 @@ const api = {
   runMonteCarlo, createGoal, getGoals, updateGoal, deleteGoal, healthCheck,
   sendChatMessage, getChatHistory, clearChatSession, rebalancePortfolio,
   updateRecommendationWeights, optimisePortfolio,
-  computeTax, compareTax,
+  computeTax, compareTax, computePostTaxReturn, computePostTaxReturnBatch,
 };
 
 export default api;

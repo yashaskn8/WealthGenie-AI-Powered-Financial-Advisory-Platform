@@ -1,23 +1,77 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import JargonTooltip from './components/JargonTooltip';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Scale, Percent, AlertCircle, TrendingUp, TrendingDown, Info, ShieldCheck, PiggyBank, Layers, Award, ChevronDown, ChevronUp, Zap, Eye, EyeOff, ArrowRight, Sparkles, Target, Shield } from 'lucide-react';
 import { computeRealReturn } from './utils/postTaxEngine';
-import { formatINR, getMarginalRate, computePostTaxReturn } from './recommendationEngine';
+import { formatINR } from './recommendationEngine';
+import { computePostTaxReturnBatch } from './services/api';
 import './PostTaxAnalysis.css';
 
 const PostTaxAnalysis = ({ profile, recommendations }) => {
   const regime = profile?.taxRegime || 'new';
   const inflationRate = 6.0;
   const [showBreakdown, setShowBreakdown] = useState(true);
+  const [backendPostTaxResults, setBackendPostTaxResults] = useState(null);
+  const [postTaxLoading, setPostTaxLoading] = useState(false);
+
+  // ── WG-038: Fetch post-tax returns from backend (single source of truth) ──
+  // This replaces the previous client-side computePostTaxReturn() from
+  // engine/taxComputation.js which was missing Section 87A rebate logic.
+  const instrumentTypeMap = {
+    eee: 'PPF', slab: 'FD', ltcg: 'Equity_MF', elss: 'ELSS',
+    nps: 'NPS', sgb: 'SGB',
+  };
+
+  useEffect(() => {
+    if (!profile || !recommendations || !Array.isArray(recommendations) || recommendations.length === 0) {
+      setBackendPostTaxResults(null);
+      return;
+    }
+    const annualIncome = (profile.monthly_income || 0) * 12;
+    const annualSavings = (profile.monthly_savings || 0) * 12;
+    const horizon = profile.investment_horizon || 15;
+    const age = profile.age || 30;
+
+    const instruments = recommendations.map(inv => {
+      const nominalRate = inv.nominalReturn !== undefined ? inv.nominalReturn : (inv.expectedReturn || inv.rate || 0);
+      return {
+        instrumentType: inv.type || instrumentTypeMap[inv.taxType] || 'FD',
+        nominalRate: nominalRate / 100,
+        holdingYears: horizon,
+        monthlySIP: (annualSavings / 12) || 10000,
+      };
+    });
+
+    let cancelled = false;
+    setPostTaxLoading(true);
+
+    computePostTaxReturnBatch(instruments, annualIncome, regime, age)
+      .then(data => {
+        if (!cancelled && data?.results) setBackendPostTaxResults(data.results);
+      })
+      .catch(err => {
+        console.error('[PostTaxAnalysis] Backend post-tax-return/batch failed:', err);
+        if (!cancelled) setBackendPostTaxResults(null);
+      })
+      .finally(() => { if (!cancelled) setPostTaxLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [profile, recommendations, regime]);
 
   // 1. Calculate Marginal Tax Rate
   const { marginalRate, effectiveRate: _effectiveRate } = useMemo(() => {
     if (!profile) return { marginalRate: 0, effectiveRate: 0 };
-    const annualIncome = (profile.monthly_income || 0) * 12;
-    const mr = getMarginalRate(annualIncome, regime);
 
+    // WG-038: Use backend taxRate from first slab-taxed result if available
+    if (backendPostTaxResults && backendPostTaxResults.length > 0) {
+      const slabResult = backendPostTaxResults.find(r => r.taxRate > 0) || backendPostTaxResults[0];
+      const mr = slabResult?.taxRate || 0;
+      return { marginalRate: mr, effectiveRate: mr };
+    }
+
+    // Fallback: inline effective rate calculation (rebate-aware for display header)
+    const annualIncome = (profile.monthly_income || 0) * 12;
     const stdDeduction = regime === 'new' ? 75000 : 50000;
     const taxable = Math.max(0, annualIncome - stdDeduction);
     let tax = 0;
@@ -37,6 +91,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
         const taxableInSlab = Math.min(taxable, slab.max) - slab.min;
         tax += taxableInSlab * slab.rate;
       }
+      // Section 87A rebate: zero tax for taxable income <= ₹12L
       if (taxable <= 1200000) {
         tax = 0;
       } else {
@@ -74,15 +129,15 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
 
     const surcharge = tax * surchargeRate;
     const totalTax = (tax + surcharge) * 1.04;
+    // When below rebate threshold, marginal rate is effectively 0
+    const mr = (tax === 0) ? 0 : (annualIncome > 0 ? totalTax / annualIncome : 0);
     const er = annualIncome > 0 ? (totalTax / annualIncome) : 0;
     return { marginalRate: mr, effectiveRate: er };
-  }, [profile, regime]);
+  }, [profile, regime, backendPostTaxResults]);
 
-  // 2. Map recommendations to Post-Tax Metrics
+  // 2. Map recommendations to Post-Tax Metrics (WG-038: sourced from backend)
   const postTaxData = useMemo(() => {
     if (!profile || !recommendations || !Array.isArray(recommendations)) return [];
-    const annualIncome = (profile.monthly_income || 0) * 12;
-    const annualSavings = (profile.monthly_savings || 0) * 12;
     const horizon = profile.investment_horizon || 15;
     const stepUpPct = 10; 
 
@@ -103,14 +158,18 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
       return fv;
     };
 
-    return recommendations.map(inv => {
+    return recommendations.map((inv, idx) => {
       const totalInvested = (inv.monthly_allocation || 0) * horizon * 12;
-      const profileWithRegime = { ...profile, taxRegime: regime };
-      const ptResult = computePostTaxReturn(inv, annualSavings, annualIncome, profileWithRegime);
       const nominalReturn = inv.nominalReturn !== undefined ? inv.nominalReturn : (inv.expectedReturn || inv.rate || 0);
-      const postTaxReturn = ptResult.postTaxRate !== undefined && ptResult.postTaxRate !== null
-        ? ptResult.postTaxRate
-        : (inv.postTaxReturn !== undefined ? inv.postTaxReturn : nominalReturn);
+
+      // WG-038: Use backend post-tax result if available
+      let postTaxReturn = nominalReturn; // fallback = nominal (no tax drag shown)
+      if (backendPostTaxResults && backendPostTaxResults[idx] && !backendPostTaxResults[idx].error) {
+        const backendResult = backendPostTaxResults[idx];
+        // Backend returns postTaxReturn as decimal (e.g. 0.07); convert to pct points
+        postTaxReturn = (backendResult.postTaxReturn || 0) * 100;
+      }
+
       const realReturn = computeRealReturn(postTaxReturn, inflationRate / 100);
 
       const nominalFV = calcStepUpFV(inv.monthly_allocation, nominalReturn, horizon);
@@ -141,7 +200,7 @@ const PostTaxAnalysis = ({ profile, recommendations }) => {
         realReturn,
       };
     });
-  }, [recommendations, profile, regime]);
+  }, [recommendations, profile, regime, backendPostTaxResults]);
 
   const totalTaxDragRupees = useMemo(() => {
     return postTaxData.reduce((sum, d) => sum + d.taxDetails.taxDragWealth, 0);
