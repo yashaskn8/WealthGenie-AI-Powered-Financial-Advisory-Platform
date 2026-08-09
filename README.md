@@ -1,335 +1,339 @@
-<div align="center">
+# WealthGenie — AI-Powered Financial Advisory & Portfolio Optimization Platform
 
-# 🔮 WealthGenie
-### **Enterprise-Grade AI-Powered Financial Advisory Platform**
+> A full-stack financial advisory engine featuring a 5-stage portfolio optimization pipeline, hybrid RAG knowledge retrieval, deep learning suitability classification, multi-agent conversational AI, and real-time FY2025-26 Indian tax regime evaluation.
 
-*Autonomous Agentic Tool Loops • Multi-Model Tabular Risk Classifiers • Regulatory RAG Pipeline • Quantitative Financial SDE*
+[![CI Test Matrix](https://github.com/yashaskn8/WealthGenie-AI-Powered-Financial-Advisory-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/yashaskn8/WealthGenie-AI-Powered-Financial-Advisory-Platform/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/Node.js-v22.x-339933?logo=node.js)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-v18.x-61DAFB?logo=react)](https://react.dev/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-v7.0-47A248?logo=mongodb)](https://www.mongodb.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green?logo=node.js)](https://nodejs.org/)
-[![Express.js](https://img.shields.io/badge/Express-v4.18-000000?logo=express)](https://expressjs.com/)
-[![React](https://img.shields.io/badge/React-v18.2-blue?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-v5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Python](https://img.shields.io/badge/Python-v3.12-3776AB?logo=python)](https://python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-v0.100%2B-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-v2.0%2B-EE4C2C?logo=pytorch)](https://pytorch.org/)
-[![Scikit-Learn](https://img.shields.io/badge/scikit--learn-v1.3-F7931E?logo=scikit-learn)](https://scikit-learn.org/)
-[![License](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
-[![Test Suite](https://img.shields.io/badge/Tests-Passing-success)](server/test)
+`Python 3.12` • `FastAPI` • `Node.js / Express` • `MongoDB` • `Redis` • `React 18` • `Vite` • `PyTorch` • `SentenceTransformers` • `Docker`
 
 ---
 
-</div>
+## Technical Overview & Recruiter Summary
 
-## 💡 Executive Overview
+**WealthGenie** is a production-grade financial engineering platform designed to automate portfolio construction, tax-optimized wealth planning, and AI advisory for retail investors in India.
 
-**WealthGenie** is a full-stack, production-grade financial advisory ecosystem engineered specifically for the Indian wealth management landscape (FY 2025-26 Indian Income Tax Code, SEBI regulatory frameworks, and asset-class dynamics). 
+### Core Engineering Capabilities Demonstrated
 
-Combining **Agentic AI tool orchestration**, **multi-model machine learning**, **dense vector RAG**, and **quantitative SDE engines**, WealthGenie bridges the gap between raw probabilistic AI generation and deterministic financial precision.
-
-> 🚀 **Key Achievement**: Combines an autonomous DAG-based agent tool loop with a 97.05% accurate FT-Transformer risk classifier, a 96.0% Recall@4 regulatory RAG pipeline, and a zero-hallucination arithmetic verification layer.
-
----
-
-## 🌟 Core Technical Highlights
-
-<table>
-<tr>
-<td width="50%">
-
-### 🤖 1. Agentic AI & LLM Systems
-- **DAG Tool Orchestration**: Dynamic multi-pass tool planning with dependency graph resolution.
-- **Intent Gate**: Real-time query classification (Factual Regulatory vs. Conversational Advisory).
-- **Dual LLM Resilience**: Production failover (Gemini Flash API → Groq Llama 3 → Local Templates).
-- **Math Anti-Hallucination**: Deterministic AST-based calculation interceptor and re-checker.
-- **State & Memory**: Multi-tiered session memory (Short-term, Mid-term, Long-term profile).
-
-</td>
-<td width="50%">
-
-### 🧠 2. AI / Machine Learning & RAG
-- **Tabular Neural Nets**: FT-Transformer (*NeurIPS 2021*) achieving 97.05% classification accuracy.
-- **TreeSHAP Explainability**: Per-feature decision breakdown on 100-tree Random Forest models.
-- **Dense RAG Subsystem**: `SentenceTransformer` (384D) + Weighted Keyword Reranker.
-- **100% Citation Accuracy**: Verifiable inline references to Section 80C/80D/80CCD tax codes.
-- **LLM Eval Suite**: Automated benchmarks (BLEU, ROUGE-1/L, Jaccard, Faithfulness).
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 📊 3. Quantitative SDE Engines
-- **Progressive Tax Engine**: Complete FY 2025-26 Old vs. New Regime tax calculator.
-- **Monte Carlo Simulator**: Geometric Brownian Motion (GBM) running 10,000-path stochastic wealth projections.
-- **Newton-Raphson XIRR**: Cash flow rate of return solver with automatic derivative step-sizing.
-- **Post-Tax Real Returns**: Inflation-adjusted CAGR incorporating STCG/LTCG tax rules.
-
-</td>
-<td width="50%">
-
-### 🛡️ 4. SDE Architecture & Security
-- **Microservices Setup**: React 18 TS + Express Gateway + Python FastAPI Microservice.
-- **Fail-Closed Auth**: Security pipeline with constant-time API key comparison (`hmac.compare_digest`).
-- **Structured Response Protocols**: Strict JSON action cards for interactive client UIs.
-- **Prompt Injection Defense**: Security pipeline neutralizing prompt hijacking vectors.
-
-</td>
-</tr>
-</table>
+* **5-Stage Mathematical Portfolio Optimization**: Combines mean-variance optimization (`numeric` / quadratic solver), rule-based heuristic fallback, policy concentration caps (`CONCENTRATION_CAPS`), and emergency fund floor protection.
+* **Hybrid RAG Knowledge Retrieval**: Intent-gated architecture combining `SentenceTransformers` (`all-MiniLM-L6-v2` 384D) vector search over vectorized SEBI/RBI/IT-Act chunks with inline citation verification.
+* **Multi-Model Tabular Deep Learning**: Comparative suitability modeling benchmarking **Random Forest** (95.63% test accuracy, TreeSHAP explainability), **PyTorch MLP** (95.60%), and **FT-Transformer** (*NeurIPS 2021*, 97.05% test accuracy).
+* **Multi-Agent Conversational System**: Layered stateful conversation orchestration featuring security prompt injection defense, financial tool calling, `LayeredMemoryManager`, and structured JSON response protocols.
+* **Dual Tax Engine (FY2025-26)**: Microsecond-latency in-memory Indian tax engine evaluating Old vs New tax regimes, Section 87A marginal rebate relief, surcharges, and Section 80C/80D deductions.
+* **High-Throughput REST Architecture**: Express gateway benchmarked up to **5,537.7 req/s** on local load tests (`autocannon` v8.0.0) with fail-closed API security and Mongoose schema validation.
 
 ---
 
-## 🎯 Role-Based Engineering Capabilities
+## Feature Matrix
 
-### 🤖 For Agentic AI & LLM Engineers
-
-WealthGenie moves beyond simple prompt wrapper scripts to a robust **Agentic Framework**:
-
-- **Autonomous Tool Orchestration (`aiToolOrchestrator.js`)**: Executes multi-pass dependency graphs (DAGs). Evaluates tool requests, resolves execution order, executes independent tools concurrently, and injects results back to the LLM context.
-- **Central Tool Registry (`financialToolRegistry.js`)**: Type-safe declarative registry wrapping deterministic calculation engines with strict Joi input validation schemas.
-- **Intent Gate (`intentGate.js`)**: Intercepts user queries to route factual questions directly to RAG (`ragClient.js`) and advisory dialogues to the agentic tool orchestrator.
-- **Math Anti-Hallucination Guardrail (`arithmeticVerifier.js`)**: Financial advice demands exact numbers. Intercepts numeric statements in LLM responses and re-calculates them using deterministic code, fixing hallucinations before rendering.
-- **Layered Memory Manager (`layeredMemoryManager.js`)**: Context window manager maintaining multi-turn dialogue state across short-term, session-level, and long-term user profile vectors.
-
----
-
-### 🧠 For AI / Machine Learning & Data Engineers
-
-Built with rigorous ML pipeline standards and empirical evaluation:
-
-- **Tabular Risk Profiling Benchmark**: Trained on 20,000 NAV-derived investor samples across 16 engineered features.
-  - **Random Forest (`model.pkl`)**: 100 trees, max depth 15, yielding **95.63% rule-approximation fidelity**. Powered by **TreeSHAP (`explainer.py`)** for interpretability.
-  - **PyTorch Deep MLP (`FinancialMLP`)**: Feedforward architecture (`64→32` layers, ReLU, BatchNorm, Dropout 0.2) scoring **95.60% rule-approximation fidelity**.
-  - **FT-Transformer (`FT-Transformer`)**: Tabular self-attention transformer (*NeurIPS 2021*) achieving **97.05% rule-approximation fidelity**.
-  - ⚠️ **Rigor Note**: All above metrics measure model fidelity in approximating `label_construction.py` — not independent behavioral prediction. Against an independent CFP suitability benchmark (0.00% formula overlap; term sets manually extracted from source), accuracy drops across all architectures: **Random Forest (25.26%)**, **PyTorch MLP (17.50%)**, and headline model **FT-Transformer (15.83%)**. See [`rigor_evaluation_report.json`](ml-service/model/rigor_evaluation_report.json).
-- **Dense RAG Subsystem**:
-  - `SentenceChunker` + `SentenceTransformer` (`all-MiniLM-L6-v2`, 384D embeddings) + Cosine Vector Store.
-  - **Heuristic Reranker (`RelevanceScoreReranker`)**: $\text{Score} = 0.5 \cdot \text{Dense} + 0.35 \cdot \text{Keyword} + 0.15 \cdot \text{Title}$.
-  - **96.0% In-Domain Recall@4** & **100% Citation Accuracy**.
-- **Embedding Ablation Study**: Empirically proved dense semantic embeddings provide a **+2.0% Recall@4** and **+0.09 MRR** uplift over hash-based vectorizers.
-- **LLM Benchmarking Suite**: Automated evaluation suite scoring model responses against gold references using BLEU, ROUGE-1, ROUGE-L, Lexical Jaccard, Semantic Similarity, and Faithfulness metrics.
+| Capability | Implementation Mechanism | Verification / Benchmark Source |
+| :--- | :--- | :--- |
+| **Portfolio Recommendation** | 5-stage pipeline: Risk scoring → Asset allocation → Quadratic solver / Heuristic fallback → Policy caps → Rebalancing | [`server/services/RecommendationPipeline.js`](server/services/RecommendationPipeline.js), 41 unit tests |
+| **RAG Knowledge Retrieval** | FastAPI hybrid vector search (`all-MiniLM-L6-v2` 384D) with cosine similarity & intent routing | In-Domain Recall@4: **96.0%**, MRR: **0.9600** ([`rag_eval_report.json`](ml-service/reports/rag_eval_report.json)) |
+| **Investor Classification** | Random Forest (`model.pkl`), PyTorch MLP, and FT-Transformer tabular neural network | FT-Transformer: **97.05%** accuracy, RF: **95.63%** ([`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json)) |
+| **Agentic Advisory Chat** | Multi-agent state machine (`geminiChatService.js`, `aiToolOrchestrator.js`) with tool-calling graph | Post-patch load test: **105.7–193.6 req/s** at 0% error rate ([`load_test_report.md`](load_test_report.md)) |
+| **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736–5,537 req/s** ([`load_test_report.md`](load_test_report.md)) |
+| **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes with 775 execution product pathways | `investment_master.json` (155 instruments) |
+| **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
+| **Testing & CI/CD** | 45 Node.js unit/integration tests + 186 Python pytest items across multi-OS CI matrix | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 
-### 💻 For Software Development Engineers (Full-Stack / Backend SDE)
+## System Architecture
 
-Designed with production microservice principles and financial accuracy:
+The platform architecture splits workload across an Express.js Gateway (IntentGate) (Node.js), a FastAPI Machine Learning & RAG Microservice (Python 3.12), a MongoDB document datastore, an in-memory Redis cache layer, and a React 18 single-page application.
 
-- **Microservices Architecture**:
-  - **React 18 + Vite + TypeScript (`reactapp`)**: Modular UI featuring dynamic risk charts, tax sliders, portfolio health dashboards, and interactive action card chat windows.
-  - **Express.js API Gateway (IntentGate)**: Node.js gateway managing authentication, rate limiting, and agentic orchestration.
-  - **FastAPI ML Microservice**: High-throughput Python microservice delivering ML inference, tree explainability, and vector RAG.
-- **Fail-Closed Security Architecture**: Constant-time API key comparison (`verify_api_key` via `hmac.compare_digest`) returning HTTP 500 on server misconfiguration and HTTP 401 on bad keys, preventing silent auth bypasses.
-- **Deterministic Financial Engines**:
-  - **Indian Progressive Tax Engine (`taxEngine.js`)**: Computes exact tax under FY 2025-26 Old & New Regimes (80C, 80D, 80CCD, standard deduction ₹75k, 87A rebate).
-  - **Monte Carlo Portfolio Simulator (`monteCarloEngine.js`)**: Runs Geometric Brownian Motion (GBM) over asset covariance matrices to generate 10th, 50th, and 90th percentile wealth projections.
-  - **Newton-Raphson XIRR Engine (`xirrCalculator.js`)**: Exact cash flow return solver with convergence controls.
+![System Architecture Diagram showing the React SPA, Express API Gateway, MongoDB, Redis, FastAPI ML microservice, and LLMs](docs/architecture/system_architecture.png)
+> **System architecture.** End-to-end request pathways across the React client, Express REST API Gateway, MongoDB document datastore, Redis cache, and Python FastAPI ML microservice.
+
+### Request Flow
+1. **User Request**: The React SPA submits user profile or query payload to Express gateway.
+2. **Intent Classification**: [`intentGate.js`](server/services/intentGate.js) analyzes prompt semantics. Factual regulatory/tax questions route to FastAPI RAG (`/rag/query`); conversational queries route to Gemini/Groq LLM orchestrators.
+3. **Execution**:
+   - **Recommendation Requests**: Express invokes `RecommendationPipeline.js` (5-stage optimization) + queries FastAPI ML microservice for suitability predictions.
+   - **RAG Queries**: FastAPI embeds query with `all-MiniLM-L6-v2` (384D), searches vector database, extracts top chunks, and returns cited responses.
+4. **Response Delivery**: Output passes through security filters and structured JSON validation before returning to client.
 
 ---
 
-## 🏛️ System Architecture
+## AI & Machine Learning Architecture
 
-```mermaid
-graph LR
-    User["Client App<br/>(React 18 + TS)"] -->|HTTP / JWT| Express["Express.js Gateway (IntentGate)<br/>(Node.js API Gateway)"]
-    
-    subgraph ExpressGateway ["Express.js API Gateway"]
-        Express --> AuthMW["JWT & Rate Limiter"]
-        AuthMW --> IntentGate{"intentGate.js<br/>isFactualQuery()"}
-        
-        IntentGate -->|Conversational| AgentOrch["aiToolOrchestrator.js<br/>(Agentic Execution Loop)"]
-        AgentOrch --> ProviderMgr["providerAbstraction.js<br/>(LLM Provider Fallback)"]
-        ProviderMgr --> Gemini["Gemini Flash API"]
-        ProviderMgr -.->|Fallback| Groq["Groq (Llama 3)"]
-        
-        AgentOrch --> ToolReg["financialToolRegistry.js"]
-        ToolReg --> TaxEngine["Tax Engine (FY 2025-26)"]
-        ToolReg --> MonteCarlo["Monte Carlo Simulator"]
-        ToolReg --> XIRR["XIRR Engine"]
-    end
-    
-    IntentGate -->|Factual / Regulatory| RAGClient["ragClient.js<br/>queryRAG()"]
-    RAGClient -->|POST /rag/query<br/>API Key| FastAPI["FastAPI ML Service<br/>(Python Microservice)"]
-    ToolReg -->|Prediction Requests| MLClient["mlClient.js"]
-    MLClient -->|POST /predict| FastAPI
-    
-    subgraph FastAPI_ML ["FastAPI ML Service"]
-        FastAPI --> RAGSub["Dense Vector RAG<br/>(SentenceTransformers)"]
-        FastAPI --> RFModel["Random Forest + TreeSHAP"]
-        FastAPI --> MLPModel["PyTorch MLP"]
-        FastAPI --> FTTModel["PyTorch FT-Transformer"]
-    end
+### 1. Tabular Deep Learning Suitability Benchmark (Phase 3)
+The platform trains and evaluates three distinct model architectures on a dataset of **20,000 NAV-derived investor profiles** (16 canonical features, 60/20/20 train/val/test split):
+
+| Model Architecture | Test Accuracy | Macro F1 | Balanced Accuracy | Training Time | Primary Use Case |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **FT-Transformer** (*NeurIPS 2021*) | **97.05%** | **0.9331** | 0.9220 | 79.15s | High-precision deep learning benchmark checkpoint ([`ft_transformer_benchmark.pt`](ml-service/model/checkpoints/ft_transformer_benchmark.pt)) |
+| **Random Forest** | 95.63% | 0.9144 | **0.9221** | **4.16s** | **Production Serving**: Fast inference (4.16s train time) + TreeSHAP explainability (`model.pkl`) |
+| **PyTorch MLP** | 95.60% | 0.9012 | 0.9080 | 12.40s | Neural baseline comparison checkpoint ([`mlp_benchmark.pt`](ml-service/model/checkpoints/mlp_benchmark.pt)) |
+
+*Report source*: [`ml-service/reports/multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json).
+
+### 2. Retrieval-Augmented Generation (RAG) Subsystem (Phase 2 & 5)
+The FastAPI microservice implements a dense vector search pipeline indexing vectorized chunks of SEBI regulations, RBI circulars, and the Indian Income Tax Act.
+
+![RAG Retrieval Pipeline Diagram showing document ingestion, SentenceTransformer dense vector embedding, PersistentVectorStore search, and citation verification](docs/architecture/rag_pipeline.png)
+> **RAG retrieval pipeline.** Ingestion of vectorized regulatory/tax chunks, SentenceTransformer 384D dense vector embedding, vector similarity search, and context grounding with citation validation.
+
+* **Embedder**: `SentenceTransformerEmbeddingProvider` using `all-MiniLM-L6-v2` (384D dense vectors).
+* **Vector Store**: `PersistentVectorStore` in `ml-service/rag/vector_store/memory_vector_store.py`.
+
+#### Empirical RAG Evaluation Metrics (35 Evaluation Queries):
+* **In-Domain Recall@4**: **96.0%** (100.0% hit rate across 25 in-domain tax & regulatory queries).
+* **In-Domain Mean Reciprocal Rank (MRR)**: **0.9600** (improves to **0.9733** in ablation test).
+* **Citation Accuracy**: **100.0%** (all returned claims map to valid seed knowledge chunk IDs).
+* **Mean Grounding Score**: **0.7716**.
+
+#### Embedding Provider Ablation Study (Dense Transformer vs Hash-Based):
+An ablation study ([`ml-service/reports/embedding_ablation.json`](ml-service/reports/embedding_ablation.json)) compared 128D character n-gram feature hashing against 384D transformer embeddings:
+
+| Metric | Hash Provider (`DenseVectorEmbeddingProvider`) | Dense Transformer (`all-MiniLM-L6-v2`) | Empirical Uplift |
+| :--- | :---: | :---: | :---: |
+| **Vector Dimension** | 128D (n-gram hash) | 384D (transformer vector) | +256 dimensions |
+| **In-Domain Recall@4** | 98.0% | **100.0%** | **+2.0%** |
+| **Mean Reciprocal Rank (MRR)** | 0.8833 | **0.9733** | **+0.0900** |
+| **Mean NDCG@4** | 0.8975 | **0.9800** | **+0.0825** |
+
+### 3. Base LLM Evaluation Harness (Phase 4)
+Base `Qwen/Qwen2.5-0.5B-Instruct` was evaluated across 25 financial prompts against gold reference answers ([`ml-service/reports/llm_eval_report.json`](ml-service/reports/llm_eval_report.json)):
+* **Mean Lexical Overlap**: 0.4998
+* **Dense Semantic Embedding Similarity**: **0.6660** (SentenceTransformer cosine similarity)
+* **Mean Faithfulness**: 0.5608
+
+---
+
+## Agentic AI & Conversation Architecture
+
+The chat system implements a stateful, tool-assisted agent pipeline driven by [`geminiChatService.js`](server/services/geminiChatService.js) and [`aiToolOrchestrator.js`](server/services/aiToolOrchestrator.js):
+
+![Agentic AI Workflow Diagram showing prompt injection inspection, intent gate routing, layered memory manager, financial tool registry, and tool trace graph](docs/architecture/agent_workflow.png)
+> **Agentic AI workflow.** Step-by-step advisory flow from security prompt inspection and intent classification to tool execution and structured response generation.
+
+### Component Breakdown
+* **`immutableSecurityPipeline.js`**: Sanitizes prompt inputs and detects injection attacks before LLM submission.
+* **`intentGate.js`**: Classifies incoming queries to decide whether RAG grounding or LLM tool-orchestration is required.
+* **`financialToolRegistry.js`**: Exposes functional tool abstractions to the LLM (e.g. SIP calculators, Old vs New tax comparison, portfolio rebalancing).
+* **`layeredMemoryManager.js`**: Manages sliding conversation history, profile context injection, and system prompts.
+* **`toolTraceGraph.js`**: Snapshots tool execution steps for UI visualization and debugging.
+
+---
+
+## Software Engineering & System Design
+
+### 5-Stage Recommendation Pipeline
+The core recommendation engine ([`RecommendationPipeline.js`](server/services/RecommendationPipeline.js)) generates asset allocations through five deterministic stages:
+
+![5-Stage Portfolio Optimization Engine Diagram showing risk profiling, allocation matrix, quadratic mean-variance optimizer, policy concentration caps, and execution candidate ranking](docs/architecture/portfolio_pipeline.png)
+> **5-Stage portfolio optimization engine.** Quantitative pipeline progressing from multi-factor risk profiling through quadratic solver optimization, policy concentration caps, and candidate product ranking.
+
+1. **Stage 1 — Risk & Capacity Profiling**: Computes composite risk score (1–10) combining age, savings rate, dependents, emergency fund status, and debt EMI ratio (`riskProfiler.js`).
+2. **Stage 2 — Target Allocation Matrix**: Maps composite risk score to asset class targets (Equity, Debt, Gold, Liquid).
+3. **Stage 3 — Mathematical Optimization**: Executes mean-variance quadratic optimization via `numeric` package to maximize return for target volatility. If optimizer fails or encounters invalid boundaries, falls back to deterministic heuristic solver.
+4. **Stage 4 — Policy Concentration Caps**: Enforces `CONCENTRATION_CAPS` (e.g. Smallcap ≤15%, Direct Equity ≤20%, SGB ≤10%, NPS ≤25%) with iterative excess redistribution.
+5. **Stage 5 — Execution Pathway Selection**: Ranks execution product candidates (775 candidates across 155 catalog instruments) using profile-aware scoring.
+
+### Security Controls
+* **Fail-Closed API Key Authentication**: [`verify_api_key()`](ml-service/main.py#L231) in the ML microservice returns HTTP 500 (misconfiguration error) if `ML_SERVICE_API_KEY` is unset in non-local environments, preventing unauthorized access.
+* **Prompt Injection Defense**: [`promptSecurity.js`](server/services/promptSecurity.js) inspects prompts against pattern rules before sending payloads to LLM providers.
+* **Input Validation**: Joi schemas validate incoming API request bodies on Express routes (`profile.js`, `recommend.js`, `tax.js`).
+
+---
+
+## Performance Benchmarks & Capacity Load Testing
+
+Empirical load testing was conducted using `autocannon` (v8.0.0) across 30-second benchmark scenarios on a single host (Intel Core i7-10870H @ 2.20GHz, 16GB RAM, local MongoDB v7.0 & Redis 7.2):
+
+| Scenario | Concurrency | p50 Latency | p95 Latency | p99 Latency | Throughput (req/s) | Error Rate | Status Codes |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Tax Comparison (Compute-Heavy)** | 10 | 2.0 ms | 4.0 ms | 5.0 ms | **3,606.5 req/s** | **0.00%** | 108,174x HTTP 200 |
+| **Tax Comparison (Compute-Heavy)** | 50 | 12.0 ms | 19.0 ms | 21.0 ms | **3,809.4 req/s** | **0.00%** | 114,264x HTTP 200 |
+| **Tax Comparison (Compute-Heavy)** | 100 | 25.0 ms | 36.0 ms | 41.0 ms | **3,736.7 req/s** | **0.00%** | 112,088x HTTP 200 |
+| **Stress Ceiling (Tax Compare)** | 200 | 35.0 ms | 43.0 ms | 54.0 ms | **5,537.7 req/s** | **0.00%** | 166,115x HTTP 200 |
+| **Instruments DB (Read-Heavy)** | 10 | 48.0 ms | 66.0 ms | 73.0 ms | **199.0 req/s** | **0.00%** | 5,969x HTTP 200 |
+| **Instruments DB (Read-Heavy)** | 100 | 79.0 ms | 244.0 ms | 267.0 ms | **973.7 req/s** | **0.00%** | 29,212x HTTP 200 |
+| **Agentic Chat Endpoint (Post-Patch)** | 10 | 90.0 ms | 155.0 ms | 245.0 ms | **105.7 req/s** | **0.00%** | 3,170x HTTP 200 |
+| **Agentic Chat Endpoint (Post-Patch)** | 100 | 506.0 ms | 844.0 ms | 874.0 ms | **193.6 req/s** | **0.00%** | 5,807x HTTP 200 |
+
+*Full benchmark report*: [`load_test_report.md`](load_test_report.md) with committed raw outputs in `server/reports/loadtest/`.
+
+---
+
+## Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Framer Motion, Recharts, Lucide React, CSS3 (Vanilla Glassmorphism) |
+| **Backend Gateway** | Node.js v22.x, Express.js, Mongoose ODM, Joi Validation, Numeric.js, Autocannon |
+| **ML Microservice** | Python 3.12, FastAPI, PyTorch, scikit-learn, SentenceTransformers, NumPy, pandas, Uvicorn |
+| **Database & Cache** | MongoDB v7.0 (Document Store), Redis 7.2 (Cache & HybridStore) |
+| **AI / LLM / RAG** | Google Gemini 1.5 Pro / Flash API, Groq API, `all-MiniLM-L6-v2` 384D Embeddings |
+| **Containerization & CI** | Docker, Docker Compose, GitHub Actions (Multi-OS Node + Python matrix) |
+
+---
+
+## Installation & Setup
+
+### Prerequisites
+* **Node.js**: `v22.x` or higher
+* **Python**: `v3.12`
+* **MongoDB**: `v7.0` (local instance or MongoDB Atlas)
+* **Redis**: `v7.x` (optional, falls back to in-memory store)
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/yashaskn8/WealthGenie-AI-Powered-Financial-Advisory-Platform.git
+cd WealthGenie-AI-Powered-Financial-Advisory-Platform
 ```
 
----
+### 2. Environment Configuration
+Copy environment variable templates:
+```bash
+cp server/.env.example server/.env
+cp ml-service/.env.example ml-service/.env
+cp reactapp/.env.example reactapp/.env
+```
 
-## 📊 Benchmark Reports & Empirical Results
+Key environment variables to configure in `server/.env`:
+```ini
+PORT=5000
+MONGODB_URI=mongodb://127.0.0.1:27017/wealthgenie
+JWT_SECRET=your_secure_jwt_secret_key_min_32_chars
+ML_SERVICE_URL=http://127.0.0.1:8000
+GEMINI_API_KEY=your_gemini_api_key
+```
 
-### 1. Risk Profiling Model Benchmark (20,000 Samples, 6 Classes)
+In `ml-service/.env`:
+```ini
+PORT=8000
+ENVIRONMENT=local
+ML_SERVICE_API_KEY=your_ml_service_key
+```
 
-| Model | Accuracy | Balanced Acc | Macro F1 | MCC | Training Time |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Random Forest** (100 Trees, max_depth=15) | **95.63%** | 0.9221 | 0.9144 | 0.9393 | 4.16s |
-| **PyTorch MLP** (64→32, ReLU, Dropout 0.2) | **95.60%** | 0.9126 | 0.9174 | 0.9390 | 17.50s |
-| **FT-Transformer** (NeurIPS 2021 Tabular) | **97.05%** | **0.9220** | **0.9331** | **0.9590** | 79.15s |
+### 3. Start Backend Services Locally
 
-*Source: `ml-service/reports/multi_model_benchmark.json`*
+#### Express Server (Node.js)
+```bash
+cd server
+npm install
+npm start
+```
 
----
+#### ML Microservice (Python)
+```bash
+cd ml-service
+python -m venv venv
+# On Windows: venv\Scripts\activate | On Linux/macOS: source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --port 8000 --reload
+```
 
-### 2. RAG Retrieval Performance (25 Hand-Labeled In-Domain Queries)
+#### Frontend Client (React)
+```bash
+cd reactapp
+npm install
+npm run dev
+```
 
-| Metric | In-Domain Performance (n=25) | Blended Aggregate (n=35)* |
-| :--- | :---: | :---: |
-| **Recall@4** | **0.9600 (96.0%)** | 0.9714 |
-| **Mean Reciprocal Rank (MRR)** | **0.9600** | 0.9714 |
-| **NDCG@4** | — | **0.9679** |
-| **Citation Accuracy** | **1.0000 (100%)** | 1.0000 |
-| **Mean Grounding Score** | — | **0.7716** |
-
-*\*Note: Blended aggregate includes 10 out-of-domain negative control queries.*  
-*Source: `ml-service/reports/rag_eval_report.json`*
-
----
-
-### 3. Embedding Provider Ablation Study
-
-| Metric | Hash Vectorizer (128D) | Dense Semantic (`all-MiniLM-L6-v2`, 384D) | Uplift |
-| :--- | :---: | :---: | :---: |
-| **In-Domain Recall@4** | 0.9800 | **1.0000** | **+0.0200** |
-| **MRR** | 0.8833 | **0.9733** | **+0.0900** |
-| **NDCG@4** | 0.8975 | **0.9800** | **+0.0825** |
-
-*Source: `ml-service/reports/embedding_ablation.json`*
-
----
-
-## 🧮 Mathematical Foundations
-
-<details>
-<summary><b>Click to expand mathematical formulations</b></summary>
-
-### 1. Vector Cosine Similarity (Retrieval)
-$$\text{cosine\_similarity}(\mathbf{q}, \mathbf{d}) = \frac{\mathbf{q} \cdot \mathbf{d}}{\|\mathbf{q}\| \|\mathbf{d}\|}$$
-
-### 2. Heuristic Reranker Score
-$$\text{Score}_{\text{reranked}} = 0.5 \cdot \text{Score}_{\text{dense}} + 0.35 \cdot \text{Overlap}_{\text{keyword}} + 0.15 \cdot \text{Match}_{\text{title}}$$
-
-### 3. Rescaled Lexical Overlap Index
-$$\text{Score}_{\text{lexical}} = 0.4 + 0.6 \times \frac{|R \cap C|}{|R \cup C|}$$
-
-### 4. Geometric Brownian Motion (Monte Carlo Asset Simulation)
-$$S_t = S_0 \exp\left( \left( \mu - \frac{\sigma^2}{2} \right) t + \sigma W_t \right)$$
-
-### 5. Newton-Raphson XIRR Formulation
-$$f(r) = \sum_{i=1}^{N} C_i (1 + r)^{-\frac{d_i - d_1}{365}} = 0, \qquad r_{n+1} = r_n - \frac{f(r_n)}{f'(r_n)}$$
-
-</details>
+The application client runs at `http://localhost:5173`.
 
 ---
 
-## 🔌 API Endpoint Directory
+## Docker Deployment
 
-<details>
-<summary><b>Express Gateway Routes (Node.js)</b></summary>
-
-| Method | Endpoint Route | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | User account creation & password hashing |
-| `POST` | `/api/auth/login` | User login & JWT issuance |
-| `POST` | `/api/chat/message` | Agentic chat (Intent-gated RAG, LLM, or Tool execution) |
-| `POST` | `/api/profile` | Create/update financial profile attributes |
-| `POST` | `/api/tax/calculate` | Tax computation comparing Old vs. New Regimes |
-| `POST` | `/api/montecarlo/simulate` | Execute Monte Carlo wealth projection |
-| `POST` | `/api/portfolio/xirr` | Calculate portfolio XIRR cash flows |
-
-</details>
-
-<details>
-<summary><b>FastAPI Microservice Routes (Python)</b></summary>
-
-| Method | Endpoint Route | Description |
-| :--- | :--- | :--- |
-| `POST` | `/predict` | Predict risk profile via Random Forest |
-| `POST` | `/predict/enriched` | Predict risk profile with TreeSHAP explainability |
-| `POST` | `/predict/pytorch` | Predict risk profile via PyTorch Deep MLP |
-| `POST` | `/predict/ft_transformer` | Predict risk profile via PyTorch FT-Transformer |
-| `POST` | `/predict/compare` | Compare predictions across all 3 classification models |
-| `POST` | `/rag/query` | Perform vector retrieval, reranking, and citation generation |
-
-</details>
-
----
-
-## 🧪 Verification & Automated Testing
+To spin up the full multi-container application stack (MongoDB, Redis, Express backend, FastAPI ML service, React frontend):
 
 ```bash
-# 1. Express Gateway Unit & Integration Test Suite (21 test suites)
-cd server && npm test
+docker-compose up --build -d
+```
 
-# 2. Python ML Microservice Pytest Suite
-cd ml-service && python -m pytest tests/test_ml_validation.py -v -p no:phoenix
+Service mapping:
+* **Frontend**: `http://localhost:80`
+* **Express Gateway**: `http://localhost:5000`
+* **FastAPI ML Service**: `http://localhost:8000`
+* **MongoDB**: `localhost:27017`
+* **Redis**: `localhost:6379`
 
-# 3. End-to-End RAG Integration Verification
-cd server && node --test test/ragIntegration.test.js
+---
 
-# 4. Static Architecture & Docs Synchronization Check (CI Script)
+## Testing & Quality Assurance
+
+### Node.js / Express Backend Test Suite
+```bash
+cd server
+npm test               # Run unit & integration tests
+npm run test:coverage  # Run test suite with coverage report
+```
+
+### Python ML Microservice Test Suite
+```bash
+cd ml-service
+pytest                 # Run full 186-item pytest suite
+```
+
+### Static Docs-vs-Code Sync Check
+To verify that documentation claims match code imports and API routes:
+```bash
 node scripts/docs/check_docs_sync.js
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## Project Structure
 
-```bash
-# 1. Clone repo & set up environment
-git clone https://github.com/yashaskn8/WealthGenie-AI-Powered-Financial-Advisory-Platform.git
-cd WealthGenie-AI-Powered-Financial-Advisory-Platform
-cp .env.example .env
-
-# 2. Launch FastAPI ML Microservice (Terminal 1)
-cd ml-service
-python -m venv venv && source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-
-# 3. Launch Express Gateway (Terminal 2)
-cd server && npm install && npm run dev
-
-# 4. Launch React Frontend (Terminal 3)
-cd reactapp && npm install && npm run dev
-```
-
----
-
-## 📂 Repository Structure
-
-```
+```text
 WealthGenie-AI-Powered-Financial-Advisory-Platform/
-├── reactapp/                          # React 18 + Vite + TypeScript Frontend
-│   ├── src/components/                # Chat UI, Action Cards, Interactive Dashboards
-│   ├── src/RecommendationDashboard.jsx # Financial Advisory Hub
-│   └── src/HealthScoreScreen.jsx      # Portfolio Health Visualizer
-├── server/                            # Express.js API Gateway (Node.js)
-│   ├── routes/                        # REST API Routes
-│   ├── services/aiToolOrchestrator.js  # DAG-based Agent Tool Loop
-│   ├── services/financialToolRegistry.js # Financial Tool Definitions
-│   ├── services/intentGate.js         # Query Router (Factual RAG vs Conversational)
-│   ├── services/providerAbstraction.js# LLM Provider Manager (Gemini + Groq)
-│   ├── services/arithmeticVerifier.js # Math Anti-Hallucination Re-checker
-│   ├── services/taxEngine.js          # FY 2025-26 Indian Tax Engine
-│   └── services/monteCarloEngine.js   # GBM Stochastic Portfolio Simulator
-├── ml-service/                        # FastAPI ML Microservice (Python)
-│   ├── main.py                        # FastAPI endpoints & fail-closed auth
-│   ├── model/architecture/            # PyTorch MLP & FT-Transformer Models
-│   ├── model/evaluation/              # TreeSHAP Explainer & Model Benchmarks
-│   ├── rag/                           # Dense Vector RAG & Reranker Pipeline
-│   └── llm/                           # Open-weight LLM Registry & Evaluation
-└── scripts/docs/check_docs_sync.js    # CI Static Verification Script
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions CI matrix (Node 22.x, Py 3.12, Mongo 6/7)
+├── docs/
+│   └── architecture/              # Technical architecture & pipeline visual diagrams
+│       ├── system_architecture.png
+│       ├── agent_workflow.png
+│       ├── rag_pipeline.png
+│       └── portfolio_pipeline.png
+├── docker-compose.yml             # Full-stack container orchestration
+├── RESEARCH_LOG.md                # Empirical research & engineering audit log
+├── PROJECT_STATUS.md              # Feature status & architectural disclosure matrix
+├── load_test_report.md            # Autocannon load testing benchmark report
+├── reactapp/                      # React 18 Single-Page Application
+│   ├── src/
+│   │   ├── components/            # UI Components (ProfilePage, TaxScreen, Rebalancer, etc.)
+│   │   ├── services/              # API client bridge
+│   │   ├── utils/                 # Client WTI generator, post-tax return calculator
+│   │   └── App.jsx                # Main entry & router
+│   └── package.json
+├── server/                        # Express.js REST API Gateway
+│   ├── config/                    # DB & Redis connection config
+│   ├── middleware/                # Auth, rate-limiter, idempotency, error handlers
+│   ├── models/                    # Mongoose Schemas (User, Profile, Recommendation, etc.)
+│   ├── routes/                    # REST Endpoints (recommend, tax, profile, chat, etc.)
+│   ├── services/                  # RecommendationPipeline, TaxEngine, GeminiChatService
+│   └── test/                      # 45 Node.js unit & integration tests
+├── ml-service/                    # FastAPI Machine Learning Microservice
+│   ├── main.py                    # FastAPI routes (/predict, /rag/query, /health)
+│   ├── model/                     # Random Forest (model.pkl) & FT-Transformer checkpoints
+│   ├── rag/                       # Vector store, SentenceTransformer 384D embedder
+│   ├── reports/                   # Committed JSON evaluation reports
+│   └── tests/                     # 186 pytest test items
+└── scripts/                       # Maintenance & docs sync verification scripts
 ```
 
 ---
 
-## 📜 License
+## Limitations & Disclosures
 
-Distributed under the MIT License. Copyright (c) 2026 Yashas K N. See [`LICENSE`](LICENSE) for details.
+1. **Local Load Test Disclosure**: Load test benchmarks were conducted on a single host (`localhost:5000` / `127.0.0.1:8000`). They measure single-node event loop throughput and microservice latency, not multi-region cloud network conditions.
+2. **Fine-Tuning Scope**: LoRA/QLoRA LLM fine-tuning pipelines are defined in code interfaces but were deferred due to CPU compute constraints during evaluation. Base `Qwen/Qwen2.5-0.5B-Instruct` was used for LLM evaluation.
+3. **Computer Vision**: The platform intentionally focuses on tabular ML, text RAG, and financial tax algorithms. Computer vision (VLM) is explicitly out of scope.
+4. **WTI Endpoint Split**: `POST /api/instruments/rank-wti` is an intentional server-side API path for potential external consumers; the client React app uses `wtiGenerator.js` (`rankWhereToInvest()`) with catalog risk input for UI candidate ranking.
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
