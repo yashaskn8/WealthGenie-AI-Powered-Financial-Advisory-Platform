@@ -44,9 +44,9 @@ describe('goalCatalog (WG-031)', () => {
     expect(retirement.defaultTargetMultiplierOfAnnualIncome).toBe(25);
     // age 30 -> 60 - 30 = 30 years to retire
     expect(retirement.computeYearsToGoal(30)).toBe(30);
-    // monthly expenses 40k -> 40,000 * 12 * 25 * (1.06^30) rounded to Lakhs
-    const target = retirement.computeTarget(40000, 30);
-    expect(target).toBeGreaterThan(60000000);
+    // monthly expenses 40k -> real-terms 40,000 * 12 * 25 = 12,000,000 (₹1.2 Crore)
+    const target = retirement.computeTarget(40000);
+    expect(target).toBe(12000000);
 
     const emergency = getGoalTypeById('emergency_fund');
     expect(emergency.quickStartEligible).toBe(true);
@@ -63,5 +63,16 @@ describe('goalCatalog (WG-031)', () => {
     expect(tax.quickStartEligible).toBe(true);
     expect(tax.defaultTarget).toBe(150000);
     expect(tax.computeTarget()).toBe(150000);
+  });
+
+  it('WG-036: retirement computeTarget output does not vary with yearsToRetire (locks in single backend inflation layer)', () => {
+    const retirement = getGoalTypeById('retirement');
+    const targetWith1Arg = retirement.computeTarget(40000);
+    const targetWith2Args = retirement.computeTarget(40000, 30);
+    const targetWith50Years = retirement.computeTarget(40000, 50);
+
+    expect(targetWith1Arg).toBe(12000000);
+    expect(targetWith2Args).toBe(12000000);
+    expect(targetWith50Years).toBe(12000000);
   });
 });

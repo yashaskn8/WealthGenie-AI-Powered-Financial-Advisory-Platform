@@ -22,11 +22,11 @@ export const GOAL_TYPES = [
     color: '#f59e0b', // Canonical from GoalForm.jsx (Amber; GoalTracker previously used #0ea5e9 Cyan)
     themeColor: '#f59e0b',
     themeColorRGB: '245, 158, 11',
-    defaultTargetMultiplierOfAnnualIncome: 25, // 25x annual expenses inflated at 6% p.a. over yearsToRetire
+    defaultTargetMultiplierOfAnnualIncome: 25, // Real-terms 25x annual expenses estimate (inflation-adjusted target is computed exclusively on backend in server/routes/goals.js)
     defaultYearsToGoal: 30, // 60 - age (age 30 baseline)
     computeYearsToGoal: (age) => Math.max(5, 60 - (Number(age) || 30)),
-    computeTarget: (monthlyExpenses, yearsToRetire) =>
-      Math.round(((monthlyExpenses || 40000) * 12 * 25 * Math.pow(1.06, yearsToRetire)) / 100000) * 100000,
+    computeTarget: (monthlyExpenses) =>
+      Math.round(((monthlyExpenses || 40000) * 12 * 25) / 100000) * 100000,
     returnRate: 12,
     defaultPriority: 'High',
     quickStartEligible: true,

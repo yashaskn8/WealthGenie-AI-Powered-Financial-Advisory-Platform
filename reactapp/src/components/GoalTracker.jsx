@@ -45,7 +45,7 @@ function computeSmartDefaults(profile) {
 
     if (g.id === 'retirement') {
       yearsToGoal = g.computeYearsToGoal ? g.computeYearsToGoal(age) : yearsToRetire;
-      target = g.computeTarget ? g.computeTarget(monthlyExpenses, yearsToRetire) : 25 * annualIncome;
+      target = g.computeTarget ? g.computeTarget(monthlyExpenses) : 25 * annualIncome;
       description = `Build ${formatShort(target)} fund (roughly 25 times your annual expenses) by age ${retirementAge}`;
       tip = `Based on your ₹${monthlyExpenses.toLocaleString('en-IN')}/mo expenses, you need about 25 times your annual expenses saved for a comfortable retirement.`;
     } else if (g.id === 'wealth_growth') {
