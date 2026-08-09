@@ -1,5 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { User } from 'lucide-react';
+import { 
+  User, Sparkles, TrendingUp, Wallet, PiggyBank, Calendar, 
+  Shield, ShieldCheck, Scale, Zap, Landmark, DollarSign, 
+  Target, Compass, ArrowRight, Check 
+} from 'lucide-react';
 import profileImg from '../assets/gen_4k_nobull.png';
 import * as api from '../services/api';
 
@@ -193,44 +197,61 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     });
   }
 
+  // Icons mapping for primary goals
+  const goalIcons = {
+    'Retirement': Landmark,
+    'Wealth Growth': TrendingUp,
+    'Tax Saving': ShieldCheck,
+    'Emergency Fund': PiggyBank,
+  };
+
   return (
     <main className="profile-page">
       {/* Form content on the left */}
       <div className="profile-content">
-        <h1 className="profile-page-title">
-          Create Your <span className="gradient-text">Financial Profile</span>
-        </h1>
+        <div className="profile-header-meta">
+          <span className="profile-badge-chip">
+            <Sparkles size={13} className="badge-icon-sparkle" /> AI Advisory Onboarding
+          </span>
+          <h1 className="profile-page-title">
+            Create Your <span className="gradient-text">Financial Profile</span>
+          </h1>
+          <p className="profile-page-subtitle">
+            Configure your income, tax parameters, and risk appetite to initialize your personalized wealth engine.
+          </p>
+        </div>
 
         <div className="profile-form-card">
-          {/* Profile Summary Quick Badge */}
-          <div style={{
-            background: 'rgba(30, 41, 59, 0.7)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '10px',
-            padding: '1rem',
-            marginBottom: '1.5rem',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-            gap: '0.75rem',
-            fontSize: '0.85rem'
-          }}>
-            <div>
-              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Total CTC</span>
-              <strong style={{ color: '#38bdf8' }}>₹{Number(totalCTC || 0).toLocaleString('en-IN')}/yr</strong>
+          {/* Profile Summary Quick KPI Strip */}
+          <div className="profile-summary-kpi-strip">
+            <div className="kpi-mini-card">
+              <div className="kpi-mini-icon-wrap kpi-icon--blue">
+                <TrendingUp size={15} />
+              </div>
+              <div>
+                <span className="kpi-mini-label">Total CTC</span>
+                <strong className="kpi-mini-val val--ctc">₹{Number(totalCTC || 0).toLocaleString('en-IN')}<span className="kpi-mini-unit">/yr</span></strong>
+              </div>
             </div>
-            {/* <div>
-              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Basic Salary</span>
-              <strong style={{ color: '#f1f5f9' }}>₹{Number(basicComponent || 0).toLocaleString('en-IN')}/yr</strong>
-            </div> */}
-            <div>
-              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Take-Home</span>
-              <strong style={{ color: '#4ade80' }}>₹{Number(monthlyTakeHome || 0).toLocaleString('en-IN')}/mo</strong>
+            <div className="kpi-mini-card">
+              <div className="kpi-mini-icon-wrap kpi-icon--green">
+                <Wallet size={15} />
+              </div>
+              <div>
+                <span className="kpi-mini-label">Take-Home</span>
+                <strong className="kpi-mini-val val--takehome">₹{Number(monthlyTakeHome || 0).toLocaleString('en-IN')}<span className="kpi-mini-unit">/mo</span></strong>
+              </div>
             </div>
-            <div>
-              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Lump Sum Deployment</span>
-              <strong style={{ color: hasLumpSum ? '#fbbf24' : '#94a3b8' }}>
-                {hasLumpSum ? `₹${Number(lumpSumAmount || 0).toLocaleString('en-IN')}` : 'None'}
-              </strong>
+            <div className="kpi-mini-card">
+              <div className="kpi-mini-icon-wrap kpi-icon--amber">
+                <DollarSign size={15} />
+              </div>
+              <div>
+                <span className="kpi-mini-label">Lump Sum Capital</span>
+                <strong className={`kpi-mini-val ${hasLumpSum ? 'val--lumpsum' : 'val--none'}`}>
+                  {hasLumpSum ? `₹${Number(lumpSumAmount || 0).toLocaleString('en-IN')}` : 'None'}
+                </strong>
+              </div>
             </div>
           </div>
 
@@ -238,7 +259,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             {/* CTC & Salary Structure */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label>Total CTC (Annual ₹)</label>
+                <label><TrendingUp size={13} className="field-label-icon" /> Total CTC (Annual ₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -255,27 +276,12 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                   />
                 </div>
               </div>
-              {/* <div className="pf-field">
-                <label>Basic Salary Component (Annual ₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input 
-                    type="number" 
-                    placeholder="390000" 
-                    value={basicComponent || ''} 
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      setBasicComponent(val === '' ? '' : Number(val));
-                    }} 
-                  />
-                </div>
-              </div> */}
             </div>
 
             {/* Income & Take Home */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label>Monthly Take-Home (₹)</label>
+                <label><Wallet size={13} className="field-label-icon" /> Monthly Take-Home (₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -292,7 +298,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 </div>
               </div>
               <div className="pf-field">
-                <label>Monthly Savings Capacity (₹)</label>
+                <label><PiggyBank size={13} className="field-label-icon" /> Monthly Savings Capacity (₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -317,7 +323,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             {/* Age & Risk Appetite */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label>Age</label>
+                <label><Calendar size={13} className="field-label-icon" /> Age (Years)</label>
                 <input 
                   type="number" 
                   placeholder="32" 
@@ -331,16 +337,21 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 />
               </div>
               <div className="pf-field">
-                <label>Risk Tolerance</label>
+                <label><Shield size={13} className="field-label-icon" /> Risk Appetite</label>
                 <div className="risk-toggle-group">
-                  {['Conservative', 'Moderate', 'Aggressive'].map((level) => (
+                  {[
+                    { level: 'Conservative', icon: ShieldCheck },
+                    { level: 'Moderate', icon: Scale },
+                    { level: 'Aggressive', icon: Zap }
+                  ].map(({ level, icon: IconComponent }) => (
                     <button
                       key={level}
                       type="button"
                       className={`risk-toggle-btn ${riskTolerance === level ? 'active' : ''}`}
                       onClick={() => setRiskTolerance(level)}
                     >
-                      {level}
+                      <IconComponent size={13} className="btn-toggle-icon" />
+                      <span>{level}</span>
                     </button>
                   ))}
                 </div>
@@ -350,7 +361,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             {/* One-Time Capital & Liquidity */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label>Sold Property Proceeds (₹)</label>
+                <label><Landmark size={13} className="field-label-icon" /> Sold Property Proceeds (₹)</label>
                 <div className="pf-input-prefix">
                   <span className="prefix-symbol">₹</span>
                   <input 
@@ -365,24 +376,24 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 </div>
               </div>
               <div className="pf-field">
-                <label>Has Lump Sum to Invest?</label>
+                <label><DollarSign size={13} className="field-label-icon" /> Has Lump Sum to Invest?</label>
                 <div className="risk-toggle-group">
                   <button
                     type="button"
-                    className={`risk-toggle-btn ${!hasLumpSum ? 'active' : ''}`}
+                    className={`risk-toggle-btn ${!hasLumpSum ? 'active active--no' : ''}`}
                     onClick={() => {
                       setHasLumpSum(false);
                       setLumpSumAmount(0);
                     }}
                   >
-                    No
+                    <span>No</span>
                   </button>
                   <button
                     type="button"
-                    className={`risk-toggle-btn ${hasLumpSum ? 'active' : ''}`}
+                    className={`risk-toggle-btn ${hasLumpSum ? 'active active--yes' : ''}`}
                     onClick={() => setHasLumpSum(true)}
                   >
-                    Yes
+                    <span>Yes</span>
                   </button>
                 </div>
               </div>
@@ -390,24 +401,16 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
             {/* Conditional Lump Sum Amount & Action button */}
             {hasLumpSum && (
-              <div className="pf-field pf-field-full" style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <label>Lump Sum Investment Amount (₹)</label>
+              <div className="pf-field pf-field-full lump-sum-field-container">
+                <div className="lump-sum-header">
+                  <label><DollarSign size={13} className="field-label-icon" /> Lump Sum Investment Amount (₹)</label>
                   {Number(soldPropertyAmount) > 0 && (
                     <button
                       type="button"
-                      style={{
-                        background: 'rgba(59, 130, 246, 0.15)',
-                        border: '1px solid rgba(59, 130, 246, 0.4)',
-                        color: '#60a5fa',
-                        padding: '0.25rem 0.6rem',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        cursor: 'pointer'
-                      }}
+                      className="btn-use-property-sale"
                       onClick={() => setLumpSumAmount(Number(soldPropertyAmount))}
                     >
-                      Use my property sale amount (₹{Number(soldPropertyAmount).toLocaleString('en-IN')})
+                      Use property proceeds (₹{Number(soldPropertyAmount).toLocaleString('en-IN')})
                     </button>
                   )}
                 </div>
@@ -428,25 +431,35 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
             {/* Row 3: Goal Checkboxes */}
             <div className="pf-field pf-field-full">
-              <label>Investment Goal</label>
+              <label><Target size={13} className="field-label-icon" /> Investment Goals</label>
               <div className="goal-checkbox-group">
-                {['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'].map((goal) => (
-                  <label key={goal} className="goal-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={investmentGoals.includes(goal)}
-                      onChange={() => toggleGoal(goal)}
-                    />
-                    <span className="goal-checkmark"></span>
-                    <span className="goal-label-text">{goal}</span>
-                  </label>
-                ))}
+                {['Retirement', 'Wealth Growth', 'Tax Saving', 'Emergency Fund'].map((goal) => {
+                  const GoalIcon = goalIcons[goal] || Target;
+                  const isChecked = investmentGoals.includes(goal);
+                  return (
+                    <label key={goal} className={`goal-card-chip ${isChecked ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleGoal(goal)}
+                      />
+                      <div className="goal-card-content">
+                        <GoalIcon size={15} className="goal-card-icon" />
+                        <span className="goal-label-text">{goal}</span>
+                        {isChecked && <Check size={14} className="goal-card-check-icon" />}
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
             {/* Row 4: Horizon Slider */}
             <div className="pf-field pf-field-full">
-              <label>Investment Horizon</label>
+              <div className="horizon-header-row">
+                <label><Compass size={13} className="field-label-icon" /> Investment Horizon</label>
+                <span className="horizon-badge-pill">{horizon} {horizon === 1 ? 'Year' : 'Years'}</span>
+              </div>
               <div className="horizon-slider-container">
                 <input
                   type="range"
@@ -458,16 +471,17 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                   style={{ '--slider-pct': `${((horizon - 1) / 29) * 100}%` }}
                 />
                 <div className="horizon-labels">
-                  <span>1</span>
-                  <span className="horizon-value">{horizon} {horizon === 1 ? 'Year' : 'Years'}</span>
-                  <span>30</span>
+                  <span>1 Year</span>
+                  <span>15 Years</span>
+                  <span>30 Years</span>
                 </div>
               </div>
             </div>
 
-
             <button type="submit" className="btn-save-continue">
-              Save and Continue
+              <Sparkles size={18} className="btn-sparkle-icon" />
+              <span>Save & Launch Advisory Engine</span>
+              <ArrowRight size={18} className="btn-arrow-icon" />
             </button>
           </form>
         </div>
@@ -484,3 +498,4 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 };
 
 export default ProfilePage;
+
