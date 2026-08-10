@@ -215,4 +215,114 @@ describe('GenieChat V3 Enterprise Architecture Tests', () => {
 
     assert.equal(ProviderManager.gemini.isHealthy(), false);
   });
+
+  // ── MCP Two-Pass Architecture Integration Coverage ──
+  // Cross-Reference: Exhaustive two-pass DAG & grounding assertions are also covered in server/test/twoPassChatLoop.test.js
+
+  it('MCP Two-Pass Overhaul: processChat executes two-pass tool call grounding', async () => {
+    let callCount = 0;
+    axios.post = async (url) => {
+      if (url.includes('generativelanguage.googleapis.com')) {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            data: {
+              candidates: [
+                {
+                  content: {
+                    parts: [
+                      {
+                        functionCall: {
+                          name: 'sip_projection',
+                          args: { monthlyInvestment: 10000, annualRate: 0.12, years: 10 },
+                        },
+                      },
+                    ],
+                  },
+                  finishReason: 'STOP',
+                },
+              ],
+              usageMetadata: { totalTokenCount: 100 },
+            },
+          };
+        } else {
+          return {
+            data: {
+              candidates: [
+                {
+                  content: {
+                    parts: [{ text: 'Grounded response: SIP future value is ₹23,23,391.' }],
+                  },
+                  finishReason: 'STOP',
+                },
+              ],
+              usageMetadata: { totalTokenCount: 120 },
+            },
+          };
+        }
+      }
+      throw new Error('Unexpected URL');
+    };
+
+    const result = await processChat({
+      userId: mockUserId,
+      user: mockUser,
+      message: 'Calculate SIP projection',
+      sessionId: mockSessionId,
+    });
+
+    assert.equal(callCount, 2, 'processChat must invoke provider twice for tool-grounded query');
+    assert.equal(result.tool_results.length, 1);
+    assert.equal(result.tool_results[0].result.futureValue, 2323391);
+    assert.match(result.response, /₹23,23,391/);
+  });
+
+  it('MCP Two-Pass Overhaul: processChat completes direct non-tool questions in single pass', async () => {
+    let callCount = 0;
+    axios.post = async (url) => {
+      if (url.includes('generativelanguage.googleapis.com')) {
+        callCount++;
+        return {
+          data: {
+            candidates: [
+              {
+                content: { parts: [{ text: 'Direct financial answer without tools.' }] },
+                finishReason: 'STOP',
+              },
+            ],
+            usageMetadata: { totalTokenCount: 50 },
+          },
+        };
+      }
+      throw new Error('Unexpected URL');
+    };
+
+    const result = await processChat({
+      userId: mockUserId,
+      user: mockUser,
+      message: 'What is diversification?',
+      sessionId: mockSessionId,
+    });
+
+    assert.equal(callCount, 1, 'Direct answer path must use exactly 1 LLM call');
+    assert.equal(result.tool_results.length, 0);
+    assert.match(result.response, /Direct financial answer/);
+  });
+
+  it('MCP Two-Pass Overhaul: isFallback local fallback path operates reliably when both providers fail', async () => {
+    axios.post = async () => {
+      throw new Error('All LLM endpoints down');
+    };
+
+    const result = await processChat({
+      userId: mockUserId,
+      user: mockUser,
+      message: 'Rebalance portfolio advice',
+      sessionId: mockSessionId,
+    });
+
+    assert.equal(result.provider, 'local_fallback');
+    assert.equal(result.tool_results.length, 0);
+    assert.match(result.response, /connectivity issues|Portfolio Allocation/i);
+  });
 });

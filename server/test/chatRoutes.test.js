@@ -10,6 +10,7 @@ import Recommendation from '../models/Recommendation.js';
 import Goal from '../models/Goal.js';
 import ConversationHistory from '../models/ConversationHistory.js';
 import User from '../models/User.js';
+import { ProviderManager } from '../services/providerAbstraction.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-wealthgenie-2026';
 process.env.JWT_SECRET = JWT_SECRET;
@@ -44,6 +45,11 @@ describe('Chat Routes Integration & Input Validation Tests', () => {
   let originalUserFindById;
 
   beforeEach(() => {
+    process.env.GEMINI_API_KEY = 'mock-gemini-key';
+    process.env.GROQ_API_KEY = 'mock-groq-key';
+    ProviderManager.gemini.recordSuccess();
+    ProviderManager.groq.recordSuccess();
+
     originalProfileFindOne = FinancialProfile.findOne;
     originalRecFindOne = Recommendation.findOne;
     originalGoalFind = Goal.find;
@@ -130,7 +136,10 @@ describe('Chat Routes Integration & Input Validation Tests', () => {
     });
   });
 
-  it('POST /api/chat/message responds with 200 and structured response for valid request', async () => {
+  // ── MCP Two-Pass Contract Protocol & Route Coverage ──
+  // Cross-Reference: Service-level execution mechanics are tested in server/test/twoPassChatLoop.test.js and server/test/geminiChatService.test.js
+
+  it('POST /api/chat/message responds with 200 and complete V3 contract response shape', async () => {
     await withServer(buildApp(), async (baseUrl) => {
       const res = await rawRequest(`${baseUrl}/api/chat/message`, {
         method: 'POST',
@@ -144,7 +153,85 @@ describe('Chat Routes Integration & Input Validation Tests', () => {
       const data = await res.json();
       assert.equal(typeof data.response, 'string');
       assert.equal(typeof data.session_id, 'string');
+      assert.equal(data.version, '3.0');
+      assert.ok(Array.isArray(data.tool_calls), 'Response must contain tool_calls array');
+      assert.ok(Array.isArray(data.tool_results), 'Response must contain tool_results array');
+      assert.ok(Array.isArray(data.action_cards), 'Response must contain action_cards array');
+      assert.ok(data.governance, 'Response must contain governance metadata');
+      assert.ok(data.explainability, 'Response must contain explainability metadata');
+      assert.ok(data.verification, 'Response must contain verification metadata');
+      assert.ok(data.audit, 'Response must contain audit metadata');
     });
+  });
+
+  it('POST /api/chat/message end-to-end two-pass tool execution through Express route layer', async () => {
+    const originalPost = (await import('axios')).default.post;
+    let callCount = 0;
+
+    (await import('axios')).default.post = async (url) => {
+      if (url.includes('generativelanguage.googleapis.com')) {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            data: {
+              candidates: [
+                {
+                  content: {
+                    parts: [
+                      {
+                        functionCall: {
+                          name: 'sip_projection',
+                          args: { monthlyInvestment: 10000, annualRate: 0.12, years: 10 },
+                        },
+                      },
+                    ],
+                  },
+                  finishReason: 'STOP',
+                },
+              ],
+              usageMetadata: { totalTokenCount: 100 },
+            },
+          };
+        } else {
+          return {
+            data: {
+              candidates: [
+                {
+                  content: {
+                    parts: [{ text: 'Grounded response: SIP future value is ₹23,23,391.' }],
+                  },
+                  finishReason: 'STOP',
+                },
+              ],
+              usageMetadata: { totalTokenCount: 120 },
+            },
+          };
+        }
+      }
+      throw new Error('Unexpected URL');
+    };
+
+    try {
+      await withServer(buildApp(), async (baseUrl) => {
+        const res = await rawRequest(`${baseUrl}/api/chat/message`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${validToken}`,
+          },
+          body: JSON.stringify({ message: 'Calculate 10000 monthly SIP for 10 years at 12%' }),
+        });
+
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(callCount, 2, 'Route handler must execute 2-pass LLM cycle for tool calls');
+        assert.equal(data.tool_results.length, 1);
+        assert.equal(data.tool_results[0].result.futureValue, 2323391);
+        assert.match(data.response, /₹23,23,391/);
+      });
+    } finally {
+      (await import('axios')).default.post = originalPost;
+    }
   });
 
   it('DELETE /api/chat/session/:sessionId clears session idempotently', async () => {
