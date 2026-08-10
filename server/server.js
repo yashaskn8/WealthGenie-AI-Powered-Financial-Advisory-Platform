@@ -23,6 +23,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import portfolioRoutes from './routes/portfolio.js';
 import regimeRoutes from './routes/regime.js';
 import metricsRoutes from './routes/metricsRoutes.js';
+import mcpRoutes from './routes/mcpRouter.js';
 import { enforceJsonContentType } from './middleware/contentType.js';
 import { correlationIdMiddleware } from './middleware/correlation.js';
 import healthRoutes from './routes/health.js';
@@ -122,6 +123,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/regime', regimeRoutes);
 app.use('/api/metrics', metricsRoutes);
+app.use('/api/mcp', mcpRoutes);
 
 // ── Health Check (Detailed) ──────────────────────────────────────
 app.get('/api/health', (req, res) => {

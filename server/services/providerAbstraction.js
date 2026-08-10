@@ -46,7 +46,7 @@ export class GeminiProviderAdapter extends BaseProviderAdapter {
     super('gemini', 0.0004);
   }
 
-  async generate({ systemPrompt, recentHistory, maxTokens = 4096 }) {
+  async generate({ systemPrompt, recentHistory, maxTokens = 4096, tools = null }) {
     if (!this.isHealthy()) {
       return null;
     }
@@ -58,6 +58,18 @@ export class GeminiProviderAdapter extends BaseProviderAdapter {
       contents: recentHistory,
       generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 },
     };
+
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      payload.tools = [
+        {
+          functionDeclarations: tools.map(t => ({
+            name: t.name,
+            description: t.description,
+            parameters: t.parameters,
+          })),
+        },
+      ];
+    }
 
     try {
       const res = await axios.post(GEMINI_API_URL, payload, {
@@ -72,15 +84,29 @@ export class GeminiProviderAdapter extends BaseProviderAdapter {
         return null;
       }
 
-      const text = candidate.content?.parts?.map(p => p.text).join('') || '';
+      const parts = candidate.content?.parts || [];
+      const textParts = parts.filter(p => p.text).map(p => p.text);
+      const text = textParts.join('');
+
+      const toolCalls = [];
+      for (const part of parts) {
+        if (part.functionCall) {
+          toolCalls.push({
+            tool: part.functionCall.name,
+            arguments: part.functionCall.args || {},
+          });
+        }
+      }
+
       const tokensUsed = res.data?.usageMetadata?.totalTokenCount || 0;
       this.recordSuccess();
       PrometheusMetrics.inc('gemini_success_total');
       return {
         text,
+        tool_calls: toolCalls,
         tokensUsed,
         provider: this.name,
-        wasCompleted: candidate.finishReason === 'STOP',
+        wasCompleted: candidate.finishReason === 'STOP' || toolCalls.length > 0,
         estimatedCostUSD: (tokensUsed / 1000) * this.costPer1kTokens,
       };
     } catch (err) {
@@ -96,7 +122,7 @@ export class GroqProviderAdapter extends BaseProviderAdapter {
     super('groq', 0.0006);
   }
 
-  async generate({ systemPrompt, recentHistory, maxTokens = 4096 }) {
+  async generate({ systemPrompt, recentHistory, maxTokens = 4096, tools = null }) {
     if (!this.isHealthy()) {
       return null;
     }
@@ -105,19 +131,35 @@ export class GroqProviderAdapter extends BaseProviderAdapter {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...recentHistory.map(m => ({
-        role: m.role === 'model' ? 'assistant' : m.role,
-        content: m.parts.map(p => p.text).join(''),
-      })),
+      ...recentHistory.map(m => {
+        const content = m.parts ? m.parts.map(p => p.text || '').join('') : (m.content || '');
+        return {
+          role: m.role === 'model' ? 'assistant' : m.role,
+          content,
+        };
+      }),
     ];
 
+    const body = {
+      model: GROQ_MODEL,
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.4,
+    };
+
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      body.tools = tools.map(t => ({
+        type: 'function',
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters,
+        },
+      }));
+    }
+
     try {
-      const res = await axios.post(GROQ_API_URL, {
-        model: GROQ_MODEL,
-        messages,
-        max_tokens: maxTokens,
-        temperature: 0.4,
-      }, {
+      const res = await axios.post(GROQ_API_URL, body, {
         timeout: 30000,
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -125,11 +167,31 @@ export class GroqProviderAdapter extends BaseProviderAdapter {
         },
       });
 
-      const text = res.data?.choices?.[0]?.message?.content;
-      if (!text) {
+      const choice = res.data?.choices?.[0];
+      const message = choice?.message;
+      if (!message && !choice) {
         this.recordFailure();
         PrometheusMetrics.inc('groq_failure_total');
         return null;
+      }
+
+      const text = message?.content || '';
+      const toolCalls = [];
+      if (message?.tool_calls && Array.isArray(message.tool_calls)) {
+        for (const tc of message.tool_calls) {
+          if (tc.function) {
+            let parsedArgs = {};
+            try {
+              parsedArgs = typeof tc.function.arguments === 'string'
+                ? JSON.parse(tc.function.arguments)
+                : tc.function.arguments;
+            } catch (_) { /* default empty object */ }
+            toolCalls.push({
+              tool: tc.function.name,
+              arguments: parsedArgs,
+            });
+          }
+        }
       }
 
       const tokensUsed = res.data?.usage?.total_tokens || 0;
@@ -137,9 +199,10 @@ export class GroqProviderAdapter extends BaseProviderAdapter {
       PrometheusMetrics.inc('groq_success_total');
       return {
         text,
+        tool_calls: toolCalls,
         tokensUsed,
         provider: this.name,
-        wasCompleted: res.data?.choices?.[0]?.finish_reason === 'stop',
+        wasCompleted: choice?.finish_reason === 'stop' || toolCalls.length > 0,
         estimatedCostUSD: (tokensUsed / 1000) * this.costPer1kTokens,
       };
     } catch (err) {

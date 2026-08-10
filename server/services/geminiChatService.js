@@ -13,6 +13,7 @@ import Recommendation from '../models/Recommendation.js';
 import Goal from '../models/Goal.js';
 import User from '../models/User.js';
 
+import { WealthGenieMcpServer } from '../mcp/wealthgenieMcpServer.js';
 import { validateAndSanitizeActionCards } from './actionCardValidator.js';
 import { verifyAndCorrectArithmetic } from './arithmeticVerifier.js';
 import { inspectPromptSecurity } from './promptSecurity.js';
@@ -136,21 +137,16 @@ export async function processChat({ userId, user, message, sessionId }) {
   recentHistory.push({ role: 'user', parts: [{ text: securityContext.sanitizedMessage }] });
 
   const startTime = Date.now();
+  const mcpTools = WealthGenieMcpServer.getToolDefinitions();
 
-  // Phase 9: Provider Abstraction Layer & Resilient Execution
-  let result = await ProviderManager.gemini.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS });
+  // ── PASS 1: Provider-Native Call + MCP Tool Definitions ──
+  let result = await ProviderManager.gemini.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS, tools: mcpTools });
   if (!result) {
     console.info('[Chat] Gemini adapter unavailable/failed, falling back to Groq adapter...');
-    result = await ProviderManager.groq.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS });
+    result = await ProviderManager.groq.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS, tools: mcpTools });
   }
 
-  const latencyMs = Date.now() - startTime;
-  let rawResponseText = '';
-  let tokensUsed = 0;
-  let provider = '';
-  let wasCompleted = true;
   let isFallback = false;
-
   if (!result) {
     console.info('[Chat] Dual providers failed, executing local fallback adapter...');
     isFallback = true;
@@ -158,28 +154,76 @@ export async function processChat({ userId, user, message, sessionId }) {
     result = await ProviderManager.local.generate({ fallbackText });
   }
 
-  rawResponseText = result.text;
-  tokensUsed = result.tokensUsed;
-  provider = result.provider;
-  wasCompleted = result.wasCompleted;
+  let nativeToolCalls = result.tool_calls || [];
+  let v2Protocol = { answer: result.text || '', tool_calls: [] };
+
+  // Native Precedence Rule: If native function calls are present, skip text-blob tool parsing.
+  if (nativeToolCalls.length === 0 && result.text) {
+    v2Protocol = validateAndSanitizeStructuredResponse(result.text);
+    if (v2Protocol.tool_calls && v2Protocol.tool_calls.length > 0) {
+      nativeToolCalls = v2Protocol.tool_calls;
+    }
+  }
+
+  let toolResults = [];
+  let orchestration = { toolResults: [], executionGraph: { status: 'NO_TOOLS' } };
+  let executedTwoPass = false;
+
+  // ── PASS 2: Execute Tools & Call LLM Again Grounded in Calculation Outputs ──
+  if (nativeToolCalls.length > 0 && !isFallback) {
+    console.info(`[Chat] Native function calls requested (${nativeToolCalls.length} tools): ${nativeToolCalls.map(t => t.tool).join(', ')}. Executing DAG orchestration...`);
+    orchestration = await AIToolOrchestrator.orchestrate(nativeToolCalls, { profile, user: fullUser });
+    toolResults = orchestration.toolResults;
+
+    // Append Pass 1 function call and tool result turns to conversation history for Pass 2
+    recentHistory.push({
+      role: 'model',
+      parts: nativeToolCalls.map(tc => ({ functionCall: { name: tc.tool, args: tc.arguments } })),
+    });
+
+    recentHistory.push({
+      role: 'user',
+      parts: toolResults.map(tr => ({
+        functionResponse: {
+          name: tr.tool,
+          response: tr.success ? tr.result : { error: tr.error },
+        },
+      })),
+    });
+
+    console.info(`[Chat] Executing Pass 2 LLM generation grounded in ${toolResults.length} tool result(s)...`);
+    const pass2Result = await ProviderManager.gemini.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS })
+      || await ProviderManager.groq.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS });
+
+    if (pass2Result && pass2Result.text) {
+      result = pass2Result;
+      executedTwoPass = true;
+    }
+  }
+
+  const latencyMs = Date.now() - startTime;
+  const rawResponseText = result.text;
+  const tokensUsed = result.tokensUsed;
+  const provider = result.provider;
+  const wasCompleted = result.wasCompleted;
 
   PrometheusMetrics.recordLatency(provider, latencyMs);
 
-  // Phase 1: Structured V2.0 Contract Protocol & Sanitization
-  const v2Protocol = validateAndSanitizeStructuredResponse(rawResponseText);
-  let responseText = v2Protocol.answer || rawResponseText;
+  let responseText = rawResponseText;
 
-  // Phase 1 & Phase 2: AI Tool Orchestrator DAG Resolution & Execution
-  const orchestration = await AIToolOrchestrator.orchestrate(v2Protocol.tool_calls, { profile, user: fullUser });
-  const toolResults = orchestration.toolResults;
-
-  // Phase 2: Server-Side ACTION_CARD Validation
+  // Server-Side ACTION_CARD Validation
   const { cleanedText, validCards, validationSummary } = validateAndSanitizeActionCards(responseText);
   responseText = cleanedText;
 
-  // Phase 3: Independent Arithmetic Verification
+  // Independent Arithmetic Verification (Safety Net)
   const { verifiedText, verificationMetadata } = verifyAndCorrectArithmetic(responseText, profile);
   responseText = verifiedText;
+
+  // If post-Pass-2 verification was required, record metric
+  if (executedTwoPass && verificationMetadata.corrected_fields && verificationMetadata.corrected_fields.length > 0) {
+    PrometheusMetrics.inc('arithmetic_corrections_post_pass2_total');
+    console.warn(`[Chat] Post-Pass-2 arithmetic correction fired for fields: ${verificationMetadata.corrected_fields.join(', ')}`);
+  }
 
   // Phase 5: Enforce Regulatory Compliance
   responseText = ImmutableSecurityPipeline.enforceCompliance(responseText);

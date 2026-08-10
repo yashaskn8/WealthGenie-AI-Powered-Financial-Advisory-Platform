@@ -210,13 +210,16 @@ class ToolRegistry {
         assets: Joi.array().items(Joi.string()).min(2).max(10).default(['Equity_MF', 'Debt_MF', 'Gold']),
       }),
       executor: async ({ strategy, assets }) => {
+        const defaultReturns = { Equity_MF: 0.12, Debt_MF: 0.07, Gold: 0.08, ELSS: 0.12, FD: 0.065 };
+        const postTaxReturns = assets.map(a => defaultReturns[a] || 0.08);
+
         let result;
         if (strategy === 'max_sharpe') {
-          result = solveMaxSharpe(assets);
+          result = solveMaxSharpe(assets, postTaxReturns);
         } else if (strategy === 'risk_parity') {
-          result = solveRiskParity(assets);
+          result = solveRiskParity(assets, postTaxReturns);
         } else {
-          result = solveMinVariance(assets);
+          result = solveMinVariance(assets, postTaxReturns);
         }
         return { strategy, ...result };
       },

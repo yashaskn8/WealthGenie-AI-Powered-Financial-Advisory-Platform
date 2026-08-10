@@ -15,6 +15,7 @@ class MetricsCollector {
       tool_execution_success_total: 0,
       tool_execution_failure_total: 0,
       arithmetic_corrections_total: 0,
+      arithmetic_corrections_post_pass2_total: 0,
       invalid_action_cards_total: 0,
       prompt_injection_attempts_total: 0,
     };

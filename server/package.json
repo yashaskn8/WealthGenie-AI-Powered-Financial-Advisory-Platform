@@ -19,6 +19,7 @@
     "eval": "node scripts/run-eval.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -29,6 +30,8 @@
     "fast-check": "^4.8.0",
     "helmet": "^8.0.0",
     "joi": "^18.1.2",
+    "joi-to-json": "^5.0.5",
+    "joi-to-json-schema": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
