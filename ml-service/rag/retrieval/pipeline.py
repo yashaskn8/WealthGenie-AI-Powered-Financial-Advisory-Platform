@@ -15,6 +15,7 @@ from rag.prompts.builder import PromptBuilder
 from rag.reranking.base import BaseReranker
 from rag.reranking.noop_reranker import NoOpReranker
 from rag.reranking.relevance_reranker import RelevanceScoreReranker
+from rag.reranking.cross_encoder_reranker import CrossEncoderReranker
 from rag.retrievers.base import BaseRetriever
 from rag.retrievers.bm25_retriever import BM25KeywordRetriever
 from rag.retrievers.dense_retriever import DenseRetriever
@@ -33,6 +34,7 @@ from rag.query_understanding.pipeline import QueryUnderstandingPipeline
 _RERANKER_REGISTRY: Dict[str, type] = {
     "no_op": NoOpReranker,
     "relevance_score": RelevanceScoreReranker,
+    "cross_encoder": CrossEncoderReranker,
 }
 
 

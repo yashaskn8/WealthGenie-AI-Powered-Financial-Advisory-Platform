@@ -286,7 +286,7 @@ def run_eval():
         },
     ]
 
-    rag_config = RAGConfig(retrieval_strategy="dense", top_k=4)
+    rag_config = RAGConfig.from_env()
     query_pipeline = RAGPipeline(
         config=rag_config,
         embedder=embedder,
@@ -315,8 +315,8 @@ def run_eval():
     logger.info(f"Running evaluation over {len(EVALUATION_DATASET)} queries...")
 
     for idx, item in enumerate(EVALUATION_DATASET, 1):
-        q = item["query"]
-        gt_ids = item["ground_truth_ids"]
+        q: str = str(item["query"])
+        gt_ids: Set[str] = set(item["ground_truth_ids"])
 
         req = RAGQueryRequest(question=q, top_k=4)
         resp = query_pipeline.query(req)
