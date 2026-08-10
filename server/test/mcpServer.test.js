@@ -106,4 +106,50 @@ describe('Phase 1: WealthGenie MCP Server Core & Schema Parity Tests', () => {
     assert.deepEqual(mcpResult.result, directResult.result);
     assert.equal(mcpResult.result.rebalance_recommended, true);
   });
+
+  it('tools/call: unknown tool execution returns error result gracefully without throwing', async () => {
+    const mcpResult = await WealthGenieMcpServer.executeTool('non_existent_tool', {});
+    assert.equal(mcpResult.success, false);
+    assert.match(mcpResult.error, /Unknown tool/i);
+  });
+});
+
+describe('MCP Endpoint Auth & Router Integration Tests', () => {
+  it('GET /api/mcp/sse rejects unauthenticated request with 401', async () => {
+    const express = (await import('express')).default;
+    const mcpRouter = (await import('../routes/mcpRouter.js')).default;
+    const { errorHandler } = await import('../middleware/errorHandler.js');
+    const { withServer, rawRequest } = await import('../test-utils/httpTestUtils.js');
+
+    const app = express();
+    app.use(express.json());
+    app.use('/api/mcp', mcpRouter);
+    app.use(errorHandler);
+
+    await withServer(app, async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/sse`, { method: 'GET' });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  it('POST /api/mcp/messages rejects unauthenticated request with 401', async () => {
+    const express = (await import('express')).default;
+    const mcpRouter = (await import('../routes/mcpRouter.js')).default;
+    const { errorHandler } = await import('../middleware/errorHandler.js');
+    const { withServer, rawRequest } = await import('../test-utils/httpTestUtils.js');
+
+    const app = express();
+    app.use(express.json());
+    app.use('/api/mcp', mcpRouter);
+    app.use(errorHandler);
+
+    await withServer(app, async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/messages`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
+      assert.equal(res.status, 401);
+    });
+  });
 });

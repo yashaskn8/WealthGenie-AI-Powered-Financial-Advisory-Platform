@@ -186,4 +186,132 @@ describe('Phase 3: Two-Pass Tool-Grounded Chat Loop Tests', () => {
     assert.match(result.response, /invest in stocks/);
     assert.equal(result.tool_results.length, 0);
   });
+
+  it('Groq Provider Fallback: Groq executes native tool call and Pass 2 grounding when Gemini fails', async () => {
+    let groqCallCount = 0;
+
+    axios.post = async (url, payload) => {
+      // Gemini endpoint fails
+      if (url.includes('generativelanguage.googleapis.com')) {
+        throw new Error('Gemini 500 error');
+      }
+
+      // Groq API endpoint
+      if (url.includes('api.groq.com')) {
+        groqCallCount++;
+        if (groqCallCount === 1) {
+          // Pass 1: Groq emits tool call using OpenAI tool_calls format
+          return {
+            data: {
+              choices: [
+                {
+                  message: {
+                    content: null,
+                    tool_calls: [
+                      {
+                        function: {
+                          name: 'sip_projection',
+                          arguments: JSON.stringify({ monthlyInvestment: 15000, annualRate: 0.12, years: 10 }),
+                        },
+                      },
+                    ],
+                  },
+                  finish_reason: 'tool_calls',
+                },
+              ],
+              usage: { total_tokens: 110 },
+            },
+          };
+        } else {
+          // Pass 2: Groq receives tool execution result and generates grounded output
+          return {
+            data: {
+              choices: [
+                {
+                  message: {
+                    content: 'Groq Grounded: Monthly SIP of ₹15,000 grows to ₹34,85,086.',
+                  },
+                  finish_reason: 'stop',
+                },
+              ],
+              usage: { total_tokens: 140 },
+            },
+          };
+        }
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await processChat({
+      userId: mockUserId,
+      user: mockUser,
+      message: 'Calculate 15000 monthly SIP for 10 years at 12%',
+      sessionId: mockSessionId,
+    });
+
+    assert.equal(groqCallCount, 2, 'Groq provider must execute 2 passes when invoked');
+    assert.equal(result.provider, 'groq');
+    assert.equal(result.tool_results.length, 1);
+    assert.equal(result.tool_results[0].result.futureValue, 3485086);
+    assert.match(result.response, /Groq Grounded/);
+  });
+
+  it('Tool Execution Fault Isolation: processChat recovers cleanly when a tool throws or fails', async () => {
+    let callCount = 0;
+
+    axios.post = async (url) => {
+      if (url.includes('generativelanguage.googleapis.com')) {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            data: {
+              candidates: [
+                {
+                  content: {
+                    parts: [
+                      {
+                        functionCall: {
+                          name: 'rebalance_calculator',
+                          args: { invalid_param: true }, // Invalid arguments to trigger tool failure
+                        },
+                      },
+                    ],
+                  },
+                  finishReason: 'STOP',
+                },
+              ],
+              usageMetadata: { totalTokenCount: 90 },
+            },
+          };
+        } else {
+          return {
+            data: {
+              candidates: [
+                {
+                  content: {
+                    parts: [{ text: 'I noticed an issue calculating exact rebalance targets, but here is general advice.' }],
+                  },
+                  finishReason: 'STOP',
+                },
+              ],
+              usageMetadata: { totalTokenCount: 100 },
+            },
+          };
+        }
+      }
+      throw new Error('Unexpected URL');
+    };
+
+    const result = await processChat({
+      userId: mockUserId,
+      user: mockUser,
+      message: 'Rebalance portfolio with bad inputs',
+      sessionId: mockSessionId,
+    });
+
+    assert.equal(callCount, 2, 'Pass 2 must run even when tool execution returns failure status');
+    assert.equal(result.tool_results.length, 1);
+    assert.equal(result.tool_results[0].success, false);
+    assert.match(result.response, /general advice/);
+  });
 });
