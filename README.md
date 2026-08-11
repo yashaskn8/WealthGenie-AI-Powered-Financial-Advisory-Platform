@@ -267,14 +267,14 @@ Service mapping:
 ### Node.js / Express Backend Test Suite
 ```bash
 cd server
-npm test               # Run unit & integration tests across 39 test files (287 assertions)
+npm test               # Run unit & integration tests across 44 test files (346 tests)
 npm run test:coverage  # Run test suite with coverage report
 ```
 
 ### Python ML Microservice Test Suite
 ```bash
 cd ml-service
-pytest                 # Run full 186-item pytest suite
+pytest                 # Run full 171-item pytest suite
 ```
 
 ### Static Docs-vs-Code Sync Check
@@ -315,13 +315,13 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 │   ├── models/                    # Mongoose Schemas (User, Profile, Recommendation, etc.)
 │   ├── routes/                    # REST Endpoints (recommend, tax, profile, chat, etc.)
 │   ├── services/                  # RecommendationPipeline, TaxEngine, GeminiChatService
-│   └── test/                      # 39 Node.js test files (287 assertions)
+│   └── test/                      # 44 Node.js test files (346 tests)
 ├── ml-service/                    # FastAPI Machine Learning Microservice
 │   ├── main.py                    # FastAPI routes (/predict, /rag/query, /health)
 │   ├── model/                     # Random Forest (model.pkl) & FT-Transformer checkpoints
 │   ├── rag/                       # Vector store, SentenceTransformer 384D embedder
 │   ├── reports/                   # Committed JSON evaluation reports
-│   └── tests/                     # 186 pytest test items
+│   └── tests/                     # 171 pytest test functions
 └── scripts/                       # Maintenance & docs sync verification scripts
 ```
 
