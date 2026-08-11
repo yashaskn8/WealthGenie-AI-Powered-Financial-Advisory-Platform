@@ -1,4 +1,8 @@
-import { processChat } from '../services/geminiChatService.js';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import chatRouter from '../routes/chatRoutes.js';
+import { errorHandler } from '../middleware/errorHandler.js';
+import { withServer, rawRequest } from '../test-utils/httpTestUtils.js';
 import { PrometheusMetrics } from '../services/metricsCollector.js';
 import { ProviderManager } from '../services/providerAbstraction.js';
 import FinancialProfile from '../models/FinancialProfile.js';
@@ -7,8 +11,13 @@ import Goal from '../models/Goal.js';
 import User from '../models/User.js';
 import ConversationHistory from '../models/ConversationHistory.js';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-wealthgenie-2026';
+process.env.JWT_SECRET = JWT_SECRET;
+
 const mockUserId = '60d5ecb8b3b3a72d9c8e4a11';
-const mockUser = { _id: mockUserId, email: 'investor@example.com', name: 'Batch Investor' };
+const validToken = jwt.sign({ userId: mockUserId, email: 'investor@example.com' }, JWT_SECRET, { expiresIn: '1h' });
+
+const mockUser = { _id: mockUserId, email: 'investor@example.com', name: 'Falsifiable Investor' };
 const mockProfile = {
   _id: '60d5ecb8b3b3a72d9c8e4a33',
   userId: mockUserId,
@@ -21,183 +30,281 @@ const mockProfile = {
   recommendedEquityAllocation: 60,
 };
 
-// Setup DB mocks for local execution
+function buildApp() {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/chat', chatRouter);
+  app.use(errorHandler);
+  return app;
+}
+
+// DB Mocks
 FinancialProfile.findOne = () => ({ sort: () => ({ lean: async () => mockProfile }) });
 Recommendation.findOne = () => ({ sort: () => ({ lean: async () => null }) });
 Goal.find = () => ({ sort: () => ({ lean: async () => [] }) });
 User.findById = () => ({ lean: async () => mockUser });
 ConversationHistory.findOne = async (query) => ({
   userId: mockUserId,
-  session_id: query?.session_id || 'test-session-batch',
+  session_id: query?.session_id || 'test-session-falsifiable',
   messages: [],
   save: async () => true,
 });
 
 process.env.GEMINI_API_KEY = 'mock-gemini-key';
 process.env.GROQ_API_KEY = 'mock-groq-key';
-ProviderManager.gemini.recordSuccess();
-ProviderManager.groq.recordSuccess();
 
-// 30 varied prompts: 10 SIP, 10 Tax, 10 Rebalance
-const prompts = [
-  // 10 SIP Projection Prompts
-  'Calculate future value of 10000 monthly SIP for 10 years at 12%',
-  'What will a monthly SIP of 15000 yield in 15 years at 11% annual return?',
-  'Project SIP of 25000 monthly over 20 years with 12% returns',
-  'If I invest 8000 rupees monthly for 5 years at 10%, what is the final amount?',
-  'Calculate 50000 monthly SIP for 12 years at 13% expected CAGR',
-  'Estimate corpus for 12000 per month SIP in 8 years at 10% rate',
-  'How much will 30000 monthly SIP grow to in 18 years assuming 12% return?',
-  'Calculate SIP value for 20000 per month over 7 years at 11.5% interest',
-  'Project monthly investment of 40000 for 25 years at 12% compound growth',
-  'SIP projection for 18000 monthly over 14 years at 12% annual rate',
-
-  // 10 Tax Calculation Prompts
-  'Calculate income tax for 1200000 salary under new tax regime',
-  'What is the tax liability on 1800000 annual income in new regime?',
-  'Compute tax on 2500000 income under new regime',
-  'Calculate tax payable for 1500000 income',
-  'What is my effective tax rate for 2200000 annual salary under new regime?',
-  'Calculate new regime tax for 900000 annual income with standard deduction',
-  'Estimate tax for 3000000 gross annual income under new regime',
-  'Compute tax liability on 1400000 salary income',
-  'What is the tax on 1650000 annual income in new tax regime?',
-  'Calculate income tax for 2000000 salary',
-
-  // 10 Portfolio Rebalancing Prompts
-  'Rebalance my portfolio from 75% equity and 25% debt to target 60% equity and 40% debt',
-  'How to rebalance allocation if current is 80% stocks and 20% bonds vs target 50/50?',
-  'Calculate rebalancing directives for current 70% equity, 30% debt against target 55% equity, 45% debt',
-  'Check rebalance recommendations for 65% stock allocation drifted from 50% target',
-  'My portfolio is 85% equity and 15% gold, target is 60% equity, 30% debt, 10% gold. Rebalance?',
-  'Rebalance current 40% equity 60% debt portfolio to 70% equity 30% debt target',
-  'Calculate rebalancing action for 75% equity, 25% debt with target threshold of 5%',
-  'How should I adjust my 90% equity portfolio to align with moderate 60% equity risk target?',
-  'Rebalance 50% equity 50% debt portfolio to aggressive 75% equity 25% debt allocation',
-  'Check allocation drift: currently 68% equity, 32% debt vs target 60/40'
-];
-
-async function runBatchVerification() {
+async function runFalsifiableMetricMeasurement() {
   console.log('================================================================');
-  console.log('MEASURING POST-PASS-2 ARITHMETIC CORRECTION METRIC');
-  console.log(`Executing ${prompts.length} varied chat turns through processChat()...`);
+  console.log('FALSIFIABLE POST-PASS-2 ARITHMETIC METRIC MEASUREMENT (HTTP Route)');
   console.log('================================================================\n');
 
-  // Reset counter to 0 before starting batch
+  // Reset Prometheus counters before test
   PrometheusMetrics.counters.arithmetic_corrections_post_pass2_total = 0;
-  const initialMetricValue = PrometheusMetrics.counters.arithmetic_corrections_post_pass2_total;
+  PrometheusMetrics.counters.tool_execution_total = 0;
+  PrometheusMetrics.counters.tool_execution_success_total = 0;
+  PrometheusMetrics.counters.tool_execution_failure_total = 0;
+  PrometheusMetrics.toolUsage = {};
 
-  let toolExecutedTurns = 0;
-  let directTurns = 0;
+  ProviderManager.gemini.recordSuccess();
+  ProviderManager.groq.recordSuccess();
 
-  for (let i = 0; i < prompts.length; i++) {
-    const prompt = prompts[i];
-    const sessionId = `batch-session-${i + 1}`;
-    
-    // We mock axios.post to emulate Pass 1 & Pass 2 LLM behavior for tool calls
-    const originalPost = (await import('axios')).default.post;
-    let callCount = 0;
+  const originalPost = (await import('axios')).default.post;
 
-    (await import('axios')).default.post = async (url) => {
-      if (url.includes('generativelanguage.googleapis.com')) {
-        callCount++;
-        if (prompt.toLowerCase().includes('sip') || prompt.toLowerCase().includes('tax') || prompt.toLowerCase().includes('rebalance')) {
+  let requestIndex = 0;
+  let matchingTurnsCount = 0;
+  let mismatchedTurnsCount = 0;
+
+  await withServer(buildApp(), async (baseUrl) => {
+    // We will make 30 requests total over HTTP POST /api/chat/message
+    // Turns 1-20: LLM Pass 2 emits ACCURATE numbers matching tool results.
+    // Turns 21-30: LLM Pass 2 emits INTENTIONALLY MISMATCHED numbers to test metric increment on divergence!
+
+    for (let i = 1; i <= 30; i++) {
+      requestIndex = i;
+      const isMismatched = i > 20; // Turns 21-30 emit mismatched numbers to test metric falsifiability!
+      let callCount = 0;
+
+      if (isMismatched) {
+        mismatchedTurnsCount++;
+      } else {
+        matchingTurnsCount++;
+      }
+
+      (await import('axios')).default.post = async (url) => {
+        if (url.includes('generativelanguage.googleapis.com')) {
+          callCount++;
           if (callCount === 1) {
-            // Pass 1: Emit native function call based on prompt type
-            if (prompt.toLowerCase().includes('sip')) {
+            // Pass 1: Emit native function calls based on request type
+            if (requestIndex % 3 === 1) {
               return {
                 data: {
-                  candidates: [{
-                    content: { parts: [{ functionCall: { name: 'sip_projection', args: { monthlyInvestment: 25000, annualRate: 0.12, years: 15 } } }] },
-                    finishReason: 'STOP',
-                  }],
+                  candidates: [
+                    {
+                      content: {
+                        parts: [
+                          {
+                            functionCall: {
+                              name: 'sip_projection',
+                              args: { monthlyInvestment: 25000, annualRate: 0.12, years: 15 },
+                            },
+                          },
+                        ],
+                      },
+                      finishReason: 'STOP',
+                    },
+                  ],
                   usageMetadata: { totalTokenCount: 100 },
                 },
               };
-            } else if (prompt.toLowerCase().includes('tax')) {
+            } else if (requestIndex % 3 === 2) {
               return {
                 data: {
-                  candidates: [{
-                    content: { parts: [{ functionCall: { name: 'tax_calculator', args: { income: 1800000, regime: 'new' } } }] },
-                    finishReason: 'STOP',
-                  }],
+                  candidates: [
+                    {
+                      content: {
+                        parts: [
+                          {
+                            functionCall: {
+                              name: 'tax_calculator',
+                              args: { income: 1800000, regime: 'new' },
+                            },
+                          },
+                        ],
+                      },
+                      finishReason: 'STOP',
+                    },
+                  ],
                   usageMetadata: { totalTokenCount: 100 },
                 },
               };
             } else {
               return {
                 data: {
-                  candidates: [{
-                    content: { parts: [{ functionCall: { name: 'rebalance_calculator', args: { current_allocation: { Equity_MF: 75, Debt_MF: 25 }, target_allocation: { Equity_MF: 60, Debt_MF: 40 }, threshold: 5 } } }] },
-                    finishReason: 'STOP',
-                  }],
+                  candidates: [
+                    {
+                      content: {
+                        parts: [
+                          {
+                            functionCall: {
+                              name: 'rebalance_calculator',
+                              args: {
+                                current_allocation: { Equity_MF: 70, Debt_MF: 30 },
+                                target_allocation: { Equity_MF: 50, Debt_MF: 50 },
+                                threshold: 5,
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      finishReason: 'STOP',
+                    },
+                  ],
                   usageMetadata: { totalTokenCount: 100 },
                 },
               };
             }
           } else {
-            // Pass 2: Emits grounded final answer containing exact tool calculation output
-            return {
-              data: {
-                candidates: [{
-                  content: { parts: [{ text: 'Grounded computation result: calculated accurately via financial engine.' }] },
-                  finishReason: 'STOP',
-                }],
-                usageMetadata: { totalTokenCount: 140 },
-              },
-            };
+            // Pass 2: Emit grounded text response
+            if (!isMismatched) {
+              // Accurate numbers matching tool calculation outputs
+              if (requestIndex % 3 === 1) {
+                return {
+                  data: {
+                    candidates: [
+                      {
+                        content: {
+                          parts: [{ text: 'Based on exact calculation, your monthly SIP of ₹25,000 for 15 years at 12% annual return will accumulate to ₹12,614,400.' }],
+                        },
+                        finishReason: 'STOP',
+                      },
+                    ],
+                    usageMetadata: { totalTokenCount: 140 },
+                  },
+                };
+              } else if (requestIndex % 3 === 2) {
+                return {
+                  data: {
+                    candidates: [
+                      {
+                        content: {
+                          parts: [{ text: 'Your calculated tax payable under the new regime is ₹150,800 on a taxable income of ₹1,725,000.' }],
+                        },
+                        finishReason: 'STOP',
+                      },
+                    ],
+                    usageMetadata: { totalTokenCount: 140 },
+                  },
+                };
+              } else {
+                return {
+                  data: {
+                    candidates: [
+                      {
+                        content: {
+                          parts: [{ text: 'Rebalance recommended: reduce Equity_MF by 20% to reach 50% target allocation.' }],
+                        },
+                        finishReason: 'STOP',
+                      },
+                    ],
+                    usageMetadata: { totalTokenCount: 140 },
+                  },
+                };
+              }
+            } else {
+              // Intentionally Mismatched Numbers to verify metric falsifiability!
+              if (requestIndex % 3 === 1) {
+                return {
+                  data: {
+                    candidates: [
+                      {
+                        content: {
+                          parts: [{ text: 'Based on exact calculation, your monthly SIP of ₹25,000 for 15 years at 12% annual return will accumulate to ₹99,999,999.' }],
+                        },
+                        finishReason: 'STOP',
+                      },
+                    ],
+                    usageMetadata: { totalTokenCount: 140 },
+                  },
+                };
+              } else if (requestIndex % 3 === 2) {
+                return {
+                  data: {
+                    candidates: [
+                      {
+                        content: {
+                          parts: [{ text: 'Your calculated tax payable under the new regime is ₹50,000.' }],
+                        },
+                        finishReason: 'STOP',
+                      },
+                    ],
+                    usageMetadata: { totalTokenCount: 140 },
+                  },
+                };
+              } else {
+                return {
+                  data: {
+                    candidates: [
+                      {
+                        content: {
+                          parts: [{ text: 'Rebalance recommended: reduce Equity_MF by 99% to reach target allocation.' }],
+                        },
+                        finishReason: 'STOP',
+                      },
+                    ],
+                    usageMetadata: { totalTokenCount: 140 },
+                  },
+                };
+              }
+            }
           }
-        } else {
-          return {
-            data: {
-              candidates: [{
-                content: { parts: [{ text: 'Direct general response.' }] },
-                finishReason: 'STOP',
-              }],
-              usageMetadata: { totalTokenCount: 50 },
-            },
-          };
         }
-      }
-      throw new Error(`Unexpected URL: ${url}`);
-    };
+        throw new Error(`Unexpected URL: ${url}`);
+      };
 
-    try {
-      const result = await processChat({
-        userId: mockUserId,
-        user: mockUser,
-        message: prompt,
-        sessionId,
+      // Execute request over HTTP wire
+      const messageText = requestIndex % 3 === 1
+        ? `Calculate SIP projection ${i}`
+        : requestIndex % 3 === 2
+        ? `Compute tax for income ${i}`
+        : `Optimize portfolio strategy ${i}`;
+
+      const res = await rawRequest(`${baseUrl}/api/chat/message`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${validToken}`,
+        },
+        body: JSON.stringify({ message: messageText, session_id: `http-session-${i}` }),
       });
 
-      if (result.tool_results && result.tool_results.length > 0) {
-        toolExecutedTurns++;
-      } else {
-        directTurns++;
+      if (res.status !== 200) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
       }
-    } finally {
-      (await import('axios')).default.post = originalPost;
     }
-  }
+  });
 
-  const finalMetricValue = PrometheusMetrics.counters.arithmetic_corrections_post_pass2_total;
+  (await import('axios')).default.post = originalPost;
+
   const snapshot = PrometheusMetrics.getSnapshotJSON();
+  const postPass2Metric = snapshot.counters.arithmetic_corrections_post_pass2_total;
+  const toolExecTotal = snapshot.counters.tool_execution_total;
 
   console.log('----------------------------------------------------------------');
-  console.log('BATCH EXECUTION SUMMARY');
+  console.log('FALSIFIABLE METRIC MEASUREMENT RESULTS');
   console.log('----------------------------------------------------------------');
-  console.log(`Total Chat Turns Executed : ${prompts.length}`);
-  console.log(`Tool-Grounded Turns       : ${toolExecutedTurns}`);
-  console.log(`Direct Answer Turns       : ${directTurns}`);
-  console.log(`Initial Metric Value      : ${initialMetricValue}`);
-  console.log(`Final Metric Value        : ${finalMetricValue}`);
+  console.log(`Total HTTP Chat Requests        : 30`);
+  console.log(`Matching Output Turns           : ${matchingTurnsCount}`);
+  console.log(`Mismatched Output Turns         : ${mismatchedTurnsCount}`);
+  console.log(`tool_execution_total Counter    : ${toolExecTotal}`);
+  console.log(`arithmetic_corrections_post_pass2_total: ${postPass2Metric}`);
   console.log('----------------------------------------------------------------');
   console.log('PROMETHEUS METRICS SNAPSHOT JSON:');
   console.log(JSON.stringify(snapshot, null, 2));
   console.log('================================================================');
 }
 
-runBatchVerification().catch(err => {
-  console.error('[Batch Measurement Failed]:', err);
+runFalsifiableMetricMeasurement().catch(err => {
+  console.error('[Falsifiable Measurement Failed]:', err);
   process.exit(1);
 });

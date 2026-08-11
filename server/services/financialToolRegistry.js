@@ -4,6 +4,7 @@ import { reverseSIP } from './monteCarloEngine.js';
 import { computeTax } from './taxEngine.js';
 import { computeXIRR } from './xirrCalculator.js';
 import { solveMinVariance, solveMaxSharpe, solveRiskParity, computeRebalance } from './portfolioEngine.js';
+import { PrometheusMetrics } from './metricsCollector.js';
 
 /**
  * WealthGenie Centralized Financial Tool Registry
@@ -58,6 +59,7 @@ class ToolRegistry {
     const tool = this.getTool(name);
 
     if (!tool) {
+      PrometheusMetrics.recordToolExecution(name, false);
       return {
         success: false,
         error: `Unknown tool requested: '${name}'`,
@@ -69,6 +71,7 @@ class ToolRegistry {
     // Validate inputs against tool Joi schema
     const { error, value } = tool.schema.validate(args, { stripUnknown: true });
     if (error) {
+      PrometheusMetrics.recordToolExecution(name, false);
       return {
         success: false,
         error: `Invalid tool arguments for '${name}': ${error.details.map(d => d.message).join(', ')}`,
@@ -79,6 +82,7 @@ class ToolRegistry {
 
     try {
       const result = await tool.executor(value, context);
+      PrometheusMetrics.recordToolExecution(name, true);
       return {
         success: true,
         result,
@@ -86,6 +90,7 @@ class ToolRegistry {
       };
     } catch (execErr) {
       console.error(`[ToolRegistry] Error executing tool '${name}':`, execErr.message);
+      PrometheusMetrics.recordToolExecution(name, false);
       return {
         success: false,
         error: `Execution error in '${name}': ${execErr.message}`,
