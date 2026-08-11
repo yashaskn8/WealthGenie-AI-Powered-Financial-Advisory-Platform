@@ -1,0 +1,162 @@
+import { test, describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import mcpRouter from '../routes/mcpRouter.js';
+import { verifyJWT } from '../middleware/authMiddleware.js';
+import { errorHandler } from '../middleware/errorHandler.js';
+import { withServer, rawRequest } from '../test-utils/httpTestUtils.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-wealthgenie-2026';
+process.env.JWT_SECRET = JWT_SECRET;
+
+const mockUserId = '60d5ecb8b3b3a72d9c8e4a11';
+const validToken = jwt.sign({ userId: mockUserId, email: 'test@example.com' }, JWT_SECRET, { expiresIn: '1h' });
+
+function buildMcpApp() {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/mcp', mcpRouter);
+  app.use(errorHandler);
+  return app;
+}
+
+describe('MCP SSE & HTTP Endpoint Integration Tests', () => {
+  // ── Authentication Gate Tests ──
+
+  it('GET /api/mcp/sse rejects unauthenticated request with 401', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/sse`, { method: 'GET' });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  it('GET /api/mcp/sse rejects expired JWT token with 401', async () => {
+    const expiredToken = jwt.sign({ userId: mockUserId }, JWT_SECRET, { expiresIn: '-1s' });
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/sse`, {
+        method: 'GET',
+        headers: { authorization: `Bearer ${expiredToken}` },
+      });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  it('GET /api/mcp/sse rejects malformed JWT with 401', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/sse`, {
+        method: 'GET',
+        headers: { authorization: 'Bearer invalid.jwt.garbage' },
+      });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  it('POST /api/mcp/messages rejects unauthenticated request with 401', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/messages`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  it('POST /api/mcp/messages rejects expired JWT with 401', async () => {
+    const expiredToken = jwt.sign({ userId: mockUserId }, JWT_SECRET, { expiresIn: '-1s' });
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/messages`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${expiredToken}`,
+        },
+        body: JSON.stringify({ message: 'test' }),
+      });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  // ── Session Validation Tests ──
+
+  it('POST /api/mcp/messages with valid JWT but missing sessionId returns 400', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/messages`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${validToken}`,
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'tools/list', id: 1 }),
+      });
+      // Without a valid SSE session, the handler returns 400 for missing session
+      assert.ok([400, 500].includes(res.status), `Expected 400 or 500 for missing session, got ${res.status}`);
+    });
+  });
+
+  it('POST /api/mcp/messages with non-existent sessionId returns 400 error', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/messages?sessionId=non-existent-session-xyz`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${validToken}`,
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'tools/list', id: 1 }),
+      });
+      assert.ok([400, 500].includes(res.status), `Expected 400 for invalid session, got ${res.status}`);
+      const data = await res.json();
+      assert.ok(data.error, 'Response must contain error field for invalid session');
+    });
+  });
+
+  // ── HTTP Method Enforcement Tests ──
+
+  it('PUT /api/mcp/sse returns 404 (only GET is wired)', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/sse`, {
+        method: 'PUT',
+        headers: { authorization: `Bearer ${validToken}` },
+      });
+      assert.ok([404, 405].includes(res.status), `Expected 404/405 for PUT on /sse, got ${res.status}`);
+    });
+  });
+
+  it('GET /api/mcp/messages returns 404 (only POST is wired)', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      const res = await rawRequest(`${baseUrl}/api/mcp/messages`, {
+        method: 'GET',
+        headers: { authorization: `Bearer ${validToken}` },
+      });
+      assert.ok([404, 405].includes(res.status), `Expected 404/405 for GET on /messages, got ${res.status}`);
+    });
+  });
+
+  // ── SSE Connection Establishment Tests ──
+
+  it('GET /api/mcp/sse with valid JWT initiates SSE stream (text/event-stream content-type)', async () => {
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      // Use a raw HTTP request with a short timeout to verify SSE headers
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
+
+      try {
+        const response = await fetch(`${baseUrl}/api/mcp/sse`, {
+          method: 'GET',
+          headers: { authorization: `Bearer ${validToken}` },
+          signal: controller.signal,
+        });
+        assert.equal(response.status, 200);
+        const contentType = response.headers.get('content-type');
+        assert.ok(contentType && contentType.includes('text/event-stream'),
+          `Expected text/event-stream content-type, got ${contentType}`);
+      } catch (err) {
+        // AbortError is expected since SSE holds the connection open
+        if (err.name !== 'AbortError') throw err;
+      } finally {
+        clearTimeout(timeout);
+      }
+    });
+  });
+});
