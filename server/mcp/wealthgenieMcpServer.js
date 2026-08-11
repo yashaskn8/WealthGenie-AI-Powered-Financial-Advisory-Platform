@@ -102,7 +102,7 @@ export class WealthGenieMcpServer {
   async connectStdio() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.info('[WealthGenieMcpServer] MCP Server connected via stdio transport.');
+    console.error('[WealthGenieMcpServer] MCP Server connected via stdio transport.');
   }
 
   /**
@@ -134,3 +134,10 @@ export class WealthGenieMcpServer {
 }
 
 export const mcpServerInstance = new WealthGenieMcpServer();
+
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('wealthgenieMcpServer.js')) {
+  mcpServerInstance.connectStdio().catch(err => {
+    console.error('[WealthGenieMcpServer] Failed to connect stdio transport:', err);
+    process.exit(1);
+  });
+}
