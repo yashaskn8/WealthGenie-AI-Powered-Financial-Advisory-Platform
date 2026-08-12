@@ -25,18 +25,14 @@ class FixedSizeChunker(BaseChunker):
             chunk_text = content[idx : idx + self.chunk_size].strip()
             if chunk_text:
                 chunk_id = f"{document.document_id}#{chunk_idx:04d}"
-                metadata = ChunkMetadata(
-                    chunk_id=chunk_id,
-                    document_id=document.document_id,
-                    chunk_index=chunk_idx,
-                    title=document.metadata.title,
-                    source=document.metadata.source,
-                    publication_date=document.metadata.publication_date,
-                    document_type=document.metadata.document_type,
-                    version=document.metadata.version,
-                    author=document.metadata.author,
-                    token_count=len(chunk_text),
-                )
+                meta_dict = document.metadata.model_dump()
+                meta_dict.update({
+                    "chunk_id": chunk_id,
+                    "document_id": document.document_id,
+                    "chunk_index": chunk_idx,
+                    "token_count": len(chunk_text),
+                })
+                metadata = ChunkMetadata(**meta_dict)
                 chunks.append(
                     TextChunk(
                         chunk_id=chunk_id,

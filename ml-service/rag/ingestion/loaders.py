@@ -28,7 +28,14 @@ class DocumentLoader:
         hasher.update(content.encode("utf-8"))
         return hasher.hexdigest()[:16]
 
-    def load_file(self, file_path: Path, title: Optional[str] = None, author: Optional[str] = None) -> Document:
+    def load_file(
+        self,
+        file_path: Path,
+        title: Optional[str] = None,
+        author: Optional[str] = None,
+        effective_date: Optional[str] = None,
+        source_trust_tier: Optional[str] = None,
+    ) -> Document:
         """Loads a document file from disk based on extension."""
         if not file_path.exists():
             raise DocumentLoaderError(f"File not found at path: {file_path}")
@@ -59,24 +66,43 @@ class DocumentLoader:
             doc_type = "text"
 
         doc_id = self.compute_doc_id(content, str(file_path))
-        metadata = DocumentMetadata(
-            title=doc_title,
-            source=source,
-            document_type=doc_type,
-            author=author or "Authoritative Financial Source",
-        )
+        meta_kwargs = {
+            "title": doc_title,
+            "source": source,
+            "document_type": doc_type,
+            "author": author or "Authoritative Financial Source",
+        }
+        if effective_date:
+            meta_kwargs["effective_date"] = effective_date
+        if source_trust_tier:
+            meta_kwargs["source_trust_tier"] = source_trust_tier
 
+        metadata = DocumentMetadata(**meta_kwargs)
         return Document(document_id=doc_id, content=content, metadata=metadata)
 
-    def load_text(self, text: str, title: str, source: str = "direct_input", author: str = None) -> Document:
+    def load_text(
+        self,
+        text: str,
+        title: str,
+        source: str = "direct_input",
+        author: Optional[str] = None,
+        effective_date: Optional[str] = None,
+        source_trust_tier: Optional[str] = None,
+    ) -> Document:
         """Loads a raw text string directly as a Document."""
         doc_id = self.compute_doc_id(text, source)
-        metadata = DocumentMetadata(
-            title=title,
-            source=source,
-            document_type="text",
-            author=author or "Financial Advisor",
-        )
+        meta_kwargs = {
+            "title": title,
+            "source": source,
+            "document_type": "text",
+            "author": author or "Financial Advisor",
+        }
+        if effective_date:
+            meta_kwargs["effective_date"] = effective_date
+        if source_trust_tier:
+            meta_kwargs["source_trust_tier"] = source_trust_tier
+
+        metadata = DocumentMetadata(**meta_kwargs)
         return Document(document_id=doc_id, content=text, metadata=metadata)
 
     def _load_csv(self, file_path: Path) -> str:

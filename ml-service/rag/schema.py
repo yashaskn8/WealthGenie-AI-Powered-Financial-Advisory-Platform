@@ -16,6 +16,8 @@ class DocumentMetadata(BaseModel):
     document_type: str = Field("markdown", description="pdf, markdown, text, html, or csv")
     version: str = Field("1.0", description="Document schema version")
     author: Optional[str] = Field(None, description="Authoring authority (e.g. Income Tax Dept, AMFI)")
+    effective_date: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d"), description="Effective date of regulations (YYYY-MM-DD)")
+    source_trust_tier: str = Field("government_official", description="government_official, regulatory_circular, or internal_analysis")
     tenant_id: str = Field("default", description="Tenant isolation scope identifier")
     custom_metadata: Dict[str, Any] = Field(default_factory=dict)
 

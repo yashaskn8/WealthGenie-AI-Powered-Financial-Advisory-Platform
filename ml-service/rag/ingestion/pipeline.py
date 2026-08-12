@@ -36,14 +36,42 @@ class IngestionPipeline:
         self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or PersistentVectorStore()
 
-    def ingest_file(self, file_path: Path, title: Optional[str] = None, author: Optional[str] = None) -> Dict[str, Any]:
+    def ingest_file(
+        self,
+        file_path: Path,
+        title: Optional[str] = None,
+        author: Optional[str] = None,
+        effective_date: Optional[str] = None,
+        source_trust_tier: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Loads and ingests a single document file into the RAG vector store."""
-        document = self.loader.load_file(file_path, title=title, author=author)
+        document = self.loader.load_file(
+            file_path,
+            title=title,
+            author=author,
+            effective_date=effective_date,
+            source_trust_tier=source_trust_tier,
+        )
         return self.ingest_document(document)
 
-    def ingest_text(self, text: str, title: str, source: str = "direct_input", author: Optional[str] = None) -> Dict[str, Any]:
+    def ingest_text(
+        self,
+        text: str,
+        title: str,
+        source: str = "direct_input",
+        author: Optional[str] = None,
+        effective_date: Optional[str] = None,
+        source_trust_tier: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Ingests raw text directly into the RAG vector store."""
-        document = self.loader.load_text(text, title=title, source=source, author=author)
+        document = self.loader.load_text(
+            text,
+            title=title,
+            source=source,
+            author=author,
+            effective_date=effective_date,
+            source_trust_tier=source_trust_tier,
+        )
         return self.ingest_document(document)
 
     def ingest_document(self, document: Document) -> Dict[str, Any]:
