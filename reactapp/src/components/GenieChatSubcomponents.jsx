@@ -26,14 +26,26 @@ export function CitationsList({ citations }) {
       </button>
       {isOpen && (
         <div className="citations-list">
-          {citations.map((c, i) => (
-            <div key={i} className="citation-item">
-              <div className="citation-title">
-                <span className="citation-idx">[{c.citation_id || i + 1}]</span> {c.document_title || c.source || 'Knowledge Base'}
+          {citations.map((c, i) => {
+            const scorePct = c.relevance_score ? Math.round(c.relevance_score * 100) : null;
+            return (
+              <div key={i} className="citation-item" style={{ padding: '6px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', fontSize: '0.8rem' }}>
+                <div className="citation-title" style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>
+                    <span className="citation-idx" style={{ color: '#38bdf8', marginRight: '4px' }}>[{c.citation_id || i + 1}]</span> 
+                    {c.document_title || 'Regulatory Document'} 
+                    <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: '6px', fontSize: '0.75rem' }}>({c.source || 'Knowledge Base'}{c.chunk_id ? ` #${c.chunk_id.split('#')[1] || c.chunk_id}` : ''})</span>
+                  </span>
+                  {scorePct !== null && (
+                    <span style={{ fontSize: '0.7rem', padding: '1px 6px', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', borderRadius: '4px' }}>
+                      {scorePct}% Match
+                    </span>
+                  )}
+                </div>
+                {c.excerpt && <div className="citation-excerpt" style={{ marginTop: '4px', color: '#cbd5e1', fontStyle: 'italic', fontSize: '0.75rem' }}>"{c.excerpt}"</div>}
               </div>
-              {c.excerpt && <div className="citation-excerpt">"{c.excerpt}"</div>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
