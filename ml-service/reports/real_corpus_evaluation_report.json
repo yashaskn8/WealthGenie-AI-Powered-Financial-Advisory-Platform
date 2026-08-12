@@ -1,0 +1,2831 @@
+{
+  "report_id": "rag_eval_v2_20260812_134940",
+  "timestamp_utc": "2026-08-12T13:49:40.219655+00:00",
+  "corpus_info": {
+    "total_chunks_in_store": 508,
+    "questions_evaluated": 70,
+    "questions_file": "eval_questions_v2.json"
+  },
+  "pipeline_config": {
+    "retrieval_strategy": "hybrid",
+    "reranker_strategy": "no_op",
+    "top_k": 4,
+    "similarity_threshold": 0.1,
+    "embedding_dim": 384
+  },
+  "aggregate_metrics": {
+    "recall_at_4": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "precision_at_4": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "mrr": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "hit_rate": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "ndcg_at_4": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "context_coverage": {
+      "mean": 0.6139,
+      "min": 0.2,
+      "max": 1.0
+    },
+    "chunk_diversity": {
+      "mean": 0.4446,
+      "min": 0.2483,
+      "max": 0.6331
+    },
+    "citation_accuracy": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "grounding_score": {
+      "mean": 0.3184,
+      "min": 0.1,
+      "max": 0.75
+    }
+  },
+  "source_provenance": {
+    "source_hit_count": 70,
+    "total_questions": 70,
+    "source_hit_rate": 1.0
+  },
+  "latency_summary": {
+    "mean_ms": 38.54,
+    "p50_ms": 37.14,
+    "p90_ms": 40.75,
+    "p99_ms": 85.67,
+    "min_ms": 26.85,
+    "max_ms": 175.87
+  },
+  "category_breakdowns": {
+    "tax_deduction": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.6037,
+      "chunk_diversity": 0.446,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.3541,
+      "question_count": 12,
+      "source_hit_rate": 1.0
+    },
+    "tax_regime": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.6175,
+      "chunk_diversity": 0.4037,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.3596,
+      "question_count": 10,
+      "source_hit_rate": 1.0
+    },
+    "capital_gains": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.6008,
+      "chunk_diversity": 0.5738,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.2306,
+      "question_count": 6,
+      "source_hit_rate": 1.0
+    },
+    "mutual_fund": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.6438,
+      "chunk_diversity": 0.4427,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.2993,
+      "question_count": 22,
+      "source_hit_rate": 1.0
+    },
+    "dicgc": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.4397,
+      "chunk_diversity": 0.3921,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.2389,
+      "question_count": 8,
+      "source_hit_rate": 1.0
+    },
+    "rbi_bonds": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.6585,
+      "chunk_diversity": 0.4464,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.3519,
+      "question_count": 7,
+      "source_hit_rate": 1.0
+    },
+    "sgb": {
+      "recall_at_4": 1.0,
+      "precision_at_4": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 1.0,
+      "context_coverage": 0.7314,
+      "chunk_diversity": 0.4575,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.4204,
+      "question_count": 5,
+      "source_hit_rate": 1.0
+    }
+  },
+  "per_question_results": [
+    {
+      "question_index": 1,
+      "question": "How much tax do I save if I put 50k in NPS every year?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.25,
+        "chunk_diversity": 0.5751,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 175.87,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9534
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.4919
+        }
+      ]
+    },
+    {
+      "question_index": 2,
+      "question": "What is the maximum I can claim under 80C?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.4853,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.4545
+      },
+      "query_latency_ms": 33.13,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9997
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9552
+        }
+      ]
+    },
+    {
+      "question_index": 3,
+      "question": "I earn 15 lakhs a year, which tax regime should I pick?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4286,
+        "chunk_diversity": 0.5858,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2727
+      },
+      "query_latency_ms": 41.42,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.5234
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.515
+        }
+      ]
+    },
+    {
+      "question_index": 4,
+      "question": "Is there any tax on selling equity mutual funds after 1 year?",
+      "category": "capital_gains",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.4817,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 40.04,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9924
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9863
+        }
+      ]
+    },
+    {
+      "question_index": 5,
+      "question": "What is the LTCG exemption limit on equity shares?",
+      "category": "capital_gains",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.6114,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3333
+      },
+      "query_latency_ms": 35.9,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9835
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9775
+        }
+      ]
+    },
+    {
+      "question_index": 6,
+      "question": "How are debt mutual fund gains taxed if I bought them after April 2023?",
+      "category": "capital_gains",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6,
+        "chunk_diversity": 0.5764,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 44.84,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9767
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.5123
+        }
+      ]
+    },
+    {
+      "question_index": 7,
+      "question": "What is the standard deduction under the new tax regime?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8,
+        "chunk_diversity": 0.3912,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3636
+      },
+      "query_latency_ms": 40.73,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.947
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9463
+        }
+      ]
+    },
+    {
+      "question_index": 8,
+      "question": "Do I get 80D deduction in the new tax regime?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 1.0,
+        "chunk_diversity": 0.3825,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5455
+      },
+      "query_latency_ms": 37.8,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9687
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.5081
+        }
+      ]
+    },
+    {
+      "question_index": 9,
+      "question": "How much health insurance premium can I deduct for my parents who are senior citizens?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.625,
+        "chunk_diversity": 0.5424,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2727
+      },
+      "query_latency_ms": 39.55,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9995
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9938
+        }
+      ]
+    },
+    {
+      "question_index": 10,
+      "question": "What is the surcharge rate if my income is above 1 crore?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.3581,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.4167
+      },
+      "query_latency_ms": 36.97,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9618
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.5041
+        }
+      ]
+    },
+    {
+      "question_index": 11,
+      "question": "How is HRA exemption calculated?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.4061,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 39.23,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9761
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9387
+        }
+      ]
+    },
+    {
+      "question_index": 12,
+      "question": "What is the Section 87A rebate threshold under the new regime?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.2729,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.4615
+      },
+      "query_latency_ms": 39.55,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9992
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9927
+        }
+      ]
+    },
+    {
+      "question_index": 13,
+      "question": "If I earn 12.5 lakhs, will I get the full rebate under new regime?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.625,
+        "chunk_diversity": 0.3623,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5
+      },
+      "query_latency_ms": 39.12,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9995
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.948
+        }
+      ]
+    },
+    {
+      "question_index": 14,
+      "question": "What is STCG tax rate on listed equity shares now?",
+      "category": "capital_gains",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.5667,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2727
+      },
+      "query_latency_ms": 35.69,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.5041
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.4959
+        }
+      ]
+    },
+    {
+      "question_index": 15,
+      "question": "Are gold ETF gains taxed differently from physical gold?",
+      "category": "capital_gains",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.3333,
+        "chunk_diversity": 0.5735,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 39.46,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9685
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9534
+        }
+      ]
+    },
+    {
+      "question_index": 16,
+      "question": "What deductions can I claim in the old tax regime that are not available in new?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.3333,
+        "chunk_diversity": 0.4772,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5
+      },
+      "query_latency_ms": 37.62,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9926
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9396
+        }
+      ]
+    },
+    {
+      "question_index": 17,
+      "question": "How much can I invest in ELSS for tax saving?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.4149,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.65
+      },
+      "query_latency_ms": 37.42,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9839
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.9683
+        }
+      ]
+    },
+    {
+      "question_index": 18,
+      "question": "Is PPF interest taxable?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 1.0,
+        "chunk_diversity": 0.5511,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3571
+      },
+      "query_latency_ms": 35.56,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9764
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9709
+        }
+      ]
+    },
+    {
+      "question_index": 19,
+      "question": "What is the tax slab for income between 8 to 12 lakhs under new regime?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.4282,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.1429
+      },
+      "query_latency_ms": 45.15,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9694
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9326
+        }
+      ]
+    },
+    {
+      "question_index": 20,
+      "question": "Can I claim both 80C and 80CCD(1B) deductions?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.4771,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 36.87,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9462
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9385
+        }
+      ]
+    },
+    {
+      "question_index": 21,
+      "question": "What is the lock-in period for ELSS mutual funds?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.3956,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5333
+      },
+      "query_latency_ms": 40.92,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9921
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.984
+        }
+      ]
+    },
+    {
+      "question_index": 22,
+      "question": "What types of mutual funds does SEBI allow?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4286,
+        "chunk_diversity": 0.5014,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.1111
+      },
+      "query_latency_ms": 35.67,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9458
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9394
+        }
+      ]
+    },
+    {
+      "question_index": 23,
+      "question": "What is the minimum equity allocation for a flexi cap fund?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.389,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2
+      },
+      "query_latency_ms": 41.38,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9997
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9849
+        }
+      ]
+    },
+    {
+      "question_index": 24,
+      "question": "How does the risk-o-meter work for mutual funds?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4,
+        "chunk_diversity": 0.4517,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 33.39,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9849
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9767
+        }
+      ]
+    },
+    {
+      "question_index": 25,
+      "question": "What are the six risk levels in the SEBI risk-o-meter?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8,
+        "chunk_diversity": 0.5561,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 35.56,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9683
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9612
+        }
+      ]
+    },
+    {
+      "question_index": 26,
+      "question": "What is the difference between a large cap and mid cap fund?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4,
+        "chunk_diversity": 0.3339,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.25
+      },
+      "query_latency_ms": 32.32,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9923
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9767
+        }
+      ]
+    },
+    {
+      "question_index": 27,
+      "question": "How much overlap is allowed between sectoral mutual fund schemes?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.625,
+        "chunk_diversity": 0.496,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2
+      },
+      "query_latency_ms": 34.56,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9612
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9251
+        }
+      ]
+    },
+    {
+      "question_index": 28,
+      "question": "What is a liquid fund and when should I use it?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4,
+        "chunk_diversity": 0.4893,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5294
+      },
+      "query_latency_ms": 40.4,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9394
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.5081
+        }
+      ]
+    },
+    {
+      "question_index": 29,
+      "question": "Which mutual fund category is best for emergency funds?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.4255,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.75
+      },
+      "query_latency_ms": 28.98,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 1.0
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.9779
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9618
+        }
+      ]
+    },
+    {
+      "question_index": 30,
+      "question": "What is the maximum number of stocks in a focused fund?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.4394,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.25
+      },
+      "query_latency_ms": 38.86,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9845
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.984
+        }
+      ]
+    },
+    {
+      "question_index": 31,
+      "question": "How often is the risk-o-meter reviewed by fund houses?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4,
+        "chunk_diversity": 0.4594,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.125
+      },
+      "query_latency_ms": 39.41,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.999
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9928
+        }
+      ]
+    },
+    {
+      "question_index": 32,
+      "question": "What is a balanced advantage fund?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.3864,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.1
+      },
+      "query_latency_ms": 36.41,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9839
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9607
+        }
+      ]
+    },
+    {
+      "question_index": 33,
+      "question": "Is an arbitrage fund taxed like equity or debt?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.4031,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3571
+      },
+      "query_latency_ms": 32.38,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9556
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9468
+        }
+      ]
+    },
+    {
+      "question_index": 34,
+      "question": "What is a corporate bond fund and what credit rating do its holdings need?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.625,
+        "chunk_diversity": 0.4449,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2
+      },
+      "query_latency_ms": 32.75,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9761
+        }
+      ]
+    },
+    {
+      "question_index": 35,
+      "question": "What is the Macaulay Duration range for short duration debt funds?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.3068,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3333
+      },
+      "query_latency_ms": 38.15,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9765
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.933
+        }
+      ]
+    },
+    {
+      "question_index": 36,
+      "question": "What is the minimum allocation to mid cap stocks in a multi cap fund?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.2483,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2727
+      },
+      "query_latency_ms": 30.7,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9609
+        }
+      ]
+    },
+    {
+      "question_index": 37,
+      "question": "Are gilt funds safe from credit default?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.5491,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.25
+      },
+      "query_latency_ms": 36.05,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9917
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9762
+        }
+      ]
+    },
+    {
+      "question_index": 38,
+      "question": "What is the equity allocation range for aggressive hybrid funds?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.3862,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.1818
+      },
+      "query_latency_ms": 37.31,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9771
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9549
+        }
+      ]
+    },
+    {
+      "question_index": 39,
+      "question": "How is small cap defined by AMFI market cap ranking?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8,
+        "chunk_diversity": 0.4975,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 33.19,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9761
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9387
+        }
+      ]
+    },
+    {
+      "question_index": 40,
+      "question": "What is an overnight fund?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.4598,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5625
+      },
+      "query_latency_ms": 34.81,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.4919
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.4919
+        }
+      ]
+    },
+    {
+      "question_index": 41,
+      "question": "If my bank fails, how much of my deposit is insured?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6,
+        "chunk_diversity": 0.523,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 32.61,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9685
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9612
+        }
+      ]
+    },
+    {
+      "question_index": 42,
+      "question": "Does DICGC insurance cover mutual fund investments?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4286,
+        "chunk_diversity": 0.3302,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 39.92,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9839
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9683
+        }
+      ]
+    },
+    {
+      "question_index": 43,
+      "question": "Is my FD in a cooperative bank covered by deposit insurance?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4,
+        "chunk_diversity": 0.514,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 38.48,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9396
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9186
+        }
+      ]
+    },
+    {
+      "question_index": 44,
+      "question": "If I have a joint account and a single account in the same bank, do I get separate DICGC coverage?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5556,
+        "chunk_diversity": 0.4283,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2
+      },
+      "query_latency_ms": 42.53,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9761
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9685
+        }
+      ]
+    },
+    {
+      "question_index": 45,
+      "question": "Who pays for the DICGC insurance premium?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.2872,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 33.45,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9761
+        }
+      ]
+    },
+    {
+      "question_index": 46,
+      "question": "Are government deposits covered under DICGC?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.2,
+        "chunk_diversity": 0.2872,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 32.27,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9612
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9534
+        }
+      ]
+    },
+    {
+      "question_index": 47,
+      "question": "What is the tenure of RBI floating rate savings bonds?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.4229,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3636
+      },
+      "query_latency_ms": 36.29,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9541
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9541
+        }
+      ]
+    },
+    {
+      "question_index": 48,
+      "question": "How is the interest rate on floating rate bonds calculated?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8,
+        "chunk_diversity": 0.474,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3636
+      },
+      "query_latency_ms": 40.65,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9761
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9607
+        }
+      ]
+    },
+    {
+      "question_index": 49,
+      "question": "Can I sell RBI floating rate bonds in the stock market?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.4229,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3636
+      },
+      "query_latency_ms": 38.52,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9845
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.984
+        }
+      ]
+    },
+    {
+      "question_index": 50,
+      "question": "Is interest from floating rate savings bonds taxable?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.4503,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2
+      },
+      "query_latency_ms": 34.12,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9612
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9541
+        }
+      ]
+    },
+    {
+      "question_index": 51,
+      "question": "Can senior citizens redeem floating rate bonds early?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.7143,
+        "chunk_diversity": 0.4186,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6
+      },
+      "query_latency_ms": 26.85,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.9612
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9541
+        }
+      ]
+    },
+    {
+      "question_index": 52,
+      "question": "What is the minimum investment in RBI floating rate bonds?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.4112,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 34.39,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.984
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.963
+        }
+      ]
+    },
+    {
+      "question_index": 53,
+      "question": "How often does the floating rate bond interest rate reset?",
+      "category": "rbi_bonds",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.5247,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2727
+      },
+      "query_latency_ms": 38.3,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9611
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9178
+        }
+      ]
+    },
+    {
+      "question_index": 54,
+      "question": "What is a sovereign gold bond and what interest does it pay?",
+      "category": "sgb",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.3453,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2727
+      },
+      "query_latency_ms": 28.92,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9997
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9638
+        }
+      ]
+    },
+    {
+      "question_index": 55,
+      "question": "Is there capital gains tax on gold bonds held to maturity?",
+      "category": "sgb",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.5235,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5
+      },
+      "query_latency_ms": 36.64,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9548
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.9471
+        }
+      ]
+    },
+    {
+      "question_index": 56,
+      "question": "What is the maximum amount of gold bonds I can buy in a year?",
+      "category": "sgb",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.6173,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5625
+      },
+      "query_latency_ms": 40.3,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.5041
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.4959
+        }
+      ]
+    },
+    {
+      "question_index": 57,
+      "question": "Can I pledge sovereign gold bonds as collateral for a loan?",
+      "category": "sgb",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.415,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 33.01,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9992
+        }
+      ]
+    },
+    {
+      "question_index": 58,
+      "question": "What is the lock-in for sovereign gold bonds?",
+      "category": "sgb",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8,
+        "chunk_diversity": 0.3865,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.4667
+      },
+      "query_latency_ms": 32.41,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9771
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9764
+        }
+      ]
+    },
+    {
+      "question_index": 59,
+      "question": "How does the DICGC 5 lakh limit work if I have savings and FD in the same bank?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.3333,
+        "chunk_diversity": 0.4365,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 37.95,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9541
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9541
+        }
+      ]
+    },
+    {
+      "question_index": 60,
+      "question": "What is the difference between ELSS and PPF for tax saving?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4,
+        "chunk_diversity": 0.4726,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5
+      },
+      "query_latency_ms": 39.76,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9683
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.9531
+        }
+      ]
+    },
+    {
+      "question_index": 61,
+      "question": "What is the 4% cess charged on income tax?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.25,
+        "chunk_diversity": 0.4282,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.25
+      },
+      "query_latency_ms": 39.59,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9838
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9833
+        }
+      ]
+    },
+    {
+      "question_index": 62,
+      "question": "How is real estate capital gain taxed if I bought property before July 2024?",
+      "category": "capital_gains",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6,
+        "chunk_diversity": 0.6331,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.1111
+      },
+      "query_latency_ms": 37.66,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9771
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.4959
+        }
+      ]
+    },
+    {
+      "question_index": 63,
+      "question": "What is the preventive health check-up deduction limit under 80D?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.4286,
+        "chunk_diversity": 0.3825,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.5455
+      },
+      "query_latency_ms": 30.98,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9709
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9618
+        }
+      ]
+    },
+    {
+      "question_index": 64,
+      "question": "Can I get deduction for rent if my employer does not give HRA?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_deductions_master_reference.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6,
+        "chunk_diversity": 0.3061,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.125
+      },
+      "query_latency_ms": 40.01,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9761
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9761
+        }
+      ]
+    },
+    {
+      "question_index": 65,
+      "question": "What is the 80TTA deduction for savings account interest?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_deductions_master_reference.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8333,
+        "chunk_diversity": 0.3229,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 38.32,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9541
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9541
+        }
+      ]
+    },
+    {
+      "question_index": 66,
+      "question": "How much interest deduction do senior citizens get under 80TTB?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_deductions_master_reference.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.4164,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 40.29,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9997
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9762
+        }
+      ]
+    },
+    {
+      "question_index": 67,
+      "question": "What is the exit load on liquid fund redemption within 7 days?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.604,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3333
+      },
+      "query_latency_ms": 30.92,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9318
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9314
+        }
+      ]
+    },
+    {
+      "question_index": 68,
+      "question": "Are NBFCs covered under DICGC deposit insurance?",
+      "category": "dicgc",
+      "expected_source": "rbi_and_dicgc_guidelines.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.3302,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.2222
+      },
+      "query_latency_ms": 31.67,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9921
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9764
+        }
+      ]
+    },
+    {
+      "question_index": 69,
+      "question": "What is the credit risk fund category in SEBI classification?",
+      "category": "mutual_fund",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5714,
+        "chunk_diversity": 0.5169,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 32.6,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9562
+        },
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 0.9535
+        }
+      ]
+    },
+    {
+      "question_index": 70,
+      "question": "What is the old tax regime slab for income above 10 lakhs?",
+      "category": "tax_regime",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.3506,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.1429
+      },
+      "query_latency_ms": 33.44,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.512
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.5037
+        }
+      ]
+    }
+  ]
+}
