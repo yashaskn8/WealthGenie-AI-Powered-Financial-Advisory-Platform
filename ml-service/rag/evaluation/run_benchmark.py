@@ -1,0 +1,256 @@
+"""
+WealthGenie RAG Subsystem - Step 3 Evaluation Benchmark Runner
+Loads natural-language user questions from eval_questions_v2.json,
+runs each through the real RAG pipeline, and produces a structured
+evaluation report with per-question and aggregate metrics.
+
+Usage:
+    cd ml-service && python -m rag.evaluation.run_benchmark
+"""
+
+import json
+import logging
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List
+
+# Ensure the ml-service root is on PYTHONPATH
+_script_dir = Path(__file__).resolve().parent
+_ml_service_root = _script_dir.parent.parent
+if str(_ml_service_root) not in sys.path:
+    sys.path.insert(0, str(_ml_service_root))
+
+from model.config import BASE_DIR
+from rag.config import RAGConfig
+from rag.embeddings.dense_embedding import get_embedding_provider
+from rag.evaluation.evaluator import RAGEvaluator
+from rag.retrieval.pipeline import RAGPipeline
+from rag.schema import RAGQueryRequest
+from rag.vector_store.memory_vector_store import PersistentVectorStore
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger("wealthgenie.rag.benchmark_v2")
+
+QUESTIONS_FILE = _script_dir / "eval_questions_v2.json"
+REPORT_DIR = BASE_DIR / "reports"
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
+REPORT_FILE = REPORT_DIR / "real_corpus_evaluation_report.json"
+
+
+def load_questions(path: Path) -> List[Dict[str, Any]]:
+    """Loads evaluation questions from JSON file."""
+    with open(path, "r", encoding="utf-8") as f:
+        questions = json.load(f)
+    logger.info(f"Loaded {len(questions)} evaluation questions from {path.name}")
+    return questions
+
+
+def source_match(retrieved_chunks, expected_source: str) -> bool:
+    """Checks if any retrieved chunk comes from the expected source document."""
+    expected_stem = Path(expected_source).stem.lower()
+    for rc in retrieved_chunks:
+        chunk_source = rc.chunk.metadata.source.lower()
+        chunk_title = rc.chunk.metadata.title.lower()
+        if expected_stem in chunk_source or expected_stem in chunk_title:
+            return True
+        # Also check document_id-based matching
+        if hasattr(rc.chunk.metadata, 'document_id'):
+            doc_id = rc.chunk.metadata.document_id.lower()
+            if expected_stem.replace("_", " ") in doc_id:
+                return True
+    return False
+
+
+def run_benchmark() -> Dict[str, Any]:
+    """Runs the full evaluation benchmark and returns the report."""
+    questions = load_questions(QUESTIONS_FILE)
+
+    # Initialize pipeline with real corpus vector store
+    config = RAGConfig()
+    embedder = get_embedding_provider(config)
+    vector_store = PersistentVectorStore(index_path=config.vector_store_path)
+    pipeline = RAGPipeline(
+        embedder=embedder,
+        vector_store=vector_store,
+        config=config,
+    )
+    evaluator = RAGEvaluator()
+
+    logger.info(
+        f"Pipeline initialized: {len(vector_store._chunks)} chunks in store, "
+        f"strategy={config.retrieval_strategy}, reranker={config.reranker_strategy}"
+    )
+
+    per_question_results: List[Dict[str, Any]] = []
+    category_metrics: Dict[str, List[Dict[str, float]]] = {}
+    total_source_hits = 0
+    total_queries = len(questions)
+    all_latencies: List[float] = []
+
+    for idx, q_item in enumerate(questions, start=1):
+        question = q_item["question"]
+        expected_source = q_item["expected_source"]
+        category = q_item.get("category", "unknown")
+
+        logger.info(f"[{idx}/{total_queries}] Evaluating: {question[:60]}...")
+
+        t0 = time.perf_counter()
+        request = RAGQueryRequest(question=question, include_citations=True)
+        response = pipeline.query(request)
+        query_time_ms = (time.perf_counter() - t0) * 1000.0
+        all_latencies.append(query_time_ms)
+
+        # Invalidate cache so each question gets fresh retrieval
+        pipeline.cache_manager.invalidate_all()
+
+        # Evaluate retrieval quality (no ground truth chunk IDs — self-evaluation mode)
+        eval_result = evaluator.evaluate_query_response(
+            query=question,
+            response=response,
+            ground_truth_chunk_ids=None,
+            k=4,
+        )
+
+        # Source provenance check: did we retrieve from the expected document?
+        hit = source_match(response.retrieved_chunks, expected_source)
+        if hit:
+            total_source_hits += 1
+
+        # Gather top-3 retrieved chunk sources for transparency
+        top_sources = []
+        for rc in response.retrieved_chunks[:3]:
+            top_sources.append({
+                "title": rc.chunk.metadata.title,
+                "source": rc.chunk.metadata.source,
+                "score": round(rc.score, 4),
+            })
+
+        question_result = {
+            "question_index": idx,
+            "question": question,
+            "category": category,
+            "expected_source": expected_source,
+            "source_hit": hit,
+            "metrics": eval_result["metrics"],
+            "query_latency_ms": round(query_time_ms, 2),
+            "chunks_retrieved": eval_result["retrieved_chunk_count"],
+            "citations_count": eval_result["citations_count"],
+            "top_retrieved_sources": top_sources,
+        }
+        per_question_results.append(question_result)
+
+        # Accumulate category-level metrics
+        if category not in category_metrics:
+            category_metrics[category] = []
+        category_metrics[category].append(eval_result["metrics"])
+
+    # Aggregate metrics
+    all_metrics_keys = list(per_question_results[0]["metrics"].keys()) if per_question_results else []
+    aggregate_metrics = {}
+    for key in all_metrics_keys:
+        values = [r["metrics"][key] for r in per_question_results if key in r["metrics"]]
+        aggregate_metrics[key] = {
+            "mean": round(sum(values) / len(values), 4) if values else 0.0,
+            "min": round(min(values), 4) if values else 0.0,
+            "max": round(max(values), 4) if values else 0.0,
+        }
+
+    # Category breakdowns
+    category_summaries = {}
+    for cat, metrics_list in category_metrics.items():
+        cat_summary = {}
+        for key in all_metrics_keys:
+            values = [m[key] for m in metrics_list if key in m]
+            cat_summary[key] = round(sum(values) / len(values), 4) if values else 0.0
+        cat_count = len(metrics_list)
+        cat_source_hits = sum(1 for r in per_question_results if r["category"] == cat and r["source_hit"])
+        cat_summary["question_count"] = cat_count
+        cat_summary["source_hit_rate"] = round(cat_source_hits / cat_count, 4) if cat_count else 0.0
+        category_summaries[cat] = cat_summary
+
+    # Latency summary
+    import numpy as np
+    latency_arr = np.array(all_latencies)
+    latency_summary = {
+        "mean_ms": round(float(np.mean(latency_arr)), 2),
+        "p50_ms": round(float(np.percentile(latency_arr, 50)), 2),
+        "p90_ms": round(float(np.percentile(latency_arr, 90)), 2),
+        "p99_ms": round(float(np.percentile(latency_arr, 99)), 2),
+        "min_ms": round(float(np.min(latency_arr)), 2),
+        "max_ms": round(float(np.max(latency_arr)), 2),
+    }
+
+    report = {
+        "report_id": f"rag_eval_v2_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "corpus_info": {
+            "total_chunks_in_store": len(vector_store._chunks),
+            "questions_evaluated": total_queries,
+            "questions_file": str(QUESTIONS_FILE.name),
+        },
+        "pipeline_config": {
+            "retrieval_strategy": config.retrieval_strategy,
+            "reranker_strategy": config.reranker_strategy,
+            "top_k": config.top_k,
+            "similarity_threshold": config.similarity_threshold,
+            "embedding_dim": config.embedding_dim,
+        },
+        "aggregate_metrics": aggregate_metrics,
+        "source_provenance": {
+            "source_hit_count": total_source_hits,
+            "total_questions": total_queries,
+            "source_hit_rate": round(total_source_hits / total_queries, 4) if total_queries else 0.0,
+        },
+        "latency_summary": latency_summary,
+        "category_breakdowns": category_summaries,
+        "per_question_results": per_question_results,
+    }
+
+    return report
+
+
+def main():
+    """Entry point for benchmark execution."""
+    logger.info("=" * 60)
+    logger.info("WealthGenie RAG Evaluation Benchmark v2 — Real Corpus")
+    logger.info("=" * 60)
+
+    report = run_benchmark()
+
+    # Persist report
+    with open(REPORT_FILE, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+    logger.info(f"Evaluation report saved to {REPORT_FILE}")
+
+    # Print summary
+    agg = report["aggregate_metrics"]
+    prov = report["source_provenance"]
+    lat = report["latency_summary"]
+
+    print("\n" + "=" * 60)
+    print("EVALUATION SUMMARY")
+    print("=" * 60)
+    print(f"Questions evaluated:  {report['corpus_info']['questions_evaluated']}")
+    print(f"Chunks in store:      {report['corpus_info']['total_chunks_in_store']}")
+    print(f"Source hit rate:       {prov['source_hit_rate']:.1%} ({prov['source_hit_count']}/{prov['total_questions']})")
+    print(f"")
+    print("Aggregate Retrieval Metrics (mean):")
+    for key, vals in agg.items():
+        print(f"  {key:25s}: {vals['mean']:.4f}  (min={vals['min']:.4f}, max={vals['max']:.4f})")
+    print(f"")
+    print("Latency:")
+    print(f"  Mean:  {lat['mean_ms']:.1f}ms | P50: {lat['p50_ms']:.1f}ms | P90: {lat['p90_ms']:.1f}ms | P99: {lat['p99_ms']:.1f}ms")
+    print(f"")
+    print("Category Breakdowns:")
+    for cat, summary in report["category_breakdowns"].items():
+        print(f"  {cat}: {summary['question_count']} questions, source_hit_rate={summary['source_hit_rate']:.1%}")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

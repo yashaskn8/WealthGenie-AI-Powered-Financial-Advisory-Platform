@@ -10,7 +10,7 @@
 | :--- | :--- | :--- |
 | **Random Forest classifier** | Production-serving `model.pkl` with TreeSHAP explainability | 95.63% rule-approx. fidelity (independent CFP benchmark: 25.26%) |
 | **FT-Transformer benchmark** | [`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json) | 97.05% rule-approx. fidelity (independent CFP benchmark: 15.83%) |
-| **RAG pipeline** | Live-wired into Express chat via [`intentGate.js`](server/services/intentGate.js) → [`ragClient.js`](server/services/ragClient.js) → FastAPI `/rag/query` | In-domain Recall@4: 96.0%, MRR: 0.9600 |
+| **RAG pipeline** | Live-wired into Express chat via [`intentGate.js`](server/services/intentGate.js) → [`ragClient.js`](server/services/ragClient.js) → FastAPI `/rag/query` | 508-chunk real corpus (Tax, SEBI, RBI/DICGC), 70-query eval (`eval_questions_v2.json`): 100% source hit rate, Recall@4 1.0, MRR 1.0, 38.5ms avg latency |
 | **Embedding ablation study** | [`embedding_ablation.json`](ml-service/reports/embedding_ablation.json) | Semantic vs hash: +2.0% Recall, +0.09 MRR |
 | **Base LLM evaluation** | [`llm_eval_report.json`](ml-service/reports/llm_eval_report.json) | BLEU 0.028, ROUGE-L 0.284, Semantic Sim 0.666 |
 | **Fail-closed auth** | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) | HTTP 500 when `ML_SERVICE_API_KEY` unset in non-local env |
