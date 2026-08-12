@@ -1,6 +1,6 @@
 """
 WealthGenie RAG Subsystem - Persistent Vector Store Implementation
-High-performance Cosine Similarity vector store with atomic writes, checksum verification, backup snapshots, and corruption recovery.
+High-performance Cosine Similarity vector store using FAISS IndexFlatIP with pure-Python/NumPy fallback, atomic writes, checksum verification, backup snapshots, and corruption recovery.
 """
 
 import hashlib
@@ -12,6 +12,13 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import numpy as np
 
+try:
+    import faiss
+    FAISS_AVAILABLE = True
+except ImportError:
+    faiss = None
+    FAISS_AVAILABLE = False
+
 from rag.config import RAGConfig
 from rag.schema import TextChunk, RetrievedChunk, ChunkMetadata
 from rag.vector_store.base import BaseVectorStore
@@ -20,17 +27,28 @@ logger = logging.getLogger("wealthgenie.rag.vector_store")
 
 
 class PersistentVectorStore(BaseVectorStore):
-    """Hardened vector database supporting Cosine Similarity search, atomic writes, and corruption recovery."""
+    """
+    Hardened vector database supporting FAISS IndexFlatIP vector search with NumPy fallback,
+    atomic writes, and corruption recovery.
+    """
 
     VERSION = "2.0"
 
-    def __init__(self, index_path: Optional[Path] = None):
+    def __init__(self, index_path: Optional[Path] = None, force_numpy: bool = False):
         self.index_path = index_path or RAGConfig().vector_store_path
         self.backup_path = self.index_path.with_suffix(".json.bak")
+        self.force_numpy = force_numpy
         self._chunks: List[TextChunk] = []
         self._embeddings: List[List[float]] = []
         self._stored_embedding_dim: int = 0
+        self._faiss_index: Any = None
+        self._faiss_dirty: bool = True
         self.load()
+
+    @property
+    def is_using_faiss(self) -> bool:
+        """Returns True if FAISS is active and available for vector search."""
+        return FAISS_AVAILABLE and not self.force_numpy
 
     def add_chunks(self, chunks: List[TextChunk]) -> int:
         """Adds embedded text chunks to store, avoiding duplicate chunk_ids."""
@@ -51,9 +69,29 @@ class PersistentVectorStore(BaseVectorStore):
                 existing_ids.add(chunk.chunk_id)
                 added_count += 1
 
+        self._faiss_dirty = True
         self.save()
         logger.info(f"Added {added_count} new chunks to PersistentVectorStore. Total: {len(self._chunks)}")
         return added_count
+
+    def _rebuild_faiss_index(self) -> None:
+        """Rebuilds the in-memory FAISS IndexFlatIP from normalized embeddings."""
+        if not self.is_using_faiss or not self._embeddings:
+            self._faiss_index = None
+            self._faiss_dirty = False
+            return
+
+        dim = len(self._embeddings[0])
+        matrix = np.array(self._embeddings, dtype=np.float32)
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        matrix_normed = np.ascontiguousarray(matrix / norms, dtype=np.float32)
+
+        index = faiss.IndexFlatIP(dim)
+        index.add(matrix_normed)
+        self._faiss_index = index
+        self._faiss_dirty = False
+        logger.debug(f"Rebuilt FAISS IndexFlatIP ({index.ntotal} vectors, dim={dim})")
 
     def search(
         self,
@@ -62,7 +100,7 @@ class PersistentVectorStore(BaseVectorStore):
         threshold: float = 0.0,
         tenant_id: str = "default",
     ) -> List[RetrievedChunk]:
-        """Executes tenant-isolated similarity search using Cosine Similarity."""
+        """Executes tenant-isolated similarity search using FAISS or NumPy fallback."""
         if not self._chunks or not self._embeddings:
             return []
 
@@ -78,31 +116,109 @@ class PersistentVectorStore(BaseVectorStore):
         q_vec = np.array(query_vector, dtype=np.float32)
 
         # Dimension mismatch guard
-        if self._embeddings:
-            stored_dim = len(self._embeddings[0])
-            query_dim = len(query_vector)
-            if query_dim != stored_dim:
-                raise ValueError(
-                    f"Embedding dimension mismatch: query vector is {query_dim}-dim "
-                    f"but stored index is {stored_dim}-dim. "
-                    f"Re-ingest documents with the current embedding provider."
-                )
+        stored_dim = len(self._embeddings[0])
+        query_dim = len(query_vector)
+        if query_dim != stored_dim:
+            raise ValueError(
+                f"Embedding dimension mismatch: query vector is {query_dim}-dim "
+                f"but stored index is {stored_dim}-dim. "
+                f"Re-ingest documents with the current embedding provider."
+            )
 
         q_norm = np.linalg.norm(q_vec)
         if q_norm == 0:
             return []
-        q_vec = q_vec / q_norm
+        q_vec = (q_vec / q_norm).astype(np.float32)
 
+        # Attempt FAISS search if available and applicable
+        if self.is_using_faiss:
+            try:
+                return self._search_faiss(q_vec, valid_indices, top_k, threshold, stored_dim)
+            except Exception as e:
+                logger.warning(f"FAISS search failed, falling back to NumPy search: {e}")
+
+        # NumPy Fallback Path
+        return self._search_numpy(q_vec, valid_indices, top_k, threshold)
+
+    def _search_faiss(
+        self,
+        q_vec: np.ndarray,
+        valid_indices: List[int],
+        top_k: int,
+        threshold: float,
+        stored_dim: int,
+    ) -> List[RetrievedChunk]:
+        """Executes vector search using FAISS IndexFlatIP."""
+        all_tenant_matched = (len(valid_indices) == len(self._chunks))
+
+        if all_tenant_matched:
+            if self._faiss_dirty or self._faiss_index is None:
+                self._rebuild_faiss_index()
+
+            q_matrix = np.ascontiguousarray(q_vec.reshape(1, -1), dtype=np.float32)
+            search_k = min(top_k, self._faiss_index.ntotal)
+            scores, indices = self._faiss_index.search(q_matrix, search_k)
+
+            results: List[RetrievedChunk] = []
+            for rank, (score_val, idx_val) in enumerate(zip(scores[0], indices[0]), start=1):
+                if idx_val < 0 or idx_val >= len(self._chunks):
+                    continue
+                score = float(score_val)
+                if score >= threshold:
+                    results.append(
+                        RetrievedChunk(
+                            chunk=self._chunks[idx_val],
+                            score=round(score, 4),
+                            rank=rank,
+                        )
+                    )
+            return results
+        else:
+            # Sub-index FAISS for filtered tenant subset
+            sub_embeddings = [self._embeddings[i] for i in valid_indices]
+            matrix = np.array(sub_embeddings, dtype=np.float32)
+            norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            matrix_normed = np.ascontiguousarray(matrix / norms, dtype=np.float32)
+
+            sub_index = faiss.IndexFlatIP(stored_dim)
+            sub_index.add(matrix_normed)
+
+            q_matrix = np.ascontiguousarray(q_vec.reshape(1, -1), dtype=np.float32)
+            search_k = min(top_k, len(valid_indices))
+            scores, indices = sub_index.search(q_matrix, search_k)
+
+            results = []
+            for rank, (score_val, sub_idx) in enumerate(zip(scores[0], indices[0]), start=1):
+                if sub_idx < 0 or sub_idx >= len(valid_indices):
+                    continue
+                score = float(score_val)
+                if score >= threshold:
+                    original_idx = valid_indices[sub_idx]
+                    results.append(
+                        RetrievedChunk(
+                            chunk=self._chunks[original_idx],
+                            score=round(score, 4),
+                            rank=rank,
+                        )
+                    )
+            return results
+
+    def _search_numpy(
+        self,
+        q_vec: np.ndarray,
+        valid_indices: List[int],
+        top_k: int,
+        threshold: float,
+    ) -> List[RetrievedChunk]:
+        """Pure-Python / NumPy fallback path for Cosine Similarity search."""
         sub_embeddings = [self._embeddings[i] for i in valid_indices]
         matrix = np.array(sub_embeddings, dtype=np.float32)
         norms = np.linalg.norm(matrix, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
         matrix_normed = matrix / norms
 
-        # Cosine Similarity dot product
         similarities = np.dot(matrix_normed, q_vec)
-
-        # Rank indices by descending similarity score
         top_sub_indices = np.argsort(similarities)[::-1][:top_k]
 
         results: List[RetrievedChunk] = []
@@ -117,7 +233,6 @@ class PersistentVectorStore(BaseVectorStore):
                         rank=rank,
                     )
                 )
-
         return results
 
     def get_stats(self) -> Dict[str, Any]:
@@ -131,6 +246,8 @@ class PersistentVectorStore(BaseVectorStore):
             "embedding_dimension": dimension,
             "index_path": str(self.index_path),
             "backup_exists": self.backup_path.exists(),
+            "faiss_available": FAISS_AVAILABLE,
+            "is_using_faiss": self.is_using_faiss,
         }
 
     def save(self) -> None:
@@ -208,4 +325,5 @@ class PersistentVectorStore(BaseVectorStore):
         self._chunks = [TextChunk(**item) for item in chunks_list]
         self._embeddings = [c.embedding for c in self._chunks if c.embedding]
         self._stored_embedding_dim = len(self._embeddings[0]) if self._embeddings else 0
+        self._faiss_dirty = True
         logger.info(f"Loaded {len(self._chunks)} chunks (dim={self._stored_embedding_dim}) into PersistentVectorStore from {file_path}")
