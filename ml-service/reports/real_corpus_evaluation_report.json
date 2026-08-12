@@ -1,6 +1,6 @@
 {
-  "report_id": "rag_eval_v2_20260812_134940",
-  "timestamp_utc": "2026-08-12T13:49:40.219655+00:00",
+  "report_id": "rag_eval_v2_20260812_135824",
+  "timestamp_utc": "2026-08-12T13:58:24.242784+00:00",
   "corpus_info": {
     "total_chunks_in_store": 508,
     "questions_evaluated": 70,
@@ -40,13 +40,13 @@
       "max": 1.0
     },
     "context_coverage": {
-      "mean": 0.6139,
+      "mean": 0.6172,
       "min": 0.2,
       "max": 1.0
     },
     "chunk_diversity": {
-      "mean": 0.4446,
-      "min": 0.2483,
+      "mean": 0.4458,
+      "min": 0.2203,
       "max": 0.6331
     },
     "citation_accuracy": {
@@ -55,7 +55,7 @@
       "max": 1.0
     },
     "grounding_score": {
-      "mean": 0.3184,
+      "mean": 0.304,
       "min": 0.1,
       "max": 0.75
     }
@@ -66,12 +66,12 @@
     "source_hit_rate": 1.0
   },
   "latency_summary": {
-    "mean_ms": 38.54,
-    "p50_ms": 37.14,
-    "p90_ms": 40.75,
-    "p99_ms": 85.67,
-    "min_ms": 26.85,
-    "max_ms": 175.87
+    "mean_ms": 27.49,
+    "p50_ms": 25.3,
+    "p90_ms": 29.38,
+    "p99_ms": 78.59,
+    "min_ms": 18.26,
+    "max_ms": 174.88
   },
   "category_breakdowns": {
     "tax_deduction": {
@@ -80,10 +80,10 @@
       "mrr": 1.0,
       "hit_rate": 1.0,
       "ndcg_at_4": 1.0,
-      "context_coverage": 0.6037,
-      "chunk_diversity": 0.446,
+      "context_coverage": 0.6185,
+      "chunk_diversity": 0.4428,
       "citation_accuracy": 1.0,
-      "grounding_score": 0.3541,
+      "grounding_score": 0.3367,
       "question_count": 12,
       "source_hit_rate": 1.0
     },
@@ -94,9 +94,9 @@
       "hit_rate": 1.0,
       "ndcg_at_4": 1.0,
       "context_coverage": 0.6175,
-      "chunk_diversity": 0.4037,
+      "chunk_diversity": 0.3983,
       "citation_accuracy": 1.0,
-      "grounding_score": 0.3596,
+      "grounding_score": 0.3317,
       "question_count": 10,
       "source_hit_rate": 1.0
     },
@@ -106,10 +106,10 @@
       "mrr": 1.0,
       "hit_rate": 1.0,
       "ndcg_at_4": 1.0,
-      "context_coverage": 0.6008,
-      "chunk_diversity": 0.5738,
+      "context_coverage": 0.573,
+      "chunk_diversity": 0.5533,
       "citation_accuracy": 1.0,
-      "grounding_score": 0.2306,
+      "grounding_score": 0.1936,
       "question_count": 6,
       "source_hit_rate": 1.0
     },
@@ -132,10 +132,10 @@
       "mrr": 1.0,
       "hit_rate": 1.0,
       "ndcg_at_4": 1.0,
-      "context_coverage": 0.4397,
-      "chunk_diversity": 0.3921,
+      "context_coverage": 0.4675,
+      "chunk_diversity": 0.4295,
       "citation_accuracy": 1.0,
-      "grounding_score": 0.2389,
+      "grounding_score": 0.2017,
       "question_count": 8,
       "source_hit_rate": 1.0
     },
@@ -180,49 +180,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.25,
-        "chunk_diversity": 0.5751,
-        "citation_accuracy": 1.0,
-        "grounding_score": 0.3
-      },
-      "query_latency_ms": 175.87,
-      "chunks_retrieved": 4,
-      "citations_count": 4,
-      "top_retrieved_sources": [
-        {
-          "title": "Income Tax Act Fy2025 26",
-          "source": "income_tax_act_fy2025_26.md",
-          "score": 1.0
-        },
-        {
-          "title": "Income Tax Act Fy2025 26",
-          "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9534
-        },
-        {
-          "title": "Income Tax Act Fy2025 26",
-          "source": "income_tax_act_fy2025_26.md",
-          "score": 0.4919
-        }
-      ]
-    },
-    {
-      "question_index": 2,
-      "question": "What is the maximum I can claim under 80C?",
-      "category": "tax_deduction",
-      "expected_source": "income_tax_act_fy2025_26.md",
-      "source_hit": true,
-      "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
-        "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
-        "context_coverage": 0.5,
-        "chunk_diversity": 0.4853,
+        "chunk_diversity": 0.4567,
         "citation_accuracy": 1.0,
         "grounding_score": 0.4545
       },
-      "query_latency_ms": 33.13,
+      "query_latency_ms": 174.88,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -239,7 +201,45 @@
         {
           "title": "Indian Income Tax Regulations FY 2025-26",
           "source": "doc_tax_regulations_2025",
-          "score": 0.9552
+          "score": 0.5163
+        }
+      ]
+    },
+    {
+      "question_index": 2,
+      "question": "What is the maximum I can claim under 80C?",
+      "category": "tax_deduction",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 1.0,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.75,
+        "chunk_diversity": 0.4561,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3333
+      },
+      "query_latency_ms": 29.32,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.5123
+        },
+        {
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.5123
         }
       ]
     },
@@ -260,7 +260,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 41.42,
+      "query_latency_ms": 20.27,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -298,7 +298,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 40.04,
+      "query_latency_ms": 25.43,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -332,11 +332,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.6667,
-        "chunk_diversity": 0.6114,
+        "chunk_diversity": 0.5665,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.3333
+        "grounding_score": 0.2727
       },
-      "query_latency_ms": 35.9,
+      "query_latency_ms": 30.07,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -348,12 +348,12 @@
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9835
+          "score": 0.9921
         },
         {
-          "title": "Income Tax Act Fy2025 26",
-          "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9775
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.9389
         }
       ]
     },
@@ -374,7 +374,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 44.84,
+      "query_latency_ms": 30.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -412,7 +412,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 40.73,
+      "query_latency_ms": 26.87,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -446,28 +446,28 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 1.0,
-        "chunk_diversity": 0.3825,
+        "chunk_diversity": 0.4601,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.5455
+        "grounding_score": 0.4
       },
-      "query_latency_ms": 37.8,
+      "query_latency_ms": 21.81,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
         {
-          "title": "Indian Income Tax Regulations FY 2025-26",
-          "source": "doc_tax_regulations_2025",
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
           "score": 1.0
         },
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9687
+          "score": 0.969
         },
         {
           "title": "Indian Income Tax Regulations FY 2025-26",
           "source": "doc_tax_regulations_2025",
-          "score": 0.5081
+          "score": 0.5041
         }
       ]
     },
@@ -488,7 +488,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 39.55,
+      "query_latency_ms": 19.27,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -526,7 +526,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.4167
       },
-      "query_latency_ms": 36.97,
+      "query_latency_ms": 23.18,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -564,7 +564,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 39.23,
+      "query_latency_ms": 28.46,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -576,12 +576,12 @@
         {
           "title": "Income Tax Deductions Master Reference",
           "source": "income_tax_deductions_master_reference.md",
-          "score": 0.9761
+          "score": 0.9683
         },
         {
           "title": "Income Tax Deductions Master Reference",
           "source": "income_tax_deductions_master_reference.md",
-          "score": 0.9387
+          "score": 0.9458
         }
       ]
     },
@@ -598,11 +598,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.6667,
-        "chunk_diversity": 0.2729,
+        "chunk_diversity": 0.2203,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.4615
+        "grounding_score": 0.3846
       },
-      "query_latency_ms": 39.55,
+      "query_latency_ms": 30.8,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -612,14 +612,14 @@
           "score": 1.0
         },
         {
-          "title": "Income Tax Act Fy2025 26",
-          "source": "income_tax_act_fy2025_26.md",
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
           "score": 0.9992
         },
         {
           "title": "Indian Income Tax Regulations FY 2025-26",
           "source": "doc_tax_regulations_2025",
-          "score": 0.9927
+          "score": 0.9855
         }
       ]
     },
@@ -636,11 +636,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.625,
-        "chunk_diversity": 0.3623,
+        "chunk_diversity": 0.2673,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.5
+        "grounding_score": 0.4615
       },
-      "query_latency_ms": 39.12,
+      "query_latency_ms": 27.3,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -650,14 +650,14 @@
           "score": 1.0
         },
         {
-          "title": "Indian Income Tax Regulations FY 2025-26",
-          "source": "doc_tax_regulations_2025",
-          "score": 0.9995
+          "title": "Income Tax Deductions Master Reference",
+          "source": "income_tax_deductions_master_reference.md",
+          "score": 0.9926
         },
         {
-          "title": "Indian Income Tax Regulations FY 2025-26",
-          "source": "doc_tax_regulations_2025",
-          "score": 0.948
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9869
         }
       ]
     },
@@ -673,12 +673,12 @@
         "mrr": 1.0,
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
-        "context_coverage": 0.8333,
-        "chunk_diversity": 0.5667,
+        "context_coverage": 0.6667,
+        "chunk_diversity": 0.4885,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.2727
+        "grounding_score": 0.1111
       },
-      "query_latency_ms": 35.69,
+      "query_latency_ms": 22.62,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -690,12 +690,12 @@
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.5041
+          "score": 0.9541
         },
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.4959
+          "score": 0.4919
         }
       ]
     },
@@ -716,7 +716,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 39.46,
+      "query_latency_ms": 26.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -754,7 +754,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.5
       },
-      "query_latency_ms": 37.62,
+      "query_latency_ms": 25.04,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -788,11 +788,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.75,
-        "chunk_diversity": 0.4149,
+        "chunk_diversity": 0.3956,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.65
+        "grounding_score": 0.5333
       },
-      "query_latency_ms": 37.42,
+      "query_latency_ms": 35.34,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -825,29 +825,29 @@
         "mrr": 1.0,
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
-        "context_coverage": 1.0,
-        "chunk_diversity": 0.5511,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.621,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.3571
+        "grounding_score": 0.3333
       },
-      "query_latency_ms": 35.56,
+      "query_latency_ms": 24.39,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
         {
-          "title": "Rbi And Dicgc Guidelines",
-          "source": "rbi_and_dicgc_guidelines.md",
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
           "score": 1.0
         },
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9764
+          "score": 0.9842
         },
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9709
+          "score": 0.9718
         }
       ]
     },
@@ -864,28 +864,28 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.5714,
-        "chunk_diversity": 0.4282,
+        "chunk_diversity": 0.3903,
         "citation_accuracy": 1.0,
         "grounding_score": 0.1429
       },
-      "query_latency_ms": 45.15,
+      "query_latency_ms": 24.56,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
         {
-          "title": "Indian Income Tax Regulations FY 2025-26",
-          "source": "doc_tax_regulations_2025",
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
           "score": 1.0
         },
         {
-          "title": "Income Tax Deductions Master Reference",
-          "source": "income_tax_deductions_master_reference.md",
-          "score": 0.9694
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9535
         },
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9326
+          "score": 0.5041
         }
       ]
     },
@@ -902,11 +902,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.5,
-        "chunk_diversity": 0.4771,
+        "chunk_diversity": 0.4145,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.3
+        "grounding_score": 0.5
       },
-      "query_latency_ms": 36.87,
+      "query_latency_ms": 26.58,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -918,12 +918,12 @@
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9462
+          "score": 0.9924
         },
         {
           "title": "Indian Income Tax Regulations FY 2025-26",
           "source": "doc_tax_regulations_2025",
-          "score": 0.9385
+          "score": 0.9692
         }
       ]
     },
@@ -944,7 +944,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.5333
       },
-      "query_latency_ms": 40.92,
+      "query_latency_ms": 22.46,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -961,7 +961,7 @@
         {
           "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
           "source": "doc_mutual_funds_suitability",
-          "score": 0.984
+          "score": 0.9764
         }
       ]
     },
@@ -982,7 +982,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 35.67,
+      "query_latency_ms": 24.81,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1020,7 +1020,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 41.38,
+      "query_latency_ms": 27.46,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1058,7 +1058,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 33.39,
+      "query_latency_ms": 26.05,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1096,7 +1096,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 35.56,
+      "query_latency_ms": 22.33,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1134,7 +1134,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 32.32,
+      "query_latency_ms": 23.83,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1172,7 +1172,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 34.56,
+      "query_latency_ms": 21.11,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1210,7 +1210,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.5294
       },
-      "query_latency_ms": 40.4,
+      "query_latency_ms": 24.27,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1248,7 +1248,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.75
       },
-      "query_latency_ms": 28.98,
+      "query_latency_ms": 24.19,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1286,7 +1286,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 38.86,
+      "query_latency_ms": 23.13,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1324,7 +1324,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.125
       },
-      "query_latency_ms": 39.41,
+      "query_latency_ms": 24.46,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1362,7 +1362,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1
       },
-      "query_latency_ms": 36.41,
+      "query_latency_ms": 24.41,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1400,7 +1400,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3571
       },
-      "query_latency_ms": 32.38,
+      "query_latency_ms": 26.39,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1438,7 +1438,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 32.75,
+      "query_latency_ms": 28.93,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1476,7 +1476,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3333
       },
-      "query_latency_ms": 38.15,
+      "query_latency_ms": 23.31,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1514,7 +1514,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 30.7,
+      "query_latency_ms": 26.62,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1552,7 +1552,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 36.05,
+      "query_latency_ms": 25.24,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1590,7 +1590,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1818
       },
-      "query_latency_ms": 37.31,
+      "query_latency_ms": 27.66,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1628,7 +1628,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 33.19,
+      "query_latency_ms": 24.98,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1666,7 +1666,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.5625
       },
-      "query_latency_ms": 34.81,
+      "query_latency_ms": 24.38,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1704,7 +1704,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 32.61,
+      "query_latency_ms": 25.76,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1738,11 +1738,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.4286,
-        "chunk_diversity": 0.3302,
+        "chunk_diversity": 0.3336,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 39.92,
+      "query_latency_ms": 24.83,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1754,12 +1754,12 @@
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9839
+          "score": 0.9761
         },
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9683
+          "score": 0.9685
         }
       ]
     },
@@ -1780,7 +1780,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 38.48,
+      "query_latency_ms": 20.68,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1816,9 +1816,9 @@
         "context_coverage": 0.5556,
         "chunk_diversity": 0.4283,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.2
+        "grounding_score": 0.3
       },
-      "query_latency_ms": 42.53,
+      "query_latency_ms": 25.59,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1830,12 +1830,12 @@
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9761
+          "score": 1.0
         },
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9685
+          "score": 0.9611
         }
       ]
     },
@@ -1852,11 +1852,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.5,
-        "chunk_diversity": 0.2872,
+        "chunk_diversity": 0.3596,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 33.45,
+      "query_latency_ms": 25.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1873,7 +1873,7 @@
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9761
+          "score": 0.9461
         }
       ]
     },
@@ -1890,11 +1890,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.2,
-        "chunk_diversity": 0.2872,
+        "chunk_diversity": 0.3884,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.3
+        "grounding_score": 0.1111
       },
-      "query_latency_ms": 32.27,
+      "query_latency_ms": 25.69,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1906,12 +1906,12 @@
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9612
+          "score": 0.9685
         },
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9534
+          "score": 0.9245
         }
       ]
     },
@@ -1932,7 +1932,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 36.29,
+      "query_latency_ms": 27.47,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1970,7 +1970,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 40.65,
+      "query_latency_ms": 25.35,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2008,7 +2008,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 38.52,
+      "query_latency_ms": 26.42,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2046,7 +2046,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 34.12,
+      "query_latency_ms": 18.26,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2084,7 +2084,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.6
       },
-      "query_latency_ms": 26.85,
+      "query_latency_ms": 26.2,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2122,7 +2122,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 34.39,
+      "query_latency_ms": 27.51,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2160,7 +2160,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 38.3,
+      "query_latency_ms": 25.32,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2198,7 +2198,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 28.92,
+      "query_latency_ms": 23.29,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2236,7 +2236,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.5
       },
-      "query_latency_ms": 36.64,
+      "query_latency_ms": 26.32,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2274,7 +2274,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.5625
       },
-      "query_latency_ms": 40.3,
+      "query_latency_ms": 25.61,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2312,7 +2312,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 33.01,
+      "query_latency_ms": 21.27,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2350,7 +2350,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.4667
       },
-      "query_latency_ms": 32.41,
+      "query_latency_ms": 21.05,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2383,12 +2383,12 @@
         "mrr": 1.0,
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
-        "context_coverage": 0.3333,
-        "chunk_diversity": 0.4365,
+        "context_coverage": 0.5556,
+        "chunk_diversity": 0.5097,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.2222
+        "grounding_score": 0.1111
       },
-      "query_latency_ms": 37.95,
+      "query_latency_ms": 29.89,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2400,12 +2400,12 @@
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9541
+          "score": 0.9612
         },
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9541
+          "score": 0.9038
         }
       ]
     },
@@ -2422,11 +2422,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.4,
-        "chunk_diversity": 0.4726,
+        "chunk_diversity": 0.4785,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.5
+        "grounding_score": 0.5625
       },
-      "query_latency_ms": 39.76,
+      "query_latency_ms": 34.6,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2438,12 +2438,12 @@
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.9683
+          "score": 0.984
         },
         {
           "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
           "source": "doc_mutual_funds_suitability",
-          "score": 0.9531
+          "score": 0.9461
         }
       ]
     },
@@ -2464,7 +2464,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 39.59,
+      "query_latency_ms": 29.15,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2502,7 +2502,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 37.66,
+      "query_latency_ms": 25.06,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2535,12 +2535,12 @@
         "mrr": 1.0,
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
-        "context_coverage": 0.4286,
-        "chunk_diversity": 0.3825,
+        "context_coverage": 0.8571,
+        "chunk_diversity": 0.4974,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.5455
+        "grounding_score": 0.1818
       },
-      "query_latency_ms": 30.98,
+      "query_latency_ms": 29.31,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2550,14 +2550,14 @@
           "score": 1.0
         },
         {
-          "title": "Indian Income Tax Regulations FY 2025-26",
-          "source": "doc_tax_regulations_2025",
-          "score": 0.9709
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9995
         },
         {
-          "title": "Indian Income Tax Regulations FY 2025-26",
-          "source": "doc_tax_regulations_2025",
-          "score": 0.9618
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.9837
         }
       ]
     },
@@ -2578,7 +2578,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.125
       },
-      "query_latency_ms": 40.01,
+      "query_latency_ms": 28.31,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2616,7 +2616,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 38.32,
+      "query_latency_ms": 20.33,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2654,7 +2654,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 40.29,
+      "query_latency_ms": 21.14,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2692,7 +2692,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3333
       },
-      "query_latency_ms": 30.92,
+      "query_latency_ms": 25.28,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2726,11 +2726,11 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.5,
-        "chunk_diversity": 0.3302,
+        "chunk_diversity": 0.3791,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.2222
+        "grounding_score": 0.125
       },
-      "query_latency_ms": 31.67,
+      "query_latency_ms": 20.96,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2742,12 +2742,12 @@
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9921
+          "score": 0.9761
         },
         {
           "title": "Rbi And Dicgc Guidelines",
           "source": "rbi_and_dicgc_guidelines.md",
-          "score": 0.9764
+          "score": 0.9462
         }
       ]
     },
@@ -2768,7 +2768,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 32.6,
+      "query_latency_ms": 23.09,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2802,28 +2802,28 @@
         "hit_rate": 1.0,
         "ndcg_at_4": 1.0,
         "context_coverage": 0.6667,
-        "chunk_diversity": 0.3506,
+        "chunk_diversity": 0.4043,
         "citation_accuracy": 1.0,
-        "grounding_score": 0.1429
+        "grounding_score": 0.125
       },
-      "query_latency_ms": 33.44,
+      "query_latency_ms": 27.55,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
         {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
           "title": "Indian Income Tax Regulations FY 2025-26",
           "source": "doc_tax_regulations_2025",
-          "score": 1.0
+          "score": 0.9535
         },
         {
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
-          "score": 0.512
-        },
-        {
-          "title": "Income Tax Deductions Master Reference",
-          "source": "income_tax_deductions_master_reference.md",
-          "score": 0.5037
+          "score": 0.5041
         }
       ]
     }
