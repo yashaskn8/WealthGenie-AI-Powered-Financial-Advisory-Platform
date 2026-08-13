@@ -1,56 +1,51 @@
 """
 WealthGenie RAG Subsystem - Prompt Security & Multi-Layer Injection Guard
 Sanitizes user input and retrieved document context against prompt injection, role leakage, and delimiter poisoning.
-Combines Layer 1 fast-regex matching with Layer 2 semantic paraphrase detection and encoded payload analysis.
+Loads single-source-of-truth patterns from config/security_patterns.json.
 """
 
 import base64
+import json
 import logging
 import re
+from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
 logger = logging.getLogger("wealthgenie.rag.security")
 
-# Layer 1: Known prompt injection attack signatures (Exact/Regex)
-PROMPT_INJECTION_PATTERNS = [
-    r"ignore\s+(all\s+)?(previous|above)\s+(instructions|prompts|rules)",
-    r"disregard\s+(all\s+)?(previous|above)\s+(instructions|prompts|rules)",
-    r"you\s+are\s+now\s+a",
-    r"act\s+as\s+a\s+(dan|jailbreak|developer\s+mode|unrestricted)",
-    r"system\s*prompt\s*:",
-    r"\[system\s*override\]",
-    r"\[override\]",
-    r"<\/system>",
-    r"<system>",
-    r"bypass\s+safety\s+filter",
-    r"forget\s+(your\s+)?instructions",
-]
+# Load consolidated shared security patterns
+CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "security_patterns.json"
 
-# Sensitive system role keywords to block in user input
-ROLE_LEAKAGE_PATTERNS = [
-    r"reveal\s+your\s+system\s+prompt",
-    r"print\s+your\s+instructions",
-    r"what\s+are\s+your\s+hidden\s+rules",
-]
+PROMPT_INJECTION_PATTERNS: List[str] = []
+ROLE_LEAKAGE_PATTERNS: List[str] = []
+SEMANTIC_PARAPHRASE_PATTERNS: List[str] = []
 
-# Layer 2: Semantic Paraphrase & Obfuscated Instruction Overrides
-SEMANTIC_PARAPHRASE_PATTERNS = [
-    r"forget\s+what\s+you\s+were\s+told\s+before(\s+and\s+instead)?",
-    r"do\s+not\s+follow\s+(earlier|prior|previous)\s+instructions",
-    r"override\s+(your\s+)?(guidelines|rules|system|instructions)",
-    r"disregard\s+former\s+restrictions",
-    r"ignore\s+prior\s+directive",
-    r"new\s+system\s+instruction\s*:",
-    r"instead\s+of\s+following\s+your\s+rules",
-    r"pretend\s+you\s+have\s+no\s+constraints",
-    r"cancel\s+(all\s+)?previous\s+orders",
-]
+try:
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+            PROMPT_INJECTION_PATTERNS = cfg.get("prompt_injection_patterns", [])
+            ROLE_LEAKAGE_PATTERNS = cfg.get("role_leakage_patterns", [])
+            SEMANTIC_PARAPHRASE_PATTERNS = cfg.get("semantic_paraphrase_patterns", [])
+except Exception as e:
+    logger.warning(f"Could not load shared security patterns from {CONFIG_PATH}: {e}")
+
+# Fallback patterns if config missing
+if not PROMPT_INJECTION_PATTERNS:
+    PROMPT_INJECTION_PATTERNS = [
+        r"ignore\s+(all\s+)?(previous|above)\s+(instructions|prompts|rules)",
+        r"act\s+as\s+a\s+(dan|jailbreak)",
+        r"forget\s+instructions",
+    ]
+if not ROLE_LEAKAGE_PATTERNS:
+    ROLE_LEAKAGE_PATTERNS = [r"reveal\s+your\s+system\s+prompt"]
+if not SEMANTIC_PARAPHRASE_PATTERNS:
+    SEMANTIC_PARAPHRASE_PATTERNS = [r"forget\s+what\s+you\s+were\s+told\s+before"]
 
 
 def decode_base64_payloads(text: str) -> List[str]:
     """Extracts and decodes potential base64 encoded strings from input text."""
     decoded_strings = []
-    # Match potential base64 tokens of length 12 or more
     b64_matches = re.findall(r"[A-Za-z0-9+/]{12,}={0,2}", text)
     for token in b64_matches:
         try:

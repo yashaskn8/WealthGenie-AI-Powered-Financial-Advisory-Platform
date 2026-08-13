@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "description": "Consolidated single-source-of-truth prompt security patterns for Node.js and Python RAG services",
+  "prompt_injection_patterns": [
+    "ignore\\s+(all\\s+)?(previous|above|system|prior)\\s+(instructions|prompts|rules)",
+    "disregard\\s+(all\\s+)?(previous|above)\\s+(instructions|prompts|rules)",
+    "you\\s+are\\s+now\\s+a",
+    "act\\s+as\\s+a?\\s*(dan|jailbreak|developer\\s+mode|unrestricted|admin|administrator|root)",
+    "system\\s*prompt\\s*:",
+    "\\[system\\s*override\\]",
+    "\\[override\\]",
+    "<\\/system>",
+    "<system>",
+    "bypass\\s+safety\\s+filter",
+    "forget\\s+(your\\s+)?instructions",
+    "pretend\\s+(regulation|sebi|rules|admin)\\s+do[es]*\\s+not\\s+exist",
+    "dump\\s+(prompt|system|context|raw)",
+    "override\\s+(grounding|rules|validation)",
+    "generate\\s+arbitrary\\s+navigation",
+    "javascript\\s*:",
+    "data\\s*:\\s*text\\/html"
+  ],
+  "role_leakage_patterns": [
+    "reveal\\s+(your\\s+)?(system|hidden|developer|prompt|instruction)",
+    "print\\s+your\\s+instructions",
+    "what\\s+are\\s+your\\s+hidden\\s+rules",
+    "forget\\s+(financial\\s+profile|sebi\\s+disclaimer|profile|disclaimer)"
+  ],
+  "semantic_paraphrase_patterns": [
+    "forget\\s+what\\s+you\\s+were\\s+told\\s+before(\\s+and\\s+instead)?",
+    "do\\s+not\\s+follow\\s+(earlier|prior|previous)\\s+instructions",
+    "override\\s+(your\\s+)?(guidelines|rules|system|instructions)",
+    "disregard\\s+former\\s+restrictions",
+    "ignore\\s+prior\\s+directive",
+    "new\\s+system\\s+instruction\\s*:",
+    "instead\\s+of\\s+following\\s+your\\s+rules",
+    "pretend\\s+you\\s+have\\s+no\\s+constraints",
+    "cancel\\s+(all\\s+)?previous\\s+orders"
+  ]
+}
