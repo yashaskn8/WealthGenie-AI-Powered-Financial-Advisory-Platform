@@ -9,6 +9,7 @@ Usage:
 """
 
 import json
+import math
 import logging
 import sys
 import time
@@ -48,6 +49,22 @@ def load_questions(path: Path) -> List[Dict[str, Any]]:
         questions = json.load(f)
     logger.info(f"Loaded {len(questions)} evaluation questions from {path.name}")
     return questions
+
+
+def build_ground_truth_chunk_ids(vector_store, expected_source: str) -> set:
+    """Builds the set of chunk IDs belonging to the expected source document."""
+    expected_stem = Path(expected_source).stem.lower()
+    gt_ids = set()
+    for chunk in vector_store._chunks:
+        src = chunk.metadata.source.lower()
+        title = chunk.metadata.title.lower()
+        if expected_stem in src or expected_stem in title:
+            gt_ids.add(chunk.chunk_id)
+        elif hasattr(chunk.metadata, 'document_id'):
+            doc_id = chunk.metadata.document_id.lower()
+            if expected_stem.replace('_', ' ') in doc_id:
+                gt_ids.add(chunk.chunk_id)
+    return gt_ids
 
 
 def source_match(retrieved_chunks, expected_source: str) -> bool:
@@ -108,11 +125,14 @@ def run_benchmark() -> Dict[str, Any]:
         # Invalidate cache so each question gets fresh retrieval
         pipeline.cache_manager.invalidate_all()
 
-        # Evaluate retrieval quality (no ground truth chunk IDs — self-evaluation mode)
+        # Build ground truth chunk IDs from expected source document
+        gt_chunk_ids = build_ground_truth_chunk_ids(vector_store, expected_source)
+
+        # Evaluate retrieval quality against real ground truth
         eval_result = evaluator.evaluate_query_response(
             query=question,
             response=response,
-            ground_truth_chunk_ids=None,
+            ground_truth_chunk_ids=gt_chunk_ids,
             k=4,
         )
 
@@ -153,11 +173,15 @@ def run_benchmark() -> Dict[str, Any]:
     all_metrics_keys = list(per_question_results[0]["metrics"].keys()) if per_question_results else []
     aggregate_metrics = {}
     for key in all_metrics_keys:
-        values = [r["metrics"][key] for r in per_question_results if key in r["metrics"]]
+        raw_values = [r["metrics"][key] for r in per_question_results if key in r["metrics"]]
+        # Filter out NaN values (produced when ground truth is unavailable)
+        values = [v for v in raw_values if not (isinstance(v, float) and math.isnan(v))]
         aggregate_metrics[key] = {
             "mean": round(sum(values) / len(values), 4) if values else 0.0,
             "min": round(min(values), 4) if values else 0.0,
             "max": round(max(values), 4) if values else 0.0,
+            "valid_count": len(values),
+            "nan_count": len(raw_values) - len(values),
         }
 
     # Category breakdowns
@@ -165,7 +189,8 @@ def run_benchmark() -> Dict[str, Any]:
     for cat, metrics_list in category_metrics.items():
         cat_summary = {}
         for key in all_metrics_keys:
-            values = [m[key] for m in metrics_list if key in m]
+            raw = [m[key] for m in metrics_list if key in m]
+            values = [v for v in raw if not (isinstance(v, float) and math.isnan(v))]
             cat_summary[key] = round(sum(values) / len(values), 4) if values else 0.0
         cat_count = len(metrics_list)
         cat_source_hits = sum(1 for r in per_question_results if r["category"] == cat and r["source_hit"])
@@ -223,6 +248,17 @@ def main():
     report = run_benchmark()
 
     # Persist report
+    # Replace NaN with None for JSON serialization
+    def sanitize_nan(obj):
+        if isinstance(obj, float) and math.isnan(obj):
+            return None
+        if isinstance(obj, dict):
+            return {k: sanitize_nan(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [sanitize_nan(v) for v in obj]
+        return obj
+
+    report = sanitize_nan(report)
     with open(REPORT_FILE, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     logger.info(f"Evaluation report saved to {REPORT_FILE}")

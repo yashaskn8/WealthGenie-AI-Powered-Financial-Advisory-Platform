@@ -50,13 +50,25 @@ class RAGEvaluator:
         retrieved_texts = [r.chunk.content for r in response.retrieved_chunks]
         embeddings = [r.chunk.embedding for r in response.retrieved_chunks if r.chunk.embedding]
 
-        gt_ids = ground_truth_chunk_ids or set(retrieved_ids)
+        # FIXED: Do NOT fall back to set(retrieved_ids) when ground_truth_chunk_ids is None.
+        # That created a self-referential comparison (retrieved vs retrieved) yielding trivial 1.0
+        # for every metric. When no ground truth is provided, skip chunk-level IR metrics.
+        gt_ids = ground_truth_chunk_ids
+        has_ground_truth = gt_ids is not None and len(gt_ids) > 0
 
-        recall_k = compute_recall_at_k(retrieved_ids, gt_ids, k)
-        precision_k = compute_precision_at_k(retrieved_ids, gt_ids, k)
-        mrr = compute_mrr(retrieved_ids, gt_ids)
-        hit_rate = compute_hit_rate(retrieved_ids, gt_ids, k)
-        ndcg = compute_ndcg(retrieved_ids, gt_ids, k)
+        if has_ground_truth:
+            recall_k = compute_recall_at_k(retrieved_ids, gt_ids, k)
+            precision_k = compute_precision_at_k(retrieved_ids, gt_ids, k)
+            mrr = compute_mrr(retrieved_ids, gt_ids)
+            hit_rate = compute_hit_rate(retrieved_ids, gt_ids, k)
+            ndcg = compute_ndcg(retrieved_ids, gt_ids, k)
+        else:
+            # No ground truth provided — mark IR metrics as NaN to avoid misleading scores
+            recall_k = float('nan')
+            precision_k = float('nan')
+            mrr = float('nan')
+            hit_rate = float('nan')
+            ndcg = float('nan')
 
         coverage = compute_context_coverage(query, retrieved_texts)
         diversity = compute_chunk_diversity(embeddings) if embeddings else 1.0

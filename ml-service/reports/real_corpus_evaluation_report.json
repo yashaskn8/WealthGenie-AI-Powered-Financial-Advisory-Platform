@@ -1,9 +1,9 @@
 {
-  "report_id": "rag_eval_v2_20260812_141813",
-  "timestamp_utc": "2026-08-12T14:18:13.974436+00:00",
+  "report_id": "rag_eval_v2_20260813_040839",
+  "timestamp_utc": "2026-08-13T04:08:39.585824+00:00",
   "corpus_info": {
     "total_chunks_in_store": 508,
-    "questions_evaluated": 70,
+    "questions_evaluated": 75,
     "questions_file": "eval_questions_v2.json"
   },
   "pipeline_config": {
@@ -15,71 +15,89 @@
   },
   "aggregate_metrics": {
     "recall_at_4": {
-      "mean": 1.0,
-      "min": 1.0,
-      "max": 1.0
+      "mean": 0.0214,
+      "min": 0.0,
+      "max": 0.1071,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "precision_at_4": {
-      "mean": 1.0,
-      "min": 1.0,
-      "max": 1.0
+      "mean": 0.7367,
+      "min": 0.0,
+      "max": 1.0,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "mrr": {
-      "mean": 1.0,
-      "min": 1.0,
-      "max": 1.0
+      "mean": 0.9022,
+      "min": 0.0,
+      "max": 1.0,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "hit_rate": {
-      "mean": 1.0,
-      "min": 1.0,
-      "max": 1.0
+      "mean": 0.9867,
+      "min": 0.0,
+      "max": 1.0,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "ndcg_at_4": {
-      "mean": 1.0,
-      "min": 1.0,
-      "max": 1.0
+      "mean": 0.7564,
+      "min": 0.0,
+      "max": 1.0,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "context_coverage": {
-      "mean": 0.6172,
+      "mean": 0.6077,
       "min": 0.2,
-      "max": 1.0
+      "max": 1.0,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "chunk_diversity": {
-      "mean": 0.4458,
+      "mean": 0.4501,
       "min": 0.2203,
-      "max": 0.6331
+      "max": 0.6331,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "citation_accuracy": {
       "mean": 1.0,
       "min": 1.0,
-      "max": 1.0
+      "max": 1.0,
+      "valid_count": 75,
+      "nan_count": 0
     },
     "grounding_score": {
-      "mean": 0.304,
+      "mean": 0.3073,
       "min": 0.1,
-      "max": 0.75
+      "max": 0.75,
+      "valid_count": 75,
+      "nan_count": 0
     }
   },
   "source_provenance": {
-    "source_hit_count": 70,
-    "total_questions": 70,
-    "source_hit_rate": 1.0
+    "source_hit_count": 74,
+    "total_questions": 75,
+    "source_hit_rate": 0.9867
   },
   "latency_summary": {
-    "mean_ms": 28.74,
-    "p50_ms": 27.07,
-    "p90_ms": 29.33,
-    "p99_ms": 78.8,
-    "min_ms": 19.29,
-    "max_ms": 178.25
+    "mean_ms": 31.73,
+    "p50_ms": 31.55,
+    "p90_ms": 34.51,
+    "p99_ms": 45.71,
+    "min_ms": 25.16,
+    "max_ms": 49.47
   },
   "category_breakdowns": {
     "tax_deduction": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
-      "mrr": 1.0,
+      "recall_at_4": 0.0273,
+      "precision_at_4": 0.5833,
+      "mrr": 0.8125,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.6059,
       "context_coverage": 0.6185,
       "chunk_diversity": 0.4428,
       "citation_accuracy": 1.0,
@@ -88,11 +106,11 @@
       "source_hit_rate": 1.0
     },
     "tax_regime": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
-      "mrr": 1.0,
+      "recall_at_4": 0.0119,
+      "precision_at_4": 0.575,
+      "mrr": 0.8333,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.5949,
       "context_coverage": 0.6175,
       "chunk_diversity": 0.3983,
       "citation_accuracy": 1.0,
@@ -101,11 +119,11 @@
       "source_hit_rate": 1.0
     },
     "capital_gains": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
+      "recall_at_4": 0.0172,
+      "precision_at_4": 0.8333,
       "mrr": 1.0,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.8704,
       "context_coverage": 0.573,
       "chunk_diversity": 0.5533,
       "citation_accuracy": 1.0,
@@ -114,11 +132,11 @@
       "source_hit_rate": 1.0
     },
     "mutual_fund": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
-      "mrr": 1.0,
+      "recall_at_4": 0.0232,
+      "precision_at_4": 0.875,
+      "mrr": 0.9697,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.889,
       "context_coverage": 0.6438,
       "chunk_diversity": 0.4427,
       "citation_accuracy": 1.0,
@@ -127,11 +145,11 @@
       "source_hit_rate": 1.0
     },
     "dicgc": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
+      "recall_at_4": 0.0302,
+      "precision_at_4": 0.9688,
       "mrr": 1.0,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.979,
       "context_coverage": 0.4675,
       "chunk_diversity": 0.4295,
       "citation_accuracy": 1.0,
@@ -140,11 +158,11 @@
       "source_hit_rate": 1.0
     },
     "rbi_bonds": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
+      "recall_at_4": 0.0256,
+      "precision_at_4": 0.8214,
       "mrr": 1.0,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.8537,
       "context_coverage": 0.6585,
       "chunk_diversity": 0.4464,
       "citation_accuracy": 1.0,
@@ -153,16 +171,42 @@
       "source_hit_rate": 1.0
     },
     "sgb": {
-      "recall_at_4": 1.0,
-      "precision_at_4": 1.0,
-      "mrr": 1.0,
+      "recall_at_4": 0.014,
+      "precision_at_4": 0.45,
+      "mrr": 0.65,
       "hit_rate": 1.0,
-      "ndcg_at_4": 1.0,
+      "ndcg_at_4": 0.439,
       "context_coverage": 0.7314,
       "chunk_diversity": 0.4575,
       "citation_accuracy": 1.0,
       "grounding_score": 0.4204,
       "question_count": 5,
+      "source_hit_rate": 1.0
+    },
+    "adversarial_near_miss": {
+      "recall_at_4": 0.0091,
+      "precision_at_4": 0.4167,
+      "mrr": 0.6667,
+      "hit_rate": 0.6667,
+      "ndcg_at_4": 0.4635,
+      "context_coverage": 0.5,
+      "chunk_diversity": 0.5319,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.4045,
+      "question_count": 3,
+      "source_hit_rate": 0.6667
+    },
+    "adversarial_out_of_scope": {
+      "recall_at_4": 0.0129,
+      "precision_at_4": 0.625,
+      "mrr": 1.0,
+      "hit_rate": 1.0,
+      "ndcg_at_4": 0.6697,
+      "context_coverage": 0.4375,
+      "chunk_diversity": 0.4776,
+      "citation_accuracy": 1.0,
+      "grounding_score": 0.275,
+      "question_count": 2,
       "source_hit_rate": 1.0
     }
   },
@@ -174,17 +218,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.4144,
         "context_coverage": 0.25,
         "chunk_diversity": 0.4567,
         "citation_accuracy": 1.0,
         "grounding_score": 0.4545
       },
-      "query_latency_ms": 178.25,
+      "query_latency_ms": 49.47,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -212,17 +256,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0052,
+        "precision_at_4": 0.25,
+        "mrr": 0.25,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.1681,
         "context_coverage": 0.75,
         "chunk_diversity": 0.4561,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3333
       },
-      "query_latency_ms": 28.71,
+      "query_latency_ms": 30.58,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -250,17 +294,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.4286,
         "chunk_diversity": 0.5858,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 21.86,
+      "query_latency_ms": 27.47,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -288,17 +332,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8319,
         "context_coverage": 0.5714,
         "chunk_diversity": 0.4817,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 24.13,
+      "query_latency_ms": 30.56,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -326,17 +370,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.6667,
         "chunk_diversity": 0.5665,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 27.37,
+      "query_latency_ms": 29.59,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -364,7 +408,7 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0206,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -374,7 +418,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 29.72,
+      "query_latency_ms": 34.37,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -402,17 +446,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0052,
+        "precision_at_4": 0.25,
+        "mrr": 0.3333,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.1952,
         "context_coverage": 0.8,
         "chunk_diversity": 0.3912,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 24.77,
+      "query_latency_ms": 28.04,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -440,17 +484,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.6367,
         "context_coverage": 1.0,
         "chunk_diversity": 0.4601,
         "citation_accuracy": 1.0,
         "grounding_score": 0.4
       },
-      "query_latency_ms": 29.86,
+      "query_latency_ms": 33.77,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -478,7 +522,7 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0206,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -488,7 +532,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 24.59,
+      "query_latency_ms": 31.37,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -516,17 +560,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.8333,
         "chunk_diversity": 0.3581,
         "citation_accuracy": 1.0,
         "grounding_score": 0.4167
       },
-      "query_latency_ms": 27.32,
+      "query_latency_ms": 32.82,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -554,17 +598,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0052,
+        "precision_at_4": 0.25,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.3904,
         "context_coverage": 0.5,
         "chunk_diversity": 0.4061,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 32.49,
+      "query_latency_ms": 31.63,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -592,17 +636,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5585,
         "context_coverage": 0.6667,
         "chunk_diversity": 0.2203,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3846
       },
-      "query_latency_ms": 32.84,
+      "query_latency_ms": 36.41,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -630,17 +674,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5856,
         "context_coverage": 0.625,
         "chunk_diversity": 0.2673,
         "citation_accuracy": 1.0,
         "grounding_score": 0.4615
       },
-      "query_latency_ms": 28.54,
+      "query_latency_ms": 27.84,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -668,7 +712,7 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0206,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -678,7 +722,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 27.48,
+      "query_latency_ms": 32.77,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -706,17 +750,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5856,
         "context_coverage": 0.3333,
         "chunk_diversity": 0.5735,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 27.6,
+      "query_latency_ms": 31.35,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -744,17 +788,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.4144,
         "context_coverage": 0.3333,
         "chunk_diversity": 0.4772,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5
       },
-      "query_latency_ms": 29.08,
+      "query_latency_ms": 44.39,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -782,17 +826,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.4144,
         "context_coverage": 0.75,
         "chunk_diversity": 0.3956,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5333
       },
-      "query_latency_ms": 29.22,
+      "query_latency_ms": 34.34,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -820,7 +864,7 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0206,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -830,7 +874,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3333
       },
-      "query_latency_ms": 26.73,
+      "query_latency_ms": 31.97,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -858,17 +902,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.7537,
         "context_coverage": 0.5714,
         "chunk_diversity": 0.3903,
         "citation_accuracy": 1.0,
         "grounding_score": 0.1429
       },
-      "query_latency_ms": 26.73,
+      "query_latency_ms": 33.71,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -896,17 +940,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.6367,
         "context_coverage": 0.5,
         "chunk_diversity": 0.4145,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5
       },
-      "query_latency_ms": 26.42,
+      "query_latency_ms": 32.5,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -934,17 +978,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0066,
+        "precision_at_4": 0.25,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.3904,
         "context_coverage": 0.8333,
         "chunk_diversity": 0.3956,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5333
       },
-      "query_latency_ms": 23.06,
+      "query_latency_ms": 31.72,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -972,17 +1016,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0199,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.4286,
         "chunk_diversity": 0.5014,
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 22.65,
+      "query_latency_ms": 30.76,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1010,7 +1054,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1020,7 +1064,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 27.55,
+      "query_latency_ms": 32.9,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1048,7 +1092,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1058,7 +1102,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 27.39,
+      "query_latency_ms": 31.31,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1086,7 +1130,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1096,7 +1140,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 26.07,
+      "query_latency_ms": 27.13,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1124,7 +1168,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1134,7 +1178,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 21.75,
+      "query_latency_ms": 29.59,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1162,7 +1206,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1172,7 +1216,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 27.55,
+      "query_latency_ms": 29.93,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1200,17 +1244,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0199,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.4,
         "chunk_diversity": 0.4893,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5294
       },
-      "query_latency_ms": 25.6,
+      "query_latency_ms": 31.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1238,17 +1282,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0132,
+        "precision_at_4": 0.5,
+        "mrr": 0.3333,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.3633,
         "context_coverage": 0.5714,
         "chunk_diversity": 0.4255,
         "citation_accuracy": 1.0,
         "grounding_score": 0.75
       },
-      "query_latency_ms": 20.21,
+      "query_latency_ms": 29.45,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1276,7 +1320,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1286,7 +1330,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 29.19,
+      "query_latency_ms": 28.88,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1314,7 +1358,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1324,7 +1368,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.125
       },
-      "query_latency_ms": 25.63,
+      "query_latency_ms": 27.69,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1352,7 +1396,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1362,7 +1406,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1
       },
-      "query_latency_ms": 22.23,
+      "query_latency_ms": 28.73,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1390,7 +1434,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1400,7 +1444,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3571
       },
-      "query_latency_ms": 28.41,
+      "query_latency_ms": 31.49,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1428,7 +1472,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1438,7 +1482,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 26.25,
+      "query_latency_ms": 31.91,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1466,7 +1510,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1476,7 +1520,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3333
       },
-      "query_latency_ms": 27.34,
+      "query_latency_ms": 25.87,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1504,7 +1548,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1514,7 +1558,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 34.12,
+      "query_latency_ms": 36.79,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1542,17 +1586,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0199,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.8333,
         "chunk_diversity": 0.5491,
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 29.29,
+      "query_latency_ms": 25.57,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1580,7 +1624,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1590,7 +1634,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1818
       },
-      "query_latency_ms": 27.9,
+      "query_latency_ms": 30.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1618,7 +1662,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1628,7 +1672,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 28.64,
+      "query_latency_ms": 34.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1656,17 +1700,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0132,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5856,
         "context_coverage": 0.6667,
         "chunk_diversity": 0.4598,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5625
       },
-      "query_latency_ms": 24.78,
+      "query_latency_ms": 31.55,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1694,7 +1738,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1704,7 +1748,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 22.77,
+      "query_latency_ms": 31.01,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1732,7 +1776,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1742,7 +1786,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 30.82,
+      "query_latency_ms": 33.34,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1770,17 +1814,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0234,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8319,
         "context_coverage": 0.4,
         "chunk_diversity": 0.514,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 27.0,
+      "query_latency_ms": 31.85,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1808,7 +1852,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1818,7 +1862,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 27.18,
+      "query_latency_ms": 35.7,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1846,7 +1890,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1856,7 +1900,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 27.11,
+      "query_latency_ms": 32.29,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1884,7 +1928,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1894,7 +1938,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 19.29,
+      "query_latency_ms": 29.51,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1922,7 +1966,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -1932,7 +1976,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 20.23,
+      "query_latency_ms": 34.61,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1960,17 +2004,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0234,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8319,
         "context_coverage": 0.8,
         "chunk_diversity": 0.474,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 26.09,
+      "query_latency_ms": 30.72,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -1998,7 +2042,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2008,7 +2052,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3636
       },
-      "query_latency_ms": 27.04,
+      "query_latency_ms": 35.56,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2036,7 +2080,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2046,7 +2090,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.2
       },
-      "query_latency_ms": 25.67,
+      "query_latency_ms": 25.63,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2074,17 +2118,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0156,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5856,
         "context_coverage": 0.7143,
         "chunk_diversity": 0.4186,
         "citation_accuracy": 1.0,
         "grounding_score": 0.6
       },
-      "query_latency_ms": 24.73,
+      "query_latency_ms": 29.13,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2112,7 +2156,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2122,7 +2166,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 21.37,
+      "query_latency_ms": 32.51,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2150,17 +2194,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0156,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5585,
         "context_coverage": 0.5714,
         "chunk_diversity": 0.5247,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 26.43,
+      "query_latency_ms": 25.16,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2188,17 +2232,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0156,
+        "precision_at_4": 0.5,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.4415,
         "context_coverage": 0.5,
         "chunk_diversity": 0.3453,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2727
       },
-      "query_latency_ms": 26.66,
+      "query_latency_ms": 28.97,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2226,17 +2270,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0078,
+        "precision_at_4": 0.25,
+        "mrr": 0.25,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.1681,
         "context_coverage": 0.8571,
         "chunk_diversity": 0.5235,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5
       },
-      "query_latency_ms": 24.38,
+      "query_latency_ms": 30.31,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2264,17 +2308,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0078,
+        "precision_at_4": 0.25,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.3904,
         "context_coverage": 0.6667,
         "chunk_diversity": 0.6173,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5625
       },
-      "query_latency_ms": 25.31,
+      "query_latency_ms": 33.15,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2302,17 +2346,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0234,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.7537,
         "context_coverage": 0.8333,
         "chunk_diversity": 0.415,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 25.81,
+      "query_latency_ms": 31.5,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2340,17 +2384,17 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0156,
+        "precision_at_4": 0.5,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.4415,
         "context_coverage": 0.8,
         "chunk_diversity": 0.3865,
         "citation_accuracy": 1.0,
         "grounding_score": 0.4667
       },
-      "query_latency_ms": 26.1,
+      "query_latency_ms": 27.34,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2378,7 +2422,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2388,7 +2432,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 28.34,
+      "query_latency_ms": 29.36,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2416,17 +2460,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.4144,
         "context_coverage": 0.4,
         "chunk_diversity": 0.4785,
         "citation_accuracy": 1.0,
         "grounding_score": 0.5625
       },
-      "query_latency_ms": 27.56,
+      "query_latency_ms": 31.58,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2454,17 +2498,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
-        "mrr": 1.0,
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
+        "mrr": 0.5,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.6096,
         "context_coverage": 0.25,
         "chunk_diversity": 0.4282,
         "citation_accuracy": 1.0,
         "grounding_score": 0.25
       },
-      "query_latency_ms": 27.98,
+      "query_latency_ms": 30.72,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2492,7 +2536,7 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0206,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2502,7 +2546,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1111
       },
-      "query_latency_ms": 28.6,
+      "query_latency_ms": 31.11,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2530,7 +2574,7 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0206,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2540,7 +2584,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.1818
       },
-      "query_latency_ms": 26.71,
+      "query_latency_ms": 31.55,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2568,17 +2612,17 @@
       "expected_source": "income_tax_deductions_master_reference.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.1071,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.6,
         "chunk_diversity": 0.3061,
         "citation_accuracy": 1.0,
         "grounding_score": 0.125
       },
-      "query_latency_ms": 28.86,
+      "query_latency_ms": 31.87,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2606,17 +2650,17 @@
       "expected_source": "income_tax_deductions_master_reference.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0357,
+        "precision_at_4": 0.25,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.3904,
         "context_coverage": 0.8333,
         "chunk_diversity": 0.3229,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 27.28,
+      "query_latency_ms": 29.65,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2644,17 +2688,17 @@
       "expected_source": "income_tax_deductions_master_reference.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0714,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.6367,
         "context_coverage": 0.8571,
         "chunk_diversity": 0.4164,
         "citation_accuracy": 1.0,
         "grounding_score": 0.2222
       },
-      "query_latency_ms": 27.57,
+      "query_latency_ms": 34.2,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2682,17 +2726,17 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0199,
+        "precision_at_4": 0.75,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.8048,
         "context_coverage": 0.75,
         "chunk_diversity": 0.604,
         "citation_accuracy": 1.0,
         "grounding_score": 0.3333
       },
-      "query_latency_ms": 26.89,
+      "query_latency_ms": 33.69,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2720,7 +2764,7 @@
       "expected_source": "rbi_and_dicgc_guidelines.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0312,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2730,7 +2774,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.125
       },
-      "query_latency_ms": 27.84,
+      "query_latency_ms": 33.52,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2758,7 +2802,7 @@
       "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
+        "recall_at_4": 0.0265,
         "precision_at_4": 1.0,
         "mrr": 1.0,
         "hit_rate": 1.0,
@@ -2768,7 +2812,7 @@
         "citation_accuracy": 1.0,
         "grounding_score": 0.3
       },
-      "query_latency_ms": 22.91,
+      "query_latency_ms": 32.62,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2796,17 +2840,17 @@
       "expected_source": "income_tax_act_fy2025_26.md",
       "source_hit": true,
       "metrics": {
-        "recall_at_4": 1.0,
-        "precision_at_4": 1.0,
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
         "mrr": 1.0,
         "hit_rate": 1.0,
-        "ndcg_at_4": 1.0,
+        "ndcg_at_4": 0.5856,
         "context_coverage": 0.6667,
         "chunk_diversity": 0.4043,
         "citation_accuracy": 1.0,
         "grounding_score": 0.125
       },
-      "query_latency_ms": 27.89,
+      "query_latency_ms": 33.74,
       "chunks_retrieved": 4,
       "citations_count": 4,
       "top_retrieved_sources": [
@@ -2824,6 +2868,196 @@
           "title": "Income Tax Act Fy2025 26",
           "source": "income_tax_act_fy2025_26.md",
           "score": 0.5041
+        }
+      ]
+    },
+    {
+      "question_index": 71,
+      "question": "What is the Section 80D deduction limit for health insurance of a person below 60?",
+      "category": "adversarial_near_miss",
+      "expected_source": "income_tax_deductions_master_reference.md",
+      "source_hit": false,
+      "metrics": {
+        "recall_at_4": 0.0,
+        "precision_at_4": 0.0,
+        "mrr": 0.0,
+        "hit_rate": 0.0,
+        "ndcg_at_4": 0.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.4555,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3636
+      },
+      "query_latency_ms": 37.67,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.984
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9562
+        }
+      ]
+    },
+    {
+      "question_index": 72,
+      "question": "What is the corporate tax rate for companies with turnover above 400 crore?",
+      "category": "adversarial_out_of_scope",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 0.0155,
+        "precision_at_4": 0.75,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 0.7537,
+        "context_coverage": 0.375,
+        "chunk_diversity": 0.4036,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.25
+      },
+      "query_latency_ms": 32.66,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Indian Income Tax Regulations FY 2025-26",
+          "source": "doc_tax_regulations_2025",
+          "score": 0.9405
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.5164
+        }
+      ]
+    },
+    {
+      "question_index": 73,
+      "question": "Is cryptocurrency trading profit taxable under the new tax regime?",
+      "category": "adversarial_out_of_scope",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 0.0103,
+        "precision_at_4": 0.5,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 0.5856,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.5515,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.3
+      },
+      "query_latency_ms": 33.3,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Rbi And Dicgc Guidelines",
+          "source": "rbi_and_dicgc_guidelines.md",
+          "score": 0.541
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.541
+        }
+      ]
+    },
+    {
+      "question_index": 74,
+      "question": "What is the minimum SIP amount for a SEBI-registered index fund?",
+      "category": "adversarial_near_miss",
+      "expected_source": "sebi_mutual_fund_categorization_and_riskometer.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 0.0066,
+        "precision_at_4": 0.25,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 0.3904,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.5742,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.6
+      },
+      "query_latency_ms": 31.62,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Sebi Mutual Fund Categorization And Riskometer",
+          "source": "sebi_mutual_fund_categorization_and_riskometer.md",
+          "score": 1.0
+        },
+        {
+          "title": "SEBI & AMFI Mutual Fund Classification & Risk Suitability",
+          "source": "doc_mutual_funds_suitability",
+          "score": 0.5163
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.5163
+        }
+      ]
+    },
+    {
+      "question_index": 75,
+      "question": "How much gratuity is tax exempt under Section 10(10)?",
+      "category": "adversarial_near_miss",
+      "expected_source": "income_tax_act_fy2025_26.md",
+      "source_hit": true,
+      "metrics": {
+        "recall_at_4": 0.0206,
+        "precision_at_4": 1.0,
+        "mrr": 1.0,
+        "hit_rate": 1.0,
+        "ndcg_at_4": 1.0,
+        "context_coverage": 0.5,
+        "chunk_diversity": 0.5659,
+        "citation_accuracy": 1.0,
+        "grounding_score": 0.25
+      },
+      "query_latency_ms": 31.54,
+      "chunks_retrieved": 4,
+      "citations_count": 4,
+      "top_retrieved_sources": [
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 1.0
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.512
+        },
+        {
+          "title": "Income Tax Act Fy2025 26",
+          "source": "income_tax_act_fy2025_26.md",
+          "score": 0.5037
         }
       ]
     }
