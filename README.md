@@ -36,7 +36,7 @@
 | Capability | Implementation Mechanism | Verification / Benchmark Source |
 | :--- | :--- | :--- |
 | **Portfolio Recommendation** | 5-stage pipeline: Risk scoring → Asset allocation → Quadratic solver / Heuristic fallback → Policy caps → Rebalancing | [`server/services/RecommendationPipeline.js`](server/services/RecommendationPipeline.js), 39 test files (287 assertions) |
-| **RAG Knowledge Retrieval** | FastAPI hybrid vector search (`all-MiniLM-L6-v2` 384D) with cosine similarity & intent routing | In-Domain Recall@4: **96.0%** (retrieval accuracy), MRR: **0.9600** ([`rag_eval_report.json`](ml-service/reports/rag_eval_report.json)) |
+| **RAG Knowledge Retrieval** | FastAPI hybrid vector search (`all-MiniLM-L6-v2` 384D) with cosine similarity & intent routing | Document Hit Rate: **98.7%**, Precision@4: **0.7367**, MRR: **0.9022** ([`real_corpus_evaluation_report.json`](ml-service/reports/real_corpus_evaluation_report.json)) |
 | **Investor Classification** | Random Forest (`model.pkl`), PyTorch MLP, and FT-Transformer tabular neural network | FT-Transformer: **97.05%** rule-approx. (independent CFP: 15.83%), RF: **95.63%** rule-approx. (independent CFP: 25.26%) ([`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json)) |
 | **Agentic Advisory Chat** | Multi-agent state machine (`geminiChatService.js`, `aiToolOrchestrator.js`) with tool-calling graph | Post-patch load test: **105.7–193.6 req/s** (chat API throughput) ([`load_test_report.md`](load_test_report.md)) |
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
@@ -85,11 +85,13 @@ The FastAPI microservice implements a dense vector search pipeline indexing vect
 * **Embedder**: `SentenceTransformerEmbeddingProvider` using `all-MiniLM-L6-v2` (384D dense vectors).
 * **Vector Store**: `PersistentVectorStore` in `ml-service/rag/vector_store/memory_vector_store.py`.
 
-#### Empirical RAG Evaluation Metrics (35 Evaluation Queries):
-* **In-Domain Recall@4**: **96.0%** (100.0% hit rate across 25 in-domain tax & regulatory queries).
-* **In-Domain Mean Reciprocal Rank (MRR)**: **0.9600** (improves to **0.9733** in ablation test).
-* **Citation Accuracy**: **100.0%** (all returned claims map to valid seed knowledge chunk IDs).
-* **Mean Grounding Score**: **0.7716**.
+#### Empirical RAG Evaluation Metrics (75 Evaluation Queries, incl. 5 Adversarial Controls):
+* **Document-Level Hit Rate**: **98.7%** (74/75 queries retrieved >=1 chunk from expected document; measures document provenance, not passage precision).
+* **Precision@4**: **0.7367** (73.7% of all retrieved top-4 chunks belong to expected source document).
+* **Mean Reciprocal Rank (MRR)**: **0.9022** (first relevant document chunk returned at Rank 1 for most queries).
+* **NDCG@4**: **0.7564** (ranking quality with realistic score variance).
+* **Citation Accuracy**: **100.0%** (all returned citations resolve to valid seed chunk IDs).
+* **Adversarial Control Discrimination**: Near-miss & out-of-scope questions show clear score separation (e.g., Precision@4 = 0.0 on Section 80D health insurance near-miss, 0.25 on SIP minimum near-miss).
 
 #### Embedding Provider Ablation Study (Dense Transformer vs Hash-Based):
 An ablation study ([`ml-service/reports/embedding_ablation.json`](ml-service/reports/embedding_ablation.json)) compared 128D character n-gram feature hashing against 384D transformer embeddings:
