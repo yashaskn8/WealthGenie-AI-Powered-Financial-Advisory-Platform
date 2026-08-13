@@ -21,6 +21,32 @@ from rag.lifecycle.manager import DocumentLifecycleManager
 
 logger = logging.getLogger("wealthgenie.rag.ingestion")
 
+ALLOWED_TRUSTED_DOMAINS = [
+    "sebi.gov.in",
+    "incometaxindia.gov.in",
+    "pib.gov.in",
+    "rbi.org.in",
+    "dicgc.org.in",
+]
+
+ALLOWED_TRUSTED_FILES = [
+    "income_tax_act_fy2025_26",
+    "income_tax_deductions_master_reference",
+    "sebi_mutual_fund_categorization_and_riskometer",
+    "rbi_and_dicgc_guidelines",
+]
+
+ALLOWED_TRUST_TIERS = {
+    "government_official",
+    "regulatory_circular",
+}
+
+
+class UntrustedSourceError(ValueError):
+    """Raised when a document source is not from an approved trusted domain/tier."""
+    pass
+
+
 
 class IngestionPipeline:
     """Orchestrates document loading, text cleaning, chunking, embedding, and vector storage."""
@@ -36,6 +62,32 @@ class IngestionPipeline:
         self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or PersistentVectorStore()
 
+    def is_source_trusted(self, document: Document) -> bool:
+        """Validates if the document source or trust tier is from an approved trusted domain/corpus file."""
+        source = (document.metadata.source or "").lower()
+        tier = (document.metadata.source_trust_tier or "").lower()
+        title = (document.metadata.title or "").lower()
+
+        # Check explicit pre-approved corpus filenames / stems
+        if any(f in source or f in title for f in ALLOWED_TRUSTED_FILES):
+            return True
+
+        # Check pre-approved trusted domains in source
+        if any(domain in source for domain in ALLOWED_TRUSTED_DOMAINS):
+            return True
+
+        # Check custom_metadata domain if present
+        domain_meta = str(document.metadata.custom_metadata.get("domain", "")).lower()
+        if any(domain in domain_meta for domain in ALLOWED_TRUSTED_DOMAINS):
+            return True
+
+        # Check trust tier + domain combo
+        if tier in ALLOWED_TRUST_TIERS and any(domain in source for domain in ALLOWED_TRUSTED_DOMAINS):
+            return True
+
+        return False
+
+
     def ingest_file(
         self,
         file_path: Path,
@@ -43,6 +95,7 @@ class IngestionPipeline:
         author: Optional[str] = None,
         effective_date: Optional[str] = None,
         source_trust_tier: Optional[str] = None,
+        manual_override: bool = False,
     ) -> Dict[str, Any]:
         """Loads and ingests a single document file into the RAG vector store."""
         document = self.loader.load_file(
@@ -52,7 +105,7 @@ class IngestionPipeline:
             effective_date=effective_date,
             source_trust_tier=source_trust_tier,
         )
-        return self.ingest_document(document)
+        return self.ingest_document(document, manual_override=manual_override)
 
     def ingest_text(
         self,
@@ -62,6 +115,7 @@ class IngestionPipeline:
         author: Optional[str] = None,
         effective_date: Optional[str] = None,
         source_trust_tier: Optional[str] = None,
+        manual_override: bool = False,
     ) -> Dict[str, Any]:
         """Ingests raw text directly into the RAG vector store."""
         document = self.loader.load_text(
@@ -72,10 +126,16 @@ class IngestionPipeline:
             effective_date=effective_date,
             source_trust_tier=source_trust_tier,
         )
-        return self.ingest_document(document)
+        return self.ingest_document(document, manual_override=manual_override)
 
-    def ingest_document(self, document: Document) -> Dict[str, Any]:
-        """Cleans, chunks, embeds, and stores a Document object."""
+    def ingest_document(self, document: Document, manual_override: bool = False) -> Dict[str, Any]:
+        """Cleans, chunks, embeds, and stores a Document object after trust tiering validation."""
+        if not manual_override and not self.is_source_trusted(document):
+            logger.error(f"Ingestion rejected for untrusted source: '{document.metadata.source}' (tier: '{document.metadata.source_trust_tier}')")
+            raise UntrustedSourceError(
+                f"Ingestion rejected: document source '{document.metadata.source}' (trust tier: '{document.metadata.source_trust_tier}') "
+                f"is not from an approved trusted domain {ALLOWED_TRUSTED_DOMAINS}. Set manual_override=True to bypass."
+            )
         logger.info(f"Ingesting document '{document.metadata.title}' (ID: {document.document_id})...")
 
         # 1. Clean Content
