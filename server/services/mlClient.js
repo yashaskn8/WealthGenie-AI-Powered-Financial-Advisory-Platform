@@ -9,6 +9,30 @@ if (!ML_API_KEY) {
 
 const ML_TIMEOUT_MS = 5000;
 
+let failureCount = 0;
+let circuitOpenUntil = 0;
+
+function isCircuitHealthy() {
+  if (Date.now() < circuitOpenUntil) {
+    return false;
+  }
+  return true;
+}
+
+function recordSuccess() {
+  failureCount = 0;
+  circuitOpenUntil = 0;
+}
+
+function recordFailure() {
+  failureCount++;
+  if (failureCount >= 3) {
+    circuitOpenUntil = Date.now() + 60000;
+    console.warn(`[MLClient] Circuit breaker OPENED due to ${failureCount} consecutive failures.`);
+  }
+}
+
+
 function hasUsablePrediction(result) {
   if (!result || typeof result !== 'object') return false;
   return [result.primary, result.secondary, result.tertiary]
@@ -16,6 +40,10 @@ function hasUsablePrediction(result) {
 }
 
 export async function getMLPrediction(profileData, correlationId = null) {
+  if (!isCircuitHealthy()) {
+    console.warn('[MLClient] Circuit breaker OPEN — fast-failing to rule-based fallback.');
+    return getRuleBasedFallback(profileData);
+  }
   // ── Backward Compatibility Check ──
   const debtVal = profileData.existing_debt_emi_ratio_pct !== undefined ? profileData.existing_debt_emi_ratio_pct : profileData.existing_debt;
   const isProfileIncomplete = 
@@ -57,8 +85,10 @@ export async function getMLPrediction(profileData, correlationId = null) {
       console.warn('[MLClient] ML service returned an unusable prediction, using rule-based fallback.');
       return getRuleBasedFallback(profileData);
     }
+    recordSuccess();
     return res.data;
   } catch (err) {
+    recordFailure();
     console.warn('[MLClient] ML service unavailable, using rule-based fallback:', err.message);
     return getRuleBasedFallback(profileData);
   }

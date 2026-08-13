@@ -13,4 +13,4 @@ torch>=2.0.0
 matplotlib>=3.8.0
 sentence-transformers>=2.2.0
 pyarrow>=14.0.0
-
+faiss-cpu>=1.7.4

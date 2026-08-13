@@ -41,6 +41,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - ML_SERVICE_URL=http://ml-service:8000
       - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-default_jwt_secret_key_change_in_production_min_32}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ML_SERVICE_API_KEY=${ML_SERVICE_API_KEY:-}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -69,6 +72,7 @@ services:
     environment:
       - PORT=8000
       - ENVIRONMENT=production
+      - ML_SERVICE_API_KEY=${ML_SERVICE_API_KEY:-}
 
 volumes:
   mongo_data:

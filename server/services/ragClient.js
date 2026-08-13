@@ -4,6 +4,30 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 const ML_API_KEY = process.env.ML_SERVICE_API_KEY || '';
 const RAG_TIMEOUT_MS = 8000;
 
+let failureCount = 0;
+let circuitOpenUntil = 0;
+
+function isCircuitHealthy() {
+  if (Date.now() < circuitOpenUntil) {
+    return false;
+  }
+  return true;
+}
+
+function recordSuccess() {
+  failureCount = 0;
+  circuitOpenUntil = 0;
+}
+
+function recordFailure() {
+  failureCount++;
+  if (failureCount >= 3) {
+    circuitOpenUntil = Date.now() + 60000;
+    console.warn(`[RAGClient] Circuit breaker OPENED due to ${failureCount} consecutive failures.`);
+  }
+}
+
+
 /**
  * Executes grounded RAG retrieval & answer synthesis against FastAPI /rag/query.
  * 
@@ -13,6 +37,11 @@ const RAG_TIMEOUT_MS = 8000;
  */
 export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 'default' }, correlationId = null) {
   if (!query || typeof query !== 'string' || !query.trim()) {
+    return null;
+  }
+
+  if (!isCircuitHealthy()) {
+    console.warn('[RAGClient] Circuit breaker OPEN — fast-failing query.');
     return null;
   }
 
@@ -36,10 +65,13 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 
     );
 
     if (res.status === 200 && res.data) {
+      recordSuccess();
       return res.data;
     }
+    recordFailure();
     return null;
   } catch (err) {
+    recordFailure();
     console.warn('[RAGClient] RAG service query failed:', err.response?.data?.detail || err.message);
     return null;
   }
