@@ -7,6 +7,7 @@ import { verifyJWT, isValidObjectId } from '../middleware/authMiddleware.js';
 import { asyncHandler, createError } from '../middleware/errorHandler.js';
 import { validate, chatMessageSchema } from '../validation/schemas.js';
 import { processChat } from '../services/geminiChatService.js';
+import { checkTokenBudget, recordTokenUsage } from '../middleware/tokenBudget.js';
 import ConversationHistory from '../models/ConversationHistory.js';
 
 const router = Router();
@@ -14,8 +15,9 @@ const router = Router();
 /**
  * POST /api/chat/message [Protected]
  * Send a message to the AI chat assistant.
+ * Token budget middleware prevents cost/abuse spikes from long prompts.
  */
-router.post('/message', verifyJWT, validate(chatMessageSchema), asyncHandler(async (req, res) => {
+router.post('/message', verifyJWT, checkTokenBudget(), validate(chatMessageSchema), asyncHandler(async (req, res) => {
   const { message, session_id } = req.body;
 
   const sessionId = session_id || crypto.randomUUID();
@@ -26,6 +28,10 @@ router.post('/message', verifyJWT, validate(chatMessageSchema), asyncHandler(asy
     message: message.trim(),
     sessionId,
   });
+
+  // Record token usage from the AI response for budget tracking
+  const tokensUsed = result?.usage?.totalTokens || result?.tokenCount || Math.ceil(message.length / 4);
+  recordTokenUsage(req, tokensUsed);
 
   res.json(result);
 }));

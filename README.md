@@ -143,9 +143,12 @@ The core recommendation engine ([`RecommendationPipeline.js`](server/services/Re
 
 ### Security Controls
 * **Fail-Closed API Key Authentication**: [`verify_api_key()`](ml-service/main.py#L231) in the ML microservice returns HTTP 500 (misconfiguration error) if `ML_SERVICE_API_KEY` is unset in non-local environments, preventing unauthorized access.
-* **Prompt Injection Defense**: [`promptSecurity.js`](server/services/promptSecurity.js) inspects prompts against pattern rules before sending payloads to LLM providers.
+* **Multi-Layer Prompt Injection Defense**: Two-tier pipeline shared between Node.js ([`promptSecurity.js`](server/services/promptSecurity.js)) and Python ([`prompt_sanitizer.py`](ml-service/rag/security/prompt_sanitizer.py)):
+  1. **Regex blacklist** — fast pattern-match against known injection phrases, loaded from [`config/security_patterns.json`](config/security_patterns.json).
+  2. **Semantic heuristic guard** — detects paraphrased injection attempts and Base64-encoded payloads that evade literal pattern matching. Verified by 9 red-team tests.
+* **Ingestion Trust Tiering**: [`pipeline.py`](ml-service/rag/ingestion/pipeline.py) gates document ingestion — only pre-approved government domains (SEBI, RBI, DICGC, Income Tax India) are auto-indexed. Untrusted sources are rejected unless an explicit `manual_override` flag is set. Verified by 3 unit tests and 1 end-to-end poisoning pipeline test.
+* **Per-User Token Budget**: [`tokenBudget.js`](server/middleware/tokenBudget.js) enforces a rolling-window cumulative token budget on `POST /api/chat/message`, independent of the request-count rate limiter. Prevents cost spikes from long prompts or automated abuse. Verified by 5 integration tests.
 * **Input Validation**: Joi schemas validate incoming API request bodies on Express routes (`profile.js`, `recommend.js`, `tax.js`).
-
 ---
 
 ## Performance Benchmarks & Capacity Load Testing

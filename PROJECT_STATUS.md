@@ -16,7 +16,13 @@
 | **Fail-closed auth** | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) | HTTP 500 when `ML_SERVICE_API_KEY` unset in non-local env |
 | **MLOps Registry & Drift** | [`ml-service/model/registry/`](ml-service/model/registry/) | SQLite registry, tamper-evident rollback (SHA-256), PSI feature drift monitor |
 | **Capacity Load Test** | [`load_test_report.md`](load_test_report.md) & [`server/reports/loadtest/`](server/reports/loadtest/) | 3,736–5,537 req/s (Tax Engine), 973 req/s (Instruments DB), 109.4 req/s (Agentic Chat post-patch) |
-| **Docs-sync CI check** | [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
+| **Docs-sync CI check** | [`config/security_patterns.json`](config/security_patterns.json) | Shared injection-pattern ruleset (Node + Python) |
+| [`server/middleware/tokenBudget.js`](server/middleware/tokenBudget.js) | Per-user rolling token budget middleware |
+| [`ml-service/tests/test_rag_trust_tiering.py`](ml-service/tests/test_rag_trust_tiering.py) | Ingestion trust gate tests |
+| [`ml-service/tests/test_rag_poisoning_pipeline.py`](ml-service/tests/test_rag_poisoning_pipeline.py) | End-to-end poisoning defense test |
+| [`ml-service/tests/test_rag_security_redteam.py`](ml-service/tests/test_rag_security_redteam.py) | Red-team semantic injection tests |
+| [`server/test/tokenBudgetMiddleware.test.js`](server/test/tokenBudgetMiddleware.test.js) | Token budget middleware integration tests |
+| [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
 
 ---
 
@@ -56,6 +62,21 @@ ull (NaN) instead of a fake 1.0.
    - **Threshold check**: similarity_threshold=0.1 is permissive but functional — raising to 0.7 reduced retrieved chunks from 4 to 1-2 for narrow queries, confirming the threshold gates correctly.
 
 ---
+
+
+---
+
+## AI Security Hardening (post-v1.0)
+
+The following security layers were added after the v1.0-final release to harden the RAG/AI pipeline against prompt injection, corpus poisoning, and cost-abuse attacks.
+
+| Layer | Implementation | Test Evidence |
+| :--- | :--- | :--- |
+| **Ingestion Trust Tiering** | [`pipeline.py`](ml-service/rag/ingestion/pipeline.py) — only documents from pre-approved gov domains (SEBI, RBI, DICGC, Income Tax India) are auto-ingested; untrusted sources require explicit `manual_override=True` | [`test_rag_trust_tiering.py`](ml-service/tests/test_rag_trust_tiering.py) — 3/3 pass |
+| **Corpus Poisoning Defense** | End-to-end pipeline test proving poisoned/injected documents are neutralized before reaching the prompt builder | [`test_rag_poisoning_pipeline.py`](ml-service/tests/test_rag_poisoning_pipeline.py) — 1/1 pass |
+| **Semantic Injection Guard** | [`prompt_sanitizer.py`](ml-service/rag/security/prompt_sanitizer.py) — multi-layer defense: regex blacklist + semantic paraphrase detection + Base64 payload decoding | [`test_rag_security_redteam.py`](ml-service/tests/test_rag_security_redteam.py) — 9/9 pass |
+| **Consolidated Security Patterns** | [`config/security_patterns.json`](config/security_patterns.json) — single source of truth for injection patterns shared between Node.js and Python | Both `promptSecurity.js` and `prompt_sanitizer.py` load from this file |
+| **Per-User Token Budget** | [`tokenBudget.js`](server/middleware/tokenBudget.js) — rolling-window token budget middleware on `POST /api/chat/message`; independent of request-count rate limiting | [`tokenBudgetMiddleware.test.js`](server/test/tokenBudgetMiddleware.test.js) — 5/5 pass |
 
 ## File reference
 
