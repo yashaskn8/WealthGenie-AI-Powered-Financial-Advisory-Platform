@@ -1,12 +1,13 @@
 """
-WealthGenie ML Model Registry — Core Store (SQLite-backed)
+Phase 5 MLOps -- Model Version Registry Store
 
-Every registered model version is a queryable row containing:
-- version_id, model_architecture, training_data_hash, training_timestamp
-- hyperparameters (full config JSON), metrics (Phase 4 rigor-audited numbers)
-- artifact_path, artifact_hash (SHA-256 of the serialized model file)
-- reference_distributions (per-feature stats for drift detection)
-- active flag (exactly one version is active at any time per architecture)
+SQLite-backed persistent model registry tracking:
+  - Model architecture & checkpoint path
+  - SHA-256 artifact hash (tamper-evident verification)
+  - Training data hash (lineage)
+  - Hyperparameters & Phase 4 rigor metrics (JSON)
+  - Reference feature distributions for drift detection
+  - Active version pointer & rollback history
 """
 
 import hashlib
@@ -17,12 +18,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-DB_NAME = "model_registry.db"
+_DEFAULT_DB_PATH = Path(__file__).resolve().parent / "model_registry.db"
 _SCHEMA_VERSION = 1
-
-
-def _default_db_path() -> Path:
-    return Path(__file__).resolve().parent / DB_NAME
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -35,22 +32,27 @@ def compute_file_hash(filepath: Path) -> str:
 
 
 def compute_data_hash(filepath: Path) -> str:
-    """Compute SHA-256 hash of a dataset file (CSV/Parquet) for data lineage."""
+    """Compute SHA-256 hash of training data file."""
     return compute_file_hash(filepath)
 
 
 class ModelRegistry:
-    """SQLite-backed model registry with tamper-evident hashing."""
+    """
+    Persistent model version registry backed by SQLite.
+
+    Thread-safe within a single process. For multi-worker deployments,
+    WAL mode is enabled so concurrent readers are not blocked by writers.
+    """
 
     def __init__(self, db_path: Optional[Path] = None):
-        self.db_path = db_path or _default_db_path()
+        self.db_path = Path(db_path) if db_path else _DEFAULT_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: Optional[sqlite3.Connection] = None
         self._init_db()
 
     def _get_conn(self) -> sqlite3.Connection:
         if self._conn is None:
-            self._conn = sqlite3.connect(str(self.db_path))
+            self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             self._conn.row_factory = sqlite3.Row
             self._conn.execute("PRAGMA journal_mode=WAL")
         return self._conn

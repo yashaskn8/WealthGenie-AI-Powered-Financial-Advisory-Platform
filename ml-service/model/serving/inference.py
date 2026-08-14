@@ -1,6 +1,7 @@
-"""
+﻿"""
 WealthGenie ML Microservice - Concrete Model Predictor Implementations
 Implements BasePredictor interface for RandomForest, PyTorch MLP, and FT-Transformer models.
+Supports dynamic artifact loading from persistent ModelRegistry.
 """
 
 import json
@@ -14,33 +15,40 @@ import numpy as np
 import torch
 
 from model.architecture.base import BasePredictor
-from model.config import ArtifactPaths, PyTorchModelConfig, get_device
+from model.config import ArtifactPaths, PyTorchModelConfig, SAVED_MODELS_DIR, get_device
 from model.architecture.ft_transformer import FTTransformer, FTTransformerConfig
 from model.architecture.model import FinancialMLP
 from model.data.preprocessing import FeaturePreprocessor
 
 logger = logging.getLogger("wealthgenie.inference")
 
+_BASE_MODEL_DIR = Path(__file__).resolve().parents[1]
+
 
 class RandomForestPredictor(BasePredictor):
     """Predictor wrapping trained Scikit-Learn RandomForest classifier."""
 
     def __init__(self, model_path: Optional[Path] = None, label_encoder_path: Optional[Path] = None):
-        self.model_path = model_path or (Path(__file__).resolve().parent / "model.pkl")
-        self.label_encoder_path = label_encoder_path or (Path(__file__).resolve().parent / "label_encoder.pkl")
+        self.model_path = model_path or (_BASE_MODEL_DIR / "model.pkl")
+        self.label_encoder_path = label_encoder_path or (_BASE_MODEL_DIR / "label_encoder.pkl")
         self.model = None
         self.label_encoder = None
         self._is_loaded = False
 
-    def load_artifacts(self) -> None:
+    def load_artifacts(self, artifact_path: Optional[Path] = None, label_encoder_path: Optional[Path] = None) -> None:
         """Loads RandomForest pkl and label encoder from disk."""
+        if artifact_path:
+            self.model_path = Path(artifact_path)
+        if label_encoder_path:
+            self.label_encoder_path = Path(label_encoder_path)
+
         if not self.model_path.exists() or not self.label_encoder_path.exists():
             logger.warning(f"RandomForest artifacts missing at {self.model_path}")
             return
         self.model = joblib.load(self.model_path)
         self.label_encoder = joblib.load(self.label_encoder_path)
         self._is_loaded = True
-        logger.info("RandomForestPredictor loaded successfully.")
+        logger.info(f"RandomForestPredictor loaded successfully from {self.model_path}.")
 
     def predict_proba(self, feature_array: np.ndarray) -> np.ndarray:
         if not self._is_loaded or self.model is None:
@@ -88,8 +96,11 @@ class MLPPredictor(BasePredictor):
         self.model: Optional[FinancialMLP] = None
         self._is_loaded = False
 
-    def load_artifacts(self) -> None:
+    def load_artifacts(self, artifact_path: Optional[Path] = None) -> None:
         """Loads PyTorch model weights and scaler from disk."""
+        if artifact_path:
+            self.paths.model_weights = Path(artifact_path)
+
         if not self.paths.model_weights.exists() or not self.paths.scaler_path.exists():
             logger.warning(f"MLPPredictor weights missing at {self.paths.model_weights}")
             return
@@ -108,7 +119,7 @@ class MLPPredictor(BasePredictor):
         self.model.load_state_dict(torch.load(self.paths.model_weights, map_location=self.device))
         self.model.eval()
         self._is_loaded = True
-        logger.info(f"MLPPredictor loaded successfully on {self.device}.")
+        logger.info(f"MLPPredictor loaded successfully from {self.paths.model_weights} on {self.device}.")
 
     def predict_proba(self, feature_array: np.ndarray) -> np.ndarray:
         if not self._is_loaded or self.model is None:
@@ -152,16 +163,18 @@ class FTTransformerPredictor(BasePredictor):
     """Predictor wrapping trained PyTorch FT-Transformer model."""
 
     def __init__(self, weights_path: Optional[Path] = None, scaler_path: Optional[Path] = None):
-        base_dir = Path(__file__).resolve().parent / "saved_models"
-        self.weights_path = weights_path or (base_dir / "ft_transformer.pt")
-        self.scaler_path = scaler_path or (base_dir / "scaler.pkl")
+        self.weights_path = weights_path or (SAVED_MODELS_DIR / "ft_transformer.pt")
+        self.scaler_path = scaler_path or (SAVED_MODELS_DIR / "scaler.pkl")
         self.device = get_device()
         self.preprocessor = FeaturePreprocessor()
         self.model: Optional[FTTransformer] = None
         self._is_loaded = False
 
-    def load_artifacts(self) -> None:
+    def load_artifacts(self, artifact_path: Optional[Path] = None) -> None:
         """Loads FT-Transformer weights and preprocessor."""
+        if artifact_path:
+            self.weights_path = Path(artifact_path)
+
         if not self.weights_path.exists() or not self.scaler_path.exists():
             logger.warning(f"FTTransformerPredictor weights missing at {self.weights_path}")
             return
@@ -172,7 +185,7 @@ class FTTransformerPredictor(BasePredictor):
         self.model.load_state_dict(torch.load(self.weights_path, map_location=self.device))
         self.model.eval()
         self._is_loaded = True
-        logger.info(f"FTTransformerPredictor loaded successfully on {self.device}.")
+        logger.info(f"FTTransformerPredictor loaded successfully from {self.weights_path} on {self.device}.")
 
     def predict_proba(self, feature_array: np.ndarray) -> np.ndarray:
         if not self._is_loaded or self.model is None:
