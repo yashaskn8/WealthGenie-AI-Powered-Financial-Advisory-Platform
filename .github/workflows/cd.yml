@@ -1,0 +1,162 @@
+﻿name: Continuous Deployment & Cluster Verification
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-kind-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-and-verify-kind:
+    name: Local Kind Cluster Deployment & Smoke Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Validate Terraform IaC
+        run: |
+          echo "### 🏗️ Terraform IaC Validation" >> $GITHUB_STEP_SUMMARY
+          cd terraform
+          terraform init -backend=false
+          terraform validate
+          echo "✅ Terraform configuration is syntactically valid and modularly sound." >> $GITHUB_STEP_SUMMARY
+
+      - name: Create Kind Kubernetes Cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: kind
+          version: v0.24.0
+          wait: 120s
+
+      - name: Install Metrics Server for HPA
+        run: |
+          echo "Installing Metrics Server on Kind cluster..."
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+          kubectl patch deployment metrics-server -n kube-system --type 'json' -p '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+          kubectl rollout status deployment metrics-server -n kube-system --timeout=120s
+
+      - name: Build Docker Container Images
+        run: |
+          echo "Building wealthgenie-server image..."
+          docker build -t wealthgenie-server:latest server/
+
+          echo "Building wealthgenie-ml-service image..."
+          docker build -t wealthgenie-ml-service:latest ml-service/
+
+      - name: Load Images into Kind Cluster
+        run: |
+          echo "Loading container images into Kind cluster nodes..."
+          kind load docker-image wealthgenie-server:latest --name kind
+          kind load docker-image wealthgenie-ml-service:latest --name kind
+
+      - name: Apply Kubernetes Manifests via Kustomize
+        run: |
+          echo "Applying Kubernetes manifests in k8s/..."
+          kubectl apply -k k8s/
+
+      - name: Wait for Database and Redis to be Ready
+        run: |
+          echo "Waiting for MongoDB StatefulSet to be Ready..."
+          kubectl rollout status statefulset/wealthgenie-mongodb -n wealthgenie --timeout=180s
+
+          echo "Waiting for Redis Deployment to be Ready..."
+          kubectl rollout status deployment/wealthgenie-redis -n wealthgenie --timeout=180s
+
+      - name: Wait for Microservices to be Ready
+        run: |
+          echo "Waiting for ML Service Deployment to be Ready..."
+          kubectl rollout status deployment/wealthgenie-ml-service -n wealthgenie --timeout=180s
+
+          echo "Waiting for Express Server Deployment to be Ready..."
+          kubectl rollout status deployment/wealthgenie-server -n wealthgenie --timeout=180s
+
+      - name: Verify Cluster State
+        run: |
+          echo "### ☸️ Kubernetes Pod & Service Status" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          kubectl get all,pvc,hpa,ingress -n wealthgenie >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n wealthgenie -o wide
+
+      - name: Port-Forward Express Server for Live Request Verification
+        run: |
+          echo "Starting background port-forward from Service to runner localhost:5000..."
+          kubectl port-forward -n wealthgenie svc/wealthgenie-server 5000:5000 &
+          sleep 5
+
+      - name: Execute Live Smoke Tests & Prove Request Flow (Step 2)
+        run: |
+          echo "### 🚀 Live Endpoint Smoke Test Verification (Step 2)" >> $GITHUB_STEP_SUMMARY
+
+          echo "1. Testing /health/live..."
+          LIVE_RES=$(curl -s -f http://127.0.0.1:5000/health/live)
+          echo "Live Response: $LIVE_RES"
+          echo "- **Liveness Probe (/health/live)**: \`$LIVE_RES\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "2. Testing /health/ready..."
+          READY_RES=$(curl -s -f http://127.0.0.1:5000/health/ready)
+          echo "Ready Response: $READY_RES"
+          echo "- **Readiness Probe (/health/ready)**: \`$READY_RES\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "3. Testing /health/deep..."
+          DEEP_RES=$(curl -s -f http://127.0.0.1:5000/health/deep)
+          echo "Deep Response: $DEEP_RES"
+          echo "- **Deep Health Probe (/health/deep)**: \`$DEEP_RES\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "4. Testing Business Endpoint /api/tax/compare..."
+          TAX_RES=$(curl -s -f "http://127.0.0.1:5000/api/tax/compare?annualIncome=1200000")
+          echo "Tax Compare Response: $TAX_RES"
+          echo "- **Business Tax Endpoint (/api/tax/compare)**: \`$TAX_RES\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Verify Horizontal Pod Autoscaler & Load Response (Step 3)
+        run: |
+          echo "### 📈 Horizontal Pod Autoscaler (HPA) Verification (Step 3)" >> $GITHUB_STEP_SUMMARY
+
+          echo "Waiting 15s for metrics-server to sample metrics..."
+          sleep 15
+          kubectl top pods -n wealthgenie || true
+          kubectl get hpa -n wealthgenie
+
+          echo "Generating 15s synthetic compute load against cluster..."
+          npx autocannon -c 40 -d 15 "http://127.0.0.1:5000/api/tax/compare?annualIncome=1200000"
+
+          sleep 5
+          HPA_STATUS=$(kubectl get hpa wealthgenie-server-hpa -n wealthgenie)
+          echo "HPA Status after load:"
+          echo "$HPA_STATUS"
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          echo "$HPA_STATUS" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Capture Cluster Logs on Failure
+        if: failure()
+        run: |
+          echo "Cluster pods status on failure:"
+          kubectl get pods -n wealthgenie -o wide
+          echo "--- MongoDB Logs ---"
+          kubectl logs -n wealthgenie -l app=wealthgenie-mongodb --tail=50
+          echo "--- Redis Logs ---"
+          kubectl logs -n wealthgenie -l app=wealthgenie-redis --tail=50
+          echo "--- ML Service Logs ---"
+          kubectl logs -n wealthgenie -l app=wealthgenie-ml-service --tail=50
+          echo "--- Server Logs ---"
+          kubectl logs -n wealthgenie -l app=wealthgenie-server --tail=50
