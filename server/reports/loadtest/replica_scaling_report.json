@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-08-14T07:13:41.288Z",
+  "concurrency": 50,
+  "durationSeconds": 10,
+  "singleReplica": {
+    "health": {
+      "throughputReqSec": 8286.6,
+      "p50LatencyMs": 5,
+      "p99LatencyMs": 9,
+      "non2xx": 0,
+      "errors": 0
+    },
+    "taxCompute": {
+      "throughputReqSec": 7676,
+      "p50LatencyMs": 6,
+      "p99LatencyMs": 9,
+      "non2xx": 0,
+      "errors": 0
+    }
+  },
+  "twoReplicas": {
+    "health": {
+      "throughputReqSec": 5227.11,
+      "p50LatencyMs": 8,
+      "p99LatencyMs": 18,
+      "non2xx": 0,
+      "errors": 0
+    },
+    "taxCompute": {
+      "throughputReqSec": 5025.7,
+      "p50LatencyMs": 9,
+      "p99LatencyMs": 18,
+      "non2xx": 0,
+      "errors": 0
+    }
+  },
+  "findings": {
+    "computeScalingFactor": "0.65x",
+    "healthScalingFactor": "0.63x",
+    "errorRate1Replica": "0.00%",
+    "errorRate2Replicas": "0.00%"
+  }
+}
