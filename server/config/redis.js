@@ -1,8 +1,9 @@
-import { createClient } from 'redis';
+﻿import { createClient } from 'redis';
 import logger from '../utils/logger.js';
 
 let redisClient = null;
 let redisAvailable = false;
+let forceFailClosedInTest = false;
 
 /**
  * Initialize Redis connection.
@@ -104,7 +105,7 @@ const testBlacklist = new Set();
  * Add token JTI to blacklist with remaining expiration time as TTL
  */
 const blacklistToken = async (jti, ttlSeconds) => {
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === 'test' && !forceFailClosedInTest) {
     testBlacklist.add(jti);
     return;
   }
@@ -118,18 +119,25 @@ const blacklistToken = async (jti, ttlSeconds) => {
 };
 
 /**
- * Check if token JTI is blacklisted
+ * Check if token JTI is blacklisted.
+ *
+ * SECURITY: When Redis is unavailable or disconnected, this check FAILS CLOSED (returns true),
+ * denying access by default to prevent revoked tokens from being silently accepted during an outage.
  */
 const isTokenBlacklisted = async (jti) => {
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === 'test' && !forceFailClosedInTest) {
     return testBlacklist.has(jti);
   }
-  if (!redisAvailable || !redisClient) return false;
+  if (!redisAvailable || !redisClient) {
+    logger.warn('Redis unavailable during token blacklist check — failing closed (denying access)', { jti });
+    return true; // FAIL CLOSED: Deny access if revocation status cannot be verified
+  }
   try {
     const res = await redisClient.get(`bl:${jti}`);
     return res === 'revoked';
-  } catch {
-    return false;
+  } catch (err) {
+    logger.error('Redis error during token blacklist check — failing closed', { message: err.message, jti });
+    return true; // FAIL CLOSED: on Redis query error
   }
 };
 
@@ -141,4 +149,18 @@ export function setRedisClient(client) {
   redisClient = client;
 }
 
-export { connectRedis, getCache, setCache, setCacheNX, delCache, blacklistToken, isTokenBlacklisted, redisClient, redisAvailable };
+export function setForceFailClosedInTest(val) {
+  forceFailClosedInTest = val;
+}
+
+export {
+  connectRedis,
+  getCache,
+  setCache,
+  setCacheNX,
+  delCache,
+  blacklistToken,
+  isTokenBlacklisted,
+  redisClient,
+  redisAvailable,
+};

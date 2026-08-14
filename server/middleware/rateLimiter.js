@@ -1,6 +1,7 @@
-import rateLimit from 'express-rate-limit';
+﻿import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { redisClient, redisAvailable } from '../config/redis.js';
+import logger from '../utils/logger.js';
 
 class HybridStore {
   constructor(options = {}) {
@@ -64,24 +65,27 @@ class HybridStore {
 }
 
 // Strict limiter for authentication endpoints (registration, login)
+// SECURITY: passOnStoreError is explicitly FALSE — auth endpoints MUST fail closed
+// if the rate-limit store encounters an error to prevent brute-force attacks.
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes window
   max: 100, // High threshold for cluster tests
-  message: { error: 'Too many auth attempts. Try again in 15 minutes.' },
+  message: { error: 'Authentication rate limit exceeded or store unavailable. Try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
   store: new HybridStore({ prefix: 'rl:auth:' }),
-  passOnStoreError: true, // Allow request through if both stores fail
+  passOnStoreError: false, // SECURITY: Fail-closed on auth store error
   skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
 });
 
 // Standard API rate limiter (protects database/CPU resource consumption)
+// AVAILABILITY: passOnStoreError is TRUE — non-auth API endpoints degrade gracefully
 export const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
   max: 1000, // High threshold for cluster load tests
   message: { error: 'Rate limit exceeded.' },
   store: new HybridStore({ prefix: 'rl:api:' }),
-  passOnStoreError: true,
+  passOnStoreError: true, // Degrade gracefully for general read endpoints
   skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
 });
 
@@ -100,3 +104,4 @@ export function createEndpointRateLimiter(options = {}) {
   });
 }
 
+export { HybridStore };
