@@ -65,6 +65,23 @@ ull (NaN) instead of a fake 1.0.
 
 
 ---
+10. **RAG Prompt Injection Semantic Generalization & Evaluation Circularity Correction**:
+   - **Audit finding**: Initial attempts to validate Layer 2 semantic paraphrase detection used test queries authored in the same session alongside the canonical anchors, introducing accidental correlation (e.g. matching the invented name `"FreedomGPT"` verbatim in both anchor and test). Furthermore, if the embedding model failed to load, Layer 2 previously failed open without surfacing errors to health monitoring.
+   - **Fail-Closed & Resilience Fix**:
+     - `PromptSanitizer` and `SemanticInjectionGuard` now track `is_ready` and `initialization_error`.
+     - `sanitizer.health_check()` reports `{"healthy": bool, "layer2_ready": bool, "layer2_error": str}`.
+     - Added `fail_closed_on_model_error=True` mode, raising `SemanticGuardInitializationError` rather than silently failing open.
+   - **Non-Circular Benchmark Methodology**:
+     - Anchors locked to the committed 12-vector anchor set in `prompt_sanitizer.py`.
+     - External attack benchmark pulled verbatim from public, independent datasets (`pr1m8/prompt-injections` Denzel Crocker dataset, `swisskyrepo/PayloadsAllTheThings`, `TakSec/Prompt-Injection-Everywhere`).
+     - False-positive benchmark evaluated on a batch of 30 varied, real-world Indian financial advisory queries across 6 domains (Taxation, Mutual Funds, Retirement, Loans, Insurance, Regulations).
+   - **Empirical Findings & Architectural Boundary**:
+     - **Legitimate Financial Queries**: Mean similarity = 0.1544, Max = 0.3155 (Section 80C query), FPR = **0.0%** (0/30 false positives) against decision threshold `0.40`.
+     - **External Direct Injections & Disclosures**: Direct overrides and system prompt leaks score **0.48 - 0.64** and are caught by Layer 2 without regex matches (e.g. `Disregard any previous instructions...` = 0.6358, `Output initialization above` = 0.4895).
+     - **Diluted / Wrapped Payloads**: Conversational wrappers and task encapsulation (e.g. translation tasks) dilute single-turn semantic embeddings, scoring **0.11 - 0.38** (sub-threshold).
+     - **Defense-in-Depth Conclusion**: Demonstrates why semantic cosine similarity cannot be an isolated defense, validating the 5-layer architecture (Layer 1 Regex fast-path + Layer 2 Semantic embedding + Ingestion Trust Tiering + Token Budgets + Prompt Isolation).
+
+---
 
 ## AI Security Hardening (post-v1.0)
 
@@ -74,7 +91,7 @@ The following security layers were added after the v1.0-final release to harden 
 | :--- | :--- | :--- |
 | **Ingestion Trust Tiering** | [`pipeline.py`](ml-service/rag/ingestion/pipeline.py) — only documents from pre-approved gov domains (SEBI, RBI, DICGC, Income Tax India) are auto-ingested; untrusted sources require explicit `manual_override=True` | [`test_rag_trust_tiering.py`](ml-service/tests/test_rag_trust_tiering.py) — 3/3 pass |
 | **Corpus Poisoning Defense** | End-to-end pipeline test proving poisoned/injected documents are neutralized before reaching the prompt builder | [`test_rag_poisoning_pipeline.py`](ml-service/tests/test_rag_poisoning_pipeline.py) — 1/1 pass |
-| **Semantic Injection Guard** | [`prompt_sanitizer.py`](ml-service/rag/security/prompt_sanitizer.py) — multi-layer defense: regex blacklist + semantic paraphrase detection + Base64 payload decoding | [`test_rag_security_redteam.py`](ml-service/tests/test_rag_security_redteam.py) — 9/9 pass |
+| **Semantic Injection Guard** | [`prompt_sanitizer.py`](ml-service/rag/security/prompt_sanitizer.py) — multi-layer defense: regex blacklist + semantic paraphrase detection + Base64 payload decoding | [`test_rag_security_redteam.py`](ml-service/tests/test_rag_security_redteam.py) (6/6 pass) + [`test_rag_security_generalization.py`](ml-service/tests/test_rag_security_generalization.py) (4/4 pass, non-circular public benchmark & 30-query FPR suite) |
 | **Consolidated Security Patterns** | [`config/security_patterns.json`](config/security_patterns.json) — single source of truth for injection patterns shared between Node.js and Python | Both `promptSecurity.js` and `prompt_sanitizer.py` load from this file |
 | **Per-User Token Budget** | [`tokenBudget.js`](server/middleware/tokenBudget.js) — rolling-window token budget middleware on `POST /api/chat/message`; independent of request-count rate limiting | [`tokenBudgetMiddleware.test.js`](server/test/tokenBudgetMiddleware.test.js) — 5/5 pass |
 
