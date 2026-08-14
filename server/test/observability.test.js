@@ -1,5 +1,5 @@
-/**
- * Tier 4 — Observability & Health Integration Tests
+﻿/**
+ * Tier 4 â€” Observability & Health Integration Tests
  *
  * Tests:
  *   1. Correlation ID generated automatically if not provided
@@ -61,7 +61,7 @@ test.after(async () => {
 });
 
 
-// ── 1. Correlation ID: auto-generated ────────────────────────────────
+// â”€â”€ 1. Correlation ID: auto-generated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 test('Observability: correlation ID generated automatically if missing', async () => {
   await withServer(async (baseUrl) => {
     // Use simple /health (always returns 200) to test correlation ID
@@ -76,7 +76,7 @@ test('Observability: correlation ID generated automatically if missing', async (
   });
 });
 
-// ── 2. Correlation ID: echo back provided ID ─────────────────────────
+// â”€â”€ 2. Correlation ID: echo back provided ID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 test('Observability: correlation ID propagated if provided in request', async () => {
   const customCid = 'test-trace-token-9988-7766';
   await withServer(async (baseUrl) => {
@@ -89,7 +89,7 @@ test('Observability: correlation ID propagated if provided in request', async ()
   });
 });
 
-// ── 3. Deep health check: structure and DB status ────────────────────
+// â”€â”€ 3. Deep health check: structure and DB status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 test('Observability: deep health check returns correct structure with DB UP', async () => {
   await ensureDb();
   await withServer(async (baseUrl) => {
@@ -106,19 +106,24 @@ test('Observability: deep health check returns correct structure with DB UP', as
     // DB should be UP since we connected
     assert.equal(body.services.database, 'UP', 'Database must be UP after ensureDb()');
 
-    // Overall status matches: UP only if all services are UP
+    // Overall status: UP if all UP, DEGRADED if non-critical DOWN, DOWN (503) only if DB DOWN
     const allUp = Object.values(body.services).every(s => s === 'UP');
-    if (allUp) {
+    const dbDown = body.services.database === 'DOWN';
+    if (dbDown) {
+      assert.equal(response.status, 503);
+      assert.equal(body.status, 'DOWN');
+    } else if (allUp) {
       assert.equal(response.status, 200);
       assert.equal(body.status, 'UP');
     } else {
-      assert.equal(response.status, 503);
-      assert.equal(body.status, 'DOWN');
+      // Non-critical services degraded - still 200
+      assert.equal(response.status, 200);
+      assert.equal(body.status, 'DEGRADED');
     }
   });
 });
 
-// ── 4. Deep health check: DB disconnected → 503 ─────────────────────
+// â”€â”€ 4. Deep health check: DB disconnected â†’ 503 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 test('Observability: deep health check returns 503 DOWN when MongoDB is disconnected', async (t) => {
   await ensureDb();
 

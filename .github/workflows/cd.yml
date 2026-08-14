@@ -129,8 +129,17 @@ jobs:
           echo "Ready Response: $READY_RES"
           echo "- **Readiness Probe (/health/ready)**: \`$READY_RES\`" >> $GITHUB_STEP_SUMMARY
 
-          echo "3. Testing /health/deep..."
-          DEEP_RES=$(curl -s -f http://127.0.0.1:5000/health/deep)
+          echo "3. Testing /health/deep (with retry for dependency warmup)..."
+          for i in 1 2 3 4 5; do
+            DEEP_RES=$(curl -s -f http://127.0.0.1:5000/health/deep) && break
+            echo "  Attempt $i failed, waiting 10s for dependencies to warm up..."
+            sleep 10
+          done
+          if [ -z "$DEEP_RES" ]; then
+            echo "ERROR: /health/deep failed after 5 retries"
+            curl -s http://127.0.0.1:5000/health/deep || true
+            exit 1
+          fi
           echo "Deep Response: $DEEP_RES"
           echo "- **Deep Health Probe (/health/deep)**: \`$DEEP_RES\`" >> $GITHUB_STEP_SUMMARY
 
