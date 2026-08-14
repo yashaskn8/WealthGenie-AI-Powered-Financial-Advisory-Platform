@@ -279,7 +279,7 @@ def train_ft_transformer_model(
     set_random_seed(training_config.random_seed)
     device = get_device()
 
-    base_dir = Path(__file__).resolve().parent / "saved_models"
+    base_dir = Path(__file__).resolve().parent.parent / "saved_models"
     base_dir.mkdir(parents=True, exist_ok=True)
     save_path = save_path or (base_dir / "ft_transformer.pt")
     scaler_path = scaler_path or (base_dir / "scaler.pkl")
