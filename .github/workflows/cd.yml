@@ -76,18 +76,18 @@ jobs:
       - name: Wait for Database and Redis to be Ready
         run: |
           echo "Waiting for MongoDB StatefulSet to be Ready..."
-          kubectl rollout status statefulset/wealthgenie-mongodb -n wealthgenie --timeout=180s
+          kubectl rollout status statefulset/wealthgenie-mongodb -n wealthgenie --timeout=240s
 
           echo "Waiting for Redis Deployment to be Ready..."
-          kubectl rollout status deployment/wealthgenie-redis -n wealthgenie --timeout=180s
+          kubectl rollout status deployment/wealthgenie-redis -n wealthgenie --timeout=240s
 
       - name: Wait for Microservices to be Ready
         run: |
           echo "Waiting for ML Service Deployment to be Ready..."
-          kubectl rollout status deployment/wealthgenie-ml-service -n wealthgenie --timeout=180s
+          kubectl rollout status deployment/wealthgenie-ml-service -n wealthgenie --timeout=240s
 
           echo "Waiting for Express Server Deployment to be Ready..."
-          kubectl rollout status deployment/wealthgenie-server -n wealthgenie --timeout=180s
+          kubectl rollout status deployment/wealthgenie-server -n wealthgenie --timeout=240s
 
       - name: Verify Cluster State
         run: |

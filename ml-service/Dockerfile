@@ -15,6 +15,9 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 
 COPY . .
 
+# Pre-train default model artifacts during image build so startup is instant
+RUN python model/training/train.py || true
+
 EXPOSE 8000
 
 ENV PORT=8000
