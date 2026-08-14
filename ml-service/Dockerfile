@@ -15,8 +15,11 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 
 COPY . .
 
-# Pre-train default model artifacts during image build so startup is instant
+# Pre-train ALL model artifacts during image build so startup is instant.
+# 1. RandomForest (train.py)
 RUN python model/training/train.py || true
+# 2. PyTorch MLP + FT-Transformer (train_pytorch.py)
+RUN python -c "from model.training.train_pytorch import train_pytorch_model, train_ft_transformer_model; train_pytorch_model(); train_ft_transformer_model()" || true
 
 EXPOSE 8000
 
