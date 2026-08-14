@@ -242,6 +242,11 @@ async def lifespan(app: FastAPI):
     # 1. Load / Train model artifacts FIRST (so they exist on disk for seeding)
     rf_pred = RandomForestPredictor()
     rf_pred.load_artifacts()
+    if not rf_pred.is_loaded:
+        logger.info("Auto-training baseline RandomForest model...")
+        from model.training.train_rf import train_random_forest_model
+        train_random_forest_model()
+        rf_pred.load_artifacts()
     model = rf_pred.model
     label_encoder = rf_pred.label_encoder
     registry.register("random_forest", rf_pred)
