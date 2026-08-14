@@ -1,22 +1,23 @@
 ﻿"""
-WealthGenie RAG Subsystem - Document Ingestion Pipeline
-Validates source trust tiers, cleans raw text, chunks hierarchically,
-generates embeddings, and indexes into the persistent vector store.
+WealthGenie RAG Subsystem - Ingestion Pipeline Orchestrator
+Executes end-to-end ingestion: Loader -> Cleaning -> Chunking -> Embedding -> Vector Store.
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+from rag.chunking.base import BaseChunker
 from rag.chunking.fixed_chunker import FixedSizeChunker
-from rag.chunking.recursive_chunker import RecursiveCharacterChunker
-from rag.cleaning.cleaner import clean_text
-from rag.embeddings.dense import DenseVectorEmbeddingProvider, get_embedding_provider
-from rag.exceptions import UntrustedSourceError
-from rag.ingestion.loader import DocumentLoader
+from rag.embeddings.base import BaseEmbeddingProvider
+from rag.embeddings.dense_embedding import get_embedding_provider
+from rag.ingestion.cleaner import clean_text
+from rag.ingestion.loaders import DocumentLoader
 from rag.schema import Document, TextChunk
-from rag.storage.vector_store import PersistentVectorStore, get_vector_store
+from rag.vector_store.base import BaseVectorStore
+from rag.vector_store.memory_vector_store import PersistentVectorStore
+from store_factory import get_vector_store
+
 from rag.lifecycle.manager import DocumentLifecycleManager
 
 logger = logging.getLogger("wealthgenie.rag.ingestion")
@@ -43,17 +44,21 @@ ALLOWED_TRUST_TIERS = {
 }
 
 
+class UntrustedSourceError(ValueError):
+    """Raised when a document source is not from an approved trusted domain/tier."""
+    pass
+
+
 class IngestionPipeline:
-    """End-to-end ingestion pipeline for documents into the vector store."""
+    """Orchestrates document loading, text cleaning, chunking, embedding, and vector storage."""
 
     def __init__(
         self,
-        loader: Optional[DocumentLoader] = None,
-        chunker: Optional[Any] = None,
-        embedder: Optional[DenseVectorEmbeddingProvider] = None,
-        vector_store: Optional[PersistentVectorStore] = None,
+        chunker: Optional[BaseChunker] = None,
+        embedder: Optional[BaseEmbeddingProvider] = None,
+        vector_store: Optional[BaseVectorStore] = None,
     ):
-        self.loader = loader or DocumentLoader()
+        self.loader = DocumentLoader()
         self.chunker = chunker or FixedSizeChunker(chunk_size=512, chunk_overlap=64)
         self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or get_vector_store()
@@ -82,7 +87,7 @@ class IngestionPipeline:
             return True
 
         # Check standard document sources, test fixtures, or regulatory sources
-        trusted_keywords = ["tax_", "official_", "synth_", "direct_input", "api_test", "incometax", "sebi", "rbi", "cbdt", "tax_code", "nps", "elss", ".txt", ".pdf", ".md", ".csv"]
+        trusted_keywords = ["tax", "official", "synth", "direct_input", "api_test", "incometax", "sebi", "rbi", "cbdt", "corpus", ".txt", ".pdf", ".md"]
         if any(kw in source or kw in title for kw in trusted_keywords):
             return True
 
@@ -103,6 +108,28 @@ class IngestionPipeline:
             title=title,
             author=author,
             effective_date=effective_date,
+            source_trust_tier=source_trust_tier,
+        )
+        return self.ingest_document(document, manual_override=manual_override)
+
+    def ingest_text(
+        self,
+        text: str,
+        title: str,
+        source: str = "direct_input",
+        author: Optional[str] = None,
+        effective_date: Optional[str] = None,
+        source_trust_tier: Optional[str] = None,
+        manual_override: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingests raw text directly into the RAG vector store."""
+        document = self.loader.load_text(
+            text,
+            title=title,
+            source=source,
+            author=author,
+            effective_date=effective_date,
+            source_trust_tier=source_trust_tier,
         )
         return self.ingest_document(document, manual_override=manual_override)
 
@@ -133,33 +160,18 @@ class IngestionPipeline:
         for chunk, emb in zip(chunks, embeddings):
             chunk.embedding = emb
 
-        # 4. Add to Vector Store
-        self.vector_store.add_chunks(chunks)
+        # 4. Store Chunks in Vector Store
+        added_count = self.vector_store.add_chunks(chunks)
+
+        # 5. Register Document Metadata in DocumentLifecycleManager
+        lifecycle_mgr = DocumentLifecycleManager(vector_store=self.vector_store)
+        lifecycle_mgr.register_document(document, len(chunks))
 
         return {
             "status": "success",
             "document_id": document.document_id,
             "title": document.metadata.title,
-            "chunks_added": len(chunks),
+            "chunks_created": len(chunks),
+            "chunks_added": added_count,
+            "vector_dimension": self.embedder.embedding_dimension,
         }
-
-    def ingest_text(
-        self,
-        text: str,
-        title: str = "Direct Text Ingestion",
-        source: str = "direct_input",
-        author: str = "WealthGenie Advisor",
-        effective_date: Optional[str] = None,
-        source_trust_tier: str = "government_official",
-        manual_override: bool = False,
-    ) -> Dict[str, Any]:
-        """Convenience method to ingest raw string content into the vector store."""
-        document = self.loader.load_text(
-            text=text,
-            title=title,
-            source=source,
-            author=author,
-            effective_date=effective_date,
-            source_trust_tier=source_trust_tier,
-        )
-        return self.ingest_document(document, manual_override=manual_override)
