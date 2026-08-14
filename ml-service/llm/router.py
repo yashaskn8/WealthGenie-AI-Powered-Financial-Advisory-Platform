@@ -1,4 +1,4 @@
-"""
+﻿"""
 WealthGenie Open-Weight LLM Platform - FastAPI Router
 Exposes dedicated endpoints (/llm/generate, /llm/rag-query, /llm/batch-generate, /llm/tool-query, /llm/models, /llm/switch, /llm/status, /llm/health).
 """
@@ -18,7 +18,7 @@ from rag.schema import RAGQueryRequest, RAGQueryResponse
 logger = logging.getLogger("wealthgenie.llm.router")
 
 llm_router = APIRouter(prefix="/llm", tags=["Open-Weight LLM Platform"])
-llm_config = LLMConfig()
+llm_config = LLMConfig.from_env()
 tool_engine = ToolCallingEngine()
 rag_llm_pipeline = RAGLLMPipeline(model_registry=llm_registry)
 

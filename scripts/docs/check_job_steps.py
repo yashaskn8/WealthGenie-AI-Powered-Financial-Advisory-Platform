@@ -1,8 +1,7 @@
 ﻿import urllib.request
 import json
-import sys
 
-run_id = 31808014109
+run_id = 31810810066
 url = f'https://api.github.com/repos/yashaskn8/WealthGenie-AI-Powered-Financial-Advisory-Platform/actions/runs/{run_id}/jobs'
 req = urllib.request.Request(url, headers={'User-Agent': 'WealthGenie-DevOps'})
 try:

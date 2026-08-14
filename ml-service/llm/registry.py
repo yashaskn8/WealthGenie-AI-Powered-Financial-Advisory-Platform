@@ -1,4 +1,4 @@
-"""
+﻿"""
 WealthGenie Open-Weight LLM Platform - Provider & Model Registry
 Manages registration, runtime switching, versioning, and lifecycle management for LLM backends.
 """
@@ -17,7 +17,7 @@ class LLMModelRegistry:
     """Enterprise registry for managing LLM providers, model versions, and active model targets."""
 
     def __init__(self, config: Optional[LLMConfig] = None):
-        self.config = config or LLMConfig()
+        self.config = config or LLMConfig.from_env()
         self._providers: Dict[str, BaseLLMProvider] = {}
         self._active_provider_key: str = self.config.default_provider
 
