@@ -16,6 +16,7 @@ from rag.ingestion.loaders import DocumentLoader
 from rag.schema import Document, TextChunk
 from rag.vector_store.base import BaseVectorStore
 from rag.vector_store.memory_vector_store import PersistentVectorStore
+from store_factory import get_vector_store
 
 from rag.lifecycle.manager import DocumentLifecycleManager
 
@@ -60,7 +61,7 @@ class IngestionPipeline:
         self.loader = DocumentLoader()
         self.chunker = chunker or FixedSizeChunker(chunk_size=512, chunk_overlap=64)
         self.embedder = embedder or get_embedding_provider()
-        self.vector_store = vector_store or PersistentVectorStore()
+        self.vector_store = vector_store or get_vector_store()
 
     def is_source_trusted(self, document: Document) -> bool:
         """Validates if the document source or trust tier is from an approved trusted domain/corpus file."""
