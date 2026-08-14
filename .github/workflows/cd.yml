@@ -144,7 +144,7 @@ jobs:
           echo "- **Deep Health Probe (/health/deep)**: \`$DEEP_RES\`" >> $GITHUB_STEP_SUMMARY
 
           echo "4. Testing Business Endpoint /api/tax/compare..."
-          TAX_RES=$(curl -s -f "http://127.0.0.1:5000/api/tax/compare?annualIncome=1200000")
+          TAX_RES=$(curl -s -f "http://127.0.0.1:5000/api/tax/compare?income=1200000")
           echo "Tax Compare Response: $TAX_RES"
           echo "- **Business Tax Endpoint (/api/tax/compare)**: \`$TAX_RES\`" >> $GITHUB_STEP_SUMMARY
 
@@ -158,7 +158,7 @@ jobs:
           kubectl get hpa -n wealthgenie
 
           echo "Generating 15s synthetic compute load against cluster..."
-          npx autocannon -c 40 -d 15 "http://127.0.0.1:5000/api/tax/compare?annualIncome=1200000"
+          npx autocannon -c 40 -d 15 "http://127.0.0.1:5000/api/tax/compare?income=1200000"
 
           sleep 5
           HPA_STATUS=$(kubectl get hpa wealthgenie-server-hpa -n wealthgenie)

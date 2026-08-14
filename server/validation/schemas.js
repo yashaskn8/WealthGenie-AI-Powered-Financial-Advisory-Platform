@@ -1,11 +1,11 @@
-import Joi from 'joi';
+﻿import Joi from 'joi';
 
 /**
  * WealthGenie Request Validation Schemas
  * Uses Joi for runtime input validation on Express routes.
  * 
  * =========================================================================
- * 📘 BEGINNER NOTE: WHAT IS INPUT VALIDATION & JOI?
+ * ðŸ“˜ BEGINNER NOTE: WHAT IS INPUT VALIDATION & JOI?
  * =========================================================================
  * 1. Why input validation matters: 
  *    We must never trust data sent by users or browsers. An attacker could send 
@@ -21,10 +21,10 @@ import Joi from 'joi';
  *    query strings like "1200000" into actual numbers).
  */
 
-// ── Reusable field definitions ─────────────────────────────────────
+// â”€â”€ Reusable field definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).message('Invalid ID format');
 
-// ── Auth Schemas ───────────────────────────────────────────────────
+// â”€â”€ Auth Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const registerSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required()
     .messages({ 'string.min': 'Name must be at least 2 characters' }),
@@ -48,19 +48,19 @@ export const loginSchema = Joi.object({
     .messages({ 'any.required': 'Password is required' }),
 });
 
-// ── Profile Schema ─────────────────────────────────────────────────
+// â”€â”€ Profile Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const profileSchema = Joi.object({
   monthly_income: Joi.number().min(1000).max(100000000).required()
     .messages({
-      'number.min': 'Monthly income must be at least ₹1,000',
-      'number.max': 'Monthly income cannot exceed ₹10,00,00,000',
+      'number.min': 'Monthly income must be at least â‚¹1,000',
+      'number.max': 'Monthly income cannot exceed â‚¹10,00,00,000',
     }),
   age: Joi.number().integer().min(18).max(80).required()
     .messages({ 'number.min': 'Age must be at least 18', 'number.max': 'Age must be at most 80' }),
   monthly_savings: Joi.number().min(500).max(100000000).required()
     .messages({
-      'number.min': 'Monthly savings must be at least ₹500',
-      'number.max': 'Monthly savings cannot exceed ₹10,00,00,000',
+      'number.min': 'Monthly savings must be at least â‚¹500',
+      'number.max': 'Monthly savings cannot exceed â‚¹10,00,00,000',
     }),
   regime: Joi.string().valid('new', 'old').default('new'),
   investment_horizon: Joi.number().integer().min(1).max(40).default(15),
@@ -77,11 +77,11 @@ export const profileSchema = Joi.object({
   risk_tolerance: Joi.string().valid('Conservative', 'Moderate', 'Aggressive').required(),
   goal_type: Joi.string().valid('retirement', 'house purchase', 'education', 'wealth-building').required(),
   total_ctc: Joi.number().min(100000).max(1000000000).optional()
-    .messages({ 'number.min': 'Total CTC must be at least ₹1,00,000', 'number.max': 'Total CTC cannot exceed ₹100 Crores' }),
+    .messages({ 'number.min': 'Total CTC must be at least â‚¹1,00,000', 'number.max': 'Total CTC cannot exceed â‚¹100 Crores' }),
   basic_component: Joi.number().min(20000).max(1000000000).optional()
-    .messages({ 'number.min': 'Basic salary component must be at least ₹20,000' }),
+    .messages({ 'number.min': 'Basic salary component must be at least â‚¹20,000' }),
   monthly_take_home: Joi.number().min(1000).optional()
-    .messages({ 'number.min': 'Monthly take-home salary must be at least ₹1,000' }),
+    .messages({ 'number.min': 'Monthly take-home salary must be at least â‚¹1,000' }),
   sold_property_amount: Joi.number().min(0).max(10000000000).default(0),
   has_lump_sum: Joi.boolean().default(false).optional(),
   lump_sum_amount: Joi.when('has_lump_sum', {
@@ -94,16 +94,16 @@ export const profileSchema = Joi.object({
   version: Joi.number().integer().min(0).optional(),
 }).custom((value, helpers) => {
   if (value.monthly_savings >= value.monthly_income) {
-    return helpers.error('any.custom', { message: 'Monthly savings (₹' + value.monthly_savings.toLocaleString('en-IN') + ') must be less than monthly income (₹' + value.monthly_income.toLocaleString('en-IN') + ')' });
+    return helpers.error('any.custom', { message: 'Monthly savings (â‚¹' + value.monthly_savings.toLocaleString('en-IN') + ') must be less than monthly income (â‚¹' + value.monthly_income.toLocaleString('en-IN') + ')' });
   }
   if (value.monthly_take_home && value.total_ctc && (value.monthly_take_home * 12 > value.total_ctc)) {
-    return helpers.error('any.custom', { message: 'Annualized monthly take-home salary (₹' + (value.monthly_take_home * 12).toLocaleString('en-IN') + ') cannot exceed Total CTC (₹' + value.total_ctc.toLocaleString('en-IN') + ')' });
+    return helpers.error('any.custom', { message: 'Annualized monthly take-home salary (â‚¹' + (value.monthly_take_home * 12).toLocaleString('en-IN') + ') cannot exceed Total CTC (â‚¹' + value.total_ctc.toLocaleString('en-IN') + ')' });
   }
   if (value.basic_component && value.total_ctc && (value.basic_component > value.total_ctc * 0.6)) {
-    return helpers.error('any.custom', { message: 'Basic salary component (₹' + value.basic_component.toLocaleString('en-IN') + ') cannot exceed 60% of Total CTC (₹' + value.total_ctc.toLocaleString('en-IN') + ')' });
+    return helpers.error('any.custom', { message: 'Basic salary component (â‚¹' + value.basic_component.toLocaleString('en-IN') + ') cannot exceed 60% of Total CTC (â‚¹' + value.total_ctc.toLocaleString('en-IN') + ')' });
   }
   if (value.basic_component && value.total_ctc && (value.basic_component < value.total_ctc * 0.2)) {
-    return helpers.error('any.custom', { message: 'Basic salary component (₹' + value.basic_component.toLocaleString('en-IN') + ') must be at least 20% of Total CTC (₹' + value.total_ctc.toLocaleString('en-IN') + ')' });
+    return helpers.error('any.custom', { message: 'Basic salary component (â‚¹' + value.basic_component.toLocaleString('en-IN') + ') must be at least 20% of Total CTC (â‚¹' + value.total_ctc.toLocaleString('en-IN') + ')' });
   }
   return value;
 });
@@ -115,13 +115,13 @@ export const updateProfileSchema = profileSchema.keys({
   }),
 });
 
-// ── Recommendation Schema ──────────────────────────────────────────
+// â”€â”€ Recommendation Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const recommendSchema = Joi.object({
   profileId: objectId.required()
     .messages({ 'string.pattern.base': 'Invalid profile ID format' }),
 });
 
-// ── Projection Schema ──────────────────────────────────────────────
+// â”€â”€ Projection Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const VALID_INSTRUMENTS = [
   'FD', 'ELSS', 'Equity_MF', 'ETF', 'Debt_MF',
   'RBI_Bond', 'G-Sec', 'PPF', 'NPS', 'Gold',
@@ -136,7 +136,7 @@ export const projectionSchema = Joi.object({
   years: Joi.array().items(Joi.number().integer().min(1).max(50)).min(1).max(10).optional(),
 });
 
-// ── Monte Carlo Schema ─────────────────────────────────────────────
+// â”€â”€ Monte Carlo Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const monteCarloSchema = Joi.object({
   instrument: Joi.string().valid(...VALID_INSTRUMENTS).required(),
   monthly_investment: Joi.number().min(500).max(10000000).required(),
@@ -146,13 +146,13 @@ export const monteCarloSchema = Joi.object({
   profileId: objectId.optional(),
 });
 
-// ── Goal Schema ────────────────────────────────────────────────────
+// â”€â”€ Goal Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const goalSchema = Joi.object({
   goal_name: Joi.string().trim().min(2).max(100).required(),
   target_amount: Joi.number().min(1000).max(10000000000).required()
     .messages({
-      'number.min': 'Target amount must be at least ₹1,000',
-      'number.max': 'Target amount cannot exceed ₹1,000 Crores',
+      'number.min': 'Target amount must be at least â‚¹1,000',
+      'number.max': 'Target amount cannot exceed â‚¹1,000 Crores',
     }),
   target_date: Joi.date().iso().required()
     .custom((value, helpers) => {
@@ -178,12 +178,12 @@ export const goalSchema = Joi.object({
   priority: Joi.string().valid('Critical', 'High', 'Medium', 'Low').default('Medium').optional(),
 });
 
-// ── Tax Schema ─────────────────────────────────────────────────────
+// â”€â”€ Tax Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const goalUpdateSchema = Joi.object({
   target_amount: Joi.number().min(1000).max(10000000000).optional()
     .messages({
-      'number.min': 'Target amount must be at least ₹1,000',
-      'number.max': 'Target amount cannot exceed ₹1,000 Crores',
+      'number.min': 'Target amount must be at least â‚¹1,000',
+      'number.max': 'Target amount cannot exceed â‚¹1,000 Crores',
     }),
   current_savings: Joi.number().min(0).max(10000000000).optional(),
   priority: Joi.string().valid('Critical', 'High', 'Medium', 'Low').optional(),
@@ -214,7 +214,7 @@ export const taxComputeSchema = taxCompareSchema.keys({
   regime: Joi.string().valid('new', 'old').default('new'),
 });
 
-// ── Rebalance Schema ───────────────────────────────────────────────
+// â”€â”€ Rebalance Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const rebalanceSchema = Joi.object({
   current_allocation: Joi.object().pattern(Joi.string(), Joi.number().min(0).max(1000000000)).max(30).required()
     .messages({ 'any.required': 'Current asset allocation is required' }),
@@ -233,7 +233,7 @@ export const updateWeightsSchema = Joi.object({
 });
 
 
-// ── Chat Schema ────────────────────────────────────────────────────
+// â”€â”€ Chat Schema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const chatMessageSchema = Joi.object({
   message: Joi.string().trim().min(1).max(1000).required()
     .messages({
@@ -243,7 +243,7 @@ export const chatMessageSchema = Joi.object({
   session_id: Joi.string().max(100).optional(),
 });
 
-// ── Rank WTI Schema (WG-005) ─────────────────────────────────────────
+// â”€â”€ Rank WTI Schema (WG-005) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const rankWtiSchema = Joi.object({
   userProfile: Joi.object({
     age: Joi.number().integer().min(18).max(80).optional(),

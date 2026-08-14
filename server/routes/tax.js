@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { asyncHandler, createError } from '../middleware/errorHandler.js';
 import { validateQuery, taxComputeSchema, taxCompareSchema } from '../validation/schemas.js';
 import { computeTax, compareTaxRegimes, isFYVerified, CURRENT_FY } from '../services/taxEngine.js';
@@ -56,7 +56,7 @@ router.get('/compute', validateQuery(taxComputeSchema), asyncHandler(async (req,
  * Compare both tax regimes and return the recommended one.
  */
 router.get('/compare', validateQuery(taxCompareSchema), asyncHandler(async (req, res) => {
-  const income = Number(req.query.income);
+  const income = Number(req.query.income !== undefined ? req.query.income : req.query.annualIncome);
 
   if (!Number.isFinite(income) || income < 0) {
     return res.status(400).json({ error: 'Income must be a valid positive number.' });
@@ -116,7 +116,7 @@ router.get('/compare', validateQuery(taxCompareSchema), asyncHandler(async (req,
  * Added in WG-038 to eliminate the client-side duplicate tax engine
  * (engine/taxComputation.js) which was missing the Section 87A rebate,
  * causing PostTaxAnalysis.jsx to systematically understate post-tax returns
- * for users with gross income under ~₹12.75L.
+ * for users with gross income under ~â‚¹12.75L.
  */
 router.post('/post-tax-return', asyncHandler(async (req, res) => {
   const { instrumentType, nominalRate, annualIncome, holdingYears, regime, monthlySIP, userAge } = req.body;

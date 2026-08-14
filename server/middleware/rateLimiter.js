@@ -14,7 +14,10 @@ class HybridStore {
     if (redisAvailable && redisClient) {
       if (!this.redisStore) {
         this.redisStore = new RedisStore({
-          sendCommand: (...args) => redisClient.sendCommand(args),
+          sendCommand: (...args) => {
+            const flatArgs = args.flat(Infinity).filter(a => a !== undefined && a !== null).map(a => String(a));
+            return redisClient.sendCommand(flatArgs);
+          },
           prefix: this.options.prefix || 'rl:',
         });
       }
