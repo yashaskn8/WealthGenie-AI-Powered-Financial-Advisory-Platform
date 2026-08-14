@@ -194,6 +194,14 @@ def get_decision_path_description(age: int, income: float, risk_category: str) -
     return path
 
 
+@app.get("/healthz")
+def healthz():
+    return {"status": "alive"}
+
+@app.get("/readyz")
+def readyz():
+    return readiness()
+
 @app.get("/health", response_model=HealthResponse)
 def health():
     rf = registry.get("random_forest")

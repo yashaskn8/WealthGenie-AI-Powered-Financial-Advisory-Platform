@@ -108,6 +108,8 @@ app.use('/health', healthRoutes);
 // ── Root-level health aliases for Railway / container probes ─────
 app.get('/ready', (req, res) => res.redirect(307, '/health/ready'));
 app.get('/live', (req, res) => res.redirect(307, '/health/live'));
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'ALIVE', uptime_seconds: Math.round(process.uptime()), timestamp: new Date().toISOString() }));
+app.get('/readyz', (req, res) => { if (mongoose.connection.readyState !== 1) { return res.status(503).json({ status: 'NOT_READY', reason: 'Database not connected' }); } res.status(200).json({ status: 'READY', timestamp: new Date().toISOString() }); });
 
 // ── Routes ───────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wealthgenie-server
+  namespace: wealthgenie
+  labels:
+    app: wealthgenie-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wealthgenie-server
+  template:
+    metadata:
+      labels:
+        app: wealthgenie-server
+    spec:
+      containers:
+        - name: server
+          image: wealthgenie-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: wealthgenie-config
+          env:
+            - name: PORT
+              value: "5000"
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: wealthgenie-secrets
+                  key: MONGODB_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wealthgenie-secrets
+                  key: JWT_SECRET
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wealthgenie-secrets
+                  key: GEMINI_API_KEY
+            - name: ML_SERVICE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wealthgenie-secrets
+                  key: ML_SERVICE_API_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3

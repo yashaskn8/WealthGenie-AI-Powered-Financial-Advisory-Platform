@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wealthgenie-ingress
+  namespace: wealthgenie
+  labels:
+    app.kubernetes.io/name: wealthgenie
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: wealthgenie-server
+                port:
+                  number: 5000
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: wealthgenie-server
+                port:
+                  number: 5000
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: wealthgenie-server
+                port:
+                  number: 5000
+          - path: /readyz
+            pathType: Exact
+            backend:
+              service:
+                name: wealthgenie-server
+                port:
+                  number: 5000
