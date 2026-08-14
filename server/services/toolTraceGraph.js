@@ -67,4 +67,4 @@ export const promptVersion = {
   checksum: crypto.createHash('sha256').update(JSON.stringify(promptVersionFields)).digest('hex'),
 };
 
-export const policyVersion = '2026.1.0-SEBI-COMPLIANT';
+export const policyVersion = '2026.1.0';
