@@ -81,7 +81,12 @@ def _seed_and_resolve_active_models(version_registry) -> None:
     """
     Seeds baseline models into the persistent version registry if empty or paths invalid,
     ensuring tamper-evident lineage is maintained across restarts and replicas.
+
+    MUST be called AFTER model artifacts exist on disk (i.e. after training/loading),
+    not before, or it will correctly skip seeding and log the reason.
     """
+    logger.info("[Registry Seeding] Starting _seed_and_resolve_active_models...")
+
     data_dir = BASE_DIR / "data"
     profiles_csv = data_dir / "investment_profiles.csv"
     data_hash = "unavailable"
@@ -89,8 +94,11 @@ def _seed_and_resolve_active_models(version_registry) -> None:
         try:
             from model.registry.registry_store import compute_data_hash
             data_hash = compute_data_hash(profiles_csv)
-        except Exception:
-            pass
+            logger.info(f"[Registry Seeding] Computed training data hash: {data_hash[:16]}...")
+        except Exception as e:
+            logger.warning(f"[Registry Seeding] Failed to compute data hash: {e}")
+    else:
+        logger.info(f"[Registry Seeding] Training data not found at {profiles_csv}, using data_hash='unavailable'.")
 
     ref_dist = None
     if profiles_csv.exists():
@@ -107,22 +115,28 @@ def _seed_and_resolve_active_models(version_registry) -> None:
                 "dependents_adjusted_burden_score",
             ]
             ref_dist = compute_reference_distributions(df, feature_cols)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[Registry Seeding] Failed to compute reference distributions: {e}")
 
-    # 1. Seed RandomForest if not already registered or artifact path not existing
+    seeded_count = 0
+
+    # --- 1. Seed RandomForest ---
     rf_artifact = MODEL_DIR / "model.pkl"
     if rf_artifact.exists():
         active_rf = version_registry.get_active_model("RandomForest")
-        if active_rf is None or not Path(active_rf["artifact_path"]).exists():
+        if active_rf is not None and Path(active_rf["artifact_path"]).exists():
+            logger.info(f"[Registry Seeding] RandomForest already registered and active: {active_rf['version_id']}")
+        else:
+            reason = "no active version" if active_rf is None else f"artifact path invalid ({active_rf.get('artifact_path')})"
+            logger.info(f"[Registry Seeding] Seeding RandomForest baseline ({reason})...")
             meta = {}
             metadata_path = MODEL_DIR / "metadata.json"
             if metadata_path.exists():
                 try:
                     with open(metadata_path, "r", encoding="utf-8") as f:
                         meta = json.load(f)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"[Registry Seeding] Failed to read metadata.json: {e}")
 
             fidelity = meta.get("test_accuracy", 0.9553)
             training_timestamp = meta.get("trained_at", "2026-07-23T19:28:42Z")
@@ -145,15 +159,22 @@ def _seed_and_resolve_active_models(version_registry) -> None:
                     notes="Baseline RandomForest model seeded at application startup",
                     set_active=True,
                 )
-                logger.info(f"Seeded active RandomForest baseline version {vid} in ModelRegistry.")
+                logger.info(f"[Registry Seeding] ✓ Seeded active RandomForest version {vid}")
+                seeded_count += 1
             except Exception as e:
-                logger.warning(f"Failed to seed RandomForest baseline version: {e}")
+                logger.error(f"[Registry Seeding] ✗ FAILED to seed RandomForest: {type(e).__name__}: {e}", exc_info=True)
+    else:
+        logger.warning(f"[Registry Seeding] RandomForest artifact NOT FOUND at {rf_artifact} — skipping seed.")
 
-    # 2. Seed PyTorch MLP if not already registered
+    # --- 2. Seed PyTorch MLP ---
     mlp_artifact = MODEL_DIR / "saved_models" / "mlp_model.pt"
     if mlp_artifact.exists():
         active_mlp = version_registry.get_active_model("PyTorch_MLP")
-        if active_mlp is None or not Path(active_mlp["artifact_path"]).exists():
+        if active_mlp is not None and Path(active_mlp["artifact_path"]).exists():
+            logger.info(f"[Registry Seeding] PyTorch_MLP already registered and active: {active_mlp['version_id']}")
+        else:
+            reason = "no active version" if active_mlp is None else f"artifact path invalid ({active_mlp.get('artifact_path')})"
+            logger.info(f"[Registry Seeding] Seeding PyTorch_MLP baseline ({reason})...")
             try:
                 vid = version_registry.register_model(
                     model_architecture="PyTorch_MLP",
@@ -165,15 +186,22 @@ def _seed_and_resolve_active_models(version_registry) -> None:
                     notes="Baseline PyTorch MLP model seeded at application startup",
                     set_active=True,
                 )
-                logger.info(f"Seeded active PyTorch MLP baseline version {vid} in ModelRegistry.")
+                logger.info(f"[Registry Seeding] ✓ Seeded active PyTorch_MLP version {vid}")
+                seeded_count += 1
             except Exception as e:
-                logger.warning(f"Failed to seed PyTorch MLP baseline: {e}")
+                logger.error(f"[Registry Seeding] ✗ FAILED to seed PyTorch_MLP: {type(e).__name__}: {e}", exc_info=True)
+    else:
+        logger.warning(f"[Registry Seeding] PyTorch_MLP artifact NOT FOUND at {mlp_artifact} — skipping seed.")
 
-    # 3. Seed FT-Transformer if not already registered
+    # --- 3. Seed FT-Transformer ---
     ft_artifact = MODEL_DIR / "saved_models" / "ft_transformer.pt"
     if ft_artifact.exists():
         active_ft = version_registry.get_active_model("FT_Transformer")
-        if active_ft is None or not Path(active_ft["artifact_path"]).exists():
+        if active_ft is not None and Path(active_ft["artifact_path"]).exists():
+            logger.info(f"[Registry Seeding] FT_Transformer already registered and active: {active_ft['version_id']}")
+        else:
+            reason = "no active version" if active_ft is None else f"artifact path invalid ({active_ft.get('artifact_path')})"
+            logger.info(f"[Registry Seeding] Seeding FT_Transformer baseline ({reason})...")
             try:
                 vid = version_registry.register_model(
                     model_architecture="FT_Transformer",
@@ -185,9 +213,20 @@ def _seed_and_resolve_active_models(version_registry) -> None:
                     notes="Baseline FT-Transformer model seeded at application startup",
                     set_active=True,
                 )
-                logger.info(f"Seeded active FT-Transformer baseline version {vid} in ModelRegistry.")
+                logger.info(f"[Registry Seeding] ✓ Seeded active FT_Transformer version {vid}")
+                seeded_count += 1
             except Exception as e:
-                logger.warning(f"Failed to seed FT-Transformer baseline: {e}")
+                logger.error(f"[Registry Seeding] ✗ FAILED to seed FT_Transformer: {type(e).__name__}: {e}", exc_info=True)
+    else:
+        logger.warning(f"[Registry Seeding] FT_Transformer artifact NOT FOUND at {ft_artifact} — skipping seed.")
+
+    # --- Summary ---
+    total_versions = version_registry.list_versions()
+    active_versions = [v for v in total_versions if v.get("is_active")]
+    logger.info(
+        f"[Registry Seeding] Complete. Seeded {seeded_count} new version(s). "
+        f"Registry now has {len(total_versions)} total version(s), {len(active_versions)} active."
+    )
 
 
 @asynccontextmanager
@@ -198,32 +237,18 @@ async def lifespan(app: FastAPI):
     version_registry = get_model_registry()
     registry.set_version_registry(version_registry)
     app.state.version_registry = version_registry
+    logger.info(f"Version registry initialized: {type(version_registry).__name__}")
 
-    # 1. Seed & Resolve Active Model Versions from Persistent Registry
-    _seed_and_resolve_active_models(version_registry)
-
-    # 2. Instantiate & Register Predictors in ModelRegistry from Active Versions
+    # 1. Load / Train model artifacts FIRST (so they exist on disk for seeding)
     rf_pred = RandomForestPredictor()
-    active_rf = version_registry.get_active_model("RandomForest")
-    if active_rf and Path(active_rf["artifact_path"]).exists():
-        rf_pred.load_artifacts(artifact_path=Path(active_rf["artifact_path"]))
-        model_version = active_rf["version_id"]
-        model_accuracy = active_rf.get("metrics", {}).get("rule_approximation_fidelity", 0.9553)
-    else:
-        rf_pred.load_artifacts()
-
+    rf_pred.load_artifacts()
     model = rf_pred.model
     label_encoder = rf_pred.label_encoder
     registry.register("random_forest", rf_pred)
     registry.register("rf", rf_pred)
 
     mlp_pred = MLPPredictor()
-    active_mlp = version_registry.get_active_model("PyTorch_MLP")
-    if active_mlp and Path(active_mlp["artifact_path"]).exists():
-        mlp_pred.load_artifacts(artifact_path=Path(active_mlp["artifact_path"]))
-    else:
-        mlp_pred.load_artifacts()
-
+    mlp_pred.load_artifacts()
     if not mlp_pred.is_loaded:
         logger.info("Auto-training baseline PyTorch MLP model...")
         from model.training.train_pytorch import train_pytorch_model
@@ -233,12 +258,7 @@ async def lifespan(app: FastAPI):
     registry.register("pytorch", mlp_pred)
 
     ft_pred = FTTransformerPredictor()
-    active_ft = version_registry.get_active_model("FT_Transformer")
-    if active_ft and Path(active_ft["artifact_path"]).exists():
-        ft_pred.load_artifacts(artifact_path=Path(active_ft["artifact_path"]))
-    else:
-        ft_pred.load_artifacts()
-
+    ft_pred.load_artifacts()
     if not ft_pred.is_loaded:
         logger.info("Auto-training baseline FT-Transformer model...")
         from model.training.train_pytorch import train_ft_transformer_model
@@ -246,7 +266,32 @@ async def lifespan(app: FastAPI):
         ft_pred.load_artifacts()
     registry.register("ft_transformer", ft_pred)
 
-    # 3. Load TreeSHAP Explainer from RF model
+    # 2. NOW seed the version registry (artifacts guaranteed to exist on disk)
+    _seed_and_resolve_active_models(version_registry)
+
+    # 3. Resolve active versions from registry and reload predictors from registry-tracked paths
+    active_rf = version_registry.get_active_model("RandomForest")
+    if active_rf and Path(active_rf["artifact_path"]).exists():
+        rf_pred.load_artifacts(artifact_path=Path(active_rf["artifact_path"]))
+        model_version = active_rf["version_id"]
+        model_accuracy = active_rf.get("metrics", {}).get("rule_approximation_fidelity", 0.9553)
+        model = rf_pred.model
+        label_encoder = rf_pred.label_encoder
+        logger.info(f"RandomForest loaded from registry version {active_rf['version_id']}")
+    else:
+        logger.info(f"RandomForest loaded from default path (no active registry version).")
+
+    active_mlp = version_registry.get_active_model("PyTorch_MLP")
+    if active_mlp and Path(active_mlp["artifact_path"]).exists():
+        mlp_pred.load_artifacts(artifact_path=Path(active_mlp["artifact_path"]))
+        logger.info(f"PyTorch_MLP loaded from registry version {active_mlp['version_id']}")
+
+    active_ft = version_registry.get_active_model("FT_Transformer")
+    if active_ft and Path(active_ft["artifact_path"]).exists():
+        ft_pred.load_artifacts(artifact_path=Path(active_ft["artifact_path"]))
+        logger.info(f"FT_Transformer loaded from registry version {active_ft['version_id']}")
+
+    # 4. Load TreeSHAP Explainer from RF model
     if rf_pred.is_loaded and rf_pred.model is not None and rf_pred.label_encoder is not None:
         try:
             explainer_instance = ModelExplainer(rf_pred.model, rf_pred.label_encoder)
@@ -254,7 +299,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"TreeSHAP Explainer initialization failed ({e}); serving without SHAP attributions.")
 
-    # 4. Initialize & Seed RAG Knowledge Base
+    # 5. Initialize & Seed RAG Knowledge Base
     try:
         from rag.seed_knowledge import seed_default_knowledge_base
         seed_default_knowledge_base()
@@ -344,10 +389,24 @@ def readyz():
 def health():
     rf = registry.get("random_forest")
     status_str = "ok" if (rf and rf.is_loaded) else "model_not_loaded"
+
+    # Query live version registry at request time, not stale startup globals
+    live_version = model_version
+    live_accuracy = model_accuracy
+    version_store = registry.get_version_registry()
+    if version_store is not None:
+        try:
+            active = version_store.get_active_model("RandomForest")
+            if active:
+                live_version = active["version_id"]
+                live_accuracy = active.get("metrics", {}).get("rule_approximation_fidelity", live_accuracy)
+        except Exception:
+            pass  # Fall back to globals on any registry read error
+
     return HealthResponse(
         status=status_str,
-        model_version=model_version,
-        model_accuracy=model_accuracy,
+        model_version=live_version,
+        model_accuracy=live_accuracy,
         explainer_loaded=explainer_instance is not None,
     )
 
