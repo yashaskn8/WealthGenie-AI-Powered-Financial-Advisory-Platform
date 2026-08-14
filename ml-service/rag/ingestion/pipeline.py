@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from rag.chunking.fixed_chunker import FixedSizeChunker
-from rag.chunking.semantic_chunker import SemanticChunker
+from rag.chunking.recursive_chunker import RecursiveCharacterChunker
 from rag.cleaning.cleaner import clean_text
 from rag.embeddings.dense import DenseVectorEmbeddingProvider, get_embedding_provider
 from rag.exceptions import UntrustedSourceError
