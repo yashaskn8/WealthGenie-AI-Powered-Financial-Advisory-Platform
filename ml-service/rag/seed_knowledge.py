@@ -1,4 +1,4 @@
-"""
+﻿"""
 WealthGenie RAG Subsystem - Seed Knowledge Base Ingestion
 Ingests authoritative Indian FY 2025-26 tax regulations, SEBI mutual fund guidelines,
 and RBI/DICGC regulatory frameworks from real corpus documents into the vector store.
@@ -13,6 +13,21 @@ from rag.ingestion.pipeline import IngestionPipeline
 logger = logging.getLogger("wealthgenie.rag.seed_knowledge")
 
 CORPUS_DIR = BASE_DIR / "rag" / "data" / "corpus"
+
+TAX_REGULATIONS_2025 = """
+Income Tax Regulations FY 2025-26 (AY 2026-27):
+Section 80C: Deduction up to Rs 1,50,000 (1.5 lakh) per financial year for investments in ELSS (Equity Linked Savings Scheme), PPF, EPF, NSC, and Life Insurance. ELSS has a mandatory lock-in period of 3 years.
+Section 80D: Deduction up to Rs 25,000 for health insurance premiums for self and family, and up to Rs 50,000 for senior citizen parents.
+Section 87A: Rebate available under the new tax regime for taxable income up to Rs 7,00,000, and standard deduction of Rs 75,000 for salaried employees.
+Section 80CCD(1B): Additional deduction up to Rs 50,000 for contributions to National Pension System (NPS).
+"""
+
+MUTUAL_FUNDS_SUITABILITY = """
+SEBI Mutual Fund Categorization and Investor Suitability Guidelines:
+Equity Linked Savings Schemes (ELSS) are open-ended equity schemes with a statutory lock-in period of 3 years offering tax benefits under Section 80C.
+Riskometer: Mutual funds are categorized into Low, Low-to-Moderate, Moderate, Moderately High, High, and Very High risk.
+Investor Suitability: High-risk equity funds and ELSS are suitable for investors with an investment horizon of 3-5+ years.
+"""
 
 
 def seed_default_knowledge_base(force_reingest: bool = False) -> int:
@@ -38,22 +53,13 @@ def seed_default_knowledge_base(force_reingest: bool = False) -> int:
         and p.name != "corpus_sources.md"
     ])
 
-    logger.info(f"Found {len(corpus_files)} authoritative corpus files for ingestion.")
-
-    total_added = 0
+    total_ingested_chunks = 0
     for file_path in corpus_files:
-        logger.info(f"Ingesting corpus file: {file_path.name}...")
-        res = pipeline.ingest_file(file_path, title=file_path.stem.replace("_", " ").title())
-        chunks_added = res.get("chunks_created", 0)
-        total_added += chunks_added
-        logger.info(f"File '{file_path.name}' yielded {chunks_added} chunks.")
+        try:
+            res = pipeline.ingest_file(file_path, manual_override=True)
+            total_ingested_chunks += res.get("chunks_added", 0)
+        except Exception as e:
+            logger.error(f"Error seeding {file_path.name}: {e}")
 
-    final_stats = pipeline.vector_store.get_stats()
-    logger.info(f"Knowledge base seeding complete. Total chunks indexed: {final_stats['total_chunks']}")
-    return final_stats["total_chunks"]
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    total = seed_default_knowledge_base(force_reingest=True)
-    print(f"SEEDED_CHUNKS_COUNT={total}")
+    logger.info(f"Successfully seeded {total_ingested_chunks} chunks into vector store.")
+    return pipeline.vector_store.get_stats()["total_chunks"]
