@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import mongoose from 'mongoose';
 import { redisClient, redisAvailable } from '../config/redis.js';
 import { checkMLHealth } from '../services/mlClient.js';
@@ -27,7 +27,6 @@ router.get('/deep', asyncHandler(async (req, res) => {
   try {
     const isDbConnected = mongoose.connection.readyState === 1;
     if (isDbConnected) {
-      // Run quick admin ping to confirm actual network/liveness
       await mongoose.connection.db.admin().ping();
       health.services.database = 'UP';
     }
@@ -50,7 +49,13 @@ router.get('/deep', asyncHandler(async (req, res) => {
   // 3. Check ML Microservice
   try {
     const mlHealth = await checkMLHealth(req.correlationId);
-    if (mlHealth && (mlHealth.status === 'UP' || mlHealth.status === 'healthy' || mlHealth.healthy === true)) {
+    if (mlHealth && (
+      mlHealth.status === 'UP' ||
+      mlHealth.status === 'healthy' ||
+      mlHealth.status === 'ok' ||
+      mlHealth.status === 'ready' ||
+      mlHealth.healthy === true
+    )) {
       health.services.ml = 'UP';
     }
   } catch (err) {
@@ -77,7 +82,7 @@ router.get('/', (req, res) => {
 
 /**
  * GET /health/ready
- * Readiness probe — returns 200 only when the database is connected and responsive.
+ * Readiness probe - returns 200 only when the database is connected and responsive.
  * Container orchestrators use this to decide when to route traffic.
  */
 router.get('/ready', (req, res) => {
@@ -89,7 +94,7 @@ router.get('/ready', (req, res) => {
 
 /**
  * GET /health/live
- * Liveness probe — returns 200 if the process is alive.
+ * Liveness probe - returns 200 if the process is alive.
  * Container orchestrators use this to decide whether to restart the container.
  */
 router.get('/live', (req, res) => {
