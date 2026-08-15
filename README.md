@@ -23,7 +23,9 @@
 ### Core Engineering Capabilities Demonstrated
 
 * **5-Stage Mathematical Portfolio Optimization**: Combines mean-variance quadratic optimization (`numeric` solver), rule-based heuristic fallback, policy concentration caps (`CONCENTRATION_CAPS`), and emergency fund floor protection.
-* **Hybrid RAG Knowledge Retrieval**: Intent-gated architecture combining `SentenceTransformers` (`all-MiniLM-L6-v2` 384D) vector search over vectorized SEBI/RBI/IT-Act chunks with inline citation verification.
+* **Multi-Tenant RAG Knowledge Retrieval**: Intent-gated architecture combining `SentenceTransformers` (`all-MiniLM-L6-v2` 384D) vector search and BM25 sparse retrieval over vectorized SEBI/RBI/IT-Act chunks with multi-tenant namespace isolation and inline citation verification.
+* **OpenTelemetry Distributed Tracing**: Full W3C `traceparent` and `X-Correlation-ID` context propagation across Express and FastAPI microservices exporting spans to local `traces.jsonl`.
+* **Immutable Advisory Audit Trail**: Synchronous, fail-loudly SHA-256 hashed advisory audit logging recording user inputs, active model versions, and cited RAG chunks in MongoDB.
 * **Multi-Model Tabular Deep Learning**: Comparative suitability modeling benchmarking **Random Forest** (95.63% test rule-approximation fidelity, TreeSHAP explainability), **PyTorch MLP** (95.60%), and **FT-Transformer** (*NeurIPS 2021*, 97.05% test rule-approximation fidelity).
 * **Multi-Agent Conversational System**: Layered stateful conversation orchestration featuring security prompt injection defense, financial tool calling, `LayeredMemoryManager`, and structured JSON response protocols.
 * **Dual Tax Engine (FY2025-26)**: In-memory Indian tax engine evaluating Old vs New tax regimes, Section 87A marginal rebate relief, surcharges, and Section 80C/80D deductions.
@@ -35,14 +37,17 @@
 
 | Capability | Implementation Mechanism | Verification / Benchmark Source |
 | :--- | :--- | :--- |
-| **Portfolio Recommendation** | 5-stage pipeline: Risk scoring → Asset allocation → Quadratic solver / Heuristic fallback → Policy caps → Rebalancing | [`server/services/RecommendationPipeline.js`](server/services/RecommendationPipeline.js), 39 test files (287 assertions) |
-| **RAG Knowledge Retrieval** | FastAPI hybrid vector search (`all-MiniLM-L6-v2` 384D) with cosine similarity & intent routing | Document Hit Rate: **98.7%**, Precision@4: **0.7367**, MRR: **0.9022** ([`real_corpus_evaluation_report.json`](ml-service/reports/real_corpus_evaluation_report.json)) |
+| **Portfolio Recommendation** | 5-stage pipeline: Risk scoring → Asset allocation → Quadratic solver / Heuristic fallback → Policy caps → Rebalancing | [`server/services/RecommendationPipeline.js`](server/services/RecommendationPipeline.js), 49 test suites (366 assertions) |
+| **RAG Knowledge Retrieval & Multi-Tenancy** | FastAPI hybrid vector search (`all-MiniLM-L6-v2` 384D) with tenant namespace isolation & intent routing | Document Hit Rate: **98.7%**, Precision@4: **0.7367**, MRR: **0.9022** ([`real_corpus_evaluation_report.json`](ml-service/reports/real_corpus_evaluation_report.json), [`test_rag_tenant_isolation.py`](ml-service/tests/test_rag_tenant_isolation.py)) |
+| **Distributed Tracing** | OpenTelemetry SDK with W3C `traceparent` propagation across Express <-> FastAPI microservices exporting to `traces.jsonl` | [`server/config/tracing.js`](server/config/tracing.js), [`ml-service/tracing.py`](ml-service/tracing.py), [`scripts/verify_distributed_tracing.js`](scripts/verify_distributed_tracing.js) |
+| **Immutable Advisory Audit Trail** | Synchronous SHA-256 hashed audit log with fail-loudly guarantees and admin endpoints | [`server/models/AuditRecord.js`](server/models/AuditRecord.js), [`server/test/auditTrail.test.js`](server/test/auditTrail.test.js) (4/4 pass) |
+| **Playwright Full-Lifecycle E2E Suite** | Automated 5-service orchestrator for end-to-end user lifecycle journey | [`scripts/run_e2e_stack.ps1`](scripts/run_e2e_stack.ps1), [`reactapp/e2e/full-flow.spec.ts`](reactapp/e2e/full-flow.spec.ts) (1 passed in 21.1s) |
 | **Investor Classification** | Random Forest (`model.pkl`), PyTorch MLP, and FT-Transformer tabular neural network | FT-Transformer: **97.05%** rule-approx. (independent CFP: 15.83%), RF: **95.63%** rule-approx. (independent CFP: 25.26%) ([`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json)) |
 | **Agentic Advisory Chat** | Multi-agent state machine (`geminiChatService.js`, `aiToolOrchestrator.js`) with tool-calling graph | Post-patch load test: **105.7–193.6 req/s** (chat API throughput) ([`load_test_report.md`](load_test_report.md)) |
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
 | **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | `investment_master.json` (155 instruments) |
 | **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
-| **Testing & CI/CD** | 39 Node.js test files (287 assertions) + 186 Python pytest items across multi-OS CI matrix | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
+| **Testing & CI/CD** | 49 Node.js test suites (366 assertions) + 198 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 
@@ -322,7 +327,7 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 ├── PROJECT_STATUS.md              # Feature status & architectural disclosure matrix
 ├── load_test_report.md            # Autocannon load testing benchmark report
 ├── reactapp/                      # React 19 Single-Page Application & Design System
-│   ├── e2e/                       # Playwright E2E full user lifecycle test suite
+│   ├── e2e/                       # Playwright E2E full user lifecycle test suite (full-flow.spec.ts)
 │   ├── src/
 │   │   ├── components/            # UI Components (ProfilePage, TaxScreen, Rebalancer, etc.)
 │   │   ├── styles/                # CSS Design Tokens System (tokens.css, components.css)
@@ -333,19 +338,22 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 │   ├── playwright.config.js       # Playwright E2E configuration
 │   └── package.json
 ├── server/                        # Express.js REST API Gateway
-│   ├── config/                    # DB & Redis connection config
-│   ├── middleware/                # Auth, rate-limiter, idempotency, error handlers
-│   ├── models/                    # Mongoose Schemas (User, Profile, Recommendation, etc.)
+│   ├── config/                    # DB, Redis & OpenTelemetry tracing config (tracing.js)
+│   ├── middleware/                # Auth, rate-limiter, correlation/traceparent, idempotency
+│   ├── models/                    # Mongoose Schemas (User, Profile, Recommendation, AuditRecord)
 │   ├── routes/                    # REST Endpoints (recommend, tax, profile, chat, etc.)
 │   ├── services/                  # RecommendationPipeline, TaxEngine, GeminiChatService
-│   └── test/                      # 44 Node.js test files (346 tests)
+│   └── test/                      # 49 Node.js test suites (366 tests)
 ├── ml-service/                    # FastAPI Machine Learning Microservice
 │   ├── main.py                    # FastAPI routes (/predict, /rag/query, /health)
+│   ├── tracing.py                 # OpenTelemetry instrumentation & FileSpanExporter
 │   ├── model/                     # Random Forest (model.pkl) & FT-Transformer checkpoints
-│   ├── rag/                       # Vector store, SentenceTransformer 384D embedder
+│   ├── rag/                       # Multi-tenant vector store, SentenceTransformer 384D embedder
 │   ├── reports/                   # Committed JSON evaluation reports
-│   └── tests/                     # 171 pytest test functions
-└── scripts/                       # Maintenance & docs sync verification scripts
+│   └── tests/                     # 198 pytest test functions
+└── scripts/                       # Orchestration, tracing verification & CSS migration scripts
+    ├── run_e2e_stack.ps1          # Automated 5-service Playwright stack orchestrator
+    └── verify_distributed_tracing.js # Distributed tracing cross-service assertion script
 ```
 
 ---

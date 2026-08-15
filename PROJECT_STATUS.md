@@ -8,7 +8,10 @@
 | **Frontend CSS Migration (17/17)** | [`reactapp/src/`](reactapp/src/) | 100% of the 17 CSS files migrated to design tokens with zero visual regressions and unified aesthetic |
 | **Unified State Handling** | [`reactapp/src/components/StateMessages.jsx`](reactapp/src/components/StateMessages.jsx) | Standardized `LoadingState`, `ErrorState`, and `EmptyState` components with ARIA live regions (`role="status"`, `role="alert"`) |
 | **Accessibility (0 Violations)** | [`reactapp/src/__tests__/a11y.test.jsx`](reactapp/src/__tests__/a11y.test.jsx) | Automated `axe-core` testing verifying 0 accessibility violations across all 5 audited core screens |
-| **Playwright Full-Lifecycle E2E Suite** | [`reactapp/e2e/full-flow.spec.js`](reactapp/e2e/full-flow.spec.js) | Full end-to-end integration test (Signup -> Profile -> Recommendations & DeepDive -> Goal Planning -> GenieChat grounded advice) passing in 17.4s |
+| **Playwright Full-Lifecycle E2E Suite** | [`reactapp/e2e/full-flow.spec.ts`](reactapp/e2e/full-flow.spec.ts) & [`scripts/run_e2e_stack.ps1`](scripts/run_e2e_stack.ps1) | Full end-to-end integration test (Signup -> Profile -> Recommendations & DeepDive -> Goal Planning -> GenieChat grounded advice) passing in ~21s with automated stack orchestrator |
+| **OpenTelemetry Distributed Tracing** | [`server/config/tracing.js`](server/config/tracing.js) & [`ml-service/tracing.py`](ml-service/tracing.py) | End-to-end W3C `traceparent` and `X-Correlation-ID` propagation across Express <-> FastAPI microservice boundary; exports spans to `traces.jsonl` ([`scripts/verify_distributed_tracing.js`](scripts/verify_distributed_tracing.js)) |
+| **Immutable Advisory Audit Trail** | [`server/models/AuditRecord.js`](server/models/AuditRecord.js) & [`server/routes/recommend.js`](server/routes/recommend.js) | Synchronous, fail-loudly SHA-256 hashed advisory audit logging recording model version IDs, cited RAG chunks, input hashes, and paginated admin endpoints ([`server/test/auditTrail.test.js`](server/test/auditTrail.test.js)) |
+| **Multi-Tenant RAG Isolation** | [`ml-service/rag/`](ml-service/rag/) | Multi-tenant namespace isolation across vector storage, BM25 indexing, ingestion, and retrieval queries ([`ml-service/tests/test_rag_tenant_isolation.py`](ml-service/tests/test_rag_tenant_isolation.py)) |
 | **Kind Cluster CD Pipeline** | [`.github/workflows/cd.yml`](.github/workflows/cd.yml) | Automated CD workflow executing in GitHub Actions: spins up Kind cluster, installs `metrics-server`, deploys manifests via Kustomize, runs live smoke tests (`/health/live`, `/health/ready`, `/health/deep`, `/api/tax/compare`), and verifies HPA metrics |
 | **Horizontal Pod Autoscaling (HPA)** | [`k8s/hpa/server-hpa.yaml`](k8s/hpa/server-hpa.yaml) | CPU-based autoscaling (70% utilization target, 1 min / 4 max replicas) wired with `metrics-server` |
 | **Terraform IaC (Validated)** | [`terraform/`](terraform/) | Modular IaC for AWS VPC (3-AZ, public/private subnets, NAT Gateway), Amazon DocumentDB (3-node cluster, KMS encrypted), ALB, and Route53 DNS. Validated via `terraform validate` ("Success! The configuration is valid") & `terraform plan` ("Plan: 22 to add, 0 to change, 0 to destroy") |
@@ -31,6 +34,7 @@
 | [`server/test/tokenBudgetMiddleware.test.js`](server/test/tokenBudgetMiddleware.test.js) | Token budget middleware integration tests |
 | [`server/test/failClosed.test.js`](server/test/failClosed.test.js) | Fail-closed security integration test suite (5/5 pass) |
 | [`server/test/idempotency.test.js`](server/test/idempotency.test.js) | Idempotency deduplication & dead-letter queue routing suite (3/3 pass) |
+| [`server/test/auditTrail.test.js`](server/test/auditTrail.test.js) | Regulatory advisory audit trail integration test suite (4/4 pass) |
 | [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
 
 ---
