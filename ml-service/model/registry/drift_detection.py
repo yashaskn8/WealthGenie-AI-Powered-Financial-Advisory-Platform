@@ -27,11 +27,16 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-# Industry-standard PSI thresholds
+import logging
+
+logger = logging.getLogger("wealthgenie.drift_detection")
+
+# Industry-standard PSI thresholds (Siddiqi 2006, OCC Bulletin 2011-12)
 PSI_THRESHOLD_WARN = 0.1
 PSI_THRESHOLD_FAIL = 0.2
+PSI_SANITY_CEILING = 2.5  # Practical upper ceiling for total distribution divergence in financial scoring
 DEFAULT_N_BINS = 10
-_EPS = 1e-6  # avoid log(0)
+_MIN_PROPORTION = 0.001  # Standard 0.1% floor for probability proportions to prevent numerical blow-up
 
 
 def compute_reference_distributions(
@@ -78,25 +83,35 @@ def compute_reference_distributions(
 def compute_psi(
     reference_proportions: np.ndarray,
     new_proportions: np.ndarray,
+    min_prob: float = _MIN_PROPORTION,
 ) -> float:
     """
     Compute Population Stability Index between two proportion vectors.
 
     PSI = Σ (P_new - P_ref) * ln(P_new / P_ref)
 
-    Both vectors must be the same length and represent proportions
-    (should sum to ~1.0).
+    Applies standard minimum probability flooring to prevent numerical explosion
+    on empty/sparse histogram bins and bounds extreme divergence to the practical ceiling.
     """
-    # Clip to avoid log(0) / division-by-zero
-    ref = np.clip(reference_proportions, _EPS, None)
-    new = np.clip(new_proportions, _EPS, None)
+    # Floor to avoid log(0) / extreme logarithmic explosion on empty bins
+    ref = np.maximum(reference_proportions, min_prob)
+    new = np.maximum(new_proportions, min_prob)
 
-    # Normalize to ensure they sum to 1
+    # Normalize to ensure they sum to 1.0
     ref = ref / ref.sum()
     new = new / new.sum()
 
-    psi = np.sum((new - ref) * np.log(new / ref))
-    return float(psi)
+    per_bin_psi = (new - ref) * np.log(new / ref)
+    raw_psi = float(np.sum(per_bin_psi))
+
+    if raw_psi > PSI_SANITY_CEILING:
+        logger.warning(
+            f"[PSI Sanity Bound] Raw computed PSI {raw_psi:.4f} exceeded practical ceiling "
+            f"({PSI_SANITY_CEILING:.1f}) due to extreme distribution divergence. Bounding to ceiling."
+        )
+        return PSI_SANITY_CEILING
+
+    return max(0.0, raw_psi)
 
 
 def compute_feature_psi(
