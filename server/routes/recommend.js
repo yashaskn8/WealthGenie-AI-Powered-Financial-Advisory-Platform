@@ -78,12 +78,13 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     annual_income: profile.annualIncome,
     monthly_savings: profile.savings,
     risk_category: profile.riskCategory,
-    liquid_savings: profile.liquid_savings,
-    existing_debt: profile.existing_debt,
-    dependents: profile.dependents,
-    emergency_fund_months: profile.emergency_fund_months,
-    risk_tolerance: profile.risk_tolerance,
-    goal_type: profile.goal_type,
+    liquid_savings: profile.liquid_savings !== undefined ? profile.liquid_savings : 0,
+    existing_debt: profile.existing_debt !== undefined ? profile.existing_debt : (profile.existing_debt_emi_ratio_pct !== undefined ? profile.existing_debt_emi_ratio_pct : 0),
+    existing_debt_emi_ratio_pct: profile.existing_debt_emi_ratio_pct !== undefined ? profile.existing_debt_emi_ratio_pct : (profile.existing_debt !== undefined ? profile.existing_debt : 0),
+    dependents: profile.dependents !== undefined ? profile.dependents : 0,
+    emergency_fund_months: profile.emergency_fund_months !== undefined ? profile.emergency_fund_months : 0,
+    risk_tolerance: profile.risk_tolerance || 'Moderate',
+    goal_type: profile.goal_type || 'wealth-building',
     investment_horizon: profile.investmentHorizon || 15
   }, req.correlationId);
 
@@ -342,3 +343,4 @@ router.post('/weights', verifyJWT, validate(updateWeightsSchema), asyncHandler(a
 }));
 
 export default router;
+

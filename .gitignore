@@ -82,3 +82,7 @@ bin/
 *.exe
 .terraform/
 *.tfstate*
+
+traces.jsonl
+reactapp/test-results/
+reactapp/playwright-report/
