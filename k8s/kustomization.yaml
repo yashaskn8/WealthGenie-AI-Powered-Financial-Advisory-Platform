@@ -17,4 +17,6 @@ resources:
   - server/deployment.yaml
   - server/service.yaml
   - server/hpa.yaml
+  - frontend/deployment.yaml
+  - frontend/service.yaml
   - ingress.yaml

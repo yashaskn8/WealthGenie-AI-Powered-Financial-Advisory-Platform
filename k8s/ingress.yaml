@@ -41,3 +41,10 @@ spec:
                 name: wealthgenie-server
                 port:
                   number: 5000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wealthgenie-frontend
+                port:
+                  number: 80

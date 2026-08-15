@@ -1,4 +1,4 @@
-﻿name: Continuous Deployment & Cluster Verification
+name: Continuous Deployment & Cluster Verification
 
 on:
   push:
@@ -62,11 +62,15 @@ jobs:
           echo "Building wealthgenie-ml-service image..."
           docker build -t wealthgenie-ml-service:latest ml-service/
 
+          echo "Building wealthgenie-frontend image..."
+          docker build --build-arg VITE_API_URL=/api -t wealthgenie-frontend:latest reactapp/
+
       - name: Load Images into Kind Cluster
         run: |
           echo "Loading container images into Kind cluster nodes..."
           kind load docker-image wealthgenie-server:latest --name kind
           kind load docker-image wealthgenie-ml-service:latest --name kind
+          kind load docker-image wealthgenie-frontend:latest --name kind
 
       - name: Apply Kubernetes Manifests via Kustomize
         run: |
@@ -98,6 +102,15 @@ jobs:
             kubectl describe pods -n wealthgenie -l app=wealthgenie-server
             echo "--- Server Pod Logs ---"
             kubectl logs -n wealthgenie -l app=wealthgenie-server --tail=80
+            exit 1
+          }
+
+          echo "Waiting for Frontend Deployment to be Ready..."
+          kubectl rollout status deployment/wealthgenie-frontend -n wealthgenie --timeout=180s || {
+            echo "--- Frontend Pod Describe ---"
+            kubectl describe pods -n wealthgenie -l app=wealthgenie-frontend
+            echo "--- Frontend Pod Logs ---"
+            kubectl logs -n wealthgenie -l app=wealthgenie-frontend --tail=80
             exit 1
           }
 
