@@ -8,6 +8,17 @@ class HybridStore {
     this.options = options;
     this.redisStore = null;
     this.hits = new Map();
+    this.windowMs = options.windowMs || 60000;
+  }
+
+  init(options) {
+    if (options && options.windowMs) {
+      this.windowMs = options.windowMs;
+      this.options.windowMs = options.windowMs;
+    }
+    if (this.redisStore && this.redisStore.init) {
+      this.redisStore.init(options);
+    }
   }
 
   getStore() {
@@ -20,6 +31,9 @@ class HybridStore {
           },
           prefix: this.options.prefix || 'rl:',
         });
+        if (this.redisStore.init) {
+          this.redisStore.init({ windowMs: this.windowMs });
+        }
       }
       return this.redisStore;
     }
@@ -31,7 +45,7 @@ class HybridStore {
     if (store) return store.increment(key);
 
     const now = Date.now();
-    const windowMs = this.options.windowMs || 60000;
+    const windowMs = this.options.windowMs || this.windowMs || 60000;
     const entry = this.hits.get(key) || { count: 0, resetTime: new Date(now + windowMs) };
 
     if (now > entry.resetTime.getTime()) {
@@ -68,7 +82,7 @@ class HybridStore {
 }
 
 // Strict limiter for authentication endpoints (registration, login)
-// SECURITY: passOnStoreError is explicitly FALSE — auth endpoints MUST fail closed
+// SECURITY: passOnStoreError is explicitly FALSE - auth endpoints MUST fail closed
 // if the rate-limit store encounters an error to prevent brute-force attacks.
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes window
@@ -76,18 +90,18 @@ export const authLimiter = rateLimit({
   message: { error: 'Authentication rate limit exceeded or store unavailable. Try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: new HybridStore({ prefix: 'rl:auth:' }),
+  store: new HybridStore({ prefix: 'rl:auth:', windowMs: 15 * 60 * 1000 }),
   passOnStoreError: false, // SECURITY: Fail-closed on auth store error
   skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
 });
 
 // Standard API rate limiter (protects database/CPU resource consumption)
-// AVAILABILITY: passOnStoreError is TRUE — non-auth API endpoints degrade gracefully
+// AVAILABILITY: passOnStoreError is TRUE - non-auth API endpoints degrade gracefully
 export const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
   max: 1000, // High threshold for cluster load tests
   message: { error: 'Rate limit exceeded.' },
-  store: new HybridStore({ prefix: 'rl:api:' }),
+  store: new HybridStore({ prefix: 'rl:api:', windowMs: 60 * 1000 }),
   passOnStoreError: true, // Degrade gracefully for general read endpoints
   skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
 });
@@ -101,7 +115,7 @@ export function createEndpointRateLimiter(options = {}) {
     message: { error: 'Rate Limit Exceeded', message },
     standardHeaders: true,
     legacyHeaders: false,
-    store: new HybridStore({ prefix: 'rl:ep:' }),
+    store: new HybridStore({ prefix: 'rl:ep:', windowMs }),
     passOnStoreError: true,
     skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
   });

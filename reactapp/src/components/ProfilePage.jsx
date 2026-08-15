@@ -91,8 +91,10 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     const numDeps = Number(dependents);
     const numEf = Number(emergencyFundMonths);
     const numTakeHome = Number(monthlyTakeHome || monthlyIncome);
-    const numCTC = totalCTC ? Number(totalCTC) : numTakeHome * 12;
-    const numBasic = basicComponent ? Number(basicComponent) : Math.round(numCTC * 0.5);
+    const numCTC = Math.max(totalCTC ? Number(totalCTC) : 0, numTakeHome * 12);
+    const numBasic = (basicComponent && basicComponent >= numCTC * 0.2 && basicComponent <= numCTC * 0.6)
+      ? Number(basicComponent)
+      : Math.round(numCTC * 0.5);
     const numPropSale = Number(soldPropertyAmount);
     const numLumpSum = Number(lumpSumAmount);
 
@@ -236,7 +238,11 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                       let val = e.target.value.replace(/^0+/, '');
                       let num = val === '' ? '' : Number(val);
                       setMonthlyTakeHome(num);
-                      if (num) setMonthlyIncome(num);
+                      if (num) {
+                        setMonthlyIncome(num);
+                        setTotalCTC(num * 12);
+                        setBasicComponent(Math.round(num * 12 * 0.5));
+                      }
                     }} 
                   />
                 </div>
