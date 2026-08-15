@@ -27,5 +27,9 @@ export default defineConfig({
         }
       }
     }
+  },
+  test: {
+    include: ['src/**/*.{test,spec}.{js,jsx}'],
+    exclude: ['e2e/**', 'node_modules/**'],
   }
 })
