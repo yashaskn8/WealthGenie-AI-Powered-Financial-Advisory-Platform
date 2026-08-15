@@ -18,14 +18,14 @@
   );
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 10px 0 50px rgba(0, 0, 0, 0.8), inset -1px 0 0 rgba(255, 255, 255, 0.1);
+  border-right: 1px solid var(--border-default);
+  box-shadow: 10px 0 50px rgba(0, 0, 0, 0.8), inset -1px 0 0 var(--border-default);
   display: flex;
   flex-direction: column;
   z-index: 100;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .sidebar--collapsed {
@@ -41,8 +41,8 @@
   height: 300px;
   background: radial-gradient(
     circle,
-    rgba(56, 189, 248, 0.15) 0%,
-    rgba(139, 92, 246, 0.08) 40%,
+    var(--color-primary-hover) 0%,
+    var(--color-violet-bg) 40%,
     transparent 70%
   );
   pointer-events: none;
@@ -86,7 +86,7 @@
 .sidebar-logo-img {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   object-fit: contain;
   position: relative;
   z-index: 1;
@@ -96,7 +96,7 @@
 .sidebar-logo-ring {
   position: absolute;
   inset: -3px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: conic-gradient(
     from 0deg,
     rgba(6, 182, 212, 0.5),
@@ -122,7 +122,7 @@
 .sidebar-brand-text {
   font-size: 1.25rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+  background: linear-gradient(135deg, #ffffff 0%, var(--text-muted) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -134,7 +134,7 @@
 .sidebar-brand-tagline {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--color-primary);
   letter-spacing: 2px;
   text-transform: uppercase;
   line-height: 1;
@@ -151,7 +151,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   transition: all 0.25s ease;
   flex-shrink: 0;
 }
@@ -245,20 +245,20 @@
   padding: 12px 16px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   color: rgba(203, 213, 225, 0.7);
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s var(--ease-out-expo);
   position: relative;
   text-align: left;
   letter-spacing: 0.4px;
 }
 
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--border-subtle);
+  border-color: var(--border-default);
   color: #fff;
   transform: translateX(5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
@@ -272,18 +272,18 @@
   justify-content: center;
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.03);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.4s var(--ease-out-expo);
   flex-shrink: 0;
 }
 
 .sidebar-item:hover .sidebar-icon-wrap {
   background: rgba(56, 189, 248, 0.06);
-  border-color: rgba(56, 189, 248, 0.2);
-  color: #38bdf8;
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
   transform: scale(1.05);
 }
 
@@ -293,7 +293,7 @@
   color: #fff !important;
   box-shadow: 
     0 0 20px rgba(56, 189, 248, 0.5), 
-    0 0 40px rgba(56, 189, 248, 0.2),
+    0 0 40px var(--color-primary-border),
     inset 0 2px 8px rgba(255, 255, 255, 0.4);
   transform: scale(1.08);
   filter: brightness(1.1);
@@ -302,11 +302,11 @@
 .icon-glow {
   position: absolute;
   inset: -4px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: radial-gradient(
     circle at center,
     rgba(56, 189, 248, 0.6) 0%,
-    rgba(139, 92, 246, 0.2) 30%,
+    var(--color-violet-border) 30%,
     transparent 80%
   );
   pointer-events: none;
@@ -321,12 +321,12 @@
 /* ─── Active State ──────────────────────────────────────────────── */
 .sidebar-item--active {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-strong);
   color: #fff;
   font-weight: 700;
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 1px var(--border-hover),
     0 10px 30px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
 }
@@ -335,8 +335,8 @@
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 16px;
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.1) 0%, transparent 100%);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--color-primary-bg) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -344,7 +344,7 @@
   background: rgba(255, 255, 255, 0.07);
   transform: none;
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    inset 0 1px 1px var(--border-strong),
     0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -356,13 +356,13 @@
   transform: translateY(-50%);
   width: 5px;
   height: 50%;
-  background: linear-gradient(180deg, #38bdf8 0%, #8b5cf6 100%);
-  border-radius: 4px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-violet) 100%);
+  border-radius: var(--radius-xs);
   box-shadow:
     0 0 15px rgba(56, 189, 248, 0.8),
     0 0 25px rgba(139, 92, 246, 0.6),
     inset 0 0 4px rgba(255,255,255,0.8);
-  animation: indicatorAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: indicatorAppear 0.5s var(--ease-out-expo);
 }
 
 @keyframes indicatorAppear {
@@ -375,7 +375,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #38bdf8;
+  background: var(--color-primary);
   margin-left: auto;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.9), 0 0 4px #fff;
   animation: dotPulse 2s ease-in-out infinite;
@@ -401,9 +401,9 @@
   transform: translateY(-50%);
   background: rgba(15, 18, 30, 0.97);
   border: 1px solid rgba(99, 102, 241, 0.15);
-  color: #e2e8f0;
+  color: var(--color-gray-200);
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 500;
   white-space: nowrap;
@@ -436,7 +436,7 @@
   position: absolute;
   top: -3px;
   right: -3px;
-  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  background: linear-gradient(135deg, var(--color-error-light), #e11d48);
   color: #fff;
   font-size: 0.55rem;
   font-weight: 700;
@@ -521,7 +521,7 @@
 }
 
 .sidebar--collapsed .sidebar-item--active::before {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .sidebar--collapsed .active-indicator {
@@ -589,7 +589,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: #818cf8;
+    background: var(--color-secondary);
     box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
   }
 
