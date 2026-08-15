@@ -8,6 +8,61 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
 
+def is_scope_accessible(
+    chunk_scope: Optional[str],
+    chunk_tenant_id: Optional[str] = None,
+    requesting_scope: Optional[str] = None,
+    requesting_user_id: Optional[str] = None,
+    tenant_id: Optional[str] = None,
+) -> bool:
+    """
+    Evaluates whether a chunk with `chunk_scope` / `chunk_tenant_id` is accessible
+    to the requesting query context.
+
+    Rules:
+    1. A chunk with scope "global", "default", "*", or "public" (AND tenant_id in ("default", "global", None))
+       is accessible to all queries.
+    2. A chunk with tenant_id != "default" or user scope "user:{user_id}" is accessible ONLY IF:
+       - requesting_user_id == user_id / tenant_id, OR
+       - requesting_scope matches, OR
+       - tenant_id == chunk_tenant_id
+    3. Never returns another user/tenant's scoped content.
+    """
+    c_scope = (chunk_scope or "global").strip().lower()
+    c_tenant = (chunk_tenant_id or "default").strip().lower()
+
+    # If chunk is explicitly scoped to a non-default tenant
+    if c_tenant not in ("default", "global", "") and c_scope in ("global", "default", ""):
+        c_scope = c_tenant
+
+    if c_scope in ("global", "default", "*", "public", "") and c_tenant in ("default", "global", ""):
+        return True
+
+    allowed_scopes = set()
+    if requesting_user_id:
+        uid = str(requesting_user_id).strip().lower()
+        allowed_scopes.add(uid)
+        allowed_scopes.add(f"user:{uid}")
+
+    if requesting_scope:
+        s = str(requesting_scope).strip().lower()
+        allowed_scopes.add(s)
+        if s.startswith("user:"):
+            allowed_scopes.add(s[5:])
+        else:
+            allowed_scopes.add(f"user:{s}")
+
+    if tenant_id and str(tenant_id).strip().lower() not in ("default", "global", ""):
+        t = str(tenant_id).strip().lower()
+        allowed_scopes.add(t)
+        if t.startswith("user:"):
+            allowed_scopes.add(t[5:])
+        else:
+            allowed_scopes.add(f"user:{t}")
+
+    return c_scope in allowed_scopes or c_tenant in allowed_scopes
+
+
 class DocumentMetadata(BaseModel):
     """Metadata retained for every ingested document."""
     title: str = Field(..., description="Document title")
@@ -19,6 +74,7 @@ class DocumentMetadata(BaseModel):
     effective_date: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d"), description="Effective date of regulations (YYYY-MM-DD)")
     source_trust_tier: str = Field("government_official", description="government_official, regulatory_circular, or internal_analysis")
     tenant_id: str = Field("default", description="Tenant isolation scope identifier")
+    scope: str = Field("global", description="Tenant isolation scope: 'global' for public corpus or 'user:{user_id}' for user-specific documents")
     custom_metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -45,6 +101,7 @@ class TextChunk(BaseModel):
     content: str
     metadata: ChunkMetadata
     tenant_id: str = Field("default", description="Tenant isolation scope identifier")
+    scope: str = Field("global", description="Tenant isolation scope: 'global' or 'user:{user_id}'")
     embedding: Optional[List[float]] = None
 
 
@@ -70,6 +127,8 @@ class RAGQueryRequest(BaseModel):
     question: str = Field(..., min_length=3, description="User advisory question")
     top_k: Optional[int] = Field(None, ge=1, le=20, description="Override default top-k retrieval count")
     tenant_id: str = Field("default", description="Tenant isolation scope identifier")
+    user_id: Optional[str] = Field(None, description="Requesting user ID for scoped retrieval")
+    scope: Optional[str] = Field(None, description="Explicit retrieval scope (e.g. 'global' or 'user:{user_id}')")
     user_profile: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Contextual investor profile")
     include_citations: bool = Field(True, description="Whether to format inline citations")
 

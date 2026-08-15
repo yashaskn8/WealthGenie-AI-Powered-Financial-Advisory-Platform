@@ -61,6 +61,8 @@ class IngestTextRequest(BaseModel):
     source: str = Field("api_input", description="Source identifier")
     author: Optional[str] = Field("Financial Authority", description="Author")
     tenant_id: str = Field("default", description="Tenant isolation scope")
+    scope: Optional[str] = Field(None, description="Scope identifier: 'global' or 'user:{user_id}'")
+    user_id: Optional[str] = Field(None, description="User ID if user-scoped document")
 
 
 @rag_router.get("/health")
@@ -120,6 +122,10 @@ def index_document(request: IngestTextRequest, req: Request):
             title=request.title,
             source=request.source,
             author=request.author,
+            tenant_id=request.tenant_id,
+            user_id=request.user_id,
+            scope=request.scope,
+            manual_override=True,
         )
         return {"status": "success", "ingestion_result": res}
     except Exception as e:

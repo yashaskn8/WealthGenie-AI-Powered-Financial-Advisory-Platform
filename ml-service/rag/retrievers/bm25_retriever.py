@@ -9,7 +9,7 @@ from typing import List, Dict, Set, Optional
 import numpy as np
 
 from rag.retrievers.base import BaseRetriever
-from rag.schema import TextChunk, RetrievedChunk
+from rag.schema import TextChunk, RetrievedChunk, is_scope_accessible
 from rag.vector_store.base import BaseVectorStore
 from rag.vector_store.memory_vector_store import PersistentVectorStore
 
@@ -37,13 +37,26 @@ class BM25KeywordRetriever(BaseRetriever):
         cleaned = re.sub(r"[^\w\s]", " ", text.lower())
         return [w for w in cleaned.split() if len(w) > 1]
 
-    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:
-        """Executes BM25 keyword search across tenant-scoped vector store chunks."""
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 4,
+        threshold: float = 0.0,
+        tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
+    ) -> List[RetrievedChunk]:
+        """Executes BM25 keyword search across tenant/scope-filtered vector store chunks."""
         all_chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
         chunks = [
             c for c in all_chunks
-            if getattr(c, "tenant_id", "default") == tenant_id
-            or getattr(c.metadata, "tenant_id", "default") == tenant_id
+            if is_scope_accessible(
+                chunk_scope=getattr(c, "scope", getattr(c.metadata, "scope", "global")),
+                chunk_tenant_id=getattr(c, "tenant_id", getattr(c.metadata, "tenant_id", "default")),
+                requesting_scope=scope,
+                requesting_user_id=user_id,
+                tenant_id=tenant_id,
+            )
         ]
         if not chunks:
             return []

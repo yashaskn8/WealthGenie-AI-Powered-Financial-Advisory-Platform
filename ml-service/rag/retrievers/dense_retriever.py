@@ -23,10 +23,25 @@ class DenseRetriever(BaseRetriever):
         self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or PersistentVectorStore()
 
-    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:
-        """Embeds query and searches vector store within tenant scope."""
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 4,
+        threshold: float = 0.0,
+        tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
+    ) -> List[RetrievedChunk]:
+        """Embeds query and searches vector store within tenant/user scope."""
         query_vector = self.embedder.embed_text(query)
-        return self.vector_store.search(query_vector=query_vector, top_k=top_k, threshold=threshold, tenant_id=tenant_id)
+        return self.vector_store.search(
+            query_vector=query_vector,
+            top_k=top_k,
+            threshold=threshold,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            scope=scope,
+        )
 
     @property
     def strategy_name(self) -> str:

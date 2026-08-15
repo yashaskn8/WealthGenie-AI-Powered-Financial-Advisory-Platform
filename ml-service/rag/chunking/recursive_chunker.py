@@ -38,6 +38,8 @@ class RecursiveCharacterChunker(BaseChunker):
                 version=document.metadata.version,
                 author=document.metadata.author,
                 token_count=len(text),
+                tenant_id=document.metadata.tenant_id,
+                scope=document.metadata.scope,
             )
             chunks.append(
                 TextChunk(
@@ -45,6 +47,8 @@ class RecursiveCharacterChunker(BaseChunker):
                     document_id=document.document_id,
                     content=text,
                     metadata=metadata,
+                    tenant_id=document.metadata.tenant_id,
+                    scope=document.metadata.scope,
                 )
             )
 

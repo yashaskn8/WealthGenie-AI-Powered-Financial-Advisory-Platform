@@ -25,7 +25,7 @@ except ImportError:
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-from rag.schema import TextChunk, RetrievedChunk, ChunkMetadata
+from rag.schema import TextChunk, RetrievedChunk, ChunkMetadata, is_scope_accessible
 from rag.vector_store.base import BaseVectorStore
 
 logger = logging.getLogger("wealthgenie.rag.vector_store.mongo")
@@ -41,7 +41,7 @@ class MongoVectorStore(BaseVectorStore):
     as PersistentVectorStore, but with MongoDB replacing JSON files.
     """
 
-    VERSION = "3.0"
+    VERSION = "3.1"
 
     def __init__(
         self,
@@ -71,6 +71,7 @@ class MongoVectorStore(BaseVectorStore):
             self._collection.create_index("chunk_id", unique=True)
             self._collection.create_index("document_id")
             self._collection.create_index("tenant_id")
+            self._collection.create_index("scope")
             logger.info("MongoVectorStore indexes initialized")
         except ConnectionFailure as e:
             logger.error(f"Failed to connect to MongoDB for vector store: {e}")
@@ -87,12 +88,14 @@ class MongoVectorStore(BaseVectorStore):
             if not chunk.embedding:
                 continue
 
+            scope = getattr(chunk, "scope", None) or getattr(chunk.metadata, "scope", "global")
             doc = {
                 "chunk_id": chunk.chunk_id,
                 "document_id": chunk.document_id,
                 "content": chunk.content,
                 "metadata": chunk.metadata.model_dump(),
                 "tenant_id": chunk.tenant_id,
+                "scope": scope,
                 "embedding": chunk.embedding,
             }
 
@@ -119,10 +122,13 @@ class MongoVectorStore(BaseVectorStore):
         top_k: int = 4,
         threshold: float = 0.0,
         tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
     ) -> List[RetrievedChunk]:
         """
-        Executes tenant-isolated similarity vector search.
-        Loads embeddings from in-memory cache, performs FAISS or NumPy search.
+        Executes tenant/scope-isolated similarity vector search.
+        Filters chunks to scope=='global' OR scope=='user:{requesting_user_id}',
+        never returning another user's scoped content.
         """
         if not self._chunks or not self._embeddings:
             return []
@@ -133,9 +139,16 @@ class MongoVectorStore(BaseVectorStore):
             return []
         q_vec = q_vec / q_norm
 
-        # Tenant filtering
+        # Scope & Tenant filtering: global content or matching user's private content
         valid_indices = [
-            i for i, c in enumerate(self._chunks) if c.tenant_id == tenant_id
+            i for i, c in enumerate(self._chunks)
+            if is_scope_accessible(
+                chunk_scope=getattr(c, "scope", getattr(c.metadata, "scope", "global")),
+                chunk_tenant_id=getattr(c, "tenant_id", getattr(c.metadata, "tenant_id", "default")),
+                requesting_scope=scope,
+                requesting_user_id=user_id,
+                tenant_id=tenant_id,
+            )
         ]
         if not valid_indices:
             return []
@@ -307,13 +320,17 @@ class MongoVectorStore(BaseVectorStore):
 
         for doc in cursor:
             try:
-                metadata = ChunkMetadata(**doc["metadata"])
+                meta_dict = dict(doc.get("metadata", {}))
+                scope = doc.get("scope", meta_dict.get("scope", "global"))
+                meta_dict["scope"] = scope
+                metadata = ChunkMetadata(**meta_dict)
                 chunk = TextChunk(
                     chunk_id=doc["chunk_id"],
                     document_id=doc["document_id"],
                     content=doc["content"],
                     metadata=metadata,
                     tenant_id=doc.get("tenant_id", "default"),
+                    scope=scope,
                     embedding=doc.get("embedding"),
                 )
                 self._chunks.append(chunk)

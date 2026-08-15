@@ -105,10 +105,11 @@ class RAGPipeline:
 
     def query(self, request: RAGQueryRequest) -> RAGQueryResponse:
         """Executes full RAG query workflow and returns grounded response with citations."""
+        effective_scope = request.scope or (f"user:{request.user_id}" if request.user_id else request.tenant_id)
         # Check Response Cache
-        cached_response = self.cache_manager.get_response(request.question, tenant_id=request.tenant_id)
+        cached_response = self.cache_manager.get_response(request.question, tenant_id=effective_scope)
         if cached_response is not None:
-            logger.info(f"Serving cached RAG query response for '{request.question[:30]}...' (tenant: {request.tenant_id})")
+            logger.info(f"Serving cached RAG query response for '{request.question[:30]}...' (scope: {effective_scope})")
             return cached_response
 
         start_time = time.perf_counter()
@@ -128,6 +129,8 @@ class RAGPipeline:
             top_k=retrieval_top_k,
             threshold=self.config.similarity_threshold,
             tenant_id=request.tenant_id,
+            user_id=request.user_id,
+            scope=request.scope,
         )
         retrieval_latency = (time.perf_counter() - t1) * 1000.0
 
@@ -209,7 +212,7 @@ class RAGPipeline:
             metrics=metrics,
             grounded=len(final_chunks) > 0,
         )
-        self.cache_manager.put_response(request.question, response, tenant_id=request.tenant_id)
+        self.cache_manager.put_response(request.question, response, tenant_id=effective_scope)
         return response
 
     def _generate_grounded_answer(self, question: str, retrieved_chunks: List[RetrievedChunk]) -> str:

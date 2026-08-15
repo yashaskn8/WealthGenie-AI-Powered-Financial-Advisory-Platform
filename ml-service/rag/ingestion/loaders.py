@@ -35,6 +35,8 @@ class DocumentLoader:
         author: Optional[str] = None,
         effective_date: Optional[str] = None,
         source_trust_tier: Optional[str] = None,
+        tenant_id: str = "default",
+        scope: str = "global",
     ) -> Document:
         """Loads a document file from disk based on extension."""
         if not file_path.exists():
@@ -71,6 +73,8 @@ class DocumentLoader:
             "source": source,
             "document_type": doc_type,
             "author": author or "Authoritative Financial Source",
+            "tenant_id": tenant_id,
+            "scope": scope,
         }
         if effective_date:
             meta_kwargs["effective_date"] = effective_date
@@ -88,6 +92,8 @@ class DocumentLoader:
         author: Optional[str] = None,
         effective_date: Optional[str] = None,
         source_trust_tier: Optional[str] = None,
+        tenant_id: str = "default",
+        scope: str = "global",
     ) -> Document:
         """Loads a raw text string directly as a Document."""
         doc_id = self.compute_doc_id(text, source)
@@ -96,6 +102,8 @@ class DocumentLoader:
             "source": source,
             "document_type": "text",
             "author": author or "Financial Advisor",
+            "tenant_id": tenant_id,
+            "scope": scope,
         }
         if effective_date:
             meta_kwargs["effective_date"] = effective_date

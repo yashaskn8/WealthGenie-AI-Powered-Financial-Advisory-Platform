@@ -4,7 +4,7 @@ Defines the standard repository contract for vector search storage engines.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from rag.schema import TextChunk, RetrievedChunk
 
 
@@ -23,6 +23,8 @@ class BaseVectorStore(ABC):
         top_k: int = 4,
         threshold: float = 0.0,
         tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
     ) -> List[RetrievedChunk]:
         """Executes tenant-isolated similarity vector search and returns top-k ranked chunks with similarity scores."""
         pass

@@ -20,7 +20,7 @@ except ImportError:
     FAISS_AVAILABLE = False
 
 from rag.config import RAGConfig
-from rag.schema import TextChunk, RetrievedChunk, ChunkMetadata
+from rag.schema import TextChunk, RetrievedChunk, ChunkMetadata, is_scope_accessible
 from rag.vector_store.base import BaseVectorStore
 
 logger = logging.getLogger("wealthgenie.rag.vector_store")
@@ -32,7 +32,7 @@ class PersistentVectorStore(BaseVectorStore):
     atomic writes, and corruption recovery.
     """
 
-    VERSION = "2.0"
+    VERSION = "2.1"
 
     def __init__(self, index_path: Optional[Path] = None, force_numpy: bool = False):
         self.index_path = index_path or RAGConfig().vector_store_path
@@ -99,16 +99,27 @@ class PersistentVectorStore(BaseVectorStore):
         top_k: int = 4,
         threshold: float = 0.0,
         tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
     ) -> List[RetrievedChunk]:
-        """Executes tenant-isolated similarity search using FAISS or NumPy fallback."""
+        """
+        Executes tenant/scope-isolated similarity search using FAISS or NumPy fallback.
+        Filters chunks to scope=='global' OR scope=='user:{requesting_user_id}',
+        never returning another user's scoped content.
+        """
         if not self._chunks or not self._embeddings:
             return []
 
-        # Filter indices by tenant_id scope
+        # Filter indices by scope & tenant_id
         valid_indices = [
             i for i, c in enumerate(self._chunks)
-            if getattr(c, "tenant_id", "default") == tenant_id
-            or getattr(c.metadata, "tenant_id", "default") == tenant_id
+            if is_scope_accessible(
+                chunk_scope=getattr(c, "scope", getattr(c.metadata, "scope", "global")),
+                chunk_tenant_id=getattr(c, "tenant_id", getattr(c.metadata, "tenant_id", "default")),
+                requesting_scope=scope,
+                requesting_user_id=user_id,
+                tenant_id=tenant_id,
+            )
         ]
         if not valid_indices:
             return []

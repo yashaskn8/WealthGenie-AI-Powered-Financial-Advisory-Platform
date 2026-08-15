@@ -18,7 +18,7 @@ TEST_DB_NAME = "wealthgenie_test_vectorstore"
 TEST_COLLECTION = "test_vector_chunks"
 
 
-def _make_chunk(chunk_id, doc_id, content, embedding, tenant_id="default"):
+def _make_chunk(chunk_id, doc_id, content, embedding, tenant_id="default", scope="global"):
     from rag.schema import TextChunk, ChunkMetadata
     metadata = ChunkMetadata(
         title="Test Doc",
@@ -27,6 +27,7 @@ def _make_chunk(chunk_id, doc_id, content, embedding, tenant_id="default"):
         document_id=doc_id,
         chunk_index=0,
         tenant_id=tenant_id,
+        scope=scope,
     )
     return TextChunk(
         chunk_id=chunk_id,
@@ -34,6 +35,7 @@ def _make_chunk(chunk_id, doc_id, content, embedding, tenant_id="default"):
         content=content,
         metadata=metadata,
         tenant_id=tenant_id,
+        scope=scope,
         embedding=embedding,
     )
 
@@ -127,6 +129,36 @@ class TestMongoVectorStore:
         results = store.search(query_vector=emb, top_k=5, tenant_id="tenant_2")
         assert len(results) == 1
         assert results[0].chunk.tenant_id == "tenant_2"
+
+    def test_scope_and_user_isolation(self, store):
+        emb = _random_embedding()
+        chunks = [
+            _make_chunk("glob1", "gdoc", "Public tax rules Section 80C", emb, tenant_id="default", scope="global"),
+            _make_chunk("u1c1", "udoc1", "User 123 confidential bank statement", emb, tenant_id="user_123", scope="user:user_123"),
+            _make_chunk("u2c1", "udoc2", "User 456 confidential salary slip", emb, tenant_id="user_456", scope="user:user_456"),
+        ]
+        store.add_chunks(chunks)
+
+        # 1. User 123 searches -> Should retrieve public doc + user 123 doc, NEVER user 456 doc
+        res_u1 = store.search(query_vector=emb, top_k=5, user_id="user_123")
+        retrieved_ids_u1 = {r.chunk.chunk_id for r in res_u1}
+        assert "glob1" in retrieved_ids_u1
+        assert "u1c1" in retrieved_ids_u1
+        assert "u2c1" not in retrieved_ids_u1, "User 123 leaked User 456 private chunk!"
+
+        # 2. User 456 searches -> Should retrieve public doc + user 456 doc, NEVER user 123 doc
+        res_u2 = store.search(query_vector=emb, top_k=5, user_id="user_456")
+        retrieved_ids_u2 = {r.chunk.chunk_id for r in res_u2}
+        assert "glob1" in retrieved_ids_u2
+        assert "u2c1" in retrieved_ids_u2
+        assert "u1c1" not in retrieved_ids_u2, "User 456 leaked User 123 private chunk!"
+
+        # 3. Unauthenticated/anonymous search -> Should retrieve public doc only
+        res_anon = store.search(query_vector=emb, top_k=5, user_id=None)
+        retrieved_ids_anon = {r.chunk.chunk_id for r in res_anon}
+        assert "glob1" in retrieved_ids_anon
+        assert "u1c1" not in retrieved_ids_anon
+        assert "u2c1" not in retrieved_ids_anon
 
     def test_save_is_noop(self, store):
         store.save()

@@ -100,15 +100,21 @@ class IngestionPipeline:
         author: Optional[str] = None,
         effective_date: Optional[str] = None,
         source_trust_tier: Optional[str] = None,
+        tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
         manual_override: bool = False,
     ) -> Dict[str, Any]:
         """Loads and ingests a single document file into the RAG vector store."""
+        resolved_scope = scope or (f"user:{user_id}" if user_id else "global")
         document = self.loader.load_file(
             file_path,
             title=title,
             author=author,
             effective_date=effective_date,
             source_trust_tier=source_trust_tier,
+            tenant_id=tenant_id,
+            scope=resolved_scope,
         )
         return self.ingest_document(document, manual_override=manual_override)
 
@@ -120,9 +126,13 @@ class IngestionPipeline:
         author: Optional[str] = None,
         effective_date: Optional[str] = None,
         source_trust_tier: Optional[str] = None,
+        tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
         manual_override: bool = False,
     ) -> Dict[str, Any]:
         """Ingests raw text directly into the RAG vector store."""
+        resolved_scope = scope or (f"user:{user_id}" if user_id else "global")
         document = self.loader.load_text(
             text,
             title=title,
@@ -130,6 +140,8 @@ class IngestionPipeline:
             author=author,
             effective_date=effective_date,
             source_trust_tier=source_trust_tier,
+            tenant_id=tenant_id,
+            scope=resolved_scope,
         )
         return self.ingest_document(document, manual_override=manual_override)
 

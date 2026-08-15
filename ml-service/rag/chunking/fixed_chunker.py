@@ -39,6 +39,8 @@ class FixedSizeChunker(BaseChunker):
                         document_id=document.document_id,
                         content=chunk_text,
                         metadata=metadata,
+                        tenant_id=document.metadata.tenant_id,
+                        scope=document.metadata.scope,
                     )
                 )
                 chunk_idx += 1

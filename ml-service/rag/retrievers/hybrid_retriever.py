@@ -36,11 +36,33 @@ class HybridRetriever(BaseRetriever):
     def strategy_name(self) -> str:
         return f"hybrid_{self.fusion_mode}"
 
-    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:
-        """Retrieves candidates from both dense and keyword retrievers and fuses ranks/scores within tenant scope."""
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 4,
+        threshold: float = 0.0,
+        tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
+    ) -> List[RetrievedChunk]:
+        """Retrieves candidates from both dense and keyword retrievers and fuses ranks/scores within tenant/user scope."""
         candidate_k = top_k * 2
-        dense_results = self.dense_retriever.retrieve(query, top_k=candidate_k, threshold=0.0, tenant_id=tenant_id)
-        keyword_results = self.keyword_retriever.retrieve(query, top_k=candidate_k, threshold=0.0, tenant_id=tenant_id)
+        dense_results = self.dense_retriever.retrieve(
+            query,
+            top_k=candidate_k,
+            threshold=0.0,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            scope=scope,
+        )
+        keyword_results = self.keyword_retriever.retrieve(
+            query,
+            top_k=candidate_k,
+            threshold=0.0,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            scope=scope,
+        )
 
         if not dense_results and not keyword_results:
             return []

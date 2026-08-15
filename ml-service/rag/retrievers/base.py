@@ -4,7 +4,7 @@ Defines the standard strategy interface for retrieval mechanisms (Dense, Keyword
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 from rag.schema import RetrievedChunk
 
 
@@ -12,8 +12,16 @@ class BaseRetriever(ABC):
     """Abstract base class for all chunk retrieval strategies."""
 
     @abstractmethod
-    def retrieve(self, query: str, top_k: int = 4, threshold: float = 0.0, tenant_id: str = "default") -> List[RetrievedChunk]:
-        """Retrieves and ranks relevant chunks for the given query text within a tenant scope."""
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 4,
+        threshold: float = 0.0,
+        tenant_id: str = "default",
+        user_id: Optional[str] = None,
+        scope: Optional[str] = None,
+    ) -> List[RetrievedChunk]:
+        """Retrieves and ranks relevant chunks for the given query text within a tenant/user scope."""
         pass
 
     @property
