@@ -1,7 +1,7 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
-const ML_API_KEY = process.env.ML_SERVICE_API_KEY || '';
+const getMlServiceUrl = () => process.env.ML_SERVICE_URL || 'http://localhost:8000';
+const getMlApiKey = () => process.env.ML_SERVICE_API_KEY || '';
 const RAG_TIMEOUT_MS = 8000;
 
 let failureCount = 0;
@@ -46,8 +46,10 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 
   }
 
   try {
+    const mlUrl = getMlServiceUrl();
+    const apiKey = getMlApiKey();
     const res = await axios.post(
-      `${ML_SERVICE_URL}/rag/query`,
+      `${mlUrl}/rag/query`,
       {
         question: query.trim(),
         top_k: Number(top_k) || 4,
@@ -58,7 +60,7 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 
         timeout: RAG_TIMEOUT_MS,
         headers: {
           'Content-Type': 'application/json',
-          ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
+          ...(apiKey ? { 'X-API-Key': apiKey } : {}),
           ...(correlationId ? { 'X-Correlation-ID': correlationId } : {}),
         },
       }
@@ -82,10 +84,12 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 
  */
 export async function checkRAGHealth(correlationId = null) {
   try {
-    const res = await axios.get(`${ML_SERVICE_URL}/health`, {
+    const mlUrl = getMlServiceUrl();
+    const apiKey = getMlApiKey();
+    const res = await axios.get(`${mlUrl}/health`, {
       timeout: 3000,
       headers: {
-        ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
+        ...(apiKey ? { 'X-API-Key': apiKey } : {}),
         ...(correlationId ? { 'X-Correlation-ID': correlationId } : {}),
       },
     });

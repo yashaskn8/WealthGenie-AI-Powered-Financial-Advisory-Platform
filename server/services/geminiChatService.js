@@ -125,6 +125,13 @@ export async function processChat({ userId, user, message, sessionId }) {
         citations: ragResult.citations || [],
         retrieved_chunks: ragResult.retrieved_chunks || [],
         metrics: ragResult.metrics || {},
+        tool_calls: [],
+        tool_results: [],
+        action_cards: [],
+        governance: { compliance: 'SEBI/AMFI grounded RAG retrieval', trust_tier: 'verified' },
+        explainability: { rag_citations: ragResult.citations || [] },
+        verification: { verification_status: 'grounded_rag', verified: true, source: 'fastapi_rag' },
+        audit: { strategy: 'rag_retrieval', timestamp: new Date().toISOString() },
         messages_this_hour: rateCheck.count,
         rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
       };
