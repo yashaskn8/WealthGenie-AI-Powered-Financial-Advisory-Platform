@@ -168,7 +168,7 @@ const AllocationPlanner = ({ profile }) => {
             <div className="donut-chart-count">{allocation.length} Asset Classes</div>
           </div>
 
-          <div className="donut-chart-wrapper">
+          <div className="donut-chart-wrapper" role="region" aria-label="Investment allocation breakdown donut chart">
             {/* Background Ambient Radial Ring Glow */}
             <div className="donut-glow-ring" />
 
@@ -293,6 +293,7 @@ const AllocationPlanner = ({ profile }) => {
 
         {/* RIGHT: Detailed Investment Allocation Cards */}
         <div className="ap-cards-panel">
+          <h2 className="sr-only" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>Detailed Asset Class Allocations</h2>
           {allocation.map((a, index) => {
             const isHovered = hoveredSlice?.id === a.id;
             return (

@@ -845,7 +845,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
                 <Sparkles className="ai-recs-sparkle-icon" size={18} />
               </div>
               <div>
-                <h3 className="ai-recs-title">AI Recommended Mix</h3>
+                <h2 className="ai-recs-title">AI Recommended Mix</h2>
                 <p className="ai-recs-subtitle">Optimised for compounding growth</p>
               </div>
             </div>
@@ -1022,6 +1022,7 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
                       <input
                         type="range"
                         className="rebal-range"
+                        aria-label={`Allocation percentage for ${inv.name}`}
                         min="0" max="100" step="0.5"
                         value={pct}
                         onChange={e => handleSliderChange(inv.id, Number(e.target.value))}
@@ -1188,9 +1189,9 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '16px', marginTop: 0 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '16px', marginTop: 0 }}>
               Future Wealth Projection
-            </h3>
+            </h2>
 
             {loadingProjection ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1268,9 +1269,9 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.34 }}
           >
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '16px', marginTop: 0 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '16px', marginTop: 0 }}>
               Market Scenario Projections (10 Years)
-            </h3>
+            </h2>
 
             {loadingMC ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1330,9 +1331,9 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.36 }}
           >
-            <h3 className="journey-title">
+            <h2 className="journey-title">
               Why This Mix Fits You
-            </h3>
+            </h2>
             <p className="journey-subtitle" style={{ marginBottom: '20px' }}>
               Personalised to your financial profile
             </p>
@@ -1374,9 +1375,9 @@ const RebalancerScreen = ({ profile, recommendations, onSave }) => {
             transition={{ delay: 0.4 }}
             style={{ marginTop: '12px' }}
           >
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 20px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 20px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldCheck size={20} color="#818cf8" /> Investment Summary
-            </h3>
+            </h2>
             
             <div className="summary-stats-grid">
               

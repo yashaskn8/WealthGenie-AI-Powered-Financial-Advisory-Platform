@@ -197,8 +197,8 @@ const GenieChat = ({ profile, onNavigate }) => {
               </div>
               <div className="genie-header-actions">
                 <span className={`rate-limit-badge ${rateLimit.remaining <= 5 ? 'rate-limit-warning' : ''}`}>{rateLimit.remaining <= 0 ? 'Limit reached' : `${rateLimit.remaining}/${rateLimit.total}`}</span>
-                <button onClick={clearChat} title="Clear chat"><Trash2 size={16} /></button>
-                <button onClick={() => setIsOpen(false)} title="Close"><X size={18} /></button>
+                <button onClick={clearChat} title="Clear chat" aria-label="Clear chat conversation"><Trash2 size={16} /></button>
+                <button onClick={() => setIsOpen(false)} title="Close" aria-label="Close chat helper"><X size={18} /></button>
               </div>
             </div>
 
@@ -252,12 +252,12 @@ const GenieChat = ({ profile, onNavigate }) => {
             {/* Input Bar */}
             <div className="genie-input-bar">
               {recognitionRef.current && (
-                <button className={`voice-btn ${isListening ? 'voice-active' : ''}`} onClick={toggleVoice} title="Voice input">
+                <button className={`voice-btn ${isListening ? 'voice-active' : ''}`} onClick={toggleVoice} title="Voice input" aria-label={isListening ? "Stop voice input" : "Start voice input"}>
                   {isListening ? <MicOff size={16} /> : <Mic size={16} />}
                 </button>
               )}
-              <input ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={isListening ? 'Listening...' : 'Ask me anything about saving & investing...'} className="genie-input" maxLength={1000} disabled={isLoading || rateLimit.remaining === 0} />
-              <button className="genie-send-btn" onClick={() => sendMessage()} disabled={isLoading || !input.trim() || rateLimit.remaining === 0}>
+              <input ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={isListening ? 'Listening...' : 'Ask me anything about saving & investing...'} aria-label="Ask Genie a financial question" className="genie-input" maxLength={1000} disabled={isLoading || rateLimit.remaining === 0} />
+              <button className="genie-send-btn" onClick={() => sendMessage()} aria-label="Send message" disabled={isLoading || !input.trim() || rateLimit.remaining === 0}>
                 {isLoading ? <RefreshCw size={18} className="spin-icon" /> : <Send size={18} />}
               </button>
             </div>
@@ -268,7 +268,7 @@ const GenieChat = ({ profile, onNavigate }) => {
             <div className="genie-panel-workspace-pane">
               <div className="workspace-header">
                 <div className="workspace-title-section">
-                  <button className="workspace-back-btn" onClick={() => setActiveWorkspace(null)} title="Back to Chat">
+                  <button className="workspace-back-btn" onClick={() => setActiveWorkspace(null)} title="Back to Chat" aria-label="Back to Chat">
                     <ArrowLeft size={16} />
                   </button>
                   <div>
@@ -281,10 +281,10 @@ const GenieChat = ({ profile, onNavigate }) => {
                   </div>
                 </div>
                 <div className="workspace-header-actions">
-                  <button className="workspace-fullscreen-btn" onClick={() => { onNavigate(activeWorkspace); setIsOpen(false); }} title="Open Full Page View">
+                  <button className="workspace-fullscreen-btn" onClick={() => { onNavigate(activeWorkspace); setIsOpen(false); }} title="Open Full Page View" aria-label="Open Full Page View">
                     <ExternalLink size={14} /> Full Page View
                   </button>
-                  <button className="workspace-close-btn" onClick={() => setActiveWorkspace(null)}>✕</button>
+                  <button className="workspace-close-btn" onClick={() => setActiveWorkspace(null)} aria-label="Close workspace">✕</button>
                 </div>
               </div>
 
@@ -301,7 +301,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                         <span className="sandbox-label"><Scale size={14} /> How much in <JargonTooltip term="Asset Allocation">stocks</JargonTooltip>?</span>
                         <span className="sandbox-val text-sky">{targetEquity}%</span>
                       </div>
-                      <input type="range" min="10" max="90" step="5" value={targetEquity} onChange={e => setTargetEquity(Number(e.target.value))} className="sandbox-slider" />
+                      <input type="range" min="10" max="90" step="5" value={targetEquity} onChange={e => setTargetEquity(Number(e.target.value))} aria-label="Target equity allocation percentage" className="sandbox-slider" />
                       <div className="slider-limits"><span>10% — Play it safe</span><span>90% — Go for growth</span></div>
                     </div>
 
@@ -310,7 +310,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                         <span className="sandbox-label"><Coins size={14} /> Monthly investment (<JargonTooltip term="SIP">SIP</JargonTooltip>)</span>
                         <span className="sandbox-val text-sky">₹{rebalanceMonthlySIP.toLocaleString('en-IN')}</span>
                       </div>
-                      <input type="range" min="1000" max="100000" step="1000" value={rebalanceMonthlySIP} onChange={e => setRebalanceMonthlySIP(Number(e.target.value))} className="sandbox-slider" />
+                      <input type="range" min="1000" max="100000" step="1000" value={rebalanceMonthlySIP} onChange={e => setRebalanceMonthlySIP(Number(e.target.value))} aria-label="Monthly SIP investment amount" className="sandbox-slider" />
                       <div className="slider-limits"><span>₹1K</span><span>₹100K</span></div>
                     </div>
 

@@ -35,6 +35,48 @@ const DeepDiveModal = ({ isOpen, onClose, investment, onSelectInvestment, allRec
   const [prevInvestmentId, setPrevInvestmentId] = useState(investment?.id);
   const [prevHorizon, setPrevHorizon] = useState(horizon);
 
+  const modalRef = React.useRef(null);
+  const previouslyFocusedElementRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      previouslyFocusedElementRef.current = document.activeElement;
+      if (modalRef.current) {
+        modalRef.current.focus();
+      }
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onClose();
+        } else if (e.key === 'Tab' && modalRef.current) {
+          const focusableElements = modalRef.current.querySelectorAll(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusableElements.length === 0) return;
+          const first = focusableElements[0];
+          const last = focusableElements[focusableElements.length - 1];
+
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (previouslyFocusedElementRef.current && previouslyFocusedElementRef.current.focus) {
+          previouslyFocusedElementRef.current.focus();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
+
   // ─── Instrument-Aware Calculator Bounds ───
   const calcBounds = useMemo(() => {
     if (!investment) return { returnMin: 1, returnMax: 30, yearMin: 1, yearMax: 40 };
@@ -284,15 +326,15 @@ const DeepDiveModal = ({ isOpen, onClose, investment, onSelectInvestment, allRec
           box-shadow: 0 0 14px rgba(56, 189, 248, 0.7), 0 2px 8px rgba(0, 0, 0, 0.5) !important;
         }
       `}</style>
-      <div className="ddm-content" onClick={e => e.stopPropagation()}>
+      <div className="ddm-content" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="deepdive-modal-title" onClick={e => e.stopPropagation()}>
         
         {/* Sticky Header */}
         <div className="ddm-sticky-header">
-          <button className="modal-close" onClick={onClose} aria-label="Close"><X size={18} /></button>
+          <button className="modal-close" onClick={onClose} aria-label="Close dialog"><X size={18} /></button>
           
           <div className="ddm-header-top">
             <span className="premium-badge">{inv.category}</span>
-            <h2 className="ddm-title">{inv.name}</h2>
+            <h2 id="deepdive-modal-title" className="ddm-title">{inv.name}</h2>
           </div>
 
           <div className="ddm-quick-metrics">

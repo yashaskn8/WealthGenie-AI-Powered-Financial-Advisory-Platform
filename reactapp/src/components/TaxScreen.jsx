@@ -361,7 +361,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
       {/* UNVERIFIED TAX DATA WARNING */}
       <AnimatePresence>
         {serverTaxData && (serverTaxData.verified === false || serverTaxData.warning) && (
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -371,7 +371,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
               <Info size={22} />
             </div>
             <div>
-              <h4 className="tax-warning-title">UNVERIFIED TAX DATA</h4>
+              <h2 className="tax-warning-title">UNVERIFIED TAX DATA</h2>
               <p className="tax-warning-text">
                 {serverTaxData.warning || 'The tax slabs used for this calculation have not been confirmed against an official gazette source. Do not use this for actual tax filing.'}
               </p>
@@ -390,7 +390,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
           <Sparkles size={24} />
         </div>
         <div>
-          <h4 className="tax-verdict-title">Our Recommendation</h4>
+          <h2 className="tax-verdict-title">Our Recommendation</h2>
           <p className="tax-verdict-text">
             {betterRegime !== 'Either' ? (
               <span>You'll pay less tax with the <strong>{betterRegime} Regime</strong> - saving <strong>{formatINR(betterRegimeSavings)}</strong> compared to the other option!</span>
@@ -469,6 +469,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
           
           <input 
             type="range" 
+            aria-label="Yearly gross income before tax"
             min="300000" 
             max="12000000" 
             step="50000" 
@@ -533,8 +534,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
             >
               {/* 80C Deduction */}
               <div className="tax-control-card tax-control-card--small">
-                <label className="tax-input-label">
-                  <JargonTooltip term="Section 80C">Tax-Saving Investments</JargonTooltip>
+                <label className="tax-input-label" htmlFor="tax-80c-input">
+                  <JargonTooltip term="Section 80C">Tax-Saving Investments (80C)</JargonTooltip>
                 </label>
                 <div className="tax-input-subtext">
                   PPF, ELSS, Life Insurance, Tax-saver FD, etc.
@@ -542,6 +543,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input 
+                    id="tax-80c-input"
+                    aria-label="Tax-Saving Investments Section 80C"
                     type="number" 
                     value={existing80C} 
                     onChange={e => setExisting80C(e.target.value === '' ? '' : Math.min(SECTION_80C_LIMIT, Number(e.target.value)))} 
@@ -555,7 +558,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
               {/* NPS 80CCD */}
               <div className="tax-control-card tax-control-card--small">
-                <label className="tax-input-label">
+                <label className="tax-input-label" htmlFor="tax-nps-input">
                   <JargonTooltip term="NPS">Pension (NPS) Savings</JargonTooltip>
                 </label>
                 <div className="tax-input-subtext">
@@ -564,6 +567,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input 
+                    id="tax-nps-input"
+                    aria-label="Pension NPS Savings Section 80CCD 1B"
                     type="number" 
                     value={existing80CCD} 
                     onChange={e => setExisting80CCD(e.target.value === '' ? '' : Math.min(SECTION_80CCD_1B_LIMIT, Number(e.target.value)))} 
@@ -577,7 +582,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
               {/* HRA Exemption */}
               <div className="tax-control-card tax-control-card--small">
-                <label className="tax-input-label">
+                <label className="tax-input-label" htmlFor="tax-hra-input">
                   Rent Allowance (HRA)
                 </label>
                 <div className="tax-input-subtext">
@@ -586,6 +591,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input 
+                    id="tax-hra-input"
+                    aria-label="House Rent Allowance HRA Exemption"
                     type="number" 
                     value={existingHRA} 
                     onChange={e => setExistingHRA(e.target.value === '' ? '' : Number(e.target.value))} 
@@ -598,7 +605,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
               {/* Home Loan Interest (Sec 24b) */}
               <div className="tax-control-card tax-control-card--small">
-                <label className="tax-input-label">
+                <label className="tax-input-label" htmlFor="tax-homeloan-input">
                   Home Loan Interest
                 </label>
                 <div className="tax-input-subtext" style={{ minHeight: '34px' }}>
@@ -607,6 +614,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input 
+                    id="tax-homeloan-input"
+                    aria-label="Home Loan Interest Section 24b"
                     type="number" 
                     value={existingHomeLoan} 
                     onChange={e => setExistingHomeLoan(e.target.value === '' ? '' : Math.min(200000, Number(e.target.value)))} 
@@ -620,7 +629,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
               {/* Medical Insurance 80D - Self/Family */}
               <div className="tax-control-card tax-control-card--small">
-                <label className="tax-input-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label className="tax-input-label" htmlFor="tax-80d-self-input" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Heart size={13} /> Medical Insurance
                 </label>
                 <div className="tax-input-subtext" style={{ minHeight: '34px' }}>
@@ -629,6 +638,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input
+                    id="tax-80d-self-input"
+                    aria-label="Medical Insurance Self and Family Section 80D"
                     type="number"
                     value={existing80DSelf}
                     onChange={e => setExisting80DSelf(e.target.value === '' ? '' : Math.min(self80DLimit, Number(e.target.value)))}
@@ -642,13 +653,14 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
               {/* Medical Insurance 80D - Parents */}
               <div className="tax-control-card tax-control-card--small">
-                <label className="tax-input-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label className="tax-input-label" htmlFor="tax-80d-parents-input" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Heart size={13} /> Parent Insurance
                 </label>
                 <button
                   type="button"
                   onClick={() => setParentsSenior(prev => !prev)}
                   className={`tax-toggle-senior-btn ${parentsSenior ? 'tax-toggle-senior-btn--active' : 'tax-toggle-senior-btn--inactive'}`}
+                  aria-label="Toggle senior citizen parents for tax deduction limits"
                 >
                   {parentsSenior ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                   Senior citizen parents
@@ -656,6 +668,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input
+                    id="tax-80d-parents-input"
+                    aria-label="Medical Insurance Parents Section 80D"
                     type="number"
                     value={existing80DParents}
                     onChange={e => setExisting80DParents(e.target.value === '' ? '' : Math.min(parents80DLimit, Number(e.target.value)))}
@@ -669,7 +683,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
               {/* Other Deductions */}
               <div className="tax-control-card tax-control-card--small" style={{ gridColumn: 'span 3' }}>
-                <label className="tax-input-label">
+                <label className="tax-input-label" htmlFor="tax-other-input">
                   Other Deductions
                 </label>
                 <div className="tax-input-subtext">
@@ -678,6 +692,8 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                 <div className="tax-input-wrapper">
                   <span className="tax-input-prefix">₹</span>
                   <input 
+                    id="tax-other-input"
+                    aria-label="Other eligible tax deductions"
                     type="number" 
                     value={existingOther} 
                     onChange={e => setExistingOther(e.target.value === '' ? '' : Number(e.target.value))} 
@@ -731,7 +747,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
             <Sparkles size={24} />
           </div>
           <div>
-            <h4 className="tax-crossover-title">When Should You Switch Regimes?</h4>
+            <h2 className="tax-crossover-title">When Should You Switch Regimes?</h2>
             <p className="tax-crossover-text">
               With your income of <strong>{formatINR(annualIncome)}</strong>, you need to invest at least <strong>{formatINR(crossoverBreakpoint)}</strong> in tax-saving options (like PF, home loan, or medical insurance) to make the Old Regime cheaper than the New Regime.
               {currentDeductions >= crossoverBreakpoint ? (
@@ -760,10 +776,10 @@ const TaxScreen = ({ profile, onLearnMore }) => {
           <div className="tax-slabs-grid">
             {/* Slabs table */}
             <div className="tax-slabs-container">
-              <h3 className="tax-slabs-header">
+              <h2 className="tax-slabs-header">
                 <Layers size={18} color="#38bdf8" />
                 How Your Tax is Calculated ({regime === 'new' ? 'New' : 'Old'} Regime)
-              </h3>
+              </h2>
               <p className="tax-slabs-subtext">
                 Your salary is split into ranges. Each range has a different tax rate. Only the income that falls in each range is taxed at that rate.
               </p>
@@ -847,10 +863,10 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
             {/* Smart Insights Panel */}
             <div className="tax-insights-panel">
-              <h3 className="tax-insights-header">
+              <h2 className="tax-insights-header">
                 <Sparkles size={18} color="#fbbf24" />
                 Helpful Insights
-              </h3>
+              </h2>
               <div className="tax-insight-items">
                 <div className="tax-insight-item">
                   <div className="tax-insight-icon tax-insight-icon-blue"><IndianRupee size={16} /></div>
@@ -906,7 +922,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <h3>Old vs New Regime - Which Costs Less?</h3>
+              <h2>Old vs New Regime - Which Costs Less?</h2>
               <div className="tax-bar-chart-container tax-bar-chart-glow">
                 <ResponsiveContainer>
                   <BarChart data={regimeChartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
@@ -936,7 +952,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
 
             {/* Slabs optimization chart (only Old regime) */}
             <div className="tax-chart-wrapper">
-              <h3>Before vs After Tax-Saving Investments</h3>
+              <h2>Before vs After Tax-Saving Investments</h2>
               {totalTax > 0 && regime === 'old' && potentialSaving > 0 ? (
                 <div className="tax-bar-chart-container tax-bar-chart-glow">
                   <ResponsiveContainer>
@@ -1011,10 +1027,10 @@ const TaxScreen = ({ profile, onLearnMore }) => {
           transition={{ delay: 0.5 }}
           style={{ marginTop: 32 }}
         >
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
             <PiggyBank size={22} color="#34d399" />
             Smart Ways to Save on Taxes
-          </h3>
+          </h2>
           <div className="tax-recs-grid">
             {taxSavingRecs.map((rec, i) => {
               const getInstrumentIcon = (name) => {
@@ -1048,7 +1064,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
                     </span>
                   </div>
                   
-                  <h4 className="tax-rec-name">{rec.name}</h4>
+                  <h3 className="tax-rec-name">{rec.name}</h3>
                   
                   <div className="tax-rec-stats">
                     <div className="tax-rec-stat">
