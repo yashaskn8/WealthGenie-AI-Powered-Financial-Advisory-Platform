@@ -33,6 +33,7 @@ HEX_REPLACEMENTS = {
     r'#6ee7b7\b': 'var(--color-success-light)',
     r'#86efac\b': 'var(--color-success-light)',
     r'#bbf7d0\b': 'var(--color-success-light)',
+    r'#a7f3d0\b': 'var(--color-success-light)',
     r'#d1fae5\b': 'var(--color-success-light)',
     r'#00E5A0\b': 'var(--color-accent-teal)',
     r'#2dd4bf\b': 'var(--color-accent-teal-light)',
@@ -78,7 +79,9 @@ HEX_REPLACEMENTS = {
     r'#040810\b': 'var(--surface-0)',
     r'#080e1c\b': 'var(--surface-1)',
     r'#080d1c\b': 'var(--surface-1)',
+    r'#0c111d\b': 'var(--surface-1)',
     r'#0a0f1e\b': 'var(--surface-2)',
+    r'#101726\b': 'var(--surface-2)',
     r'#030712\b': 'var(--surface-0)',
     r'#0c1225\b': 'var(--surface-2)',
     r'#0f0f14\b': 'var(--surface-0)',
@@ -99,9 +102,12 @@ HEX_REPLACEMENTS = {
     r'#4b5e7a\b': 'var(--text-faint)',
     r'#3b4a5e\b': 'var(--text-faint)',
     r'#3e4a5c\b': 'var(--text-faint)',
+    r'#3e4c63\b': 'var(--text-faint)',
     r'#b0bec5\b': 'var(--text-secondary)',
     r'#e2e8f0\b': 'var(--color-gray-200)',
+    r'#e5e7eb\b': 'var(--color-gray-200)',
     r'#f1f5f9\b': 'var(--color-gray-100)',
+    r'#111\b': 'var(--surface-0)',
 }
 
 def migrate_single_file(rel_path):
