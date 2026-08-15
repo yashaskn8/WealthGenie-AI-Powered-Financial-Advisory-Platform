@@ -39,7 +39,8 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def client():
-    with TestClient(app) as test_client:
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    with TestClient(app, headers={"X-API-Key": api_key}) as test_client:
         yield test_client
 
 

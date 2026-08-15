@@ -137,10 +137,7 @@ describe('MCP SSE & HTTP Endpoint Integration Tests', () => {
 
   it('GET /api/mcp/sse with valid JWT initiates SSE stream (text/event-stream content-type)', async () => {
     await withServer(buildMcpApp(), async (baseUrl) => {
-      // Use a raw HTTP request with a short timeout to verify SSE headers
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2000);
-
       try {
         const response = await fetch(`${baseUrl}/api/mcp/sse`, {
           method: 'GET',
@@ -151,12 +148,43 @@ describe('MCP SSE & HTTP Endpoint Integration Tests', () => {
         const contentType = response.headers.get('content-type');
         assert.ok(contentType && contentType.includes('text/event-stream'),
           `Expected text/event-stream content-type, got ${contentType}`);
-      } catch (err) {
-        // AbortError is expected since SSE holds the connection open
-        if (err.name !== 'AbortError') throw err;
       } finally {
-        clearTimeout(timeout);
+        controller.abort();
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
+    });
+  });
+
+  it('SSE session disconnect reaps session transport and active count drops back to 0', async () => {
+    const { mcpServerInstance } = await import('../mcp/wealthgenieMcpServer.js');
+    await withServer(buildMcpApp(), async (baseUrl) => {
+      // Ensure no residual sessions
+      const countStart = mcpServerInstance.getActiveSessionCount();
+
+      const controller = new AbortController();
+      try {
+        const response = await fetch(`${baseUrl}/api/mcp/sse`, {
+          method: 'GET',
+          headers: { authorization: `Bearer ${validToken}` },
+          signal: controller.signal,
+        });
+        assert.equal(response.status, 200);
+
+        // Session established
+        const activeCount = mcpServerInstance.getActiveSessionCount();
+        console.log(`[VERIFY] SSE Session count during active connection: ${activeCount}`);
+        assert.equal(activeCount, countStart + 1, 'Active session count must increase by 1 while connected');
+      } finally {
+        // Abort connection to simulate client disconnect
+        controller.abort();
+      }
+
+      // Wait for socket and response close event handlers to fire
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const finalCount = mcpServerInstance.getActiveSessionCount();
+      console.log(`[VERIFY] SSE Session count AFTER client disconnect: ${finalCount}`);
+      assert.equal(finalCount, 0, 'Active session count must return to 0 after disconnect');
     });
   });
 });

@@ -13,10 +13,11 @@ from pydantic import BaseModel, Field
 
 from model.serving.registry import registry
 from store_factory import get_model_registry
+from security import verify_api_key
 
 logger = logging.getLogger("wealthgenie.registry.router")
 
-registry_router = APIRouter(prefix="/model/registry", tags=["Model Registry"])
+registry_router = APIRouter(prefix="/model/registry", tags=["Model Registry"], dependencies=[Depends(verify_api_key)])
 
 # ── Promotion Gate Configuration ──
 # Maximum allowed regression (as fraction) on any tracked metric before a candidate
@@ -130,7 +131,7 @@ class PromoteRequest(BaseModel):
     skip_gate: bool = Field(False, description="Whether to skip the promotion gate (NOT recommended)")
 
 
-@registry_router.get("/versions")
+@registry_router.get("/versions", dependencies=[Depends(verify_api_key)])
 def list_versions(
     architecture: Optional[str] = Query(None, description="Filter by model architecture"),
     store = Depends(get_version_store),
@@ -144,7 +145,7 @@ def list_versions(
     }
 
 
-@registry_router.get("/active")
+@registry_router.get("/active", dependencies=[Depends(verify_api_key)])
 def get_active_model(
     architecture: Optional[str] = Query(None, description="Filter by model architecture"),
     store = Depends(get_version_store),
@@ -159,7 +160,7 @@ def get_active_model(
     return {"active_model": active}
 
 
-@registry_router.get("/versions/{version_id}")
+@registry_router.get("/versions/{version_id}", dependencies=[Depends(verify_api_key)])
 def get_version(
     version_id: str,
     store = Depends(get_version_store),
@@ -174,7 +175,7 @@ def get_version(
     return version
 
 
-@registry_router.get("/integrity/{version_id}")
+@registry_router.get("/integrity/{version_id}", dependencies=[Depends(verify_api_key)])
 def verify_artifact_integrity(
     version_id: str,
     store = Depends(get_version_store),
@@ -186,7 +187,7 @@ def verify_artifact_integrity(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@registry_router.post("/register", status_code=status.HTTP_201_CREATED)
+@registry_router.post("/register", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_api_key)])
 def register_model_version(
     payload: RegisterModelRequest,
     store = Depends(get_version_store),
@@ -260,7 +261,7 @@ def register_model_version(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@registry_router.post("/promote", status_code=status.HTTP_200_OK)
+@registry_router.post("/promote", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_api_key)])
 def promote_version(
     payload: PromoteRequest,
     store = Depends(get_version_store),
@@ -322,7 +323,7 @@ def promote_version(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
-@registry_router.post("/drift-check")
+@registry_router.post("/drift-check", dependencies=[Depends(verify_api_key)])
 def run_drift_check_endpoint(
     payload: DriftCheckRequest,
     store = Depends(get_version_store),
@@ -362,7 +363,7 @@ def run_drift_check_endpoint(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@registry_router.post("/rollback/{version_id}")
+@registry_router.post("/rollback/{version_id}", dependencies=[Depends(verify_api_key)])
 def rollback_model_version(
     version_id: str,
     store = Depends(get_version_store),
@@ -388,7 +389,7 @@ class ConfigureShadowRequest(BaseModel):
     version_id: str = Field(..., description="Registered version ID to run as shadow candidate")
 
 
-@registry_router.post("/shadow/configure")
+@registry_router.post("/shadow/configure", dependencies=[Depends(verify_api_key)])
 def configure_shadow_model(
     payload: ConfigureShadowRequest,
     store = Depends(get_version_store),
@@ -457,14 +458,14 @@ def configure_shadow_model(
     }
 
 
-@registry_router.get("/shadow/summary")
+@registry_router.get("/shadow/summary", dependencies=[Depends(verify_api_key)])
 def get_shadow_summary():
     """Retrieves live agreement statistics and recent side-by-side comparisons for the shadow candidate."""
     from model.registry.shadow_evaluator import shadow_evaluator
     return shadow_evaluator.get_summary()
 
 
-@registry_router.delete("/shadow")
+@registry_router.delete("/shadow", dependencies=[Depends(verify_api_key)])
 def clear_shadow_model():
     """Disables shadow evaluation mode."""
     from model.registry.shadow_evaluator import shadow_evaluator

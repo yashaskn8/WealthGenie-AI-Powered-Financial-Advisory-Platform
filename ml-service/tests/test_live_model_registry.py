@@ -28,9 +28,29 @@ from store_factory import get_model_registry
 
 @pytest.fixture(scope="module")
 def client():
-    """Provides a TestClient initialized with app lifespan."""
-    with TestClient(app) as test_client:
+    """Provides a TestClient initialized with app lifespan and valid auth header."""
+    with TestClient(app, headers={"X-API-Key": "test-api-key"}) as test_client:
         yield test_client
+
+
+def test_registry_endpoints_require_authentication():
+    """Verifies that calling model registry endpoints without valid API key returns 401 Unauthorized."""
+    unauth_client = TestClient(app)
+
+    # 1. GET /model/registry/versions without API key
+    res = unauth_client.get("/model/registry/versions")
+    assert res.status_code == 401, f"Expected 401, got {res.status_code}"
+    assert "Invalid or missing API Key" in res.json().get("detail", "")
+
+    # 2. POST /model/registry/promote without API key
+    res_promote = unauth_client.post("/model/registry/promote", json={"version_id": "dummy", "skip_gate": False})
+    assert res_promote.status_code == 401, f"Expected 401, got {res_promote.status_code}"
+    assert "Invalid or missing API Key" in res_promote.json().get("detail", "")
+
+    # 3. POST /model/registry/promote with WRONG API key
+    res_wrong = unauth_client.post("/model/registry/promote", json={"version_id": "dummy", "skip_gate": False}, headers={"X-API-Key": "wrong-key"})
+    assert res_wrong.status_code == 401, f"Expected 401, got {res_wrong.status_code}"
+    assert "Invalid or missing API Key" in res_wrong.json().get("detail", "")
 
 
 def test_live_startup_seeds_and_resolves_version_registry(client):

@@ -1,7 +1,8 @@
 /**
  * WealthGenie API Client
- * Axios instance configured for the Express backend.
- * Token is stored in memory (not localStorage) for security.
+ * Configured for the Express backend.
+ * Auth tokens and user state are stored in localStorage to provide session persistence
+ * across page refreshes and SPA navigation (with standard XSS risk mitigated via CSP/sanitization).
  */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
@@ -46,14 +47,37 @@ export function clearAuthToken() {
   setUserInfo(null);
 }
 
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 async function request(method, path, data = null, options = {}, retries = 2) {
   const url = `${API_BASE}${path}`;
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
-  const config = { method, headers, ...options };
-  if (data) config.body = JSON.stringify(data);
+  // Attach Idempotency-Key for mutating requests (POST, PUT, DELETE, PATCH)
+  const isMutating = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase());
+  if (isMutating) {
+    if (!headers['Idempotency-Key'] && !headers['idempotency-key']) {
+      // Re-use key stored in options._idempotencyKey during retries, or generate fresh UUIDv4
+      if (!options._idempotencyKey) {
+        options._idempotencyKey = generateUUID();
+      }
+      headers['Idempotency-Key'] = options._idempotencyKey;
+    }
+  }
 
+  const { _idempotencyKey, ...fetchOptions } = options;
+  const config = { method, headers, ...fetchOptions };
+  if (data) config.body = JSON.stringify(data);
   try {
     const res = await fetch(url, config);
     const json = await res.json();

@@ -106,16 +106,45 @@ export class WealthGenieMcpServer {
   }
 
   /**
+   * Returns current count of active SSE sessions.
+   */
+  getActiveSessionCount() {
+    return this.sseTransports.size;
+  }
+
+  /**
    * Handles incoming SSE connection for HTTP transport.
+   * Enforces max concurrent sessions and reaps disconnected clients on close.
    */
   async handleSseConnection(req, res) {
+    const MAX_SESSIONS = 100;
+    if (this.sseTransports.size >= MAX_SESSIONS) {
+      const oldestSessionId = this.sseTransports.keys().next().value;
+      const oldestTransport = this.sseTransports.get(oldestSessionId);
+      if (oldestTransport) {
+        try {
+          if (oldestTransport.close) oldestTransport.close();
+        } catch { /* ignore */ }
+        this.sseTransports.delete(oldestSessionId);
+      }
+    }
+
     const transport = new SSEServerTransport('/api/mcp/messages', res);
     const sessionId = transport.sessionId;
     this.sseTransports.set(sessionId, transport);
 
-    transport.onclose = () => {
+    const cleanup = () => {
       this.sseTransports.delete(sessionId);
     };
+
+    transport.onclose = cleanup;
+    res.on('close', cleanup);
+    res.on('finish', cleanup);
+    req.on('close', cleanup);
+    req.on('aborted', cleanup);
+    if (req.socket) {
+      req.socket.on('close', cleanup);
+    }
 
     await this.server.connect(transport);
   }
