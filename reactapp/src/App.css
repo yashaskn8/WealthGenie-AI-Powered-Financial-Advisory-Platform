@@ -3,7 +3,6 @@
   --primary-color: var(--color-primary);
   --primary-hover: var(--color-primary-light);
   --text-main: var(--text-primary);
-  --text-muted: var(--text-muted);
   --bg-glass: var(--surface-card);
   --border-glass: var(--border-default);
   --input-bg: rgba(15, 23, 42, 0.5);
@@ -187,7 +186,7 @@ body {
 }
 
 .card-header p {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 300;
   white-space: nowrap;
@@ -201,9 +200,9 @@ body {
 .input-group label {
   display: block;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 8px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -222,7 +221,7 @@ body {
 }
 
 .input-group input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .input-group input:focus {
@@ -244,7 +243,7 @@ body {
   display: flex;
   align-items: center;
   cursor: pointer;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .remember-me input {
@@ -325,7 +324,7 @@ body {
   margin-top: 15px; /* Reduced from 30px */
   text-align: center;
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .card-footer a {

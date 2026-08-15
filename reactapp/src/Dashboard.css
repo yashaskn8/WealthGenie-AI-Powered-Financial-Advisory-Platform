@@ -11,16 +11,7 @@
   --accent-gold: var(--color-accent-gold);
   --accent-red: var(--color-error-light);
   --accent-violet: var(--color-violet);
-  --text-primary: var(--text-primary);
-  --text-secondary: var(--text-muted);
-  --text-dim: var(--text-dim);
-  --divider: var(--border-subtle);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
   --ease-premium: var(--ease-out-expo);
-  --ease-smooth: var(--ease-smooth);
 }
 
 /* ===== Core Layout & Typography ===== */

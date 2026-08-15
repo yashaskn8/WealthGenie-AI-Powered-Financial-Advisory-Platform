@@ -5,7 +5,6 @@ import { investmentDatabase, RISK_COLORS, CHART_COLORS } from './investmentDatab
 import { generateRecommendations, getEligibleInvestments, getWhy, GOAL_PROFILES } from './recommendationEngine';
 import { getConfidenceLabel } from './utils/confidenceLabels';
 import { INSTRUMENT_EXPLAINERS, CARD_SUBTITLES, RISK_PLAIN_LABELS, getLockInWarning, detectRiskAgeMismatch } from './utils/instrumentExplainers';
-import ExplainabilityPanel from './components/ExplainabilityPanel';
 import SebiDisclaimer from './components/SebiDisclaimer';
 import { formatCompactINR } from './utils/indianNumberFormat';
 import JargonTooltip from './components/JargonTooltip';
@@ -1797,24 +1796,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════
-            SECTION 9.5: SHAP EXPLAINABILITY PANEL
-            ═══════════════════════════════════════════════════════════ */}
-        {explanation && (
-          <ExplainabilityPanel
-            explanation={explanation}
-            instrumentName={(() => {
-              const predClass = explanation.predicted_class?.replace('_', ' ');
-              const match = recommendations.find(r => 
-                r.id === explanation.predicted_class || 
-                r.name.includes(predClass) || 
-                (predClass === 'Equity MF' && r.name.includes('Equity')) ||
-                (predClass === 'Debt MF' && r.name.includes('Debt'))
-              );
-              return match ? match.name : (recommendations?.[0]?.name || 'the primary pick');
-            })()}
-          />
-        )}
+        
 
         {/* ═══════════════════════════════════════════════════════════
             SECTION 10: AI ADVISORY CARD — Structured Smart Advisory Synthesis
