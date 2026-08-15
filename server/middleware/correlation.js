@@ -10,11 +10,11 @@ export const correlationIdMiddleware = (req, res, next) => {
   const activeSpan = trace.getActiveSpan();
   const spanContext = activeSpan?.spanContext();
 
-  const traceId = spanContext?.traceId || req.headers['traceparent']?.split('-')[1] || crypto.randomUUID().replace(/-/g, '');
+  const cid = req.headers['x-correlation-id'] || req.headers['x-request-id'] || crypto.randomUUID();
+  const traceId = spanContext?.traceId || req.headers['traceparent']?.split('-')[1] || cid.replace(/-/g, '').padEnd(32, '0').slice(0, 32);
   const spanId = spanContext?.spanId || crypto.randomBytes(8).toString('hex');
   const traceparent = req.headers['traceparent'] || `00-${traceId}-${spanId}-01`;
 
-  const cid = req.headers['x-correlation-id'] || req.headers['x-request-id'] || traceId;
   req.correlationId = cid;
   req.traceId = traceId;
   req.spanId = spanId;

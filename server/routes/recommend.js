@@ -4,6 +4,8 @@ import { asyncHandler, createError } from '../middleware/errorHandler.js';
 import { validate, recommendSchema, updateWeightsSchema } from '../validation/schemas.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import Recommendation from '../models/Recommendation.js';
+import AuditRecord from '../models/AuditRecord.js';
+import logger from '../utils/logger.js';
 import { getMLPrediction } from '../services/mlClient.js';
 import { getTaxSlab } from '../services/taxEngine.js';
 import { generateAdvisory } from '../services/geminiService.js';
@@ -126,9 +128,61 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     modelVersion: mlResult.model_version || (mlResult.fallback ? 'rule_fallback' : '2.0'),
   });
 
+  // ── Synchronous Audit Log Write (Regulatory Compliance - Fail Loudly) ──
+  const sanitizedInputs = {
+    age: profile.age,
+    annual_income: profile.annualIncome,
+    monthly_savings: profile.savings,
+    risk_category: profile.riskCategory,
+    liquid_savings: profile.liquid_savings,
+    existing_debt: profile.existing_debt,
+    dependents: profile.dependents,
+    emergency_fund_months: profile.emergency_fund_months,
+    risk_tolerance: profile.risk_tolerance,
+    goal_type: profile.goal_type,
+    tax_regime: profile.taxRegime,
+    investment_horizon: profile.investmentHorizon || 15,
+  };
+  const inputHash = crypto.createHash('sha256').update(JSON.stringify(sanitizedInputs)).digest('hex');
+
+  let auditRecord;
+  try {
+    auditRecord = await AuditRecord.create({
+      userId: req.user.userId,
+      profileId: profile._id,
+      recommendationId: rec._id,
+      correlationId: req.correlationId || req.traceId || crypto.randomUUID(),
+      traceId: req.traceId || req.correlationId || '',
+      version_id: rec.modelVersion || '1.0.0',
+      input_hash: inputHash,
+      inputs: sanitizedInputs,
+      recommendations: {
+        instruments,
+        confidenceScores,
+        portfolioYield,
+        modelVersion: rec.modelVersion,
+        advisorySummary: advisory.text ? advisory.text.slice(0, 500) : '',
+      },
+      cited_rag_chunk_ids: advisory.cited_chunks || mlResult.cited_chunk_ids || [],
+      engine: mlResult.fallback ? 'rule_fallback' : 'ml_service',
+      timestamp: new Date(),
+    });
+  } catch (auditErr) {
+    logger.error('CRITICAL: Advisory audit record write failed', {
+      userId: req.user.userId,
+      profileId: profile._id,
+      error: auditErr.message,
+      stack: auditErr.stack,
+    });
+    // Fail loudly as required by regulatory compliance rules
+    throw createError(500, `Audit log write failure: ${auditErr.message}`, 'Failed to record immutable advisory audit log. Transaction aborted.');
+  }
+
   // Section 7 metadata is response-only (not persisted), appended after Recommendation.create()
   const result = {
     recommendationId: rec._id,
+    audit_id: auditRecord._id,
+    audit_hash: inputHash,
     instruments,
     ranked: true,
     advisory_text: advisory.text,
@@ -157,6 +211,66 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
   await setCache(cacheKey, result, 86400);
 
   res.json(result);
+}));
+
+/**
+ * GET /api/recommend/audit [Protected]
+ * Retrieve immutable audit trail records for regulatory compliance.
+ */
+router.get('/audit', verifyJWT, asyncHandler(async (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+  const skip = Math.max(parseInt(req.query.skip) || 0, 0);
+
+  const query = { userId: req.user.userId };
+  if (req.query.correlationId) {
+    query.correlationId = req.query.correlationId;
+  }
+  if (req.query.profileId && isValidObjectId(req.query.profileId)) {
+    query.profileId = req.query.profileId;
+  }
+
+  const [records, total] = await Promise.all([
+    AuditRecord.find(query)
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    AuditRecord.countDocuments(query),
+  ]);
+
+  res.json({
+    status: 'success',
+    total,
+    count: records.length,
+    skip,
+    limit,
+    records,
+  });
+}));
+
+/**
+ * GET /api/recommend/audit/:id [Protected]
+ * Retrieve specific audit trail record by ID.
+ */
+router.get('/audit/:id', verifyJWT, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) {
+    throw createError(400, 'Invalid audit ID format', 'Invalid audit ID.');
+  }
+
+  const record = await AuditRecord.findById(id).lean();
+  if (!record) {
+    throw createError(404, 'Audit record not found', 'Audit record not found.');
+  }
+
+  if (record.userId.toString() !== req.user.userId.toString() && req.user.role !== 'admin') {
+    throw createError(403, 'Access denied to audit record', 'Access denied.');
+  }
+
+  res.json({
+    status: 'success',
+    record,
+  });
 }));
 
 /**
