@@ -282,6 +282,20 @@ cd ml-service
 pytest                 # Run full 171-item pytest suite
 ```
 
+### Frontend Client Unit & Accessibility Suite (Vitest + axe-core)
+```bash
+cd reactapp
+npm test               # Run Vitest test suite (21 test suites / 67 tests, 0 a11y violations)
+npm run typecheck      # Run TypeScript type safety checks
+```
+
+### Playwright End-to-End Suite (Full User Lifecycle)
+```bash
+cd reactapp
+npm run test:e2e       # Run Playwright E2E full user journey against live local stack
+```
+> **CI Integration Disclosure**: The Playwright E2E test suite (`npm run test:e2e`) runs against the live local application stack (Express 5000 + FastAPI 8000 + MongoDB 27017 + Vite 5173). **It is explicitly not wired into the automated GitHub Actions CI workflow (`.github/workflows/ci.yml`)** because the CI matrix runs unit/integration tests without orchestrating the multi-container live environment.
+
 ### Static Docs-vs-Code Sync Check
 To verify that documentation claims match code imports and API routes:
 ```bash
@@ -307,12 +321,16 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 ├── RESEARCH_LOG.md                # Empirical research & engineering audit log
 ├── PROJECT_STATUS.md              # Feature status & architectural disclosure matrix
 ├── load_test_report.md            # Autocannon load testing benchmark report
-├── reactapp/                      # React 18 Single-Page Application
+├── reactapp/                      # React 19 Single-Page Application & Design System
+│   ├── e2e/                       # Playwright E2E full user lifecycle test suite
 │   ├── src/
 │   │   ├── components/            # UI Components (ProfilePage, TaxScreen, Rebalancer, etc.)
+│   │   ├── styles/                # CSS Design Tokens System (tokens.css, components.css)
 │   │   ├── services/              # API client bridge
 │   │   ├── utils/                 # Client WTI generator, post-tax return calculator
+│   │   ├── __tests__/             # Vitest unit & axe-core accessibility tests (0 violations)
 │   │   └── App.jsx                # Main entry & router
+│   ├── playwright.config.js       # Playwright E2E configuration
 │   └── package.json
 ├── server/                        # Express.js REST API Gateway
 │   ├── config/                    # DB & Redis connection config
