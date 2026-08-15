@@ -78,7 +78,7 @@
   font-weight: 900;
   margin: 0 0 10px;
   letter-spacing: -1.5px;
-  background: linear-gradient(135deg, #ffffff 0%, var(--text-secondary) 100%);
+  background: linear-gradient(135deg, var(--color-white) 0%, var(--text-secondary) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -178,7 +178,7 @@
   display: block;
   margin-bottom: 4px;
   letter-spacing: -0.5px;
-  color: #fff;
+  color: var(--color-white);
 }
 .goal-overview-sub {
   display: block;
@@ -259,7 +259,7 @@
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.2px;
-  color: #fff;
+  color: var(--color-white);
 }
 .goal-card-desc {
   font-size: 0.8rem;
@@ -339,7 +339,7 @@
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius-md);
-  color: #fff;
+  color: var(--color-white);
   font-size: 1rem;
   font-weight: 600;
   outline: none;
@@ -377,7 +377,7 @@
 .preset-btn:hover {
   background: rgba(var(--theme-color-rgb), 0.1);
   border-color: rgba(var(--theme-color-rgb), 0.3);
-  color: #fff;
+  color: var(--color-white);
 }
 .preset-active {
   background: rgba(var(--theme-color-rgb), 0.15) !important;
@@ -418,7 +418,7 @@
 .label-value {
   font-size: 1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-white);
 }
 
 .goal-progress-track {
@@ -458,7 +458,7 @@
   border-radius: 50%;
   margin-right: 8px;
 }
-.legend-pct { margin-left: 6px; font-weight: 700; color: #fff; }
+.legend-pct { margin-left: 6px; font-weight: 700; color: var(--color-white); }
 
 /* ─── Footer Metrics Grid ───────────────────────────────────────── */
 .goal-card-footer {
@@ -503,7 +503,7 @@
   font-size: 1.05rem;
   font-weight: 800;
   display: block;
-  color: #fff;
+  color: var(--color-white);
 }
 .goal-metric-sub {
   display: block;
@@ -552,7 +552,7 @@
   font-size: 0.85rem;
 }
 .highlight-text {
-  color: #fff;
+  color: var(--color-white);
   font-weight: 700;
 }
 

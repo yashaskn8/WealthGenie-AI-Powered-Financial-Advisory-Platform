@@ -82,6 +82,12 @@
   --color-error-border: rgba(239, 68, 68, 0.25);
   --color-error-hover: rgba(239, 68, 68, 0.18);
 
+  /* Basic Solids */
+  --color-white: #ffffff;
+  --color-white-rgb: 255, 255, 255;
+  --color-black: #000000;
+  --color-black-rgb: 0, 0, 0;
+
   /* Accent: Violet / Purple */
   --color-violet-400: #a78bfa;
   --color-violet-500: #8b5cf6;
@@ -92,6 +98,54 @@
   --color-violet-bg: rgba(139, 92, 246, 0.10);
   --color-violet-border: rgba(139, 92, 246, 0.25);
   --color-violet-hover: rgba(139, 92, 246, 0.18);
+  --color-accent-purple: #a855f7;
+  --color-accent-purple-light: #c084fc;
+  --color-accent-purple-rgb: 168, 85, 247;
+  --color-accent-purple-bg: rgba(168, 85, 247, 0.10);
+  --color-accent-purple-border: rgba(168, 85, 247, 0.25);
+
+  /* Accent: Vibrant Teal / Emerald Glow */
+  --color-accent-teal: #00E5A0;
+  --color-accent-teal-light: #5eead4;
+  --color-accent-teal-rgb: 0, 229, 160;
+  --color-accent-teal-bg: rgba(0, 229, 160, 0.10);
+  --color-accent-teal-border: rgba(0, 229, 160, 0.25);
+  --color-accent-cyan: #38bdf8;
+  --color-accent-cyan-rgb: 56, 189, 248;
+
+  /* Aliases for Semantic Colors */
+  --color-danger: var(--color-error);
+  --color-danger-light: var(--color-error-light);
+  --color-danger-rgb: var(--color-error-rgb);
+  --color-danger-bg: var(--color-error-bg);
+  --color-danger-border: var(--color-error-border);
+  --color-danger-hover: var(--color-error-hover);
+  --color-info: var(--color-primary);
+  --color-info-light: var(--color-primary-light);
+  --color-info-rgb: var(--color-primary-rgb);
+  --color-info-bg: var(--color-primary-bg);
+  --color-info-border: var(--color-primary-border);
+  --color-bg-base: var(--surface-0);
+  --color-bg-card: var(--surface-2);
+  --color-bg-card-hover: var(--surface-3);
+  --color-bg-elevated: var(--surface-4);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-hover: var(--border-hover);
+  --color-border-focus: var(--border-focus);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --spacing-xs: var(--space-1);
+  --spacing-sm: var(--space-2);
+  --spacing-md: var(--space-3);
+  --spacing-lg: var(--space-4);
+  --spacing-xl: var(--space-5);
+  --spacing-2xl: var(--space-6);
+  --spacing-3xl: var(--space-8);
+  --spacing-4xl: var(--space-12);
+  --radius-pill: var(--radius-full);
 
   /* ── 3. Surfaces & Deep Navy Backgrounds ──────────────────────── */
   --surface-0: #040810;

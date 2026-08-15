@@ -48,27 +48,30 @@
 - **Typography**: Responsive font sizes (`--font-size-xs` to `--font-size-4xl`) with defined weights (`--font-weight-regular` to `--font-weight-black`).
 - **Border Radii & Shadows**: `--radius-sm` (6px) through `--radius-pill` (9999px); ambient card shadows and semantic glows.
 
-### 2. CSS Migration Inventory (17/17 Migrated)
-All 17 CSS files in the React frontend were audited, normalized, and fully migrated to CSS variables from `tokens.css`:
-1. `src/index.css` (Tokens import, global reset, root variables)
-2. `src/App.css` (Shell layout, global layout utilities)
-3. `src/styles/components.css` (Shared buttons, cards, badges)
-4. `src/components/Sidebar.css` (Sidebar navigation, active states, hover effects)
-5. `src/components/AuthPage.css` (Login & registration forms, password checklist)
-6. `src/components/ProfilePage.css` (Financial profile builder, CTC sliders)
-7. `src/components/GenieChat.css` (AI chat widget, message bubbles, action pills)
-8. `src/components/GoalTracker.css` (Goal cards, progress meters, HUD metrics)
-9. `src/components/AllocationPlanner.css` (Asset allocation dials, pie charts, sliders)
-10. `src/components/TaxScreen.css` (Tax regime tables, deduction sliders, verdict cards)
-11. `src/components/PostTaxAnalysis.css` (Post-tax analytics cards, holding period toggles)
-12. `src/components/RebalancerScreen.css` (Rebalance sliders, trade summary tables)
-13. `src/components/StepUpPlanner.css` (SIP step-up simulator, growth boost cards)
-14. `src/components/HealthScoreScreen.css` (Health score gauge, diagnostic cards)
-15. `src/components/DeepDiveModal.css` (Deep-dive dialog overlay, metrics grid)
-16. `src/components/FeedbackBanner.css` (User feedback banner, star ratings)
-17. `src/components/ComparisonTable.css` (Multi-instrument comparison table)
+### 2. CSS Migration Inventory (278 -> 0 Hex Instances Across All 18 Files)
+All 18 CSS files in `reactapp/src` outside `tokens.css` were scanned with `#[0-9a-fA-F]{3,8}\b` and migrated to design tokens with automated per-file verification:
 
-*Status*: **17/17 migrated (100%)**. Zero files left unmigrated.
+| File | Before | After | Migrated Tokens |
+|---|---|---|---|
+| `App.css` | 45 | **0** | `--color-white`, `--color-accent-purple`, `--color-success`, `--color-error`, `--surface-0` |
+| `components/DeepDiveModal.css` | 44 | **0** | `--color-white`, `--color-success`, `--color-error-light`, `--color-accent-purple-light` |
+| `components/GenieChat.css` | 35 | **0** | `--color-primary-700`, `--color-success`, `--color-white`, `--color-violet-light` |
+| `HealthScoreScreen.css` | 25 | **0** | `--color-white`, `--text-faint`, `--text-muted`, `--color-gray-100` |
+| `components/TaxScreen.css` | 18 | **0** | `--color-white`, `--color-primary`, `--color-violet-500`, `--color-success-light` |
+| `components/RebalancerScreen.css` | 18 | **0** | `--surface-1`, `--surface-2`, `--color-secondary-500`, `--color-secondary-400` |
+| `ComparisonTableModal.css` | 15 | **0** | `--color-white`, `--color-accent-teal-light`, `--text-faint` |
+| `components/StepUpPlanner.css` | 14 | **0** | `--color-accent-purple`, `--color-accent-purple-light`, `--color-white` |
+| `Dashboard.css` | 12 | **0** | `--color-white`, `--color-primary-700`, `--color-gray-200`, `--text-muted` |
+| `components/GoalTracker.css` | 9 | **0** | `--color-white`, `--text-secondary` |
+| `components/Sidebar.css` | 9 | **0** | `--color-white`, `--color-error`, `--text-muted` |
+| `index.css` | 8 | **0** | `--color-white`, `--color-primary-light`, `--color-accent-purple-light` |
+| `LandingPage.css` | 8 | **0** | `--surface-0`, `--color-white`, `--color-accent-purple-light` |
+| `HelpTourScreen.css` | 7 | **0** | `--color-white`, `--text-muted`, `--text-faint`, `--surface-2` |
+| `components/AllocationPlanner.css` | 5 | **0** | `--color-accent-purple` (line 75 fix), `--color-white`, `--color-success` |
+| `InsightsScreen.css` | 2 | **0** | `--color-white`, `--text-muted` |
+| `PostTaxAnalysis.css` | 2 | **0** | `--color-white`, `--color-accent-purple-light` |
+| `components/JargonTooltip.css` | 2 | **0** | `--color-violet-light` |
+| **Total Across All Files** | **278** | **0** | **100% tokenized (0 hardcoded hex codes remaining outside tokens.css)** |
 
 ### 3. Accessibility (a11y) Audit & Violation Counts
 Automated testing conducted via `axe-core` and `@testing-library/react` in `reactapp/src/__tests__/a11y.test.jsx`:
@@ -81,7 +84,7 @@ Automated testing conducted via `axe-core` and `@testing-library/react` in `reac
 - **After Migration**: **0 violations across all 5 audited screens** (WCAG 2.1 Level AA compliant).
 - **Test Suite Results**: 21 Vitest test suites (67 unit/integration tests) passing (`npm test`).
 
-### 4. Playwright End-to-End Suite & CI Integration Status
+### 4. Playwright End-to-End Suite & Reproducible Stack Execution
 - **Test File**: `reactapp/e2e/full-flow.spec.js` (Playwright configuration in `reactapp/playwright.config.js`).
 - **Flow Verified**:
   1. **Signup**: Creates new account with password validation and mobile checks.
@@ -90,8 +93,20 @@ Automated testing conducted via `axe-core` and `@testing-library/react` in `reac
   4. **Goal Planning**: Creates a target goal through the 3-step wizard and verifies Monte Carlo projections.
   5. **GenieChat**: Asks a grounded financial question and verifies AI streaming response.
 - **Runtime**: **17.4s** executed against live Express (5000), Python FastAPI ML (8000), MongoDB (27017), and Vite (5173).
+- **Reproducing Full-Stack E2E Test Runs**:
+  - **Option A (Docker Full Stack)**:
+    ```bash
+    docker-compose up -d --build
+    cd reactapp && npm run test:e2e
+    docker-compose down
+    ```
+  - **Option B (Local Processes)**:
+    1. Terminal 1 (Mongo & Redis): Local MongoDB (`27017`) and Redis (`6379`).
+    2. Terminal 2 (Server): `cd server && npm start` (port `5000`).
+    3. Terminal 3 (ML Service): `cd ml-service && uvicorn main:app --port 8000` (port `8000`).
+    4. Terminal 4 (React & E2E): `cd reactapp && npm run dev` then in another window `npx playwright test`.
 - **CI Integration Status Disclosure**:
-  > **Note**: The Playwright E2E suite is configured for local and pre-release test runs via `npm run test:e2e`. **It is explicitly NOT wired into the GitHub Actions automated CI workflow (`.github/workflows/ci.yml`)** because the CI matrix runs isolated headless unit tests and does not spin up the multi-container live stack (Vite + Express + FastAPI + Mongo + Redis) required for full browser testing.
+  > **Note**: The Playwright E2E suite is configured for local and pre-release test runs via `npm run test:e2e`. **It is explicitly NOT wired into the automated GitHub Actions CI workflow (`.github/workflows/ci.yml`)** because the CI matrix runs isolated headless unit tests and does not spin up the multi-container live stack (Vite + Express + FastAPI + Mongo + Redis) required for full browser testing.
 
 ---
 

@@ -72,7 +72,7 @@ body::after {
 /* Selection */
 ::selection {
   background: var(--color-primary-border);
-  color: #fff;
+  color: var(--color-white);
 }
 
 /* ── Utility Animations ──────────────────────────────────────── */
@@ -176,7 +176,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px !important;
   width: 16px !important;
   border-radius: 50% !important;
-  background: #ffffff !important;
+  background: var(--color-white) !important;
   border: 3px solid var(--accent-primary, var(--color-primary)) !important;
   cursor: pointer !important;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
@@ -205,7 +205,7 @@ input[type="range"]::-moz-range-thumb {
   height: 16px !important;
   width: 16px !important;
   border-radius: 50% !important;
-  background: #ffffff !important;
+  background: var(--color-white) !important;
   border: 3px solid var(--accent-primary, var(--color-primary)) !important;
   cursor: pointer !important;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
@@ -235,7 +235,7 @@ input[type="range"]::-moz-range-thumb:hover {
 .badge-glow-cyan {
   background: rgba(6, 182, 212, 0.1) !important;
   border: 1px solid rgba(6, 182, 212, 0.25) !important;
-  color: #22d3ee !important;
+  color: var(--color-primary-light) !important;
   box-shadow: 0 0 15px rgba(6, 182, 212, 0.15) !important;
   text-shadow: 0 0 6px rgba(6, 182, 212, 0.4) !important;
 }
@@ -259,7 +259,7 @@ input[type="range"]::-moz-range-thumb:hover {
 .badge-glow-rose {
   background: rgba(244, 63, 94, 0.1) !important;
   border: 1px solid rgba(244, 63, 94, 0.25) !important;
-  color: #fda4af !important;
+  color: var(--color-error-light) !important;
   box-shadow: 0 0 15px rgba(244, 63, 94, 0.15) !important;
   text-shadow: 0 0 6px rgba(244, 63, 94, 0.4) !important;
 }
@@ -267,14 +267,14 @@ input[type="range"]::-moz-range-thumb:hover {
 .badge-glow-violet {
   background: var(--color-violet-bg) !important;
   border: 1px solid var(--color-violet-border) !important;
-  color: #c084fc !important;
+  color: var(--color-accent-purple-light) !important;
   box-shadow: 0 0 15px var(--color-violet-hover) !important;
   text-shadow: 0 0 6px rgba(139, 92, 246, 0.4) !important;
 }
 
 /* Premium gradient titles */
 .text-gradient-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, #c084fc 100%) !important;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-accent-purple-light) 100%) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
@@ -303,7 +303,7 @@ input[type="range"]::-moz-range-thumb:hover {
     0 4px 20px rgba(14, 165, 233, 0.3), 
     0 0 40px rgba(124, 58, 237, 0.15),
     inset 0 1px 0 var(--border-default) !important;
-  color: #ffffff !important;
+  color: var(--color-white) !important;
   font-weight: 700 !important;
   font-family: 'Outfit', sans-serif !important;
   letter-spacing: 1px !important;

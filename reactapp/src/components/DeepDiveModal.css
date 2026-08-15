@@ -158,7 +158,7 @@
   font-weight: 800; 
   letter-spacing: -0.03em;
   margin: 0;
-  background: linear-gradient(135deg, #ffffff 40%, var(--text-secondary) 100%);
+  background: linear-gradient(135deg, var(--color-white) 40%, var(--text-secondary) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -286,7 +286,7 @@
 }
 
 .ddm-tab-btn--active { 
-  color: #ffffff; 
+  color: var(--color-white); 
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid var(--border-subtle);
   box-shadow: 
@@ -602,7 +602,7 @@
 }
 .ddm-trust-chip:hover {
   background: linear-gradient(135deg, var(--color-primary-border), var(--color-violet-border));
-  color: #fff;
+  color: var(--color-white);
 }
 
 /* Execution Pathway (WTI) Premium Styles — Ultra-Premium Glass Cards */
@@ -725,7 +725,7 @@
 .wti-name {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-white);
   letter-spacing: -0.02em;
   line-height: 1.3;
   margin: 0 0 8px;
@@ -768,7 +768,7 @@
   box-shadow: 
     inset 0 0 20px var(--color-success-bg),
     0 8px 25px var(--color-success-hover);
-  color: #6ee7b7;
+  color: var(--color-success-light);
   transform: translateY(-2px);
 }
 
@@ -825,7 +825,7 @@
   background: rgba(245, 158, 11, 0.15);
   border-color: rgba(245, 158, 11, 0.5);
   box-shadow: 0 6px 16px rgba(245, 158, 11, 0.15);
-  color: #fcd34d;
+  color: var(--color-warning-light);
 }
 
 /* WTI Note Banner */
@@ -856,7 +856,7 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   background: var(--color-violet-hover);
-  color: #c4b5fd;
+  color: var(--color-violet-light);
   border: 1px solid rgba(139, 92, 246, 0.3);
   white-space: nowrap;
   box-shadow: inset 0 0 10px var(--color-violet-bg);
@@ -879,7 +879,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #4ade80;
+  color: var(--color-success-light);
   display: block;
   margin-bottom: 6px;
 }
@@ -940,7 +940,7 @@
 
 .tax-status-chip--eligible {
   background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  color: var(--color-success);
   border: 1px solid rgba(34, 197, 94, 0.2);
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.1);
 }
@@ -1154,7 +1154,7 @@ input[type=range]::-moz-range-thumb:hover {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  background: linear-gradient(90deg, var(--color-warning), #f97316);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-warning));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1374,7 +1374,7 @@ input[type=range]::-moz-range-thumb:hover {
 .goal-export-btn--copy:hover {
   background: linear-gradient(145deg, rgba(167, 139, 250, 0.1), rgba(15, 23, 42, 0.8));
   border-color: rgba(167, 139, 250, 0.4);
-  color: #c4b5fd;
+  color: var(--color-violet-light);
   box-shadow: 0 8px 24px rgba(167, 139, 250, 0.15);
 }
 
@@ -1410,7 +1410,7 @@ input[type=range]::-moz-range-thumb:hover {
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(244, 63, 94, 0.05));
   display: flex; align-items: center; justify-content: center;
-  color: #fca5a5;
+  color: var(--color-error-light);
   flex-shrink: 0;
   box-shadow: 
     0 8px 16px -6px rgba(244, 63, 94, 0.3),
@@ -1420,7 +1420,7 @@ input[type=range]::-moz-range-thumb:hover {
 .why-invest-hero-title {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #fecdd3;
+  color: var(--color-error-light);
   margin-bottom: 6px;
   letter-spacing: -0.01em;
   text-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
@@ -1481,12 +1481,12 @@ input[type=range]::-moz-range-thumb:hover {
 .why-invest-card-icon--bad {
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(244, 63, 94, 0.02));
   border: 1px solid rgba(244, 63, 94, 0.2);
-  color: #fca5a5;
+  color: var(--color-error-light);
 }
 .why-invest-card-icon--good {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.02));
   border: 1px solid rgba(34, 197, 94, 0.2);
-  color: #86efac;
+  color: var(--color-success-light);
 }
 .why-invest-card-title {
   font-size: 1.05rem;
@@ -1521,8 +1521,8 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--color-gray-200);
   font-family: 'JetBrains Mono', monospace;
 }
-.why-invest-metric-value--loss { color: #fca5a5; text-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
-.why-invest-metric-value--gain { color: #86efac; text-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
+.why-invest-metric-value--loss { color: var(--color-error-light); text-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
+.why-invest-metric-value--gain { color: var(--color-success-light); text-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
 
 .why-invest-verdict {
   display: flex;
@@ -1537,12 +1537,12 @@ input[type=range]::-moz-range-thumb:hover {
 }
 .why-invest-verdict--loss {
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(244, 63, 94, 0.02));
-  color: #fecdd3;
+  color: var(--color-error-light);
   border: 1px solid rgba(244, 63, 94, 0.15);
 }
 .why-invest-verdict--gain {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
-  color: #bbf7d0;
+  color: var(--color-success-light);
   border: 1px solid rgba(34, 197, 94, 0.15);
 }
 
@@ -1590,7 +1590,7 @@ input[type=range]::-moz-range-thumb:hover {
 .why-invest-opportunity-value {
   font-size: 4rem;
   font-weight: 900;
-  background: linear-gradient(135deg, var(--color-primary-light), #c084fc);
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-accent-purple-light));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1640,8 +1640,8 @@ input[type=range]::-moz-range-thumb:hover {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   white-space: nowrap;
 }
-.why-invest-th--bad { color: #fca5a5 !important; }
-.why-invest-th--good { color: #86efac !important; }
+.why-invest-th--bad { color: var(--color-error-light) !important; }
+.why-invest-th--good { color: var(--color-success-light) !important; }
 
 .why-invest-table td {
   padding: 14px 24px;
@@ -1655,8 +1655,8 @@ input[type=range]::-moz-range-thumb:hover {
 .why-invest-table tr:hover td {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.02), transparent);
 }
-.why-invest-td--bad { color: #fca5a5 !important; text-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
-.why-invest-td--good { color: #86efac !important; font-weight: 800; text-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
+.why-invest-td--bad { color: var(--color-error-light) !important; text-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
+.why-invest-td--good { color: var(--color-success-light) !important; font-weight: 800; text-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
 
 /* CTA Banner */
 .why-invest-cta {
@@ -1684,8 +1684,8 @@ input[type=range]::-moz-range-thumb:hover {
   gap: 8px;
   padding: 12px 24px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-success), var(--color-success-600));
+  color: var(--color-white);
   font-weight: 800;
   font-size: 0.9rem;
   border: 1px solid rgba(255,255,255,0.2);
@@ -1787,7 +1787,7 @@ input[type=range]::-moz-range-thumb:hover {
 }
 .suit-risk-chip--high {
   background: rgba(244, 63, 94, 0.12);
-  color: #f87171;
+  color: var(--color-error-light);
   border: 1px solid rgba(244, 63, 94, 0.2);
 }
 .suit-risk-chip--lowmoderate, .suit-risk-chip--moderate {
@@ -1797,7 +1797,7 @@ input[type=range]::-moz-range-thumb:hover {
 }
 .suit-risk-chip--verylow {
   background: rgba(34, 197, 94, 0.1);
-  color: #4ade80;
+  color: var(--color-success-light);
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
@@ -1868,7 +1868,7 @@ input[type=range]::-moz-range-thumb:hover {
 .suit-check-btn--yes:hover {
   background: rgba(34, 197, 94, 0.12);
   border-color: rgba(34, 197, 94, 0.3);
-  color: #22c55e;
+  color: var(--color-success);
 }
 .suit-check-btn--no:hover {
   background: rgba(244, 63, 94, 0.12);
@@ -1879,8 +1879,8 @@ input[type=range]::-moz-range-thumb:hover {
 /* Active button states */
 .suit-item--yes .suit-check-btn--yes {
   background: rgba(34, 197, 94, 0.15);
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 .suit-item--no .suit-check-btn--no {
   background: rgba(244, 63, 94, 0.15);
@@ -1906,7 +1906,7 @@ input[type=range]::-moz-range-thumb:hover {
   align-items: flex-start;
   gap: 8px;
   font-size: 0.72rem;
-  color: #fca5a5;
+  color: var(--color-error-light);
   line-height: 1.5;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
@@ -1964,13 +1964,13 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fb923c;
+  color: var(--color-warning-light);
   flex-shrink: 0;
 }
 .stress-hero-title {
   font-size: 1.05rem;
   font-weight: 800;
-  color: #fdba74;
+  color: var(--color-warning-light);
   margin-bottom: 6px;
 }
 .stress-hero-subtitle {
@@ -2024,7 +2024,7 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f87171;
+  color: var(--color-error-light);
   flex-shrink: 0;
 }
 .stress-card-name {
@@ -2091,7 +2091,7 @@ input[type=range]::-moz-range-thumb:hover {
   font-family: 'JetBrains Mono', monospace;
 }
 .stress-stat-value--drop { color: var(--color-error-light); }
-.stress-stat-value--recovery { color: #22c55e; }
+.stress-stat-value--recovery { color: var(--color-success); }
 
 /* Scenario flow */
 .stress-scenario-box {
@@ -2149,8 +2149,8 @@ input[type=range]::-moz-range-thumb:hover {
   font-family: 'JetBrains Mono', monospace;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
-.stress-flow-item--drop .stress-flow-value { color: #f87171; text-shadow: 0 2px 8px rgba(248, 113, 113, 0.4); }
-.stress-flow-item--recover .stress-flow-value { color: #4ade80; text-shadow: 0 2px 8px rgba(74, 222, 128, 0.4); }
+.stress-flow-item--drop .stress-flow-value { color: var(--color-error-light); text-shadow: 0 2px 8px rgba(248, 113, 113, 0.4); }
+.stress-flow-item--recover .stress-flow-value { color: var(--color-success-light); text-shadow: 0 2px 8px rgba(74, 222, 128, 0.4); }
 .stress-flow-arrow {
   font-size: 1.4rem;
   color: var(--text-dim);
@@ -2186,13 +2186,13 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #22c55e;
+  color: var(--color-success);
   flex-shrink: 0;
 }
 .stress-insight-title {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #86efac;
+  color: var(--color-success-light);
   margin-bottom: 6px;
 }
 .stress-insight-text {
@@ -2513,12 +2513,12 @@ input[type=range]::-moz-range-thumb:hover {
 .goal-export-btn--pdf {
   background: linear-gradient(135deg, var(--color-violet-hover), var(--color-primary-bg));
   border: 1px solid rgba(139, 92, 246, 0.3);
-  color: #c4b5fd;
+  color: var(--color-violet-light);
 }
 .goal-export-btn--pdf:hover {
   background: linear-gradient(135deg, var(--color-violet-border), var(--color-primary-hover));
   border-color: rgba(139, 92, 246, 0.5);
-  color: #e9d5ff;
+  color: var(--color-violet-light);
   transform: translateY(-1px);
   box-shadow: 0 6px 20px var(--color-violet-hover);
 }
@@ -2552,7 +2552,7 @@ input[type=range]::-moz-range-thumb:hover {
 .tax-status-chip--eligible {
   background: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.2);
-  color: #4ade80;
+  color: var(--color-success-light);
   box-shadow: 0 0 16px rgba(34, 197, 94, 0.1);
 }
 .tax-status-chip--not-eligible {

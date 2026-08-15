@@ -139,7 +139,7 @@
 .dashboard-title {
   font-size: 2rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 0%, var(--text-secondary) 100%);
+  background: linear-gradient(135deg, var(--color-white) 0%, var(--text-secondary) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -347,7 +347,7 @@
 .param-input-group input {
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--color-white);
   width: 60px;
   text-align: right;
   outline: none;
@@ -380,7 +380,7 @@ input[type=range] {
   height: 12px;
   width: 12px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-white);
   border: 2px solid var(--accent-teal);
   cursor: pointer;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -405,7 +405,7 @@ input[type=range] {
   height: 12px;
   width: 12px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-white);
   border: 2px solid var(--accent-teal);
   cursor: pointer;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -440,7 +440,7 @@ input[type=range] {
 .dense-table th {
   text-align: left;
   padding: 12px 12px;
-  color: #7a8ba0;
+  color: var(--text-muted);
   font-weight: 700;
   font-size: 0.65rem;
   text-transform: uppercase;
@@ -643,10 +643,10 @@ input[type=range] {
 }
 
 .btn-portal-primary {
-  background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 40%, var(--color-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--color-primary-700) 0%, var(--color-primary-700) 40%, var(--color-primary-dark) 100%);
   background-size: 200% 100%;
   animation: gradientShift 6s ease infinite;
-  color: #fff;
+  color: var(--color-white);
   border: 1px solid rgba(56, 189, 248, 0.3);
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -913,13 +913,13 @@ input[type=range] {
 
 /* ===== Print Styles ===== */
 @media print {
-  .dashboard-page { background: #fff !important; }
+  .dashboard-page { background: var(--color-white) !important; }
   .panel-card {
-    background: #fff !important;
-    border: 1px solid #e5e7eb !important;
+    background: var(--color-white) !important;
+    border: 1px solid var(--color-gray-200) !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
   }
   .status-bar, .buttons-stack { display: none !important; }
-  .dashboard-title { -webkit-text-fill-color: #111 !important; }
+  .dashboard-title { -webkit-text-fill-color: var(--surface-0) !important; }
 }

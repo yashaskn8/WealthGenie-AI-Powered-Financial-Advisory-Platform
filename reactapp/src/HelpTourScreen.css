@@ -6,7 +6,7 @@
   padding: 40px 48px;
   max-width: 1000px;
   margin: 0 auto;
-  color: #fff;
+  color: var(--color-white);
   position: relative;
   min-height: 100vh;
 }
@@ -185,7 +185,7 @@
 }
 
 .help-guide-desc {
-  color: #8b9cb7;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.7;
   font-size: 0.86rem;
@@ -300,7 +300,7 @@
 .help-cta-btn-primary {
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-secondary-500));
   border: 1px solid rgba(255,255,255,0.1);
-  color: #fff;
+  color: var(--color-white);
   box-shadow: 0 8px 24px rgba(14,165,233,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
@@ -426,7 +426,7 @@
   box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
-.help-form-input::placeholder { color: #3b4a5e; }
+.help-form-input::placeholder { color: var(--text-faint); }
 
 .help-form-textarea { resize: vertical; min-height: 70px; }
 
@@ -440,7 +440,7 @@ select.help-form-input {
 }
 
 select.help-form-input option {
-  background: #0c1225;
+  background: var(--surface-2);
   color: var(--color-gray-200);
 }
 
@@ -453,7 +453,7 @@ select.help-form-input option {
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-secondary-500));
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-md);
-  color: #fff;
+  color: var(--color-white);
   font-weight: 700;
   font-size: 0.85rem;
   letter-spacing: 0.5px;
@@ -595,7 +595,7 @@ select.help-form-input option {
 
 .help-glossary-definition {
   font-size: 0.82rem;
-  color: #8b9cb7;
+  color: var(--text-muted);
   line-height: 1.5;
   margin: 0;
   font-family: var(--font-sans);

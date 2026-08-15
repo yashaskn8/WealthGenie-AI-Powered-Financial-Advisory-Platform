@@ -6,7 +6,7 @@
   padding: 40px 48px;
   max-width: 1320px;
   margin: 0 auto;
-  color: #fff;
+  color: var(--color-white);
   position: relative;
   min-height: 100vh;
 }
@@ -262,7 +262,7 @@
 
 /* Body text */
 .insight-card-body {
-  color: #8b9cb7;
+  color: var(--text-muted);
   line-height: 1.75;
   font-size: 0.85rem;
   margin: 0 0 16px;

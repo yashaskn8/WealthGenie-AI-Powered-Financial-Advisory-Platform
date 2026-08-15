@@ -32,7 +32,7 @@
   font-weight: 900;
   margin: 0 0 10px;
   letter-spacing: -1.5px;
-  background: linear-gradient(135deg, #ffffff 0%, var(--text-secondary) 100%);
+  background: linear-gradient(135deg, var(--color-white) 0%, var(--text-secondary) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -371,7 +371,7 @@ input[type="range"].tax-slider::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-white);
   border: 3px solid var(--color-primary-500);
   cursor: pointer;
   box-shadow: 0 0 12px rgba(14, 165, 233, 0.5), 0 2px 6px rgba(0,0,0,0.3);
@@ -388,7 +388,7 @@ input[type="range"].tax-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-white);
   border: 3px solid var(--color-primary-500);
   cursor: pointer;
   box-shadow: 0 0 12px rgba(14, 165, 233, 0.5), 0 2px 6px rgba(0,0,0,0.3);
@@ -453,7 +453,7 @@ input[type="range"].tax-slider::-moz-range-track {
 }
 
 .regime-btn--active {
-  color: #fff;
+  color: var(--color-white);
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-violet));
   box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
   border-top: 1px solid var(--border-strong);
@@ -590,14 +590,14 @@ input[type="range"].tax-slider::-moz-range-track {
 
 .tax-limit-bar-fill { 
   height: 100%; 
-  background: linear-gradient(90deg, #06b6d4, #3b82f6); 
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary)); 
   border-radius: 5px; 
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
   box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
 }
 
 .tax-limit-bar-fill--purple { 
-  background: linear-gradient(90deg, var(--color-violet), #d946ef); 
+  background: linear-gradient(90deg, var(--color-violet), var(--color-violet-500)); 
   box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
 }
 
@@ -681,7 +681,7 @@ input[type="range"].tax-slider::-moz-range-track {
   border-radius: var(--radius-sm);
   background: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.15);
-  color: #4ade80;
+  color: var(--color-success-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -780,7 +780,7 @@ input[type="range"].tax-slider::-moz-range-track {
   border-radius: 18px;
   margin-bottom: 32px;
   animation: slideDown 0.5s ease-out;
-  color: #d1fae5;
+  color: var(--color-success-light);
   font-size: 1.1rem;
   font-weight: 600;
   box-shadow: 0 4px 20px var(--color-success-hover);
@@ -870,7 +870,7 @@ input[type="range"].tax-slider::-moz-range-track {
   margin: 0 0 4px 0;
   font-size: 1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-white);
 }
 
 .tax-verdict-text {
@@ -1020,7 +1020,7 @@ input[type="range"].tax-slider::-moz-range-track {
 }
 
 .tax-crossover-title {
-  color: #fff;
+  color: var(--color-white);
   font-size: 1rem;
   font-weight: 800;
   margin: 0 0 6px 0;
@@ -1082,7 +1082,7 @@ input[type="range"].tax-slider::-moz-range-track {
   margin: 0 0 6px 0;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-white);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1160,7 +1160,7 @@ input[type="range"].tax-slider::-moz-range-track {
   border: 1px solid var(--color-success-border);
   border-radius: var(--radius-md);
   font-size: 0.82rem;
-  color: #a7f3d0;
+  color: var(--color-success-light);
   line-height: 1.6;
 }
 
@@ -1168,7 +1168,7 @@ input[type="range"].tax-slider::-moz-range-track {
   margin: 0 0 16px 0;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-white);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1272,7 +1272,7 @@ input[type="range"].tax-slider::-moz-range-track {
 .post-tax-panel-title {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-white);
   margin: 0;
 }
 
@@ -1315,7 +1315,7 @@ input[type="range"].tax-slider::-moz-range-track {
 }
 
 .post-tax-kpi-item--bracket::before {
-  background: #c084fc;
+  background: var(--color-accent-purple-light);
 }
 
 .post-tax-kpi-item:hover {
@@ -1384,7 +1384,7 @@ input[type="range"].tax-slider::-moz-range-track {
 }
 
 .tax-erosion-title {
-  color: #fff;
+  color: var(--color-white);
   font-size: 0.92rem;
   font-weight: 800;
   margin: 0 0 4px 0;
@@ -1410,7 +1410,7 @@ input[type="range"].tax-slider::-moz-range-track {
   margin: 0;
   font-weight: 800;
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--color-white);
 }
 
 .post-tax-table-badge {
