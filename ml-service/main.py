@@ -331,6 +331,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# OpenTelemetry Distributed Tracing Setup
+from tracing import setup_tracing
+setup_tracing(app)
+
 # Include Subsystem Routers
 from rag.router import rag_router
 from llm.router import llm_router
@@ -345,8 +349,11 @@ app.include_router(registry_router)
 async def correlation_id_middleware(request: Request, call_next):
     cid = request.headers.get("x-correlation-id") or request.headers.get("x-request-id") or str(uuid.uuid4())
     request.state.correlation_id = cid
+    traceparent = request.headers.get("traceparent")
     response = await call_next(request)
     response.headers["x-correlation-id"] = cid
+    if traceparent:
+        response.headers["traceparent"] = traceparent
     return response
 
 

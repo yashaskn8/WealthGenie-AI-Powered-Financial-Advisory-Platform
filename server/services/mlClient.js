@@ -1,7 +1,26 @@
 import axios from 'axios';
+import { trace } from '@opentelemetry/api';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 const ML_API_KEY = process.env.ML_SERVICE_API_KEY || '';
+
+function getTracingHeaders(correlationId = null) {
+  const headers = {};
+  const activeSpan = trace.getActiveSpan();
+  if (activeSpan) {
+    const sc = activeSpan.spanContext();
+    headers['traceparent'] = `00-${sc.traceId}-${sc.spanId}-01`;
+    if (!correlationId) correlationId = sc.traceId;
+  }
+  if (correlationId) {
+    headers['X-Correlation-ID'] = correlationId;
+    if (!headers['traceparent']) {
+      const cleanHex = correlationId.replace(/[^a-fA-F0-9]/g, '').padEnd(32, '0').slice(0, 32);
+      headers['traceparent'] = `00-${cleanHex}-0000000000000001-01`;
+    }
+  }
+  return headers;
+}
 
 if (!ML_API_KEY) {
   console.warn('[MLClient] ML_SERVICE_API_KEY is not set. Inter-service requests will not include an API key. Set this variable in production.');
@@ -78,7 +97,7 @@ export async function getMLPrediction(profileData, correlationId = null) {
       timeout: ML_TIMEOUT_MS,
       headers: {
         ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
-        ...(correlationId ? { 'X-Correlation-ID': correlationId } : {})
+        ...getTracingHeaders(correlationId),
       }
     });
     if (!hasUsablePrediction(res.data)) {
@@ -100,7 +119,7 @@ export async function checkMLHealth(correlationId = null) {
       timeout: 3000,
       headers: {
         ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
-        ...(correlationId ? { 'X-Correlation-ID': correlationId } : {})
+        ...getTracingHeaders(correlationId),
       }
     });
     return res.data;
