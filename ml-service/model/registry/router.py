@@ -1,6 +1,7 @@
 """
 WealthGenie ML Microservice - Model Version Registry Router
-Exposes live HTTP endpoints for model version inspection, registration, integrity verification, and rollback.
+Exposes live HTTP endpoints for model version inspection, registration, integrity verification,
+drift detection, promotion gates, shadow evaluation, and rollback.
 """
 
 import logging
@@ -17,6 +18,17 @@ logger = logging.getLogger("wealthgenie.registry.router")
 
 registry_router = APIRouter(prefix="/model/registry", tags=["Model Registry"])
 
+# ── Promotion Gate Configuration ──
+# Maximum allowed regression (as fraction) on any tracked metric before a candidate
+# is blocked from becoming active. 0.02 = candidate must be within 2% of the
+# current active version on every metric to pass.
+PROMOTION_MAX_REGRESSION = 0.02
+PROMOTION_TRACKED_METRICS = [
+    "rule_approximation_fidelity",
+    "balanced_accuracy",
+    "macro_f1",
+]
+
 
 def get_version_store():
     """Dependency returning the active ModelRegistry store instance."""
@@ -25,6 +37,67 @@ def get_version_store():
         store = get_model_registry()
         registry.set_version_registry(store)
     return store
+
+
+def check_promotion_gate(
+    candidate_metrics: Dict[str, Any],
+    active_metrics: Dict[str, Any],
+    max_regression: float = PROMOTION_MAX_REGRESSION,
+    tracked_metrics: List[str] = None,
+) -> Dict[str, Any]:
+    """
+    Compares candidate metrics against active model metrics.
+    Returns a gate result dict with pass/fail status and per-metric details.
+
+    A candidate FAILS the gate if any tracked metric regresses by more than
+    `max_regression` (fraction) relative to the active model's value.
+
+    Example: active fidelity=0.95, max_regression=0.02
+      → candidate must have fidelity >= 0.95 * (1 - 0.02) = 0.931
+    """
+    if tracked_metrics is None:
+        tracked_metrics = PROMOTION_TRACKED_METRICS
+
+    gate_passed = True
+    per_metric = {}
+    failures = []
+
+    for metric_name in tracked_metrics:
+        active_val = active_metrics.get(metric_name)
+        candidate_val = candidate_metrics.get(metric_name)
+
+        if active_val is None or candidate_val is None:
+            per_metric[metric_name] = {
+                "status": "SKIPPED",
+                "reason": f"metric missing (active={active_val}, candidate={candidate_val})",
+            }
+            continue
+
+        threshold = float(active_val) * (1.0 - max_regression)
+        passed = float(candidate_val) >= threshold
+
+        per_metric[metric_name] = {
+            "active_value": round(float(active_val), 4),
+            "candidate_value": round(float(candidate_val), 4),
+            "minimum_required": round(threshold, 4),
+            "regression_pct": round((1.0 - float(candidate_val) / float(active_val)) * 100, 2) if float(active_val) > 0 else 0.0,
+            "status": "PASS" if passed else "FAIL",
+        }
+
+        if not passed:
+            gate_passed = False
+            failures.append(
+                f"{metric_name}: candidate={round(float(candidate_val), 4)} < "
+                f"minimum={round(threshold, 4)} (active={round(float(active_val), 4)}, "
+                f"max_regression={max_regression*100}%)"
+            )
+
+    return {
+        "gate_passed": gate_passed,
+        "max_regression_allowed": max_regression,
+        "per_metric": per_metric,
+        "failures": failures,
+    }
 
 
 class RegisterModelRequest(BaseModel):
@@ -36,8 +109,25 @@ class RegisterModelRequest(BaseModel):
     hyperparameters: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Model hyperparameters")
     metrics: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Evaluation metrics (accuracy, fidelity, F1)")
     reference_distributions: Optional[Dict[str, Any]] = Field(None, description="Feature reference distributions for drift monitoring")
+    dataset_lineage: Optional[Dict[str, Any]] = Field(None, description="Reproducible dataset generation parameters (seed, N, distributions)")
     notes: Optional[str] = Field(None, description="Optional version release notes")
     set_active: bool = Field(False, description="Whether to immediately set this version as active")
+
+
+class DriftCheckRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    architecture: str = Field("RandomForest", description="Model architecture to check drift for")
+    force_retrain: bool = Field(True, description="Whether to trigger retrain if drift is detected")
+    shift_feature: Optional[str] = Field(None, description="Feature to simulate drift on (for testing)")
+    shift_multiplier: float = Field(1.0, description="Multiplicative shift to apply to the shifted feature")
+    shift_offset: float = Field(0.0, description="Additive offset to apply to the shifted feature")
+    n_samples: int = Field(300, description="Number of samples for synthetic drift batch")
+
+
+class PromoteRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    version_id: str = Field(..., description="Version ID of the candidate to promote to active")
+    skip_gate: bool = Field(False, description="Whether to skip the promotion gate (NOT recommended)")
 
 
 @registry_router.get("/versions")
@@ -101,7 +191,13 @@ def register_model_version(
     payload: RegisterModelRequest,
     store = Depends(get_version_store),
 ):
-    """Registers a new model version into the persistent version registry."""
+    """
+    Registers a new model version into the persistent version registry.
+    If set_active=true, runs the promotion gate first: the candidate's metrics
+    must meet or exceed the active version's metrics within the configured
+    max regression threshold (2% by default). If the gate fails, the registration
+    is REJECTED with HTTP 409 and the gate's failure reasons.
+    """
     artifact_path = Path(payload.artifact_path)
     if not artifact_path.exists():
         raise HTTPException(
@@ -112,13 +208,38 @@ def register_model_version(
     from datetime import datetime, timezone
     training_timestamp = payload.training_timestamp or datetime.now(timezone.utc).isoformat()
 
+    # ── Promotion Gate: enforce before allowing set_active=True ──
+    if payload.set_active:
+        active_version = store.get_active_model(payload.model_architecture)
+        if active_version and active_version.get("metrics"):
+            gate_result = check_promotion_gate(
+                candidate_metrics=payload.metrics or {},
+                active_metrics=active_version["metrics"],
+            )
+            if not gate_result["gate_passed"]:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "error": "PROMOTION_GATE_FAILED",
+                        "message": "Candidate version does not meet promotion criteria. "
+                                   "One or more tracked metrics regressed beyond the allowed threshold.",
+                        "gate_result": gate_result,
+                        "active_version_id": active_version["version_id"],
+                    },
+                )
+
+    # Build hyperparameters with dataset lineage embedded
+    hparams = payload.hyperparameters or {}
+    if payload.dataset_lineage:
+        hparams["dataset_lineage"] = payload.dataset_lineage
+
     try:
         version_id = store.register_model(
             model_architecture=payload.model_architecture,
             artifact_path=artifact_path,
             training_data_hash=payload.training_data_hash or "unknown",
             training_timestamp=training_timestamp,
-            hyperparameters=payload.hyperparameters or {},
+            hyperparameters=hparams,
             metrics=payload.metrics or {},
             reference_distributions=payload.reference_distributions,
             notes=payload.notes,
@@ -136,6 +257,108 @@ def register_model_version(
         }
     except Exception as e:
         logger.error(f"Failed to register model: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@registry_router.post("/promote", status_code=status.HTTP_200_OK)
+def promote_version(
+    payload: PromoteRequest,
+    store = Depends(get_version_store),
+):
+    """
+    Promotes a registered candidate version to active after passing the promotion gate.
+    The candidate's metrics are compared against the currently active version's metrics.
+    If any tracked metric regresses by more than 2%, the promotion is REJECTED.
+    """
+    candidate = store.get_version(payload.version_id)
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Candidate version '{payload.version_id}' not found in registry."
+        )
+
+    if candidate.get("is_active"):
+        return {
+            "status": "already_active",
+            "version_id": payload.version_id,
+            "message": "This version is already the active model.",
+        }
+
+    architecture = candidate["model_architecture"]
+    active_version = store.get_active_model(architecture)
+
+    if not payload.skip_gate and active_version and active_version.get("metrics"):
+        gate_result = check_promotion_gate(
+            candidate_metrics=candidate.get("metrics", {}),
+            active_metrics=active_version["metrics"],
+        )
+        if not gate_result["gate_passed"]:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "error": "PROMOTION_GATE_FAILED",
+                    "message": "Candidate version does not meet promotion criteria.",
+                    "gate_result": gate_result,
+                    "candidate_version_id": payload.version_id,
+                    "active_version_id": active_version["version_id"],
+                },
+            )
+
+    # Promotion gate passed (or skipped) — activate via rollback mechanism
+    try:
+        active_record = store.rollback_to_version(payload.version_id)
+        registry.reload_active_model(architecture)
+        return {
+            "status": "promoted",
+            "version_id": payload.version_id,
+            "model_architecture": architecture,
+            "is_active": True,
+            "gate_result": check_promotion_gate(
+                candidate_metrics=candidate.get("metrics", {}),
+                active_metrics=active_version["metrics"] if active_version else {},
+            ) if active_version else {"gate_passed": True, "reason": "no_previous_active_version"},
+        }
+    except (ValueError, RuntimeError, FileNotFoundError) as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+@registry_router.post("/drift-check")
+def run_drift_check_endpoint(
+    payload: DriftCheckRequest,
+    store = Depends(get_version_store),
+):
+    """
+    Runs PSI drift detection against the active model's reference distributions.
+    Optionally simulates feature drift for testing. If drift is detected and
+    force_retrain=true, triggers automated retraining and registers the result
+    as a new candidate version (is_active=false).
+    """
+    from model.registry.drift_monitor import (
+        check_drift_and_trigger_retrain,
+        generate_synthetic_feature_batch,
+    )
+
+    # Generate observation batch (with optional simulated shift)
+    input_df = generate_synthetic_feature_batch(
+        n_samples=payload.n_samples,
+        seed=42,
+        shift_feature=payload.shift_feature,
+        shift_multiplier=payload.shift_multiplier,
+        shift_offset=payload.shift_offset,
+    )
+
+    try:
+        result = check_drift_and_trigger_retrain(
+            architecture=payload.architecture,
+            input_df=input_df,
+            store=store,
+            force_retrain_on_drift=payload.force_retrain,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(f"Drift check failed: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
@@ -158,3 +381,93 @@ def rollback_model_version(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except FileNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+class ConfigureShadowRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    version_id: str = Field(..., description="Registered version ID to run as shadow candidate")
+
+
+@registry_router.post("/shadow/configure")
+def configure_shadow_model(
+    payload: ConfigureShadowRequest,
+    store = Depends(get_version_store),
+):
+    """
+    Configures a registered candidate version to run in shadow evaluation mode alongside the active model.
+    Loads the candidate's artifact into an isolated predictor instance.
+    """
+    from model.registry.shadow_evaluator import shadow_evaluator
+    from model.serving.inference import RandomForestPredictor, MLPPredictor, FTTransformerPredictor
+
+    version = store.get_version(payload.version_id)
+    if not version:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Model version '{payload.version_id}' not found in registry."
+        )
+
+    artifact_path = Path(version["artifact_path"])
+    if not artifact_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Artifact file missing at {artifact_path}"
+        )
+
+    arch = version["model_architecture"]
+    if arch.lower() in ["randomforest", "rf", "random_forest"]:
+        pred = RandomForestPredictor()
+        # Look for matching candidate label encoder, default model dir, or saved_models dir
+        base_model_dir = Path(__file__).resolve().parents[1]
+        le_path = artifact_path.parent / f"le_{payload.version_id[:8]}.pkl"
+        if not le_path.exists():
+            le_path = base_model_dir / "label_encoder.pkl"
+        if not le_path.exists():
+            le_path = artifact_path.parent / "label_encoder.pkl"
+        pred.load_artifacts(artifact_path=artifact_path, label_encoder_path=le_path)
+    elif arch.lower() in ["pytorch_mlp", "mlp"]:
+        pred = MLPPredictor()
+        pred.load_artifacts(artifact_path=artifact_path)
+    elif arch.lower() in ["ft_transformer", "fttransformer"]:
+        pred = FTTransformerPredictor()
+        pred.load_artifacts(artifact_path=artifact_path)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported architecture '{arch}' for shadow evaluation."
+        )
+
+    if not pred.is_loaded:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load predictor for shadow evaluation."
+        )
+
+    shadow_evaluator.configure_shadow(
+        version_id=payload.version_id,
+        architecture=arch,
+        predictor=pred,
+    )
+
+    return {
+        "status": "configured",
+        "shadow_version_id": payload.version_id,
+        "model_architecture": arch,
+        "message": "Shadow candidate configured. Live inference will now dual-evaluate active and shadow models.",
+    }
+
+
+@registry_router.get("/shadow/summary")
+def get_shadow_summary():
+    """Retrieves live agreement statistics and recent side-by-side comparisons for the shadow candidate."""
+    from model.registry.shadow_evaluator import shadow_evaluator
+    return shadow_evaluator.get_summary()
+
+
+@registry_router.delete("/shadow")
+def clear_shadow_model():
+    """Disables shadow evaluation mode."""
+    from model.registry.shadow_evaluator import shadow_evaluator
+    shadow_evaluator.clear_shadow()
+    return {"status": "cleared", "message": "Shadow evaluation disabled."}
+

@@ -72,11 +72,22 @@ def train_random_forest_model(
     joblib.dump(pipeline, model_path)
     joblib.dump(le, le_path)
 
+    from model.data.preprocessing import (
+        prepare_synthetic_training_data,
+        compute_dataset_hash_from_arrays,
+        get_dataset_generation_params,
+    )
+
+    data_hash = compute_dataset_hash_from_arrays(X, np.array(y_indices))
+    lineage_params = get_dataset_generation_params(num_samples=num_samples, seed=seed)
+
     metadata = {
         "model_name": "RandomForest",
         "git_commit_hash": "auto-trained-baseline",
         "model_version": "3.0.0",
         "dataset_version": "3.0.0",
+        "training_data_hash": data_hash,
+        "dataset_lineage": lineage_params,
         "policy_config_version": "1.0.0",
         "dataset_timestamp": datetime.now(timezone.utc).isoformat(),
         "trained_at": datetime.now(timezone.utc).isoformat(),

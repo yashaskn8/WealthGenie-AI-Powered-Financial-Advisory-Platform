@@ -138,9 +138,18 @@ def _seed_and_resolve_active_models(version_registry) -> None:
                 except Exception as e:
                     logger.warning(f"[Registry Seeding] Failed to read metadata.json: {e}")
 
+            from model.data.preprocessing import get_dataset_generation_params
+            lineage_params = meta.get("dataset_lineage") or get_dataset_generation_params(num_samples=2000, seed=42)
+
             fidelity = meta.get("test_accuracy", 0.9553)
             training_timestamp = meta.get("trained_at", "2026-07-23T19:28:42Z")
-            hparams = {"n_estimators": 100, "max_depth": 12, "model_type": "RandomForestClassifier"}
+            data_hash = meta.get("training_data_hash", data_hash)
+            hparams = {
+                "n_estimators": 100,
+                "max_depth": 12,
+                "model_type": "RandomForestClassifier",
+                "dataset_lineage": lineage_params,
+            }
             metrics = {
                 "rule_approximation_fidelity": fidelity,
                 "independent_cfp_benchmark_accuracy": 0.2526,
@@ -438,6 +447,7 @@ def list_registered_models():
 async def predict_enriched(data: PredictRequest):
     """
     Prediction endpoint serving recommendations using Random Forest + TreeSHAP explainability.
+    Buffers inference inputs for continuous drift monitoring and dual-evaluates shadow candidate if configured.
     """
     features = engineer_features(
         age=data.age, annual_income=data.annual_income, monthly_savings=data.monthly_savings,
@@ -447,11 +457,27 @@ async def predict_enriched(data: PredictRequest):
     )
     model_input = to_model_array(features)
 
+    # 1. Buffer for continuous drift monitoring
+    try:
+        from model.registry.drift_monitor import inference_buffer
+        inference_buffer.record(features)
+    except Exception as e:
+        logger.debug(f"Failed to record inference observation for drift monitoring: {e}")
+
     predictor = registry.get("random_forest")
     if predictor is None or not predictor.is_loaded:
         raise HTTPException(status_code=503, detail="RandomForest model not loaded.")
 
     res = predictor.predict(model_input)
+
+    # 2. Evaluate shadow candidate if active (fire-and-forget, does not alter active response)
+    try:
+        from model.registry.shadow_evaluator import shadow_evaluator
+        if shadow_evaluator.is_active():
+            shadow_evaluator.evaluate(res, model_input)
+    except Exception as e:
+        logger.debug(f"Shadow evaluation error: {e}")
+
     explanation = None
     if explainer_instance is not None:
         try:

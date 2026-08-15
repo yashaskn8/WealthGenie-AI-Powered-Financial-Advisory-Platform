@@ -120,3 +120,41 @@ def prepare_synthetic_training_data(
             y[i] = 5  # RBI_Bond
 
     return X, y
+
+
+import hashlib
+
+
+def compute_dataset_hash_from_arrays(X: np.ndarray, y: np.ndarray) -> str:
+    """Computes a deterministic SHA-256 hash over the combined feature matrix and labels."""
+    combined = np.column_stack([X, y.reshape(-1, 1)]).astype(np.float64)
+    return hashlib.sha256(combined.tobytes()).hexdigest()
+
+
+def get_dataset_generation_params(num_samples: int = 1500, seed: int = 42) -> Dict[str, Any]:
+    """Returns the exact generation parameters required to deterministically reproduce the training data."""
+    return {
+        "generator_name": "prepare_synthetic_training_data",
+        "seed": seed,
+        "num_samples": num_samples,
+        "feature_count": 16,
+        "class_count": 6,
+        "age_range": [20.0, 75.0],
+        "income_range": [300000.0, 5000000.0],
+        "monthly_savings_range": [5000.0, 150000.0],
+        "investment_horizon_range": [1.0, 30.0],
+        "target_classes": ["Equity_MF", "ELSS", "ETF", "Debt_MF", "FD", "RBI_Bond"],
+    }
+
+
+def regenerate_synthetic_dataset_and_hash(params: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray, str]:
+    """
+    Given stored generation parameters from a registered model version's lineage metadata,
+    independently regenerates the exact training dataset and returns (X, y, sha256_hash).
+    """
+    seed = params.get("seed", 42)
+    num_samples = params.get("num_samples", 1500)
+    X, y = prepare_synthetic_training_data(num_samples=num_samples, seed=seed)
+    data_hash = compute_dataset_hash_from_arrays(X, y)
+    return X, y, data_hash
+
