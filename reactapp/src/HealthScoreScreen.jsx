@@ -649,6 +649,16 @@ const HealthScoreScreen = ({ profile, recommendations, onNavigate }) => {
 
   return (
     <div className="health-screen-wrapper">
+      {/* Loading guard — profile or recommendations not yet available */}
+      {!profile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 16 }} role="status" aria-label="Loading health score">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}>
+            <Activity size={36} color="var(--color-primary)" />
+          </motion.div>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Calculating your financial health score…</p>
+        </div>
+      ) : (
+      <>
       {/* Top Header */}
       <div className="hs-header">
         <div>
@@ -813,6 +823,8 @@ const HealthScoreScreen = ({ profile, recommendations, onNavigate }) => {
       {/* FIX 4: Resolution Modal */}
       {resolutionMetric && (
         <ResolutionModal metric={resolutionMetric} onClose={() => setResolutionMetric(null)} onNavigate={handleNavigate} profile={profile} />
+      )}
+      </>
       )}
     </div>
   );
