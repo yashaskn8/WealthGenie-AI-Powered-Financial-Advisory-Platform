@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie RAG Subsystem - Seed Knowledge Base Ingestion
 Ingests authoritative Indian FY 2025-26 tax regulations, SEBI mutual fund guidelines,
 and RBI/DICGC regulatory frameworks from real corpus documents into the vector store.

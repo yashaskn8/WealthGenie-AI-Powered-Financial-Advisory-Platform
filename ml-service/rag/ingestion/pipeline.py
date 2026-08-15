@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie RAG Subsystem - Ingestion Pipeline Orchestrator
 Executes end-to-end ingestion: Loader -> Cleaning -> Chunking -> Embedding -> Vector Store.
 """

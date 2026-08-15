@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie ML Microservice - Concrete Model Predictor Implementations
 Implements BasePredictor interface for RandomForest, PyTorch MLP, and FT-Transformer models.
 Supports dynamic artifact loading from persistent ModelRegistry.

@@ -196,7 +196,6 @@ def test_shap_efficiency_axiom():
     """
     try:
         import joblib  # type: ignore[import-not-found]
-        import os
         import shap  # type: ignore[import-not-found]
         
         model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'model', 'model.pkl')

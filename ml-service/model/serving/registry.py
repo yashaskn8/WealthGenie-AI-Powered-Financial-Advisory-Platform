@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie ML Microservice - Modular Model Registry
 Centralized registry for dynamic model registration, lookup, and unified multi-model inference execution.
 Integrates in-memory inference predictors with persistent version registries (MongoDB / SQLite) via store_factory.

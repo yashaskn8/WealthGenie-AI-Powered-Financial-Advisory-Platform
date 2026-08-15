@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cross-Replica Verification Script for MongoDB-backed Stores
 
 This script provides an independently-reproducible verification that state

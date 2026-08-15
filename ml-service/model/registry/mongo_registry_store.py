@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie ML Model Registry - MongoDB-backed Store
 
 Drop-in replacement for the SQLite-backed ModelRegistry that stores all model

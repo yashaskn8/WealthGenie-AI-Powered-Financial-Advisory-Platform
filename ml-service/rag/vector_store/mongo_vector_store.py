@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie RAG Subsystem - MongoDB-backed Vector Store
 
 Stores document chunks and embeddings in MongoDB for cross-replica shared state.

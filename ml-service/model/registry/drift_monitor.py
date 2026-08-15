@@ -29,7 +29,11 @@ from model.registry.drift_detection import (
     compute_reference_distributions,
     run_drift_check,
 )
-from model.data.preprocessing import prepare_synthetic_training_data
+from model.data.preprocessing import (
+    prepare_synthetic_training_data,
+    compute_dataset_hash_from_arrays,
+    get_dataset_generation_params,
+)
 
 logger = logging.getLogger("wealthgenie.drift_monitor")
 
@@ -154,7 +158,7 @@ def trigger_candidate_retrain(
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler, LabelEncoder
-    from model.data.preprocessing import prepare_synthetic_training_data
+
     from model.registry.registry_store import compute_file_hash
 
     timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -193,11 +197,7 @@ def trigger_candidate_retrain(
         joblib.dump(pipeline, candidate_artifact_path)
         joblib.dump(le, candidate_le_path)
 
-        from model.data.preprocessing import (
-            prepare_synthetic_training_data,
-            compute_dataset_hash_from_arrays,
-            get_dataset_generation_params,
-        )
+
 
         data_hash = compute_dataset_hash_from_arrays(X, np.array(y_indices))
         lineage_params = get_dataset_generation_params(num_samples=num_samples, seed=seed)

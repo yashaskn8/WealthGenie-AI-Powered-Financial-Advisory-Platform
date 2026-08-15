@@ -17,7 +17,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-from model.data.preprocessing import prepare_synthetic_training_data
+from model.data.preprocessing import (
+    prepare_synthetic_training_data,
+    compute_dataset_hash_from_arrays,
+    get_dataset_generation_params,
+)
 
 logger = logging.getLogger("wealthgenie.rf_trainer")
 
@@ -71,12 +75,6 @@ def train_random_forest_model(
 
     joblib.dump(pipeline, model_path)
     joblib.dump(le, le_path)
-
-    from model.data.preprocessing import (
-        prepare_synthetic_training_data,
-        compute_dataset_hash_from_arrays,
-        get_dataset_generation_params,
-    )
 
     data_hash = compute_dataset_hash_from_arrays(X, np.array(y_indices))
     lineage_params = get_dataset_generation_params(num_samples=num_samples, seed=seed)

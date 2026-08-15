@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie Open-Weight LLM Platform - Provider & Model Registry
 Manages registration, runtime switching, versioning, and lifecycle management for LLM backends.
 """

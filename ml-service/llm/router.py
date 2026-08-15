@@ -1,4 +1,4 @@
-﻿"""
+"""
 WealthGenie Open-Weight LLM Platform - FastAPI Router
 Exposes dedicated endpoints (/llm/generate, /llm/rag-query, /llm/batch-generate, /llm/tool-query, /llm/models, /llm/switch, /llm/status, /llm/health).
 """
