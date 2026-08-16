@@ -424,6 +424,28 @@ def list_registered_models():
     return {"registered_models": registry.list_models()}
 
 
+def get_live_model_version(architecture: str, default_version: str) -> str:
+    """Dynamically resolve the currently active version_id from the version registry."""
+    version_store = registry.get_version_registry()
+    if version_store is not None:
+        try:
+            active = version_store.get_active_model(architecture)
+            if active and "version_id" in active:
+                return str(active["version_id"])
+        except Exception:
+            pass
+    return default_version
+
+
+def record_inference_features(features: dict) -> None:
+    """Records engineered inference features to InferenceBuffer for continuous drift monitoring."""
+    try:
+        from model.registry.drift_monitor import inference_buffer
+        inference_buffer.record(features)
+    except Exception as e:
+        logger.debug(f"Failed to record inference observation for drift monitoring: {e}")
+
+
 @app.post("/predict/enriched", response_model=PredictResponse, dependencies=[Depends(verify_api_key)])
 @app.post("/predict", response_model=PredictResponse, dependencies=[Depends(verify_api_key)])
 async def predict_enriched(data: PredictRequest):
@@ -440,11 +462,7 @@ async def predict_enriched(data: PredictRequest):
     model_input = to_model_array(features)
 
     # 1. Buffer for continuous drift monitoring
-    try:
-        from model.registry.drift_monitor import inference_buffer
-        inference_buffer.record(features)
-    except Exception as e:
-        logger.debug(f"Failed to record inference observation for drift monitoring: {e}")
+    record_inference_features(features)
 
     predictor = registry.get("random_forest")
     if predictor is None or not predictor.is_loaded:
@@ -476,7 +494,7 @@ async def predict_enriched(data: PredictRequest):
         model_used="RandomForest",
         low_confidence=res["low_confidence"],
         confidence_threshold=confidence_threshold,
-        model_version=model_version,
+        model_version=get_live_model_version("RandomForest", model_version),
         dataset_version=dataset_version,
         git_commit_hash=git_commit_hash,
         explanation=explanation,
@@ -499,6 +517,10 @@ async def predict_pytorch(data: PredictRequest):
         emergency_fund_months=data.emergency_fund_months, risk_tolerance=data.risk_tolerance
     )
     model_input = to_model_array(features)
+
+    # Buffer for continuous drift monitoring
+    record_inference_features(features)
+
     res = predictor.predict(model_input)
 
     return PredictResponse(
@@ -510,7 +532,7 @@ async def predict_pytorch(data: PredictRequest):
         model_used="PyTorch_FinancialMLP",
         low_confidence=res["low_confidence"],
         confidence_threshold=0.45,
-        model_version="1.0.0-pytorch",
+        model_version=get_live_model_version("PyTorch_MLP", "1.0.0-pytorch"),
         dataset_version=dataset_version,
         git_commit_hash=git_commit_hash,
         explanation=None,
@@ -533,6 +555,10 @@ async def predict_ft_transformer(data: PredictRequest):
         emergency_fund_months=data.emergency_fund_months, risk_tolerance=data.risk_tolerance
     )
     model_input = to_model_array(features)
+
+    # Buffer for continuous drift monitoring
+    record_inference_features(features)
+
     res = predictor.predict(model_input)
 
     return PredictResponse(
@@ -544,7 +570,7 @@ async def predict_ft_transformer(data: PredictRequest):
         model_used="PyTorch_FTTransformer",
         low_confidence=res["low_confidence"],
         confidence_threshold=0.45,
-        model_version="1.0.0-ft_transformer",
+        model_version=get_live_model_version("FT_Transformer", "1.0.0-ft_transformer"),
         dataset_version=dataset_version,
         git_commit_hash=git_commit_hash,
         explanation=None,
@@ -563,6 +589,9 @@ async def predict_compare(data: PredictRequest):
         emergency_fund_months=data.emergency_fund_months, risk_tolerance=data.risk_tolerance
     )
     model_input = to_model_array(features)
+
+    # Buffer for continuous drift monitoring
+    record_inference_features(features)
 
     loaded_models = registry.get_loaded_predictors()
     if not loaded_models:

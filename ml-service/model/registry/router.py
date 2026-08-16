@@ -119,6 +119,7 @@ class DriftCheckRequest(BaseModel):
     model_config = {"protected_namespaces": ()}
     architecture: str = Field("RandomForest", description="Model architecture to check drift for")
     force_retrain: bool = Field(True, description="Whether to trigger retrain if drift is detected")
+    use_buffer: bool = Field(True, description="Whether to evaluate real accumulated observations from InferenceBuffer")
     shift_feature: Optional[str] = Field(None, description="Feature to simulate drift on (for testing)")
     shift_multiplier: float = Field(1.0, description="Multiplicative shift to apply to the shifted feature")
     shift_offset: float = Field(0.0, description="Additive offset to apply to the shifted feature")
@@ -323,6 +324,30 @@ def promote_version(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
+@registry_router.get("/drift/buffer", dependencies=[Depends(verify_api_key)])
+def get_drift_buffer_status():
+    """Returns the current status, sample count, capacity, and last check metadata of the InferenceBuffer."""
+    from model.registry.drift_monitor import inference_buffer
+    return {
+        "size": inference_buffer.size(),
+        "capacity": inference_buffer.capacity,
+        "last_check_timestamp": inference_buffer.last_check_timestamp,
+        "last_check_verdict": inference_buffer.last_check_verdict,
+        "last_drift_score": inference_buffer.last_drift_score,
+    }
+
+
+@registry_router.delete("/drift/buffer", dependencies=[Depends(verify_api_key)])
+def clear_drift_buffer():
+    """Clears all buffered observations in the InferenceBuffer."""
+    from model.registry.drift_monitor import inference_buffer
+    inference_buffer.clear()
+    return {
+        "status": "cleared",
+        "size": inference_buffer.size(),
+    }
+
+
 @registry_router.post("/drift-check", dependencies=[Depends(verify_api_key)])
 def run_drift_check_endpoint(
     payload: DriftCheckRequest,
@@ -330,23 +355,32 @@ def run_drift_check_endpoint(
 ):
     """
     Runs PSI drift detection against the active model's reference distributions.
-    Optionally simulates feature drift for testing. If drift is detected and
-    force_retrain=true, triggers automated retraining and registers the result
-    as a new candidate version (is_active=false).
+    If shift_feature is provided, generates a synthetic shifted observation batch.
+    Otherwise, if use_buffer=True, evaluates real accumulated observations from InferenceBuffer.
+    If drift is detected and force_retrain=true, triggers automated retraining and registers
+    the result as a new candidate version (is_active=false).
     """
     from model.registry.drift_monitor import (
         check_drift_and_trigger_retrain,
         generate_synthetic_feature_batch,
+        inference_buffer,
     )
 
-    # Generate observation batch (with optional simulated shift)
-    input_df = generate_synthetic_feature_batch(
-        n_samples=payload.n_samples,
-        seed=42,
-        shift_feature=payload.shift_feature,
-        shift_multiplier=payload.shift_multiplier,
-        shift_offset=payload.shift_offset,
-    )
+    if payload.shift_feature is not None:
+        input_df = generate_synthetic_feature_batch(
+            n_samples=payload.n_samples,
+            seed=42,
+            shift_feature=payload.shift_feature,
+            shift_multiplier=payload.shift_multiplier,
+            shift_offset=payload.shift_offset,
+        )
+    elif payload.use_buffer:
+        input_df = inference_buffer.get_dataframe()
+    else:
+        input_df = generate_synthetic_feature_batch(
+            n_samples=payload.n_samples,
+            seed=42,
+        )
 
     try:
         result = check_drift_and_trigger_retrain(
