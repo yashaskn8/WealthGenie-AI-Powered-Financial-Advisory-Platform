@@ -1,4 +1,4 @@
-﻿fastapi==0.115.0
+fastapi==0.115.0
 uvicorn[standard]==0.30.0
 scikit-learn==1.5.2
 pandas==2.2.3
@@ -16,3 +16,9 @@ pyarrow>=14.0.0
 faiss-cpu>=1.7.4
 pymongo>=4.6.0
 mongomock>=4.1.2
+opentelemetry-api>=1.24.0
+opentelemetry-sdk>=1.24.0
+opentelemetry-instrumentation-fastapi>=0.45b0
+transformers>=4.40.0
+peft>=0.10.0
+pypdf>=4.0.0
