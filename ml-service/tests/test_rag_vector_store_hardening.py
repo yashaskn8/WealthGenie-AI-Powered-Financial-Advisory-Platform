@@ -28,7 +28,7 @@ def test_atomic_write_and_checksum(tmp_path):
     with open(index_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    assert data["version"] == "2.0"
+    assert data["version"] == "2.1"
     assert "sha256" in data
     assert len(data["chunks"]) == 1
 

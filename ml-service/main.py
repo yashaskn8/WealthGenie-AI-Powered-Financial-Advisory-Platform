@@ -329,6 +329,9 @@ async def correlation_id_middleware(request: Request, call_next):
     response.headers["x-correlation-id"] = cid
     if traceparent:
         response.headers["traceparent"] = traceparent
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
 

@@ -35,6 +35,7 @@ def test_full_rag_end_to_end_pipeline_workflow(tmp_path):
         title="Income Tax Act Section 87A",
         source="tax_code_2026.pdf",
         author="CBDT India",
+        tenant_id="tenant_alpha",
     )
     assert ingest_res["chunks_created"] > 0
     doc_id = ingest_res["document_id"]
@@ -42,7 +43,7 @@ def test_full_rag_end_to_end_pipeline_workflow(tmp_path):
     # 2. Query Phase for Tenant Alpha -> Expect Grounded Response with Citations
     req_alpha = RAGQueryRequest(
         question="Section 87A rebate limit for income tax",
-        tenant_id="default",
+        tenant_id="tenant_alpha",
     )
     res_alpha = query_pipeline.query(req_alpha)
     assert res_alpha.grounded
@@ -67,7 +68,7 @@ def test_full_rag_end_to_end_pipeline_workflow(tmp_path):
     # 5. Query post-purging -> Grounding should fail
     req_post_delete = RAGQueryRequest(
         question="Section 87A rebate limit for income tax",
-        tenant_id="default",
+        tenant_id="tenant_alpha",
     )
     res_post_delete = query_pipeline.query(req_post_delete)
     assert not res_post_delete.grounded
