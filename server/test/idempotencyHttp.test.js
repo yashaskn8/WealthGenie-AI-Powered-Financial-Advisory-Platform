@@ -9,7 +9,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 import profileRoutes from '../routes/profile.js';
 import goalsRoutes from '../routes/goals.js';
@@ -20,7 +20,6 @@ const JWT_SECRET = 'idempotency-test-secret-key';
 process.env.JWT_SECRET = JWT_SECRET;
 process.env.NODE_ENV = 'test';
 
-let mongoServer;
 let app;
 let serverInstance;
 let baseUrl;
@@ -34,8 +33,7 @@ function signToken(userId) {
 }
 
 test.before(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
+  await setupTestDatabase();
 
   app = express();
   app.use(express.json());
@@ -54,8 +52,7 @@ test.before(async () => {
 
 test.after(async () => {
   if (serverInstance) serverInstance.close();
-  await mongoose.disconnect();
-  if (mongoServer) await mongoServer.stop();
+  await teardownTestDatabase();
 });
 
 test('IDEMPOTENCY HTTP VERIFICATION: duplicate mutating request returns cached response without duplicate DB insert', async () => {

@@ -47,7 +47,7 @@
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
 | **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | `investment_master.json` (155 instruments) |
 | **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
-| **Testing & CI/CD** | 49 Node.js test suites (366 assertions) + 198 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
+| **Testing & CI/CD** | 20 Node.js test suites (370 assertions) + 198 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 
@@ -277,9 +277,15 @@ Service mapping:
 ### Node.js / Express Backend Test Suite
 ```bash
 cd server
-npm test               # Run unit & integration tests across 44 test files (346 tests)
+npm test               # Run unit & integration tests (370 tests across 20 suites)
 npm run test:coverage  # Run test suite with coverage report
 ```
+
+> **Offline-Resilient Test Database**: All server integration tests use a unified 4-tier database provisioning helper ([`server/test/helpers/mongoTestHelper.js`](server/test/helpers/mongoTestHelper.js)) that auto-selects the best available MongoDB mechanism:
+> 1. **`MONGODB_URI` env variable** — Pre-started MongoDB (CI services, local `mongod`). Zero startup latency.
+> 2. **Testcontainers** (`@testcontainers/mongodb`) — Spins up a `mongo:7.0` Docker container automatically.
+> 3. **MongoMemoryServer** — In-memory binary fallback for environments with internet/cached binary.
+> 4. **Fail-Fast Diagnostics** — Immediate actionable error message when no mechanism is available.
 
 ### Python ML Microservice Test Suite
 ```bash

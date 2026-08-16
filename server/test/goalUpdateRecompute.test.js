@@ -9,7 +9,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 import goalRoutes from '../routes/goals.js';
 import { enforceJsonContentType } from '../middleware/contentType.js';
@@ -23,8 +23,6 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || testSecret;
 const JWT_SECRET = process.env.JWT_SECRET;
 process.env.NODE_ENV = 'test';
 
-let mongoServer = null;
-let dbConnected = false;
 const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
 
 function signToken(userId = TEST_USER_ID) {
@@ -45,27 +43,15 @@ function buildTestApp() {
 }
 
 async function ensureDb() {
-  if (dbConnected) return;
-  if (!mongoServer) {
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-  }
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoServer.getUri());
-  }
-  dbConnected = true;
+  await setupTestDatabase();
 }
 
 test.after(async () => {
   try {
-    if (dbConnected) {
-      await Goal.deleteMany({ userId: TEST_USER_ID });
-      await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
-      await mongoose.disconnect();
-    }
-    if (mongoServer) {
-      await mongoServer.stop();
-    }
+    await Goal.deleteMany({ userId: TEST_USER_ID });
+    await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
   } catch (_) {}
+  await teardownTestDatabase();
 });
 
 test('WG-037 Scenario (a): POST /create goal with known target_amount and target_date', async () => {

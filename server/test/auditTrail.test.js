@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 import AuditRecord from '../models/AuditRecord.js';
 import FinancialProfile from '../models/FinancialProfile.js';
@@ -32,18 +32,10 @@ function buildApp() {
 }
 
 describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
-  let mongoServer;
   let profile;
 
   before(async () => {
-    if (mongoose.connection.readyState === 0) {
-      try {
-        mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-        await mongoose.connect(mongoServer.getUri());
-      } catch {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wealthgenie_test');
-      }
-    }
+    await setupTestDatabase();
 
     // Create a real test financial profile in DB
     profile = await FinancialProfile.create({
@@ -68,10 +60,7 @@ describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
     await FinancialProfile.deleteMany({ userId: { $in: [testUserId, otherUserId] } });
     await Recommendation.deleteMany({ userId: { $in: [testUserId, otherUserId] } });
     await AuditRecord.deleteMany({ userId: { $in: [testUserId, otherUserId] } });
-    if (mongoServer) {
-      await mongoose.disconnect();
-      await mongoServer.stop();
-    }
+    await teardownTestDatabase();
   });
 
   it('1. Generates recommendation and synchronously creates immutable AuditRecord', async () => {

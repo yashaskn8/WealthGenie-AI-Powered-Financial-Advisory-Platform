@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 import FinancialProfile from '../models/FinancialProfile.js';
 import Recommendation from '../models/Recommendation.js';
@@ -31,25 +31,15 @@ app.use(express.json());
 app.use('/api/profile', profileRouter);
 app.use('/api/recommend', recommendRouter);
 
-let mongoServer = null;
-
 describe('Financial Profile Deep Integration Test Suite', () => {
   before(async () => {
-    if (!mongoServer) {
-      mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-    }
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(mongoServer.getUri());
-    }
+    await setupTestDatabase();
     await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
   });
 
   after(async () => {
     await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
-    await mongoose.disconnect();
-    if (mongoServer) {
-      await mongoServer.stop();
-    }
+    await teardownTestDatabase();
   });
 
   it('WG-011: FinancialProfile uses monthlyIncome property and supports virtual income getter', async () => {

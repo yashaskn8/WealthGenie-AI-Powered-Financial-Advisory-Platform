@@ -14,6 +14,7 @@ const README_PATH = path.join(ROOT_DIR, 'README.md');
 const RAG_CLIENT_PATH = path.join(ROOT_DIR, 'server', 'services', 'ragClient.js');
 const CHAT_SERVICE_PATH = path.join(ROOT_DIR, 'server', 'services', 'geminiChatService.js');
 const ML_MAIN_PATH = path.join(ROOT_DIR, 'ml-service', 'main.py');
+const ML_SECURITY_PATH = path.join(ROOT_DIR, 'ml-service', 'security.py');
 
 console.log('=' .repeat(70));
 console.log('WealthGenie Architecture & Documentation Sync Checker');
@@ -62,8 +63,9 @@ assertCodePattern(
 );
 
 // 3. Static check: Fail-closed auth in ML service (Phase 6 auth verification)
+const targetAuthFile = fs.existsSync(ML_SECURITY_PATH) ? ML_SECURITY_PATH : ML_MAIN_PATH;
 assertCodePattern(
-  ML_MAIN_PATH,
+  targetAuthFile,
   /ENVIRONMENT.*local/i,
   'ML Service auth fails closed unless ENVIRONMENT=local'
 );

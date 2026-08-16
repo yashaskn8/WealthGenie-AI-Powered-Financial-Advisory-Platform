@@ -22,15 +22,12 @@ import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { setRedisAvailable, redisAvailable } from '../config/redis.js';
 import FinancialProfile from '../models/FinancialProfile.js';
-
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 const testJwtSecret = ['chaos', 'test', 'jwt', 'key'].join('-');
 process.env.JWT_SECRET = process.env.JWT_SECRET || testJwtSecret;
 process.env.NODE_ENV = 'test';
 
-let mongoServer = null;
-let dbConnected = false;
 const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
 
 function signToken() {
@@ -88,29 +85,16 @@ const VALID_PROFILE_BODY = {
   goal_type: 'wealth-building',
 };
 
-// Ensure DB is connected via MongoMemoryServer for isolated in-memory testing
+// Ensure DB is connected via helper
 async function ensureDb() {
-  if (dbConnected) return;
-  if (!mongoServer) {
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-  }
-  const mongoUri = mongoServer.getUri();
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoUri);
-  }
-  dbConnected = true;
+  await setupTestDatabase();
 }
 
 test.after(async () => {
   try {
     await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
   } catch (_) {}
-  if (dbConnected) {
-    await mongoose.disconnect();
-  }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  await teardownTestDatabase();
 });
 
 // ── 1. MongoDB Loss Simulation ──────────────────────────────────────

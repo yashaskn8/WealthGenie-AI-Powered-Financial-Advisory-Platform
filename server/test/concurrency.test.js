@@ -20,12 +20,11 @@ import goalsRoutes from '../routes/goals.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import Goal from '../models/Goal.js';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
 process.env.NODE_ENV = 'test';
 
-let mongoServer = null;
 const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
 const TEST_USER_ID_2 = new mongoose.Types.ObjectId().toString();
 
@@ -83,26 +82,12 @@ const VALID_PROFILE_BODY = {
 };
 
 // ── Setup ─────────────────────────────────────────────────────────────
-let dbConnected = false;
-
 async function ensureDb() {
-  if (dbConnected) return;
-  if (!mongoServer) {
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-  }
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoServer.getUri());
-  }
-  dbConnected = true;
+  await setupTestDatabase();
 }
 
 test.after(async () => {
-  if (dbConnected) {
-    await mongoose.disconnect();
-  }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  await teardownTestDatabase();
 });
 
 

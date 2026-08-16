@@ -22,13 +22,12 @@ import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
 import { blacklistToken } from '../config/redis.js';
 import FinancialProfile from '../models/FinancialProfile.js';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 import { withServer, jsonRequest as jsonFetch, rawRequest } from '../test-utils/httpTestUtils.js';
 
 process.env.JWT_SECRET = 'security-test-secret';
 process.env.NODE_ENV = 'test';
 
-let mongoServer = null;
 const USER_A_ID = new mongoose.Types.ObjectId().toString();
 const USER_B_ID = new mongoose.Types.ObjectId().toString();
 
@@ -64,28 +63,15 @@ const VALID_PROFILE_BODY = {
   goal_type: 'wealth-building',
 };
 
-let dbConnected = false;
 async function ensureDb() {
-  if (dbConnected) return;
-  if (!mongoServer) {
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-  }
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoServer.getUri());
-  }
-  dbConnected = true;
+  await setupTestDatabase();
 }
 
 test.after(async () => {
   try {
     await FinancialProfile.deleteMany({ userId: { $in: [USER_A_ID, USER_B_ID] } });
   } catch (_) {}
-  if (dbConnected) {
-    await mongoose.disconnect();
-  }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  await teardownTestDatabase();
 });
 
 // ── 1. Mass Assignment Prevention ────────────────────────────────────
@@ -346,8 +332,6 @@ test('WG-003: PUT /api/profile/:profileId updates existing profile in-place', as
     });
   } finally {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
-    await mongoose.disconnect();
-    dbConnected = false;
   }
 });
 
@@ -374,8 +358,6 @@ test('WG-007: POST /build and PUT /:profileId return identical key sets', async 
     });
   } finally {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
-    await mongoose.disconnect();
-    dbConnected = false;
   }
 });
 
@@ -408,7 +390,5 @@ test('WG-025: PUT /api/profile/:profileId requires version and returns 409 Confl
     });
   } finally {
     await FinancialProfile.deleteMany({ userId: USER_A_ID });
-    await mongoose.disconnect();
-    dbConnected = false;
   }
 });

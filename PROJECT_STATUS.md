@@ -36,6 +36,7 @@
 | [`server/test/idempotency.test.js`](server/test/idempotency.test.js) | Idempotency deduplication & dead-letter queue routing suite (3/3 pass) |
 | [`server/test/auditTrail.test.js`](server/test/auditTrail.test.js) | Regulatory advisory audit trail integration test suite (4/4 pass) |
 | [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
+| **Offline-Resilient Test Database Provisioning** | [`server/test/helpers/mongoTestHelper.js`](server/test/helpers/mongoTestHelper.js) | Unified 4-tier test database engine: `MONGODB_URI` env → Testcontainers `mongo:7.0` → `MongoMemoryServer` fallback → Fail-Fast actionable diagnostics. All 11 integration test files centralized through helper. Full suite: **370/370 pass, 0 failures**. |
 
 ---
 

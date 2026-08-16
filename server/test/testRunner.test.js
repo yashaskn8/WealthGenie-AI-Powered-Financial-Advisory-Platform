@@ -9,6 +9,8 @@ test('WG-008: All test files in server/test/ end with .test.js and are included 
   
   const invalidFiles = files.filter(file => {
     if (file.startsWith('.')) return false;
+    const fullPath = path.join(testDir, file);
+    if (fs.statSync(fullPath).isDirectory()) return false;
     return !file.endsWith('.test.js');
   });
 

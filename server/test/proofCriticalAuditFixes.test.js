@@ -9,7 +9,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import profileRoutes from '../routes/profile.js';
 import recommendRoutes from '../routes/recommend.js';
@@ -19,13 +18,12 @@ import { errorHandler } from '../middleware/errorHandler.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import { getRiskProfile } from '../services/riskProfiler.js';
 import * as redisModule from '../config/redis.js';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
 const testJwtSecret = ['audit', 'fixes', 'test', 'key'].join('-');
 process.env.JWT_SECRET = process.env.JWT_SECRET || testJwtSecret;
 process.env.NODE_ENV = 'test';
 
-let mongoServer = null;
-let dbConnected = false;
 const TEST_USER_ID = new mongoose.Types.ObjectId().toString();
 
 function signToken(userId = TEST_USER_ID) {
@@ -70,27 +68,14 @@ async function jsonFetch(url, options = {}) {
 }
 
 async function ensureDb() {
-  if (dbConnected) return;
-  if (!mongoServer) {
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-  }
-  const mongoUri = mongoServer.getUri();
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoUri);
-  }
-  dbConnected = true;
+  await setupTestDatabase();
 }
 
 test.after(async () => {
   try {
     await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
   } catch (_) {}
-  if (dbConnected) {
-    await mongoose.disconnect();
-  }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  await teardownTestDatabase();
 });
 
 // ═══════════════════════════════════════════════════════════════════

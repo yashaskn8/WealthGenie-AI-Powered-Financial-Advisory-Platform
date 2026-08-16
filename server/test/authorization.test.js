@@ -25,14 +25,12 @@ import { withServer, rawRequest } from '../test-utils/httpTestUtils.js';
 import FinancialProfile from '../models/FinancialProfile.js';
 import Goal from '../models/Goal.js';
 import Recommendation from '../models/Recommendation.js';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/mongoTestHelper.js';
 
-let mongoServer = null;
 const testSecret = ['test', 'auth', 'jwt', 'key'].join('-');
 process.env.JWT_SECRET = process.env.JWT_SECRET || testSecret;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-let dbConnected = false;
 let tokenA, tokenB, userAId, userBId;
 let profileA, goalA, recommendationA;
 
@@ -50,19 +48,8 @@ function buildTestApp() {
   return app;
 }
 
-async function ensureDb() {
-  if (dbConnected) return;
-  if (!mongoServer) {
-    mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.5' } });
-  }
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(mongoServer.getUri());
-  }
-  dbConnected = true;
-}
-
 test.before(async () => {
-  await ensureDb();
+  await setupTestDatabase();
 
   userAId = new mongoose.Types.ObjectId().toString();
   userBId = new mongoose.Types.ObjectId().toString();
@@ -102,12 +89,7 @@ test.after(async () => {
     await Goal.deleteMany({ userId: { $in: [userAId, userBId] } });
     await Recommendation.deleteMany({ userId: { $in: [userAId, userBId] } });
   } catch (_) {}
-  if (dbConnected) {
-    await mongoose.disconnect();
-  }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  await teardownTestDatabase();
 });
 
 // ═════════════════════════════════════════════════════════════════════
