@@ -47,7 +47,7 @@
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
 | **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | `investment_master.json` (155 instruments) |
 | **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
-| **Testing & CI/CD** | 20 Node.js test suites (370 assertions) + 198 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
+| **Testing & CI/CD** | 26 Node.js test suites (384 assertions) + 223 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 
@@ -124,11 +124,13 @@ The chat system implements a stateful, tool-assisted agent pipeline driven by [`
 > **Agentic AI workflow.** Step-by-step advisory flow from security prompt inspection and intent classification to tool execution and structured response generation.
 
 ### Component Breakdown
+* **`geminiChatService.js`**: Orchestrates the multi-pass tool-grounded execution loop with self-correcting replanning (`MAX_REPLANS = 2`), session token budgeting, and governance trace logging.
+* **`aiToolOrchestrator.js`**: Resolves tool dependency DAGs, executes independent tool batches concurrently, and coordinates intermediate replanning evaluation.
+* **`financialToolRegistry.js`**: Exposes canonical, deterministic financial tools with deep prototype pollution sanitization (`sanitizeToolInputs`), whitelisted asset keys, and strict Joi schema contracts.
+* **`layeredMemoryManager.js`**: Implements 7 memory tiers (Working, Profile, Mid-Term with TTL, Preference, Decision, Tool, System) with tamper-evident SHA-256 cryptographic audit ledger verification.
 * **`immutableSecurityPipeline.js`**: Sanitizes prompt inputs and detects injection attacks before LLM submission.
 * **`intentGate.js`**: Classifies incoming queries to decide whether RAG grounding or LLM tool-orchestration is required.
-* **`financialToolRegistry.js`**: Exposes functional tool abstractions to the LLM (e.g. SIP calculators, Old vs New tax comparison, portfolio rebalancing).
-* **`layeredMemoryManager.js`**: Manages sliding conversation history, profile context injection, and system prompts.
-* **`toolTraceGraph.js`**: Snapshots tool execution steps for UI visualization and debugging.
+* **`toolTraceGraph.js`**: Snapshots reproducible tool execution DAGs and governance checksums for enterprise auditability.
 
 ---
 

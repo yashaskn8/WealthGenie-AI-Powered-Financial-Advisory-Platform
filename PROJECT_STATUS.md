@@ -35,8 +35,11 @@
 | [`server/test/failClosed.test.js`](server/test/failClosed.test.js) | Fail-closed security integration test suite (5/5 pass) |
 | [`server/test/idempotency.test.js`](server/test/idempotency.test.js) | Idempotency deduplication & dead-letter queue routing suite (3/3 pass) |
 | [`server/test/auditTrail.test.js`](server/test/auditTrail.test.js) | Regulatory advisory audit trail integration test suite (4/4 pass) |
-| [`scripts/docs/check_docs_sync.js`](scripts/docs/check_docs_sync.js) | Statically verifies README matches code |
-| **Offline-Resilient Test Database Provisioning** | [`server/test/helpers/mongoTestHelper.js`](server/test/helpers/mongoTestHelper.js) | Unified 4-tier test database engine: `MONGODB_URI` env → Testcontainers `mongo:7.0` → `MongoMemoryServer` fallback → Fail-Fast actionable diagnostics. All 11 integration test files centralized through helper. Full suite: **370/370 pass, 0 failures**. |
+| **Offline-Resilient Test Database Provisioning** | [`server/test/helpers/mongoTestHelper.js`](server/test/helpers/mongoTestHelper.js) | Unified 4-tier test database engine: `MONGODB_URI` env → Testcontainers `mongo:7.0` → `MongoMemoryServer` fallback → Fail-Fast actionable diagnostics. All 11 integration test files centralized through helper. Full suite: **384/384 pass, 0 failures**. |
+| **Self-Correction & Replanning Loop (Phase 1)** | [`server/services/geminiChatService.js`](server/services/geminiChatService.js) & [`server/test/replanLoop.test.js`](server/test/replanLoop.test.js) | Multi-pass replanning loop (`MAX_REPLANS = 2`) feeding tool validation/execution errors or reasoning-driven wrong tool feedback back to LLM for argument correction, alternative tool selection, or user clarification. Verified live over HTTP. |
+| **Confused Deputy & Tool Boundary Defense (Phase 2)** | [`server/services/financialToolRegistry.js`](server/services/financialToolRegistry.js) & [`server/test/confusedDeputySecurity.test.js`](server/test/confusedDeputySecurity.test.js) | Deep recursive prototype pollution stripping (`sanitizeToolInputs`), whitelisted asset keys, and regex-constrained allocation keys. Red-team suite proves 100% containment of 7 attack classes. |
+| **Layered Memory & Tamper-Evident Ledger (Phase 3)** | [`server/services/layeredMemoryManager.js`](server/services/layeredMemoryManager.js) & [`server/scripts/verify_layered_memory_live.js`](server/scripts/verify_layered_memory_live.js) | 7-tier memory system (Working, Profile, Mid-Term, Preference, Decision, Tool, System) verified over 8 live HTTP turns beyond 5-turn working window. Cryptographic SHA-256 audit ledger verified with deliberate tamper detection at `brokenIndex: 0`. |
+| **Session Cost & Runaway Loop Protection (Phase 4)** | [`server/services/geminiChatService.js`](server/services/geminiChatService.js) & [`server/test/sessionCostSafety.test.js`](server/test/sessionCostSafety.test.js) | Session cumulative token caps (50,000 tokens), turn-level token caps (12,000 tokens), and hop caps (20 hops). Terminates runaway loops gracefully with direct user-facing notice banner in primary response text. |
 
 ---
 
@@ -148,3 +151,30 @@ To transition from the Kind-based verification to a live production AWS/GCP clou
   - **PyTorch MLP**: Possesses a zero-dependency cold-start fallback (`model.training.train_pytorch.train_pytorch_model`). If `mlp_model.pt` is missing, it auto-trains a baseline MLP on synthetic profiles, saves weights to `model/saved_models/mlp_model.pt`, and seeds into the registry.
   - **FT-Transformer**: Possesses a zero-dependency cold-start fallback (`model.training.train_pytorch.train_ft_transformer_model`). If `ft_transformer.pt` is missing, it auto-trains a baseline FT-Transformer, saves weights to `model/saved_models/ft_transformer.pt`, and seeds into the registry.
   - **Kubernetes Pod Health Impact**: Because all three architectures support automated cold-start bootstrapping, a fresh k8s pod comes up healthy on `/healthz` and `/readiness` even if launched without pre-baked image layers. In production CI/CD, pre-baked artifact image layers bypass the cold-start training time.
+
+---
+
+## Agentic AI Platform Classification & Architectural Maturity Audit
+
+### Classification: Progression from "Agentic Application" to "Agent Platform"
+
+Following the completion and independent verification of Phases 1 through 4, WealthGenie's Agentic AI architecture has transitioned from a fixed-pipeline **Agentic Application** to an autonomous **Agent Platform**:
+
+| Dimension | Initial Audit State ("Agentic Application") | Current Verified State ("Agent Platform") |
+|---|---|---|
+| **Replanning & Error Recovery** | Static fallback: tool errors immediately yielded generic fallback text or rule defaults. | **Autonomous Replanning Loop**: When a tool fails validation/execution or when ambiguous intent requires an alternative calculation, the error is fed back to the LLM. The model reasons, corrects parameters, or selects an alternative tool (capped at `MAX_REPLANS = 2`). |
+| **Tool Calling Boundary & Security** | Parameter schemas accepted unchecked prototype strings (`__proto__`, `constructor`) in object/array patterns. | **Confused Deputy Hardening**: Deep recursive input sanitization (`sanitizeToolInputs`), whitelisted asset keys (`VALID_ASSET_KEYS`), and regex-constrained dictionary keys. 100% containment of 7 red-team attack classes. |
+| **Context & Memory Architecture** | Ephemeral per-request memory or unbounded history accumulation. | **7-Tier Layered Memory**: Verified across 8+ turns (beyond 5-message working memory window). Tamper-evident SHA-256 cryptographic audit ledger detecting corrupted chain blocks at `brokenIndex: 0`. |
+| **Safety & Cost Protection** | Per-user rate limiting only; no loop hop or cumulative session token bounds. | **Multi-Tier Resource Envelopes**: Session-wide token cap (50,000 tokens), turn-level token cap (12,000 tokens), and hop cap (20 hops) with clear user-facing warning banners delivered in the primary response text. |
+
+### Real vs. Out-of-Scope Capabilities Disclosure
+
+- **Real & Fully Verified**:
+  1. Multi-pass tool self-correction and reasoning-driven replanning loop (`geminiChatService.js`, `replanLoop.test.js`, live HTTP trace).
+  2. Confused deputy prototype pollution defense across all 7 financial tools (`financialToolRegistry.js`, `confusedDeputySecurity.test.js`).
+  3. Multi-turn layered memory retrieval & cryptographic audit ledger tamper verification (`layeredMemoryManager.js`, `verify_layered_memory_live.js`, `proofLayeredMemory.test.js`).
+  4. Session-level cumulative token budgets and runaway-loop circuit breakers (`sessionCostSafety.test.js`, `verify_session_cost_safety_live.js`).
+- **Explicitly Out of Scope / Deferred**:
+  1. Arbitrary dynamic code execution sandbox (all AI actions are strictly confined to the closed deterministic tool registry).
+  2. Cross-network distributed multi-agent consensus protocols (orchestration is single-agent DAG and hierarchical planner).
+
