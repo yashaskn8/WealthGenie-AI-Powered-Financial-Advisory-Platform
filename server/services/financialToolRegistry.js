@@ -11,25 +11,61 @@ import { PrometheusMetrics } from './metricsCollector.js';
  * Exposes canonical financial engines as executable AI tools.
  * Single source of truth for all deterministic calculations requested by LLMs.
  */
+const DANGEROUS_OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf']);
+
+const VALID_ASSET_KEYS = [
+  'Equity_MF', 'ELSS', 'ETF', 'Debt_MF', 'FD', 'Gold', 'NPS', 'PPF',
+  'RBI_Bond', 'G-Sec', 'SGB', 'Liquid_MF', 'Arbitrage_MF', 'Hybrid_MF',
+  'Index_MF', 'Midcap_MF', 'Smallcap_MF',
+];
+
+const SAFE_ALLOCATION_KEY_REGEX = /^(?!__proto__|constructor|prototype|toString|valueOf)[a-zA-Z0-9_-]{1,50}$/;
+
+/**
+ * Recursively strips dangerous object keys to prevent prototype pollution.
+ */
+function sanitizeToolInputs(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeToolInputs);
+
+  const clean = Object.create(null);
+  for (const [key, val] of Object.entries(obj)) {
+    if (DANGEROUS_OBJECT_KEYS.has(key) || key.startsWith('__')) {
+      continue;
+    }
+    clean[key] = sanitizeToolInputs(val);
+  }
+  return clean;
+}
+
 class ToolRegistry {
   constructor() {
     this.tools = new Map();
     this.registerCoreTools();
   }
 
-  registerTool(name, toolDefinition) {
-    if (!name || !toolDefinition || typeof toolDefinition.executor !== 'function') {
-      throw new Error(`Invalid tool registration for '${name}'`);
+  /**
+   * Registers a new financial calculation tool.
+   *
+   * @param {string} name
+   * @param {object} config - { description, schema, executor, version }
+   */
+  registerTool(name, config) {
+    if (!name || !config.schema || !config.executor) {
+      throw new Error(`Invalid tool registration for '${name}'. Schema and executor are required.`);
     }
     this.tools.set(name, {
       name,
-      description: toolDefinition.description || '',
-      version: toolDefinition.version || '1.0.0',
-      schema: toolDefinition.schema || Joi.object().unknown(false),
-      executor: toolDefinition.executor,
+      description: config.description || '',
+      schema: config.schema,
+      executor: config.executor,
+      version: config.version || '1.0.0',
     });
   }
 
+  /**
+   * Retrieves a tool definition by name.
+   */
   getTool(name) {
     return this.tools.get(name) || null;
   }
@@ -38,6 +74,9 @@ class ToolRegistry {
     return this.tools.has(name);
   }
 
+  /**
+   * Returns metadata for all registered tools.
+   */
   listTools() {
     return Array.from(this.tools.values()).map(t => ({
       name: t.name,
@@ -68,8 +107,11 @@ class ToolRegistry {
       };
     }
 
-    // Validate inputs against tool Joi schema
-    const { error, value } = tool.schema.validate(args, { stripUnknown: true });
+    // Step 1: Deep input sanitization to strip prototype pollution keys & hidden injected fields
+    const sanitizedArgs = sanitizeToolInputs(args);
+
+    // Step 2: Validate inputs against tool Joi schema
+    const { error, value } = tool.schema.validate(sanitizedArgs, { stripUnknown: true });
     if (error) {
       PrometheusMetrics.recordToolExecution(name, false);
       return {
@@ -104,7 +146,7 @@ class ToolRegistry {
     // 1. SIP Projection Tool
     this.registerTool('sip_projection', {
       description: 'Calculates Future Value of a Systematic Investment Plan (SIP) using monthly annuity-due compounding.',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
         monthlyInvestment: Joi.number().min(100).max(10000000).required(),
         annualRate: Joi.number().min(0.001).max(0.50).required(), // decimal, e.g. 0.12 for 12%
@@ -128,7 +170,7 @@ class ToolRegistry {
     // 2. Lump Sum Projection Tool
     this.registerTool('lump_sum_projection', {
       description: 'Calculates Future Value of a one-time lump sum investment using compound interest.',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
         principal: Joi.number().min(1000).max(1000000000).required(),
         annualRate: Joi.number().min(0.001).max(0.50).required(),
@@ -150,7 +192,7 @@ class ToolRegistry {
     // 3. Reverse SIP Planner Tool
     this.registerTool('reverse_sip', {
       description: 'Calculates required monthly SIP to achieve a target financial goal.',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
         targetAmount: Joi.number().min(1000).max(10000000000).required(),
         annualRate: Joi.number().min(0.001).max(0.50).required(),
@@ -172,7 +214,7 @@ class ToolRegistry {
     // 4. Tax Calculator Tool
     this.registerTool('tax_calculator', {
       description: 'Computes income tax liability under current Indian tax slabs (FY 2025-26).',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
         income: Joi.number().min(0).max(1000000000).required(),
         basicSalary: Joi.number().min(0).max(1000000000).optional(),
@@ -192,7 +234,7 @@ class ToolRegistry {
     // 5. XIRR Calculator Tool
     this.registerTool('xirr_calculator', {
       description: 'Calculates Exact Internal Rate of Return (XIRR) for irregular cash flows.',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
         cashflows: Joi.array().items(
           Joi.object({
@@ -209,10 +251,10 @@ class ToolRegistry {
     // 6. Portfolio Optimizer Tool
     this.registerTool('portfolio_optimizer', {
       description: 'Optimizes asset weights for minimum variance, maximum Sharpe ratio, or risk parity.',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
         strategy: Joi.string().valid('min_variance', 'max_sharpe', 'risk_parity').default('min_variance'),
-        assets: Joi.array().items(Joi.string()).min(2).max(10).default(['Equity_MF', 'Debt_MF', 'Gold']),
+        assets: Joi.array().items(Joi.string().valid(...VALID_ASSET_KEYS)).min(2).max(10).default(['Equity_MF', 'Debt_MF', 'Gold']),
       }),
       executor: async ({ strategy, assets }) => {
         const defaultReturns = { Equity_MF: 0.12, Debt_MF: 0.07, Gold: 0.08, ELSS: 0.12, FD: 0.065 };
@@ -233,10 +275,10 @@ class ToolRegistry {
     // 7. Portfolio Rebalance Tool
     this.registerTool('rebalance_calculator', {
       description: 'Computes portfolio drift and rebalance buy/sell directives.',
-      version: '2.0.0',
+      version: '2.1.0',
       schema: Joi.object({
-        current_allocation: Joi.object().pattern(Joi.string(), Joi.number().min(0)).required(),
-        target_allocation: Joi.object().pattern(Joi.string(), Joi.number().min(0).max(100)).required(),
+        current_allocation: Joi.object().pattern(SAFE_ALLOCATION_KEY_REGEX, Joi.number().min(0)).required(),
+        target_allocation: Joi.object().pattern(SAFE_ALLOCATION_KEY_REGEX, Joi.number().min(0).max(100)).required(),
         threshold: Joi.number().min(0).max(50).default(2.0),
       }),
       executor: async ({ current_allocation, target_allocation, threshold }) => {
