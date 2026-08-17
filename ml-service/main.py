@@ -296,8 +296,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"RAG Knowledge Base initialization failed: {e}")
 
+    # 6. Start Scheduled Drift Monitor (asyncio periodic task)
+    from model.registry.drift_scheduler import drift_scheduler
+    drift_scheduler.start(version_registry)
+
     logger.info(f"ModelRegistry initialized with registered models: {[m['key'] for m in registry.list_models()]}")
     yield
+
+    # Shutdown: stop the drift scheduler
+    await drift_scheduler.stop()
 
 
 app = FastAPI(

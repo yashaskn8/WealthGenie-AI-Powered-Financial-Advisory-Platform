@@ -149,6 +149,7 @@ def trigger_candidate_retrain(
     architecture: str = "RandomForest",
     store: Any = None,
     trigger_reason: str = "Automated retrain triggered by feature drift detection",
+    registered_by: str = "manual_api_call",
 ) -> Dict[str, Any]:
     """
     Executes a retrain job for the specified architecture and registers the new candidate
@@ -226,6 +227,7 @@ def trigger_candidate_retrain(
             "num_samples": num_samples,
             "model_type": "RandomForestClassifier",
             "dataset_lineage": lineage_params,
+            "registered_by": registered_by,
         }
 
         # Register in persistent store
@@ -238,19 +240,20 @@ def trigger_candidate_retrain(
                 hyperparameters=hparams,
                 metrics=metrics,
                 reference_distributions=ref_dist,
-                notes=trigger_reason,
+                notes=f"[registered_by={registered_by}] {trigger_reason}",
                 set_active=False,  # MUST NOT be active until passing promotion gate
             )
         else:
             version_id = candidate_id
 
-        logger.info(f"Successfully retrained and registered candidate model version '{version_id}' (is_active=False).")
+        logger.info(f"Successfully retrained and registered candidate model version '{version_id}' (is_active=False, registered_by={registered_by}).")
         return {
             "version_id": version_id,
             "model_architecture": "RandomForest",
             "artifact_path": str(candidate_artifact_path),
             "metrics": metrics,
             "is_active": False,
+            "registered_by": registered_by,
             "registered_at": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -267,6 +270,7 @@ def check_drift_and_trigger_retrain(
     store: Any = None,
     psi_threshold: float = PSI_THRESHOLD_FAIL,
     force_retrain_on_drift: bool = True,
+    registered_by: str = "manual_api_call",
 ) -> Dict[str, Any]:
     """
     Core drift detector workflow:
@@ -328,6 +332,7 @@ def check_drift_and_trigger_retrain(
             architecture=architecture,
             store=store,
             trigger_reason=trigger_reason,
+            registered_by=registered_by,
         )
 
     return {
