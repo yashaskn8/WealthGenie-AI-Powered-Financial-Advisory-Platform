@@ -130,10 +130,10 @@ test.after(async () => {
     await FinancialProfile.deleteMany({ userId: TEST_USER_ID });
   } catch (_) {}
   await teardownTestDatabase();
-  // Force-close any lingering Redis client to prevent process hang
+  // Force-close any lingering Redis client to kill reconnection timers
   try {
-    if (redisClient && typeof redisClient.quit === 'function') {
-      await redisClient.quit().catch(() => {});
+    if (redisClient && typeof redisClient.disconnect === 'function') {
+      await redisClient.disconnect().catch(() => {});
     }
   } catch (_) {}
 });

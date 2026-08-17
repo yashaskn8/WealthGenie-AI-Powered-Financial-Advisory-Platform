@@ -136,6 +136,16 @@ export async function setupTestDatabase() {
     };
   }
 
+  // If already provisioned but mongoose was disconnected, just reconnect to existing URI!
+  if (activeUri && mongoose.connection.readyState === 0) {
+    await mongoose.connect(activeUri);
+    return {
+      uri: activeUri,
+      mechanism: activeMechanism,
+      stop: teardownTestDatabase,
+    };
+  }
+
   const errors = {};
 
   // 1. Try external URI (CI / pre-started instance)

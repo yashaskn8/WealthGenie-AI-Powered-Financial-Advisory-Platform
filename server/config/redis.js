@@ -1,4 +1,4 @@
-﻿import { createClient } from 'redis';
+import { createClient } from 'redis';
 import logger from '../utils/logger.js';
 
 let redisClient = null;
@@ -43,6 +43,12 @@ const connectRedis = async () => {
   } catch (error) {
     logger.warn('Redis not available — running without cache', { message: error.message });
     redisAvailable = false;
+    // CRITICAL: disconnect before nulling to kill reconnection timers.
+    // Without this, the client's socket retry loop keeps the process alive
+    // indefinitely, causing CI test runner hangs.
+    if (redisClient) {
+      try { await redisClient.disconnect(); } catch (_) {}
+    }
     redisClient = null;
   }
 };
