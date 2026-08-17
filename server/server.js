@@ -166,22 +166,17 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ── Start Server ─────────────────────────────────────────────────
+import { validateEnvironmentConfig } from './config/validateEnv.js';
 let server;
 
 const start = async () => {
-  // ── Critical Environment Validation ─────────────────────────────
-  const REQUIRED_ENV = ['JWT_SECRET', 'MONGODB_URI'];
-  const missing = REQUIRED_ENV.filter(key => !process.env[key]);
-  if (missing.length > 0) {
-    logger.error('Missing required environment variables — server cannot start', { missing });
+  const validation = validateEnvironmentConfig(process.env);
+  if (!validation.valid) {
+    logger.error('Critical environment configuration validation failed — server cannot start', { errors: validation.errors });
     process.exit(1);
   }
-  if (process.env.JWT_SECRET.length < 32) {
+  if (process.env.NODE_ENV !== 'production' && process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
     logger.warn('JWT_SECRET is shorter than 32 characters. Use a strong secret in production.');
-  }
-  if (process.env.NODE_ENV === 'production' && !process.env.ML_SERVICE_API_KEY) {
-    logger.error('ML_SERVICE_API_KEY is required in production. Set this variable to secure inter-service communication.');
-    process.exit(1);
   }
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
     logger.warn('Neither GEMINI_API_KEY nor GROQ_API_KEY configured. AI features will be unavailable.');
@@ -233,4 +228,8 @@ async function gracefulShutdown(signal) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-start().catch(err => { logger.error('Failed to start server', { message: err.message, stack: err.stack }); process.exit(1); });
+if (process.env.NODE_ENV !== 'test') {
+  start().catch(err => { logger.error('Failed to start server', { message: err.message, stack: err.stack }); process.exit(1); });
+}
+
+export default app;

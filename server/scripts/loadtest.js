@@ -11,7 +11,11 @@ const SERVER_URL = process.env.SERVER_URL || 'http://127.0.0.1:5000';
 const DURATION = parseInt(process.env.TEST_DURATION || '30', 10); // 30s per scenario run
 const OUTPUT_DIR = path.join(__dirname, '..', 'reports', 'loadtest');
 
-const JWT_SECRET = process.env.JWT_SECRET || '8f9e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET environment variable is required for load testing.');
+  process.exit(1);
+}
 const TEST_TOKEN = jwt.sign(
   { userId: '60d5ecb8b3b3a72d9c8e4a11', email: 'loadtest@wealthgenie.ai' },
   JWT_SECRET,

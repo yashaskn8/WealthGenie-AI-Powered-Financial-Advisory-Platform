@@ -1,0 +1,78 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { validateEnvironmentConfig } from '../config/validateEnv.js';
+
+test('Config Validation: Missing JWT_SECRET fails validation', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: '',
+    MONGODB_URI: 'mongodb://localhost:27017/wealthgenie',
+    NODE_ENV: 'development',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes('JWT_SECRET is required')));
+});
+
+test('Config Validation: Missing MONGODB_URI fails validation', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: 'test-secret-at-least-32-chars-long-valid',
+    MONGODB_URI: '',
+    NODE_ENV: 'development',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes('MONGODB_URI is required')));
+});
+
+test('Config Validation: Production rejects JWT_SECRET shorter than 32 chars', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: 'short_secret_20_chars',
+    MONGODB_URI: 'mongodb://localhost:27017/wealthgenie',
+    ML_SERVICE_API_KEY: 'valid-prod-ml-service-key-32chars',
+    NODE_ENV: 'production',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes('at least 32 characters')));
+});
+
+test('Config Validation: Production rejects placeholder JWT_SECRET', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: 'CHANGE_ME_JWT_SECRET_AT_LEAST_32_CHARACTERS_LONG',
+    MONGODB_URI: 'mongodb://localhost:27017/wealthgenie',
+    ML_SERVICE_API_KEY: 'valid-prod-ml-service-key-32chars',
+    NODE_ENV: 'production',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes('Insecure or placeholder JWT_SECRET')));
+});
+
+test('Config Validation: Production rejects missing ML_SERVICE_API_KEY', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
+    MONGODB_URI: 'mongodb://localhost:27017/wealthgenie',
+    ML_SERVICE_API_KEY: '',
+    NODE_ENV: 'production',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes('ML_SERVICE_API_KEY is required in production')));
+});
+
+test('Config Validation: Production rejects placeholder ML_SERVICE_API_KEY', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
+    MONGODB_URI: 'mongodb://localhost:27017/wealthgenie',
+    ML_SERVICE_API_KEY: 'CHANGE_ME_ML_SERVICE_API_KEY',
+    NODE_ENV: 'production',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes('Insecure placeholder ML_SERVICE_API_KEY')));
+});
+
+test('Config Validation: Valid production configuration passes', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
+    MONGODB_URI: 'mongodb://mongodb:27017/wealthgenie',
+    ML_SERVICE_API_KEY: 'production-secret-api-key-value-secure',
+    NODE_ENV: 'production',
+  });
+  assert.equal(result.valid, true);
+  assert.equal(result.errors.length, 0);
+});

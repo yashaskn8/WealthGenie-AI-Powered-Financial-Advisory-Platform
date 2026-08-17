@@ -216,19 +216,14 @@ def test_invalid_api_key_rejected_on_all_subsystems():
 
 
 def test_fail_closed_when_api_key_unset_in_production(monkeypatch):
-    """When ML_SERVICE_API_KEY is unset in production, all routers fail closed with HTTP 500."""
+    """When ML_SERVICE_API_KEY is unset in production, FastAPI startup fails closed with RuntimeError."""
     monkeypatch.delenv("ML_SERVICE_API_KEY", raising=False)
     monkeypatch.setenv("ENVIRONMENT", "production")
 
     headers = {"X-Verified-User-Id": "user_123"}
-    with TestClient(app, headers=headers) as client:
-        res_rag = client.post("/rag/query", json={"question": "test"})
-        assert res_rag.status_code == 500
-        assert "Server Misconfiguration" in res_rag.json()["detail"]
-
-        res_llm = client.post("/llm/generate", json={"prompt": "test"})
-        assert res_llm.status_code == 500
-        assert "Server Misconfiguration" in res_llm.json()["detail"]
+    with pytest.raises(RuntimeError, match="FATAL Startup Misconfiguration: ML_SERVICE_API_KEY is required in production"):
+        with TestClient(app, headers=headers):
+            pass
 
 
 # ==============================================================================

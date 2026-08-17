@@ -1,4 +1,4 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wealthgenie-ml-service
@@ -29,7 +29,7 @@ spec:
             - name: PORT
               value: "8000"
             - name: ENVIRONMENT
-              value: "local"
+              value: "production"
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:

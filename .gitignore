@@ -31,8 +31,16 @@ Desktop.ini
 
 # Environment files
 .env
-server/.env
-ml-service/.env
+.env.*
+!.env.example
+*.env
+*.env.local
+server/.env*
+!server/.env.example
+ml-service/.env*
+!ml-service/.env.example
+reactapp/.env*
+!reactapp/.env.example
 
 # Python
 __pycache__

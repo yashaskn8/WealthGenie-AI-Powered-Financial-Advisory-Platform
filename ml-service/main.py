@@ -217,6 +217,10 @@ def _seed_and_resolve_active_models(version_registry) -> None:
 async def lifespan(app: FastAPI):
     global model, label_encoder, model_accuracy, confidence_threshold, git_commit_hash, model_version, dataset_version, explainer_instance
     
+    # 0. Fail-Closed Security & Config Validation
+    from security import validate_ml_service_config
+    validate_ml_service_config()
+
     # 0. Instantiate Version Registry via Store Factory & attach to serving ModelRegistry
     version_registry = get_model_registry()
     registry.set_version_registry(version_registry)

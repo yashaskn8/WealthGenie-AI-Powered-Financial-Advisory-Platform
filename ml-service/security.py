@@ -19,21 +19,48 @@ VERIFIED_USER_HEADER = "X-Verified-User-Id"
 verified_user_header = APIKeyHeader(name=VERIFIED_USER_HEADER, auto_error=False)
 
 
+def validate_ml_service_config(environ: Optional[dict] = None) -> None:
+    """Validate ML service security configuration at startup.
+
+    Raises RuntimeError if required credentials are missing or set to
+    insecure placeholder values in non-local environments.
+    """
+    env_dict = environ if environ is not None else os.environ
+    env_mode = env_dict.get("ENVIRONMENT", "").strip().lower()
+    api_key = env_dict.get("ML_SERVICE_API_KEY", "").strip()
+
+    if env_mode not in ("local", "test", "development"):
+        if not api_key:
+            raise RuntimeError(
+                "FATAL Startup Misconfiguration: ML_SERVICE_API_KEY is required in production environments. "
+                "Set ENVIRONMENT=local to permit dev-mode bypass."
+            )
+        if api_key.startswith("CHANGE_ME"):
+            raise RuntimeError(
+                "FATAL Startup Misconfiguration: Insecure placeholder ML_SERVICE_API_KEY configured in production environment."
+            )
+
+
 async def verify_api_key(api_key: str = Security(api_key_header)) -> str:
     """Authenticate requests via constant-time API key comparison.
 
     Uses hmac.compare_digest for timing-attack-resistant string equality
     checks against the ML_SERVICE_API_KEY environment variable.
     """
-    expected_key = os.environ.get("ML_SERVICE_API_KEY", "")
-    env_mode = os.environ.get("ENVIRONMENT", "").lower()
+    expected_key = os.environ.get("ML_SERVICE_API_KEY", "").strip()
+    env_mode = os.environ.get("ENVIRONMENT", "").strip().lower()
 
     if not expected_key:
-        if env_mode == "local":
+        if env_mode in ("local", "test"):
             return api_key or "dev-mode"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server Misconfiguration: ML_SERVICE_API_KEY is not set. Set ENVIRONMENT=local to permit dev-mode bypass."
+        )
+    if expected_key.startswith("CHANGE_ME") and env_mode not in ("local", "test"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server Misconfiguration: Insecure placeholder ML_SERVICE_API_KEY configured in production."
         )
     if not api_key or not hmac.compare_digest(api_key, expected_key):
         raise HTTPException(
