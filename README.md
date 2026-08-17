@@ -47,7 +47,8 @@
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
 | **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | `investment_master.json` (155 instruments) |
 | **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
-| **Testing & CI/CD** | 26 Node.js test suites (404 assertions) + 223 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
+| **Distributed Systems Failure-Mode Testing** | Real-failure chaos tests (MongoDB disconnect, Redis disconnect, ML ECONNREFUSED), mid-transaction partial-write proof, Redis fail-closed audit (14 paths) | [`chaos.test.js`](server/test/chaos.test.js) (4/4), [`midTransaction.test.js`](server/test/midTransaction.test.js) (2/2), [`redisFailClosed.test.js`](server/test/redisFailClosed.test.js) (8/8) |
+| **Testing & CI/CD** | 26 Node.js test suites (404+ assertions) + 223 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 

@@ -218,4 +218,60 @@ WealthGenie is purpose-built and scoped strictly to **Indian personal income tax
      - Run `node --test server/test/taxEngineFuzz.test.js` (exercises 7 statutory properties across 7,000+ generated income points).
      - Run `node --test server/test/taxBoundary.test.js` (exercises exact rupee threshold boundaries).
 
+---
 
+## Distributed Systems Failure-Mode Verification & Hardening
+
+> **Verified**: August 2026. All tests run against real MongoDB 7.0 and real Redis on localhost.
+
+### Phase 1 — Chaos Test Audit & Rewrite (`chaos.test.js`)
+
+**Original state**: All 4 chaos tests were **mocked** — monkey-patching `FinancialProfile.create`, flipping a `setRedisAvailable(false)` boolean, and replacing `axios.post`. None induced real failure on a real dependency.
+
+**Rewritten state** (all 4 pass):
+
+| Test | Old Method | New Method | Verified Behavior |
+|------|-----------|-----------|-------------------|
+| MongoDB loss during write | Monkey-patched `FinancialProfile.create` (L106) | `mongoose.disconnect()` severs real TCP connection | Real `MongoNotConnectedError` → error handler → HTTP 503 |
+| Redis offline fallback | `setRedisAvailable(false)` flag flip (L134) | `connectRedis()` against real server; if unavailable, real no-client path | HybridStore falls back to MemoryStore → HTTP 200 |
+| ML service timeout | Monkey-patched `axios.post` (L165) | Dead port `59999` → real OS-level `ECONNREFUSED` | `mlClient.js` catches real error → `rule_fallback` |
+| Gemini & Groq offline | Monkey-patched `axios.post` (L207) | API keys cleared from `process.env` | Real code path skips API calls → `getFallbackAdvisory()` |
+
+### Phase 2 — MongoDB Mid-Transaction Failure (`midTransaction.test.js`)
+
+Two real multi-step write scenarios tested with `mongoose.disconnect()` between writes:
+
+| Scenario | Write 1 | Write 2 | Actual DB State After Failure |
+|----------|---------|---------|-------------------------------|
+| Goal creation | `Goal.create()` ✅ persists | `_syncProfileGoals()` ❌ `MongoNotConnectedError` | Goal exists; `Profile.goals[]` NOT updated. **Cosmetic inconsistency** (denormalization only). |
+| Recommendation + Audit | `Recommendation.create()` ✅ persists | `AuditRecord.create()` ❌ `MongoNotConnectedError` | Recommendation exists WITHOUT audit record. **Orphaned recommendation** — regulatory concern on standalone MongoDB. HTTP flow throws 500 so client sees error, but the Recommendation document is already committed. |
+
+**Honest limitation**: `mongoose.disconnect()` is a clean shutdown, not a sudden network partition (SIGKILL). Tests the most common real-world failure mode (connection pool exhaustion, primary stepdown, network blip).
+
+### Phase 3 — Redis Fail-Closed Audit (`redisFailClosed.test.js`)
+
+Complete audit of all 14 Redis usage paths across the codebase:
+
+| Path | Fail Mode | Security Impact |
+|------|-----------|-----------------|
+| `isTokenBlacklisted` (authMiddleware.js) | **FAIL CLOSED** ✅ | Returns `true` (deny access) when Redis unavailable |
+| `authLimiter` (rateLimiter.js) | **FAIL CLOSED** ✅ | `passOnStoreError: false` — propagates error |
+| `apiLimiter` (rateLimiter.js) | FAIL OPEN | Intended — general rate limit degrades gracefully |
+| `idempotency` (idempotency.js) | FAIL OPEN | Falls back to MongoDB, then proceeds without safety |
+| `blacklistToken` (auth.js) | FAIL OPEN | Mitigated: `isTokenBlacklisted` fails closed anyway |
+| `getCache/setCache` (6 files) | FAIL OPEN | Caching only — returns null, never throws |
+| `dagStream` (dagStream.js) | FAIL OPEN | Falls back to in-memory step tracking |
+
+**Verdict**: Both security-critical paths already fail closed correctly. No code fixes needed. 8/8 tests pass.
+
+### Phase 4 — Live Cluster Pod-Kill Recovery
+
+**NOT TESTED**. No Docker, no kubectl, and no live Kubernetes cluster available on this Windows development machine. No simulated or fabricated cluster output is provided.
+
+### Phase 5 — Test Count Summary
+
+| Test File | Tests | Pass | Fail |
+|-----------|-------|------|------|
+| `chaos.test.js` (rewritten) | 4 | 4 | 0 |
+| `midTransaction.test.js` (new) | 2 | 2 | 0 |
+| `redisFailClosed.test.js` (new) | 8 | 8 | 0 |
