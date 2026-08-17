@@ -178,3 +178,44 @@ Following the completion and independent verification of Phases 1 through 4, Wea
   1. Arbitrary dynamic code execution sandbox (all AI actions are strictly confined to the closed deterministic tool registry).
   2. Cross-network distributed multi-agent consensus protocols (orchestration is single-agent DAG and hierarchical planner).
 
+---
+
+## FinTech Correctness, Regulatory Versioning & Compliance Scope
+
+### 1. Jurisdiction & Instrument Scope Disclosures
+WealthGenie is purpose-built and scoped strictly to **Indian personal income tax and domestic retail investment instruments**:
+- **Tax Scope**: Indian Individual Income Tax under the Income Tax Act, 1961 (Salaried, Self-Employed, Capital Gains).
+  - *Explicitly Not Handled*: Corporate tax, Hindu Undivided Family (HUF) provisions, Non-Resident Indian (NRI) taxation / Double Tax Avoidance Agreements (DTAA), Virtual Digital Assets (VDA / Crypto 30% flat tax), and Futures & Options (F&O) business tax.
+- **Instrument Scope**: Indian retail savings and investment instruments:
+  - Small Savings: Public Provident Fund (PPF), Senior Citizens Savings Scheme (SCSS), Sukanya Samriddhi Yojana (SSY), National Savings Certificate (NSC), Post Office Deposits.
+  - Fixed Income & Sovereign: RBI Floating Rate Savings Bonds, Sovereign Gold Bonds (SGB), Gold ETFs, Bank Fixed Deposits (FD / RD), Corporate Bond Funds, Debt Mutual Funds, Target Maturity / Bharat Bond ETFs.
+  - Equities & Pensions: National Pension System (NPS Tier I & II), Voluntary Provident Fund (VPF), Large-Cap / Flexi-Cap / Multi-Cap / Mid-Cap / Small-Cap Mutual Funds, Index Funds / ETFs, ELSS (Tax Saver), and US Feeder ETFs via the RBI Liberalised Remittance Scheme (LRS).
+  - *Explicitly Not Handled*: Direct unlisted equities, private equity / venture debt, structured products / PMS, real estate fractional tokens, or exotic derivatives.
+
+### 2. "Compliance-Inspired Controls" vs. Regulatory Registration
+- **Algorithmic Guardrails**: WealthGenie incorporates mathematical and architectural controls directly inspired by SEBI (Investment Advisers) Regulations, 2013 and AMFI risk-o-meter categorizations:
+  - *Risk Capacity Reconciliation*: Automatically reconciles subjective risk tolerance with objective financial capacity, capping risk elevation at $\min(T, C+1)$ and forcing conservative allocations for senior citizens or low-emergency-fund profiles.
+  - *Multi-Instrument Concentration Caps*: Prevents concentration risk by enforcing strict aggregate asset-class caps (e.g. Small-Cap Mutual Funds $\le 15\%$, Mid-Cap $\le 20\%$, Gold/SGB $\le 10\%$) across multiple nominally distinct funds.
+  - *Immutable Advisory Audit Trail*: Records SHA-256 hashed audit records synchronously in MongoDB upon every recommendation generation (`AuditRecord.js`), capturing input hashes, model versions, regulatory rule versions, and cited regulatory chunks.
+- **Regulatory Registration Notice**: WealthGenie is an **educational technology and algorithmic decision-support project**, **NOT a SEBI-registered Investment Adviser (RIA)** or research analyst. All outputs are educational projections and algorithmic simulations, not certified financial advice.
+
+### 3. Active Statutory Tax Rules & Update Instructions
+- **Active Statutory Rule Version**: `REGULATORY_RULE_VERSION = 'FY2025-26-v1.0'`
+  - **Fiscal Year / Assessment Year**: **FY 2025-26 (AY 2026-27)**.
+  - **New Tax Regime (Section 115BAC)**: ₹0–4L: 0%, ₹4–8L: 5%, ₹8–12L: 10%, ₹12–16L: 15%, ₹16–20L: 20%, ₹20–24L: 25%, >₹24L: 30%. Standard deduction ₹75,000. Section 87A rebate up to ₹12,00,000 with statutory marginal relief.
+  - **Old Tax Regime**: ₹0–2.5L: 0%, ₹2.5–5L: 5%, ₹5–10L: 20%, >₹10L: 30%. Standard deduction ₹50,000. Section 87A rebate up to ₹5,00,000 (statutory cliff; no 87A marginal relief).
+  - **Capital Gains (Finance Act 2024 / 2025)**: Section 112A LTCG: 12.5% on gains exceeding ₹1,25,000; Section 111A STCG: 20%; Section 288A/288B rounding to nearest ₹10.
+- **Union Budget Update Protocol**:
+  When a new Union Budget is enacted:
+  1. Open [`server/services/taxEngine.js`](server/services/taxEngine.js):
+     - Update `STANDARD_NEW_SLABS` or `STANDARD_OLD_SLABS` arrays.
+     - Update standard deduction amounts in `calculateTaxableIncome`.
+     - Update Section 87A rebate limits in `computeTax`.
+     - Update `REGULATORY_RULE_VERSION` string (e.g. `'FY2026-27-v1.0'`).
+  2. Open [`server/services/instrumentConstants.js`](server/services/instrumentConstants.js):
+     - Update statutory tax rates (e.g. `CESS_RATE`, `LTCG_EQUITY_RATE`, `STCG_EQUITY_RATE`, `LTCG_EXEMPTION_LIMIT`).
+  3. Validate using Property Fuzzing and Exact Boundaries:
+     - Run `node --test server/test/taxEngineFuzz.test.js` (exercises 7 statutory properties across 7,000+ generated income points).
+     - Run `node --test server/test/taxBoundary.test.js` (exercises exact rupee threshold boundaries).
+
+

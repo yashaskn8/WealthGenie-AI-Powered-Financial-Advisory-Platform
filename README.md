@@ -47,7 +47,7 @@
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
 | **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | `investment_master.json` (155 instruments) |
 | **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
-| **Testing & CI/CD** | 26 Node.js test suites (384 assertions) + 223 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
+| **Testing & CI/CD** | 26 Node.js test suites (404 assertions) + 223 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 
@@ -351,7 +351,7 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 │   ├── models/                    # Mongoose Schemas (User, Profile, Recommendation, AuditRecord)
 │   ├── routes/                    # REST Endpoints (recommend, tax, profile, chat, etc.)
 │   ├── services/                  # RecommendationPipeline, TaxEngine, GeminiChatService
-│   └── test/                      # 49 Node.js test suites (366 tests)
+│   └── test/                      # 26 Node.js test suites (404 tests)
 ├── ml-service/                    # FastAPI Machine Learning Microservice
 │   ├── main.py                    # FastAPI routes (/predict, /rag/query, /health)
 │   ├── tracing.py                 # OpenTelemetry instrumentation & FileSpanExporter
@@ -366,19 +366,20 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 
 ---
 
-## Limitations & Disclosures
+## Limitations, Regulatory Disclosures & Jurisdictional Scope
 
-1. **Local Load Test Disclosure**: Load test benchmarks were conducted on a single host (`localhost:5000` / `127.0.0.1:8000`). They measure single-node event loop throughput and microservice latency, not multi-region cloud network conditions.
-2. **Fine-Tuning Scope**: LoRA/QLoRA LLM fine-tuning pipelines are defined in code interfaces but were deferred due to CPU compute constraints during evaluation. Base `Qwen/Qwen2.5-0.5B-Instruct` was used for LLM evaluation.
-3. **Computer Vision**: The platform intentionally focuses on tabular ML, text RAG, and financial tax algorithms. Computer vision (VLM) is explicitly out of scope.
-4. **WTI Endpoint Split**: `POST /api/instruments/rank-wti` is an intentional server-side API path for potential external consumers; the client React app uses `wtiGenerator.js` (`rankWhereToInvest()`) with catalog risk input for UI candidate ranking.
-5. **Benchmark Sourcing & Independent Evaluation**: The 97.05% (FT-Transformer) and 95.63% (Random Forest) test metrics represent rule-approximation fidelity against synthetic baseline allocations. When evaluated against independent Certified Financial Planner (CFP) benchmark profiles, real-world agreement rates are **15.83%** for FT-Transformer and **25.26%** for Random Forest.
-
-
-6. **In-Memory Vector Search**: MongoDB 7.0 Community Edition does not support Atlas Vector Search. Chunks and embeddings are persisted in MongoDB for cross-replica sharing, but vector similarity search executes in-memory via FAISS/NumPy after loading vectors from Mongo on startup.
-7. **Per-Replica Memory Scaling**: Because vector search runs in-memory, each ML service replica loads the complete embedding matrix into local RAM. Memory consumption scales linearly with $N_{\text{replicas}} \times N_{\text{chunks}}$.
-8. **DAG Crash Resume Scope**: Redis Streams step persistence allows resuming a deterministic multi-step agent DAG from the last completed step index. External non-deterministic side-effects without compensating transactions are not managed by a distributed saga orchestrator.
-9. **Rate Limiter Degrade Behavior**: `authLimiter` strictly fails closed (`passOnStoreError: false`), but `apiLimiter` falls back to in-memory `Map` counters if Redis disconnects, multiplying effective rate limits across independent replicas during an outage.
+1. **Jurisdiction & Tax Scope**: Scoped strictly to Indian individual personal income tax (Income Tax Act, 1961) and retail investment instruments (PPF, SCSS, SSY, NPS, SGB, Mutual Funds, ETFs, FD). Does not support corporate taxation, HUF, NRI/DTAA provisions, crypto (VDA), or derivative trading (F&O).
+2. **"Compliance-Inspired Controls" vs. Regulatory Registration**: WealthGenie applies algorithmic principles inspired by SEBI (Investment Advisers) Regulations, 2013 (risk capacity reconciliation, multi-instrument concentration caps, immutable SHA-256 audit trails) and AMFI risk-o-meter classifications. WealthGenie is an educational research and decision-support platform, **NOT a SEBI-registered Investment Adviser (RIA)**. All outputs are educational projections, not certified investment advice.
+3. **Statutory Tax Versioning (`FY2025-26-v1.0`)**: Tax engine reflects FY 2025-26 (AY 2026-27) slabs under Finance Act 2024 / 2025 revisions, including Section 87A rebate (₹12L New Regime with statutory marginal relief vs ₹5L Old Regime statutory cliff), Section 112A LTCG 12.5% rate (>₹1.25L exemption), and Section 288A/288B rounding conventions. When new budgets are announced, update `server/services/taxEngine.js` and bump `REGULATORY_RULE_VERSION`.
+4. **Local Load Test Disclosure**: Load test benchmarks were conducted on a single host (`localhost:5000` / `127.0.0.1:8000`). They measure single-node event loop throughput and microservice latency, not multi-region cloud network conditions.
+5. **Fine-Tuning Scope**: LoRA/QLoRA LLM fine-tuning pipelines are defined in code interfaces but were deferred due to CPU compute constraints during evaluation. Base `Qwen/Qwen2.5-0.5B-Instruct` was used for LLM evaluation.
+6. **Computer Vision**: The platform intentionally focuses on tabular ML, text RAG, and financial tax algorithms. Computer vision (VLM) is explicitly out of scope.
+7. **WTI Endpoint Split**: `POST /api/instruments/rank-wti` is an intentional server-side API path for potential external consumers; the client React app uses `wtiGenerator.js` (`rankWhereToInvest()`) with catalog risk input for UI candidate ranking.
+8. **Benchmark Sourcing & Independent Evaluation**: The 97.05% (FT-Transformer) and 95.63% (Random Forest) test metrics represent rule-approximation fidelity against synthetic baseline allocations. When evaluated against independent Certified Financial Planner (CFP) benchmark profiles, real-world agreement rates are **15.83%** for FT-Transformer and **25.26%** for Random Forest.
+9. **In-Memory Vector Search**: MongoDB 7.0 Community Edition does not support Atlas Vector Search. Chunks and embeddings are persisted in MongoDB for cross-replica sharing, but vector similarity search executes in-memory via FAISS/NumPy after loading vectors from Mongo on startup.
+10. **Per-Replica Memory Scaling**: Because vector search runs in-memory, each ML service replica loads the complete embedding matrix into local RAM. Memory consumption scales linearly with $N_{\text{replicas}} \times N_{\text{chunks}}$.
+11. **DAG Crash Resume Scope**: Redis Streams step persistence allows resuming a deterministic multi-step agent DAG from the last completed step index. External non-deterministic side-effects without compensating transactions are not managed by a distributed saga orchestrator.
+12. **Rate Limiter Degrade Behavior**: `authLimiter` strictly fails closed (`passOnStoreError: false`), but `apiLimiter` falls back to in-memory `Map` counters if Redis disconnects, multiplying effective rate limits across independent replicas during an outage.
 
 ---
 
