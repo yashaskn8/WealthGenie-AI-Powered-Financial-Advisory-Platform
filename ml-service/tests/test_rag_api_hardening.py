@@ -3,15 +3,20 @@ WealthGenie RAG Subsystem - API Hardening Test Suite
 Tests security headers, sliding window rate limiting, input validation rules, and error payloads.
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from main import app
 from rag.router import _RATE_LIMIT_STORE
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    with TestClient(app, headers={"X-API-Key": api_key}) as c:
+        yield c
 
 
-def test_api_security_headers():
+def test_api_security_headers(client):
     response = client.get("/rag/health")
     assert response.status_code == 200
     assert response.headers.get("X-Content-Type-Options") == "nosniff"
@@ -19,7 +24,7 @@ def test_api_security_headers():
     assert response.headers.get("X-XSS-Protection") == "1; mode=block"
 
 
-def test_short_content_input_validation():
+def test_short_content_input_validation(client):
     payload = {
         "title": "Short Doc",
         "content": "too short",  # <10 chars
@@ -29,7 +34,7 @@ def test_short_content_input_validation():
     assert response.status_code == 422  # Unprocessable Entity Pydantic validation
 
 
-def test_rate_limiting_enforcement():
+def test_rate_limiting_enforcement(client):
     # Clear rate limit store
     _RATE_LIMIT_STORE.clear()
 

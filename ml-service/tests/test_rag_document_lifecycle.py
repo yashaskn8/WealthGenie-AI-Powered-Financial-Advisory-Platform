@@ -3,13 +3,19 @@ WealthGenie RAG Subsystem - Document Lifecycle Manager Test Suite
 Tests document registration, soft deletion, hard deletion, metadata update, and FastAPI router integration.
 """
 
+import os
+import pytest
 from fastapi.testclient import TestClient
 from main import app
 from rag.lifecycle.manager import DocumentLifecycleManager
 from rag.schema import Document, DocumentMetadata, TextChunk, ChunkMetadata
 from rag.vector_store.memory_vector_store import PersistentVectorStore
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    with TestClient(app, headers={"X-API-Key": api_key}) as c:
+        yield c
 
 
 def test_document_lifecycle_registration_and_soft_delete(tmp_path):
@@ -81,7 +87,7 @@ def test_document_metadata_update(tmp_path):
     assert store._chunks[0].metadata.title == "New Tax Guide Title"
 
 
-def test_fastapi_document_endpoints():
+def test_fastapi_document_endpoints(client):
     res = client.get("/rag/documents")
     assert res.status_code == 200
     assert "documents" in res.json()

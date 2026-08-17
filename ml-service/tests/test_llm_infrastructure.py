@@ -3,6 +3,7 @@ WealthGenie Production Open-Weight LLM Platform - Infrastructure Test Suite (Pha
 Tests LLMConfig, Providers (Mock, API, HF), Local Loader, Model Registry, and FastAPI endpoints.
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from main import app
@@ -14,7 +15,11 @@ from llm.providers.mock_provider import MockLLMProvider
 from llm.registry import LLMModelRegistry, llm_registry
 from llm.schema import LLMGenerateRequest, LLMProviderType
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    with TestClient(app, headers={"X-API-Key": api_key}) as c:
+        yield c
 
 
 def test_llm_config_defaults_and_env(monkeypatch):
@@ -97,7 +102,7 @@ def test_llm_model_registry():
     assert len(models_list) >= 2
 
 
-def test_fastapi_llm_endpoints():
+def test_fastapi_llm_endpoints(client):
     # Health endpoint
     res_health = client.get("/llm/health")
     assert res_health.status_code == 200

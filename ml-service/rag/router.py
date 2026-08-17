@@ -6,7 +6,7 @@ Exposes enterprise RAG endpoints with rate-limiting, error handling, security he
 import logging
 import time
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
 from rag.config import RAGConfig
@@ -14,10 +14,11 @@ from rag.ingestion.pipeline import IngestionPipeline
 from rag.lifecycle.manager import DocumentLifecycleManager
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest, RAGQueryResponse
+from security import verify_api_key
 
 logger = logging.getLogger("wealthgenie.rag.router")
 
-rag_router = APIRouter(prefix="/rag", tags=["Retrieval-Augmented Generation"])
+rag_router = APIRouter(prefix="/rag", tags=["Retrieval-Augmented Generation"], dependencies=[Depends(verify_api_key)])
 
 # Instantiate RAG Subsystem instances
 rag_config = RAGConfig()

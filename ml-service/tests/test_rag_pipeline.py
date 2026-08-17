@@ -21,9 +21,14 @@ from rag.ingestion.pipeline import IngestionPipeline
 from rag.retrieval.pipeline import RAGPipeline
 from rag.prompts.builder import PromptBuilder
 from rag.citations.engine import CitationEngine
+import os
 from main import app
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    with TestClient(app, headers={"X-API-Key": api_key}) as c:
+        yield c
 
 
 def test_document_loader():
@@ -116,7 +121,7 @@ def test_ingestion_and_rag_pipeline(tmp_path):
     assert "Tax Rebates 2025" in response.citations[0].document_title
 
 
-def test_fastapi_rag_endpoints():
+def test_fastapi_rag_endpoints(client):
     # 1. Health Probe
     res_health = client.get("/rag/health")
     assert res_health.status_code == 200

@@ -5,7 +5,7 @@ Exposes dedicated endpoints (/llm/generate, /llm/rag-query, /llm/batch-generate,
 
 import logging
 from typing import Dict, Any, List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from llm.config import LLMConfig
@@ -14,10 +14,11 @@ from llm.inference.tools import ToolCallingEngine
 from llm.registry import llm_registry
 from llm.schema import LLMGenerateRequest, LLMGenerateResponse, LLMMetadata
 from rag.schema import RAGQueryRequest, RAGQueryResponse
+from security import verify_api_key
 
 logger = logging.getLogger("wealthgenie.llm.router")
 
-llm_router = APIRouter(prefix="/llm", tags=["Open-Weight LLM Platform"])
+llm_router = APIRouter(prefix="/llm", tags=["Open-Weight LLM Platform"], dependencies=[Depends(verify_api_key)])
 llm_config = LLMConfig.from_env()
 tool_engine = ToolCallingEngine()
 rag_llm_pipeline = RAGLLMPipeline(model_registry=llm_registry)
