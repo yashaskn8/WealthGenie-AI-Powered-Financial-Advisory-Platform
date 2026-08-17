@@ -6,6 +6,7 @@ Provides API key extraction, validation, and constant-time authentication depend
 import hmac
 import logging
 import os
+from typing import Optional
 from fastapi import HTTPException, Security, status
 from fastapi.security.api_key import APIKeyHeader
 
@@ -13,6 +14,9 @@ logger = logging.getLogger("wealthgenie.security")
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+VERIFIED_USER_HEADER = "X-Verified-User-Id"
+verified_user_header = APIKeyHeader(name=VERIFIED_USER_HEADER, auto_error=False)
 
 
 async def verify_api_key(api_key: str = Security(api_key_header)) -> str:
@@ -37,3 +41,20 @@ async def verify_api_key(api_key: str = Security(api_key_header)) -> str:
             detail="Invalid or missing API Key"
         )
     return api_key
+
+
+async def verify_verified_user_id(
+    user_id: Optional[str] = Security(verified_user_header)
+) -> str:
+    """Extract and validate the trusted X-Verified-User-Id downstream header.
+
+    Rejects requests missing the header with 401 Unauthorized to ensure
+    all user-scoped operations are bound to a verified identity propagated
+    by the upstream gateway/Express backend.
+    """
+    if not user_id or not user_id.strip():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or empty X-Verified-User-Id header"
+        )
+    return user_id.strip()

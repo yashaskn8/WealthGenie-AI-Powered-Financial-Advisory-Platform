@@ -19,7 +19,7 @@ def ensure_auth_environment(monkeypatch):
 
 
 # ==============================================================================
-# 1. RAG ROUTER AUTHENTICATION TESTS (Anonymous Rejection & Valid Key Acceptance)
+# 1. RAG ROUTER AUTHENTICATION & IDENTITY VERIFICATION TESTS
 # ==============================================================================
 
 def test_rag_index_rejects_unauthenticated_request():
@@ -35,12 +35,35 @@ def test_rag_index_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
+def test_rag_index_rejects_valid_api_key_without_verified_user_header():
+    """POST /rag/index MUST return 401 when called with valid X-API-Key but missing X-Verified-User-Id."""
+    headers = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers) as client:
+        payload = {
+            "title": "Unauthenticated User Document",
+            "content": "Financial advisory document with valid service key but no user identity header.",
+            "source": "test_source",
+        }
+        res = client.post("/rag/index", json=payload)
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert "X-Verified-User-Id" in res.json()["detail"]
+
+
 def test_rag_query_rejects_unauthenticated_request():
     """POST /rag/query MUST return 401 when called anonymously without X-API-Key."""
     with TestClient(app) as client:
         res = client.post("/rag/query", json={"question": "What are Section 80C limits?"})
         assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
         assert res.json()["detail"] == "Invalid or missing API Key"
+
+
+def test_rag_query_rejects_valid_api_key_without_verified_user_header():
+    """POST /rag/query MUST return 401 when called with valid X-API-Key but missing X-Verified-User-Id."""
+    headers = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/rag/query", json={"question": "What are Section 80C limits?"})
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert "X-Verified-User-Id" in res.json()["detail"]
 
 
 def test_rag_documents_delete_rejects_unauthenticated_request():
@@ -59,28 +82,31 @@ def test_rag_documents_put_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
-def test_rag_routes_succeed_with_valid_api_key():
-    """RAG routes MUST succeed when provided with a valid X-API-Key header."""
-    headers = {"X-API-Key": API_KEY}
+def test_rag_routes_succeed_with_valid_api_key_and_verified_user_header():
+    """RAG routes MUST succeed when provided with valid X-API-Key and X-Verified-User-Id headers."""
+    headers = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Id": "user_verified_live_001",
+    }
     with TestClient(app, headers=headers) as client:
-        # Health
+        # Health (unscoped)
         res_health = client.get("/rag/health")
         assert res_health.status_code == 200
         assert res_health.json()["status"] == "ok"
 
-        # Status
+        # Status (unscoped)
         res_status = client.get("/rag/status")
         assert res_status.status_code == 200
         assert "vector_store_stats" in res_status.json()
 
-        # Documents list
+        # Documents list (requires verified user)
         res_docs = client.get("/rag/documents")
         assert res_docs.status_code == 200
         assert "documents" in res_docs.json()
 
 
 # ==============================================================================
-# 2. LLM ROUTER AUTHENTICATION TESTS (Anonymous Rejection & Valid Key Acceptance)
+# 2. LLM ROUTER AUTHENTICATION & IDENTITY VERIFICATION TESTS
 # ==============================================================================
 
 def test_llm_generate_rejects_unauthenticated_request():
@@ -91,6 +117,15 @@ def test_llm_generate_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
+def test_llm_generate_rejects_valid_api_key_without_verified_user_header():
+    """POST /llm/generate MUST return 401 when called with valid X-API-Key but missing X-Verified-User-Id."""
+    headers = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/llm/generate", json={"prompt": "Generate unauthorized advice."})
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert "X-Verified-User-Id" in res.json()["detail"]
+
+
 def test_llm_batch_generate_rejects_unauthenticated_request():
     """POST /llm/batch-generate MUST return 401 when called anonymously without X-API-Key."""
     with TestClient(app) as client:
@@ -99,12 +134,30 @@ def test_llm_batch_generate_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
+def test_llm_batch_generate_rejects_valid_api_key_without_verified_user_header():
+    """POST /llm/batch-generate MUST return 401 when called with valid X-API-Key but missing X-Verified-User-Id."""
+    headers = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/llm/batch-generate", json=[{"prompt": "Query 1"}, {"prompt": "Query 2"}])
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert "X-Verified-User-Id" in res.json()["detail"]
+
+
 def test_llm_rag_query_rejects_unauthenticated_request():
     """POST /llm/rag-query MUST return 401 when called anonymously without X-API-Key."""
     with TestClient(app) as client:
         res = client.post("/llm/rag-query", json={"question": "What is Section 87A?"})
         assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
         assert res.json()["detail"] == "Invalid or missing API Key"
+
+
+def test_llm_rag_query_rejects_valid_api_key_without_verified_user_header():
+    """POST /llm/rag-query MUST return 401 when called with valid X-API-Key but missing X-Verified-User-Id."""
+    headers = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/llm/rag-query", json={"question": "What is Section 87A?"})
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert "X-Verified-User-Id" in res.json()["detail"]
 
 
 def test_llm_tool_query_rejects_unauthenticated_request():
@@ -123,9 +176,12 @@ def test_llm_switch_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
-def test_llm_routes_succeed_with_valid_api_key():
-    """LLM routes MUST succeed when provided with a valid X-API-Key header."""
-    headers = {"X-API-Key": API_KEY}
+def test_llm_routes_succeed_with_valid_api_key_and_verified_user_header():
+    """LLM routes MUST succeed when provided with valid X-API-Key and X-Verified-User-Id headers."""
+    headers = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Id": "user_verified_live_001",
+    }
     with TestClient(app, headers=headers) as client:
         # Health
         res_health = client.get("/llm/health")
@@ -149,7 +205,10 @@ def test_llm_routes_succeed_with_valid_api_key():
 
 def test_invalid_api_key_rejected_on_all_subsystems():
     """Invalid API key must return 401 on /rag, /llm, and /model/registry."""
-    bad_headers = {"X-API-Key": "invalid_random_attacker_key_123"}
+    bad_headers = {
+        "X-API-Key": "invalid_random_attacker_key_123",
+        "X-Verified-User-Id": "user_123",
+    }
     with TestClient(app, headers=bad_headers) as client:
         assert client.post("/rag/query", json={"question": "test"}).status_code == 401
         assert client.post("/llm/generate", json={"prompt": "test"}).status_code == 401
@@ -161,7 +220,8 @@ def test_fail_closed_when_api_key_unset_in_production(monkeypatch):
     monkeypatch.delenv("ML_SERVICE_API_KEY", raising=False)
     monkeypatch.setenv("ENVIRONMENT", "production")
 
-    with TestClient(app) as client:
+    headers = {"X-Verified-User-Id": "user_123"}
+    with TestClient(app, headers=headers) as client:
         res_rag = client.post("/rag/query", json={"question": "test"})
         assert res_rag.status_code == 500
         assert "Server Misconfiguration" in res_rag.json()["detail"]
@@ -172,28 +232,58 @@ def test_fail_closed_when_api_key_unset_in_production(monkeypatch):
 
 
 # ==============================================================================
-# 4. TASK 2 — TENANT & USER SCOPE TRUST AUDIT
+# 4. TASK 2 & 3 PROOFS — VERIFIED IDENTITY HEADER SCOPING & BODY OVERRIDE
 # ==============================================================================
 
-def test_task2_tenant_id_in_request_body_audit():
+def test_header_user_id_wins_and_ignores_conflicting_body_fields():
     """
-    Documents the Task 2 finding:
-    IngestTextRequest accepts `tenant_id` and `user_id` as unverified body fields.
-    With a valid service API key, any caller can submit an arbitrary tenant_id.
+    PROOFS:
+    1. Valid API Key + X-Verified-User-Id header succeeds.
+    2. Body-supplied forged user_id and tenant_id are STRICTLY IGNORED.
+    3. Document is stored and retrieved strictly under the header's verified user identity.
+    4. Forged identity cannot access the document.
     """
-    headers = {"X-API-Key": API_KEY}
-    with TestClient(app, headers=headers) as client:
+    legitimate_user_id = "user_legitimate_alice_777"
+    forged_attacker_user_id = "user_attacker_eve_999"
+    forged_tenant_id = "tenant_spoofed_corp_888"
+
+    headers_alice = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Id": legitimate_user_id,
+    }
+
+    with TestClient(app, headers=headers_alice) as client_alice:
         payload = {
-            "title": "Tenant Boundary Audit Document",
-            "content": "Tenant scoped financial advisory document for tenant isolation verification.",
-            "source": "audit_test",
-            "tenant_id": "arbitrary_unverified_tenant_xyz",
-            "user_id": "arbitrary_unverified_user_999",
+            "title": "Alice Confidential Portfolio Plan",
+            "content": "Alice's proprietary investment advisory notes for tax year 2025-26 under Section 80C.",
+            "source": "api_test",
+            "user_id": forged_attacker_user_id,    # Attacker tries to inject Eve's user_id in body
+            "tenant_id": forged_tenant_id,          # Attacker tries to inject spoofed tenant in body
+            "scope": f"user:{forged_attacker_user_id}",
         }
-        res = client.post("/rag/index", json=payload)
-        # Succeeded because service API key authenticated the caller, but tenant_id is caller-declared
-        assert res.status_code == 200
-        assert res.json()["status"] == "success"
-        res_data = res.json()["ingestion_result"]
-        assert res_data["status"] == "success"
-        assert res_data["chunks_created"] > 0
+
+        # Ingest document
+        res_ingest = client_alice.post("/rag/index", json=payload)
+        assert res_ingest.status_code == 200, f"Expected 200 OK, got {res_ingest.status_code}: {res_ingest.text}"
+        assert res_ingest.json()["status"] == "success"
+
+        # Query as Alice — should successfully find Alice's document
+        res_query_alice = client_alice.post("/rag/query", json={"question": "Alice Confidential Portfolio Plan"})
+        assert res_query_alice.status_code == 200
+        answer_alice = res_query_alice.json()["answer"]
+        assert len(answer_alice) > 0
+
+    # Query as Eve (using Eve's verified header) — must NOT access Alice's document
+    headers_eve = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Id": forged_attacker_user_id,
+    }
+    with TestClient(app, headers=headers_eve) as client_eve:
+        res_query_eve = client_eve.post("/rag/query", json={"question": "Alice Confidential Portfolio Plan"})
+        assert res_query_eve.status_code == 200
+        # Eve's retrieved chunks must not contain Alice's scoped chunk
+        chunks_eve = res_query_eve.json().get("retrieved_chunks", [])
+        for c in chunks_eve:
+            assert c["chunk"]["metadata"]["title"] != "Alice Confidential Portfolio Plan", \
+                "Security Breach: Eve retrieved Alice's user-scoped document!"
+

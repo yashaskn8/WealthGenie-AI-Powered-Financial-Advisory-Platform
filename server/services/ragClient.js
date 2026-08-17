@@ -50,11 +50,11 @@ function recordFailure() {
 /**
  * Executes grounded RAG retrieval & answer synthesis against FastAPI /rag/query.
  * 
- * @param {Object} params - { query, top_k, threshold, tenant_id }
+ * @param {Object} params - { query, top_k, threshold, userId }
  * @param {string|null} correlationId - Optional correlation ID for tracing
  * @returns {Promise<Object|null>} Grounded RAG query response or null on failure
  */
-export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 'default' }, correlationId = null) {
+export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = null }, correlationId = null) {
   if (!query || typeof query !== 'string' || !query.trim()) {
     return null;
   }
@@ -73,13 +73,13 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, tenant_id = 
         question: query.trim(),
         top_k: Number(top_k) || 4,
         threshold: Number(threshold) || 0.0,
-        tenant_id,
       },
       {
         timeout: RAG_TIMEOUT_MS,
         headers: {
           'Content-Type': 'application/json',
           ...(apiKey ? { 'X-API-Key': apiKey } : {}),
+          ...(userId ? { 'X-Verified-User-Id': String(userId) } : {}),
           ...getTracingHeaders(correlationId),
         },
       }

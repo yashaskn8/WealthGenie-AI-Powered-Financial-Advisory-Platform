@@ -14,7 +14,7 @@ from llm.inference.tools import ToolCallingEngine
 from llm.registry import llm_registry
 from llm.schema import LLMGenerateRequest, LLMGenerateResponse, LLMMetadata
 from rag.schema import RAGQueryRequest, RAGQueryResponse
-from security import verify_api_key
+from security import verify_api_key, verify_verified_user_id
 
 logger = logging.getLogger("wealthgenie.llm.router")
 
@@ -69,11 +69,15 @@ def list_models():
 
 
 @llm_router.post("/generate", response_model=LLMGenerateResponse)
-def generate_text(request: LLMGenerateRequest):
+def generate_text(
+    request: LLMGenerateRequest,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """
     Generates text using the currently active Open-Weight LLM provider.
-    Returns generated text, token counts, and execution latency.
+    Scoped strictly to the verified_user_id from X-Verified-User-Id header.
     """
+    request.tenant_id = verified_user_id
     try:
         provider = llm_registry.get_active_provider()
         return provider.generate(request)
@@ -83,10 +87,15 @@ def generate_text(request: LLMGenerateRequest):
 
 
 @llm_router.post("/batch-generate")
-def batch_generate(requests: List[LLMGenerateRequest]):
+def batch_generate(
+    requests: List[LLMGenerateRequest],
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """Runs batch inference generation across multiple LLM requests."""
     try:
         provider = llm_registry.get_active_provider()
+        for req in requests:
+            req.tenant_id = verified_user_id
         responses = [provider.generate(req) for req in requests]
         return {"batch_count": len(responses), "responses": [r.model_dump() for r in responses]}
     except Exception as e:
@@ -95,8 +104,14 @@ def batch_generate(requests: List[LLMGenerateRequest]):
 
 
 @llm_router.post("/rag-query", response_model=RAGQueryResponse)
-def rag_llm_query(request: RAGQueryRequest):
+def rag_llm_query(
+    request: RAGQueryRequest,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """Executes hybrid RAG retrieval combined with Open-Weight LLM answer synthesis."""
+    request.user_id = verified_user_id
+    request.scope = f"user:{verified_user_id}"
+    request.tenant_id = "default"
     try:
         return rag_llm_pipeline.query(request)
     except Exception as e:
@@ -105,7 +120,10 @@ def rag_llm_query(request: RAGQueryRequest):
 
 
 @llm_router.post("/tool-query")
-def tool_query(request: ToolQueryRequest):
+def tool_query(
+    request: ToolQueryRequest,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """Executes financial calculator tools (calculate_sip, calculate_cagr, calculate_tax_rebate)."""
     res = tool_engine.execute_tool(request.tool_name, request.arguments)
     if not res.success:

@@ -58,7 +58,7 @@ function hasUsablePrediction(result) {
     .some(pick => typeof pick === 'string' && pick.trim().length > 0);
 }
 
-export async function getMLPrediction(profileData, correlationId = null) {
+export async function getMLPrediction(profileData, correlationId = null, userId = null) {
   if (!isCircuitHealthy()) {
     console.warn('[MLClient] Circuit breaker OPEN — fast-failing to rule-based fallback.');
     return getRuleBasedFallback(profileData);
@@ -77,6 +77,8 @@ export async function getMLPrediction(profileData, correlationId = null) {
     console.info('[MLClient] Profile missing new fields. Routing through rule-based fallback to preserve backward compatibility.');
     return getRuleBasedFallback(profileData);
   }
+
+  const effectiveUserId = userId || profileData.userId;
 
   try {
     const mlEndpoint = process.env.ML_MODEL_ENDPOINT || '/predict/enriched';
@@ -97,6 +99,7 @@ export async function getMLPrediction(profileData, correlationId = null) {
       timeout: ML_TIMEOUT_MS,
       headers: {
         ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
+        ...(effectiveUserId ? { 'X-Verified-User-Id': String(effectiveUserId) } : {}),
         ...getTracingHeaders(correlationId),
       }
     });

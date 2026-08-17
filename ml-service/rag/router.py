@@ -14,7 +14,7 @@ from rag.ingestion.pipeline import IngestionPipeline
 from rag.lifecycle.manager import DocumentLifecycleManager
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest, RAGQueryResponse
-from security import verify_api_key
+from security import verify_api_key, verify_verified_user_id
 
 logger = logging.getLogger("wealthgenie.rag.router")
 
@@ -61,9 +61,9 @@ class IngestTextRequest(BaseModel):
     content: str = Field(..., min_length=10, description="Raw text content to ingest")
     source: str = Field("api_input", description="Source identifier")
     author: Optional[str] = Field("Financial Authority", description="Author")
-    tenant_id: str = Field("default", description="Tenant isolation scope")
-    scope: Optional[str] = Field(None, description="Scope identifier: 'global' or 'user:{user_id}'")
-    user_id: Optional[str] = Field(None, description="User ID if user-scoped document")
+    tenant_id: Optional[str] = Field(None, description="Deprecated/Ignored - Tenant scope derived from verified header")
+    scope: Optional[str] = Field(None, description="Deprecated/Ignored - Scope derived from verified header")
+    user_id: Optional[str] = Field(None, description="Deprecated/Ignored - User ID derived from verified header")
 
 
 @rag_router.get("/health")
@@ -94,13 +94,23 @@ def rag_status():
 
 
 @rag_router.post("/query", response_model=RAGQueryResponse)
-def query_rag(request: RAGQueryRequest, req: Request):
+def query_rag(
+    request: RAGQueryRequest,
+    req: Request,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """
     Executes grounded RAG query search over authoritative knowledge base.
-    Returns answer, citations, evidence chunks, and timing metrics.
+    Scoped strictly to the verified_user_id extracted from X-Verified-User-Id header.
+    Any user_id or tenant_id provided in the request body is strictly ignored.
     """
     client_ip = req.client.host if req.client else "127.0.0.1"
     check_rate_limit(client_ip)
+
+    # SECURITY: Overwrite any client-supplied identity with verified header identity
+    request.user_id = verified_user_id
+    request.scope = f"user:{verified_user_id}"
+    request.tenant_id = "default"
 
     try:
         return query_pipeline.query(request)
@@ -110,22 +120,29 @@ def query_rag(request: RAGQueryRequest, req: Request):
 
 
 @rag_router.post("/index")
-def index_document(request: IngestTextRequest, req: Request):
+def index_document(
+    request: IngestTextRequest,
+    req: Request,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """
     Ingests text document into vector store index incrementally.
+    Scoped strictly to the verified_user_id extracted from X-Verified-User-Id header.
+    Any user_id or tenant_id provided in the request body is strictly ignored.
     """
     client_ip = req.client.host if req.client else "127.0.0.1"
     check_rate_limit(client_ip)
 
     try:
+        # SECURITY: Identity is bound strictly to the verified header, ignoring body fields
         res = ingestion_pipeline.ingest_text(
             text=request.content,
             title=request.title,
             source=request.source,
             author=request.author,
-            tenant_id=request.tenant_id,
-            user_id=request.user_id,
-            scope=request.scope,
+            tenant_id="default",
+            user_id=verified_user_id,
+            scope=f"user:{verified_user_id}",
             manual_override=True,
         )
         return {"status": "success", "ingestion_result": res}
@@ -135,13 +152,20 @@ def index_document(request: IngestTextRequest, req: Request):
 
 
 @rag_router.get("/documents")
-def list_documents(include_inactive: bool = False):
+def list_documents(
+    include_inactive: bool = False,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """Lists all registered documents in the knowledge base."""
     return {"documents": lifecycle_manager.list_documents(include_inactive=include_inactive)}
 
 
 @rag_router.delete("/documents/{doc_id}")
-def delete_document(doc_id: str, hard_delete: bool = True):
+def delete_document(
+    doc_id: str,
+    hard_delete: bool = True,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """Deletes or soft-deletes a document and purges vector index chunks."""
     if hard_delete:
         success = lifecycle_manager.hard_delete_document(doc_id)
@@ -154,7 +178,12 @@ def delete_document(doc_id: str, hard_delete: bool = True):
 
 
 @rag_router.put("/documents/{doc_id}")
-def update_document(doc_id: str, title: Optional[str] = None, author: Optional[str] = None):
+def update_document(
+    doc_id: str,
+    title: Optional[str] = None,
+    author: Optional[str] = None,
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
     """Updates metadata across document registry and vector store chunks."""
     success = lifecycle_manager.update_metadata(doc_id, new_title=title, new_author=author)
     if not success:

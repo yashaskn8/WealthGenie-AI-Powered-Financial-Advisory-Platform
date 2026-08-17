@@ -103,7 +103,7 @@ export async function processChat({ userId, user, message, sessionId }) {
   // ── Phase 1 Architecture Truth: Hybrid RAG Routing for Factual/Regulatory Queries ──
   if (isFactualQuery(message)) {
     console.info(`[Chat] Message classified as factual/regulatory. Routing to FastAPI RAG service: "${message.substring(0, 60)}..."`);
-    const ragResult = await queryRAG({ query: securityContext.sanitizedMessage });
+    const ragResult = await queryRAG({ query: securityContext.sanitizedMessage, userId });
     if (ragResult && ragResult.answer) {
       console.info(`[Chat] RAG retrieval successful (${ragResult.citations?.length || 0} citations). Returning grounded response.`);
 

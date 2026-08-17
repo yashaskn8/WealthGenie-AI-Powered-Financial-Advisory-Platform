@@ -9,6 +9,7 @@ import { buildSystemPrompt } from '../services/genieChatSystemPrompt.js';
 import { INSTRUMENT_PARAMS, buildRateLookup, getNominalRate, getVolatility, toMonthlyRate, updateLiveParam } from '../services/instrumentConstants.js';
 import { fetchIndexStatistics, fetchMutualFundNAVs, checkFDRateStaleness } from '../services/marketDataService.js';
 import { checkMLHealth, getMLPrediction, getRuleBasedFallback } from '../services/mlClient.js';
+import { queryRAG } from '../services/ragClient.js';
 import { computeCAGR, generateProjections, lumpSumFV, realReturn, reverseSIPFromFV, sipFV, stepUpSipFV } from '../services/projectionEngine.js';
 import { calculatePostTaxReturn, calculatePostTaxReturnSafe } from '../services/postTaxCalculator.js';
 import { encodeRiskCategory, getRiskProfile } from '../services/riskProfiler.js';
@@ -237,5 +238,56 @@ test('postTaxCalculator respects EEE exemptions and taxable instruments', () => 
   assert.equal(ppf.postTaxReturn, 0.071);
   assert.ok(fd.postTaxReturn < 0.07);
   assert.ok(Number.isFinite(invalid.postTaxReturn));
+});
+
+test('ragClient and mlClient propagate verified X-Verified-User-Id header downstream', async (t) => {
+  const originalPost = axios.post;
+  let ragCapturedHeaders = null;
+  let ragCapturedBody = null;
+  let mlCapturedHeaders = null;
+
+  axios.post = async (url, payload, config) => {
+    if (url.includes('/rag/query')) {
+      ragCapturedHeaders = config?.headers;
+      ragCapturedBody = payload;
+      return { status: 200, data: { answer: 'Grounded tax advice', citations: [] } };
+    }
+    if (url.includes('/predict')) {
+      mlCapturedHeaders = config?.headers;
+      return { data: { primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS', confidence_scores: { ETF: 0.7 } } };
+    }
+    return { data: {} };
+  };
+
+  t.after(() => { axios.post = originalPost; });
+
+  const testUserId = '654321098765432109876543';
+
+  // 1. Test ragClient queryRAG forwards verified user header and drops unverified body fields
+  const ragRes = await queryRAG({
+    query: 'What are Section 80C deductions?',
+    userId: testUserId,
+  }, 'test-corr-id-123');
+
+  assert.ok(ragRes);
+  assert.equal(ragCapturedHeaders?.['X-Verified-User-Id'], testUserId);
+  assert.equal(ragCapturedBody?.tenant_id, undefined, 'tenant_id must not be sent in RAG request body');
+
+  // 2. Test mlClient getMLPrediction forwards verified user header
+  const mlRes = await getMLPrediction({
+    age: 35,
+    annual_income: 1500000,
+    monthly_savings: 30000,
+    risk_category: 'Moderate',
+    liquid_savings: 100000,
+    existing_debt: 5,
+    dependents: 1,
+    emergency_fund_months: 6,
+    risk_tolerance: 'Moderate',
+    goal_type: 'wealth-building',
+  }, 'test-corr-id-456', testUserId);
+
+  assert.ok(mlRes);
+  assert.equal(mlCapturedHeaders?.['X-Verified-User-Id'], testUserId);
 });
 

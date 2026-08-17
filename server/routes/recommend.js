@@ -84,7 +84,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     risk_tolerance: profile.risk_tolerance || 'Moderate',
     goal_type: profile.goal_type || 'wealth-building',
     investment_horizon: profile.investmentHorizon || 15
-  }, req.correlationId);
+  }, req.correlationId, req.user.userId);
 
   // ── Run the metadata-driven RecommendationPipeline ──────────────
   await getLiveInstrumentParams().catch(() => {});

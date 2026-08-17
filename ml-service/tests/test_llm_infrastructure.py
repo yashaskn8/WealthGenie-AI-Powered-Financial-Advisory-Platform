@@ -18,7 +18,7 @@ from llm.schema import LLMGenerateRequest, LLMProviderType
 @pytest.fixture
 def client():
     api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
-    with TestClient(app, headers={"X-API-Key": api_key}) as c:
+    with TestClient(app, headers={"X-API-Key": api_key, "X-Verified-User-Id": "test-user-id"}) as c:
         yield c
 
 

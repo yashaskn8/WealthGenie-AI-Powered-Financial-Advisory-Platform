@@ -87,7 +87,7 @@ def test_llm_router_batch_generate_and_tool_endpoints():
     import os
     from main import app
     api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
-    client = TestClient(app, headers={"X-API-Key": api_key})
+    client = TestClient(app, headers={"X-API-Key": api_key, "X-Verified-User-Id": "test-user-id"})
 
     # Batch generate
     batch_res = client.post("/llm/batch-generate", json=[
