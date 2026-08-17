@@ -46,6 +46,8 @@ const ConversationHistorySchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
   message_count: { type: Number, default: 0 },
+  cumulative_tokens: { type: Number, default: 0 },
+  cumulative_hops: { type: Number, default: 0 },
   is_active: { type: Boolean, default: true },
 });
 

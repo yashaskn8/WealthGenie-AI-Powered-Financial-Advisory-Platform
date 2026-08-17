@@ -140,6 +140,39 @@ export async function processChat({ userId, user, message, sessionId }) {
     }
   }
 
+  const SESSION_CUMULATIVE_TOKEN_CAP = 50000;
+  const SESSION_MAX_HOPS_CAP = 20;
+  const TURN_CUMULATIVE_TOKEN_CAP = 12000;
+  const MAX_REPLANS = 2;
+
+  // Session-Level Safety Budget Check
+  if ((conversation.cumulative_tokens || 0) >= SESSION_CUMULATIVE_TOKEN_CAP) {
+    console.warn(`[Chat:SafetyLimit] Session ${sessionId} exceeded cumulative token budget (${conversation.cumulative_tokens} >= ${SESSION_CUMULATIVE_TOKEN_CAP}). Gracefully terminating.`);
+    const safetyNotice = `⚠️ **Session Safety Limit Reached**: This chat session has reached its cumulative reasoning token budget (50,000 tokens). To ensure cost safety and prevent runaway execution loops, automated calculations have concluded for this session. You may continue in a fresh session or review the verified guidance below.`;
+    const fallbackText = generateLocalFallbackResponse(fullUser, profile, goals, message);
+    const finalMsg = `${safetyNotice}\n\n${fallbackText}`;
+
+    return {
+      version: '3.0',
+      response: finalMsg,
+      session_id: sessionId,
+      latency_ms: 50,
+      tokens_used: 0,
+      messages_this_hour: rateCheck.count,
+      rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
+      grounded: true,
+      provider: 'safety_circuit_breaker',
+      state: 'SafetyTerminated',
+      tool_calls: [],
+      tool_results: [],
+      audit: {
+        safety_limit_triggered: true,
+        safety_limit_reason: 'SESSION_CUMULATIVE_TOKEN_CAP_EXCEEDED',
+        cumulative_session_tokens: conversation.cumulative_tokens,
+      },
+    };
+  }
+
   const recentHistory = conversation.messages.slice(-HISTORY_WINDOW).map(m => ({ role: m.role, parts: [{ text: m.content }] }));
   recentHistory.push({ role: 'user', parts: [{ text: securityContext.sanitizedMessage }] });
 
@@ -175,11 +208,9 @@ export async function processChat({ userId, user, message, sessionId }) {
   let toolResults = [];
   let orchestration = { toolResults: [], executionGraph: { status: 'NO_TOOLS' } };
   let executedTwoPass = false;
-  const MAX_REPLANS = 2;
-  const MAX_SESSION_CUMULATIVE_TOKENS = 12000;
 
   let replanCount = 0;
-  let totalSessionTokens = result.tokensUsed || 0;
+  let totalTurnTokens = result.tokensUsed || 0;
   const replanTrace = [];
   let currentToolCalls = nativeToolCalls;
   const allExecutedToolResults = [];
@@ -216,10 +247,17 @@ export async function processChat({ userId, user, message, sessionId }) {
     });
 
     // Check token safety budget before calling LLM
-    if (totalSessionTokens >= MAX_SESSION_CUMULATIVE_TOKENS) {
+    if (totalTurnTokens >= TURN_CUMULATIVE_TOKEN_CAP) {
       safetyLimitTriggered = true;
-      safetyLimitReason = 'MAX_SESSION_CUMULATIVE_TOKENS_EXCEEDED';
-      console.warn(`[Chat:SafetyLimit] Cumulative session token budget exceeded (${totalSessionTokens} >= ${MAX_SESSION_CUMULATIVE_TOKENS}). Terminating replanning loop gracefully.`);
+      safetyLimitReason = 'TURN_CUMULATIVE_TOKEN_CAP_EXCEEDED';
+      console.warn(`[Chat:SafetyLimit] Cumulative turn token budget exceeded (${totalTurnTokens} >= ${TURN_CUMULATIVE_TOKEN_CAP}). Terminating replanning loop gracefully.`);
+      break;
+    }
+
+    if (((conversation.cumulative_hops || 0) + replanCount) >= SESSION_MAX_HOPS_CAP) {
+      safetyLimitTriggered = true;
+      safetyLimitReason = 'SESSION_MAX_HOPS_CAP_EXCEEDED';
+      console.warn(`[Chat:SafetyLimit] Cumulative session hop limit reached (${SESSION_MAX_HOPS_CAP}). Terminating replanning loop.`);
       break;
     }
 
@@ -232,7 +270,7 @@ export async function processChat({ userId, user, message, sessionId }) {
       break;
     }
 
-    totalSessionTokens += nextResult.tokensUsed || 0;
+    totalTurnTokens += nextResult.tokensUsed || 0;
     executedTwoPass = true;
 
     // Inspect if LLM requested another tool call (replanning / tool chaining / parameter correction)
@@ -351,7 +389,8 @@ export async function processChat({ userId, user, message, sessionId }) {
     state: stateTransition.nextState,
     explainability: explanationMetadata,
     governance: traceGraph.governance,
-    tokens_used: totalSessionTokens,
+    tokens_used: totalTurnTokens,
+    cumulative_session_tokens: (conversation.cumulative_tokens || 0) + totalTurnTokens,
     latency_ms: latencyMs,
     grounded_on_profile: true,
     disclaimer_appended: true,
@@ -360,6 +399,9 @@ export async function processChat({ userId, user, message, sessionId }) {
     arithmetic_verification: verificationMetadata,
     timestamp: new Date().toISOString(),
   };
+
+  conversation.cumulative_tokens = (conversation.cumulative_tokens || 0) + totalTurnTokens;
+  conversation.cumulative_hops = (conversation.cumulative_hops || 0) + (replanCount + 1);
 
   conversation.messages.push({ role: 'user', content: message, metadata: { grounded_on_profile: true, prompt_injection_detected: securityContext.isInjection } });
   conversation.messages.push({
@@ -374,7 +416,8 @@ export async function processChat({ userId, user, message, sessionId }) {
     response: responseText,
     session_id: sessionId,
     latency_ms: latencyMs,
-    tokens_used: tokensUsed,
+    tokens_used: totalTurnTokens,
+    cumulative_session_tokens: conversation.cumulative_tokens,
     messages_this_hour: rateCheck.count,
     rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
     grounded: true,
