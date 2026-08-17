@@ -1,0 +1,92 @@
+import 'dotenv/config';
+import axios from 'axios';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import assert from 'node:assert/strict';
+
+const BASE_URL = 'http://127.0.0.1:5000';
+const JWT_SECRET = process.env.JWT_SECRET || '8f9e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e';
+
+async function runLiveRegulatoryAuditVerification() {
+  console.log(`\n================================================================`);
+  console.log(`[${new Date().toISOString()}] PHASE 2: REGULATORY RULE VERSIONING LIVE AUDIT TEST`);
+  console.log(`================================================================`);
+
+  const userId = crypto.randomBytes(12).toString('hex');
+  const token = jwt.sign({ userId, email: `test_audit_${Date.now()}@wealthgenie.io`, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+
+  const client = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 30000,
+  });
+
+  // Step 1: Initialize profile
+  console.log(`[${new Date().toISOString()}] Step 1: Building test profile...`);
+  const profileRes = await client.post('/api/profile/build', {
+    age: 34,
+    monthly_income: 180000,
+    monthly_savings: 60000,
+    liquid_savings: 500000,
+    existing_debt: 15,
+    dependents: 2,
+    emergency_fund_months: 6,
+    investment_horizon: 15,
+    risk_tolerance: 'Moderate',
+    goal_type: 'wealth-building',
+  });
+  const profileId = profileRes.data.profileId || profileRes.data.profile_id || profileRes.data._id;
+  assert.ok(profileId, 'Profile must be created');
+
+  // Step 2: Request recommendation
+  console.log(`[${new Date().toISOString()}] Step 2: Requesting recommendation via POST /api/recommend...`);
+  const recommendRes = await client.post('/api/recommend', { profileId });
+  assert.equal(recommendRes.status, 200);
+
+  console.log(`\n================= LIVE RECOMMENDATION AUDIT REPORT =================`);
+  console.log(`Timestamp: ${new Date().toISOString()}`);
+  console.log(`Recommendation ID: ${recommendRes.data.recommendationId}`);
+  console.log(`Audit ID: ${recommendRes.data.audit_id}`);
+  console.log(`Audit Hash: ${recommendRes.data.audit_hash}`);
+  console.log(`Model Version: ${recommendRes.data.model_version}`);
+  console.log(`Regulatory Rule Version: ${recommendRes.data.regulatory_rule_version}`);
+  console.log(`Instruments Count: ${recommendRes.data.instruments?.length}`);
+  console.log(`Portfolio Yield: ${recommendRes.data.portfolio_yield}%`);
+
+  assert.equal(recommendRes.data.regulatory_rule_version, 'FY2025-26-v1.0');
+  assert.ok(recommendRes.data.audit_id, 'audit_id must be present');
+  assert.ok(recommendRes.data.audit_hash, 'audit_hash must be present');
+
+  // Step 3: Query GET /api/recommend/audit
+  console.log(`\n[${new Date().toISOString()}] Step 3: Querying GET /api/recommend/audit...`);
+  const auditRes = await client.get('/api/recommend/audit');
+  assert.equal(auditRes.status, 200);
+  assert.ok(auditRes.data.records?.length > 0, 'Must return at least 1 audit record');
+
+  const latestRecord = auditRes.data.records[0];
+  console.log(`\n=================== STORED AUDIT RECORD REPORT ===================`);
+  console.log(`Record ID: ${latestRecord._id}`);
+  console.log(`User ID: ${latestRecord.userId}`);
+  console.log(`Profile ID: ${latestRecord.profileId}`);
+  console.log(`Version ID: ${latestRecord.version_id}`);
+  console.log(`Regulatory Rule Version: ${latestRecord.regulatory_rule_version}`);
+  console.log(`Input Hash: ${latestRecord.input_hash}`);
+  console.log(`Engine: ${latestRecord.engine}`);
+  console.log(`Timestamp: ${latestRecord.timestamp}`);
+  console.log(`Recommendations Count: ${latestRecord.recommendations?.instruments?.length}`);
+  console.log(`==================================================================\n`);
+
+  assert.equal(latestRecord.regulatory_rule_version, 'FY2025-26-v1.0');
+  assert.ok(latestRecord.version_id, 'version_id must be present');
+  assert.ok(latestRecord.input_hash, 'input_hash must be present');
+
+  console.log(`✅ Verified: Regulatory rule version 'FY2025-26-v1.0' is successfully captured in recommendation responses and immutable AuditRecords!`);
+}
+
+runLiveRegulatoryAuditVerification().catch(err => {
+  console.error('Regulatory Audit Verification Failed:', err.response?.data || err);
+  process.exit(1);
+});

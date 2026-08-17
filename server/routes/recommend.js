@@ -7,7 +7,7 @@ import Recommendation from '../models/Recommendation.js';
 import AuditRecord from '../models/AuditRecord.js';
 import logger from '../utils/logger.js';
 import { getMLPrediction } from '../services/mlClient.js';
-import { getTaxSlab } from '../services/taxEngine.js';
+import { getTaxSlab, REGULATORY_RULE_VERSION } from '../services/taxEngine.js';
 import { generateAdvisory } from '../services/geminiService.js';
 import { runPipeline } from '../services/RecommendationPipeline.js';
 import { getLiveInstrumentParams } from '../services/marketDataService.js';
@@ -40,8 +40,6 @@ function buildProfileHash(profile) {
 export function buildRecommendationCacheKey(userId, profileId, profile) {
   return `recommendation:${userId}:${profileId}:${buildProfileHash(profile)}`;
 }
-
-// DISCLAIMER and RISK_FREE_RATE imported from instrumentConstants.js
 
 /**
  * POST /api/recommend [Protected]
@@ -89,9 +87,6 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
   }, req.correlationId);
 
   // ── Run the metadata-driven RecommendationPipeline ──────────────
-  // This replaces the previous hardcoded demographic & tax overrides
-  // with a modular pipeline: eligibility → scoring → ranking → diversity
-  // Refresh live market data before running pipeline
   await getLiveInstrumentParams().catch(() => {});
 
   const { instruments, confidenceScores, riskReconciliation, computedWeights } = runPipeline(profile, mlResult);
@@ -155,6 +150,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
       correlationId: req.correlationId || req.traceId || crypto.randomUUID(),
       traceId: req.traceId || req.correlationId || '',
       version_id: rec.modelVersion || '1.0.0',
+      regulatory_rule_version: REGULATORY_RULE_VERSION,
       input_hash: inputHash,
       inputs: sanitizedInputs,
       recommendations: {
@@ -162,6 +158,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
         confidenceScores,
         portfolioYield,
         modelVersion: rec.modelVersion,
+        regulatoryRuleVersion: REGULATORY_RULE_VERSION,
         advisorySummary: advisory.text ? advisory.text.slice(0, 500) : '',
       },
       cited_rag_chunk_ids: advisory.cited_chunks || mlResult.cited_chunk_ids || [],
@@ -192,6 +189,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     explanation: mlResult.explanation || null,
     ml_fallback: mlResult.fallback || false,
     model_version: rec.modelVersion,
+    regulatory_rule_version: REGULATORY_RULE_VERSION,
     portfolio_yield: portfolioYield,
     risk_free_rate: parseFloat((RISK_FREE_RATE * 100).toFixed(2)),
     disclaimer: DISCLAIMER,
@@ -203,7 +201,6 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     advisory_note: riskReconciliation.advisory_note,
     excluded_due_to_eligibility: riskReconciliation.excluded_due_to_eligibility,
     // WG-004: Attach backend-computed scoring weights in both snake_case and camelCase
-    // so the frontend can read profile.computedWeights / profile.computed_weights cleanly.
     computed_weights: computedWeights,
     computedWeights: computedWeights,
   };
@@ -343,4 +340,3 @@ router.post('/weights', verifyJWT, validate(updateWeightsSchema), asyncHandler(a
 }));
 
 export default router;
-
