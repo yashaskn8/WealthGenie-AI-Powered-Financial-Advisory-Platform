@@ -13,6 +13,7 @@ export function getCurrentFiscalYear() {
     return `FY${startYear}-${endYear.toString().slice(-2)}`;
 }
 export const CURRENT_FY = getCurrentFiscalYear();
+export const REGULATORY_RULE_VERSION = 'FY2025-26-v1.0';
 const defineSlabs = (slabs) => Object.freeze(slabs.map(slab => Object.freeze({ ...slab })));
 const STANDARD_NEW_SLABS = defineSlabs([
     { min: 0, max: 400000, rate: 0 },
@@ -217,8 +218,9 @@ export function computeTax(annualIncome, regime = 'new', deductions = {}, income
         taxBeforeCess = 0;
         rebateApplied = true;
     }
-    else {
-        // Marginal relief for 87A: tax cannot exceed the excess over rebate limit
+    else if (safeRegime === 'new') {
+        // Section 87A Proviso (Marginal relief under Section 115BAC):
+        // Tax payable shall not exceed the amount by which total income exceeds rebate limit
         const excessOverLimit = taxableIncome - rebateLimit;
         if (taxBeforeCess > excessOverLimit) {
             marginalReliefAmount87A = taxBeforeCess - excessOverLimit;
