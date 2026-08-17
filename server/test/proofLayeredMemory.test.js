@@ -172,4 +172,40 @@ describe('CLAIM 4 — Layered Long-Term Memory Architecture Verification Suite',
     const prompt = LayeredMemoryManager.formatForPrompt(ctx);
     assert.ok(!prompt.includes('aggressive equity'), 'Decayed session 2 mid-term must not appear in prompt');
   });
+
+  it('5. Cryptographic SHA-256 Audit Chain Verification and Deliberate Tamper Detection', () => {
+    // 1. Append legitimate entries
+    LayeredMemoryManager.saveMidTermMemory({
+      userId: TEST_USER,
+      sessionId: 'session-audit-1',
+      key: 'fact_a',
+      value: 'Investment horizon 15 years',
+    });
+    LayeredMemoryManager.saveLongTermFact({
+      userId: TEST_USER,
+      key: 'fact_b',
+      value: 'Target wealth 2 Crores',
+    });
+
+    // Untampered chain verification
+    const cleanCheck = LayeredMemoryManager.verifyMemoryAuditChain(TEST_USER);
+    assert.equal(cleanCheck.valid, true, 'Clean chain must pass verification');
+    assert.equal(cleanCheck.chainLength, 2);
+    assert.ok(cleanCheck.headHash);
+
+    // 2. Deliberate Tampering: Corrupt chainHash of first entry
+    const ledger = LayeredMemoryManager._getGovernanceLedger(TEST_USER);
+    const originalHash = ledger[0].chainHash;
+    ledger[0].chainHash = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
+    const tamperedCheck = LayeredMemoryManager.verifyMemoryAuditChain(TEST_USER);
+    assert.equal(tamperedCheck.valid, false, 'Tampered chain must fail verification');
+    assert.equal(tamperedCheck.reason, 'CHAIN_HASH_MISMATCH');
+    assert.equal(tamperedCheck.brokenIndex, 0);
+
+    // 3. Restore and verify recovery
+    ledger[0].chainHash = originalHash;
+    const restoredCheck = LayeredMemoryManager.verifyMemoryAuditChain(TEST_USER);
+    assert.equal(restoredCheck.valid, true, 'Restored chain must pass verification');
+  });
 });
