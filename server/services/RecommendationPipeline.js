@@ -282,14 +282,61 @@ function enforceAllocationTargetsHeuristic(instruments, reconciledTier, profile)
   return applyConcentrationCaps(instruments);
 }
 
+export function resolveConcentrationCap(inv) {
+  if (!inv) return null;
+  const idKey = (inv.id || inv.instrumentId || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const typeKey = (inv.backendType || inv.type || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+  if (CONCENTRATION_CAPS[idKey]) return { key: idKey, maxPct: CONCENTRATION_CAPS[idKey].maxPct };
+  if (CONCENTRATION_CAPS[typeKey]) return { key: typeKey, maxPct: CONCENTRATION_CAPS[typeKey].maxPct };
+  if (idKey.includes('smallcap') || idKey.includes('small_cap') || typeKey.includes('smallcap') || typeKey.includes('small_cap')) {
+    return { key: 'smallcap_mf', maxPct: CONCENTRATION_CAPS.smallcap_mf?.maxPct ?? 15 };
+  }
+  if (idKey.includes('midcap') || idKey.includes('mid_cap') || typeKey.includes('midcap') || typeKey.includes('mid_cap')) {
+    return { key: 'midcap_mf', maxPct: CONCENTRATION_CAPS.midcap_mf?.maxPct ?? 20 };
+  }
+  if (idKey.includes('sgb') || typeKey.includes('sgb')) {
+    return { key: 'sgb', maxPct: CONCENTRATION_CAPS.sgb?.maxPct ?? 10 };
+  }
+  if (idKey.includes('gold') || typeKey.includes('gold')) {
+    return { key: 'gold_etf', maxPct: CONCENTRATION_CAPS.gold_etf?.maxPct ?? 10 };
+  }
+  if (idKey.includes('nps') || typeKey.includes('nps')) {
+    return { key: 'nps', maxPct: CONCENTRATION_CAPS.nps?.maxPct ?? 25 };
+  }
+  if (idKey.includes('direct_equity') || idKey.includes('stock') || typeKey.includes('direct_equity')) {
+    return { key: 'direct_equity', maxPct: CONCENTRATION_CAPS.direct_equity?.maxPct ?? 20 };
+  }
+  return null;
+}
+
 /**
- * Enforce per-instrument concentration caps defined in CONCENTRATION_CAPS.
- * Clamps instrument weight exceeding maxPct and redistributes excess proportionally
- * to un-capped instruments. If all instruments reach their caps, excess is scaled
- * proportionally relative to caps as a fallback, ensuring total weight sums to 100.0%.
+ * Enforce per-instrument and aggregate category concentration caps defined in CONCENTRATION_CAPS.
+ * Prevents circumvention via multi-instrument allocation spreading across economically correlated assets.
  */
 function applyConcentrationCaps(instruments) {
   if (!instruments || instruments.length === 0) return instruments;
+
+  const allInstrumentsCapped = instruments.length > 0 && instruments.every(inv => resolveConcentrationCap(inv) !== null);
+  const totalCaps = instruments.reduce((s, inv) => s + (resolveConcentrationCap(inv)?.maxPct || 100), 0);
+
+  if (allInstrumentsCapped && totalCaps < 100) {
+    // All-capped fallback: scale capped weights proportionally to caps
+    instruments.forEach(inv => {
+      const cap = resolveConcentrationCap(inv)?.maxPct || 100;
+      inv.allocation_pct = parseFloat(((cap / totalCaps) * 100).toFixed(1));
+    });
+    const finalSum = instruments.reduce((s, i) => s + i.allocation_pct, 0);
+    const residual = parseFloat((100 - finalSum).toFixed(1));
+    if (Math.abs(residual) > 0.01) {
+      instruments[0].allocation_pct = parseFloat((instruments[0].allocation_pct + residual).toFixed(1));
+    }
+    instruments.forEach(inv => {
+      inv.allocation_pct = parseFloat(Math.max(0, inv.allocation_pct).toFixed(1));
+      inv.allocationWeight = parseFloat((inv.allocation_pct / 100).toFixed(4));
+    });
+    return instruments;
+  }
 
   let iterations = 0;
   const maxIterations = 10;
@@ -297,19 +344,46 @@ function applyConcentrationCaps(instruments) {
   while (iterations < maxIterations) {
     iterations++;
     let currentExcess = 0;
-    const roomInstruments = [];
 
+    // 1. Check and clamp aggregate category totals (anti-gaming concentration defense)
+    const categoryGroups = new Map();
     instruments.forEach(inv => {
-      const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
-      if (cap !== undefined && inv.allocation_pct > cap + 0.001) {
-        currentExcess += inv.allocation_pct - cap;
-        inv.allocation_pct = cap;
-      } else if (cap === undefined || inv.allocation_pct < cap - 0.001) {
-        roomInstruments.push(inv);
+      const capInfo = resolveConcentrationCap(inv);
+      if (capInfo) {
+        if (!categoryGroups.has(capInfo.key)) {
+          categoryGroups.set(capInfo.key, { maxPct: capInfo.maxPct, items: [] });
+        }
+        categoryGroups.get(capInfo.key).items.push(inv);
+      }
+    });
+
+    for (const [key, group] of categoryGroups.entries()) {
+      const groupTotal = group.items.reduce((s, i) => s + (i.allocation_pct || 0), 0);
+      if (groupTotal > group.maxPct + 0.001) {
+        const excess = groupTotal - group.maxPct;
+        currentExcess += excess;
+        const scale = group.maxPct / groupTotal;
+        group.items.forEach(inv => {
+          inv.allocation_pct = parseFloat((inv.allocation_pct * scale).toFixed(2));
+        });
+      }
+    }
+
+    // 2. Check and clamp individual instrument caps
+    instruments.forEach(inv => {
+      const capInfo = resolveConcentrationCap(inv);
+      if (capInfo && inv.allocation_pct > capInfo.maxPct + 0.001) {
+        currentExcess += inv.allocation_pct - capInfo.maxPct;
+        inv.allocation_pct = capInfo.maxPct;
       }
     });
 
     if (currentExcess <= 0.01) break;
+
+    const roomInstruments = instruments.filter(inv => {
+      const capInfo = resolveConcentrationCap(inv);
+      return !capInfo || inv.allocation_pct < capInfo.maxPct - 0.001;
+    });
 
     if (roomInstruments.length > 0) {
       const totalRoomWeight = roomInstruments.reduce((s, i) => s + Math.max(1, i.allocation_pct || i.score || 1), 0);
@@ -318,35 +392,69 @@ function applyConcentrationCaps(instruments) {
         inv.allocation_pct += currentExcess * share;
       });
     } else {
-      // All-capped fallback: scale capped weights proportionally to caps
-      const totalCapsSum = instruments.reduce((sum, inv) => {
-        const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
-        return sum + (cap !== undefined ? cap : 100);
-      }, 0);
-
-      if (totalCapsSum > 0) {
-        instruments.forEach(inv => {
-          const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
-          const weightCap = cap !== undefined ? cap : 100;
-          inv.allocation_pct = (weightCap / totalCapsSum) * 100;
-        });
-      }
       break;
     }
   }
 
-  // Ensure exact 100.0% sum normalization
+  // Ensure exact 100.0% sum normalization without breaching any category cap
   const finalSum = instruments.reduce((s, i) => s + i.allocation_pct, 0);
   const residual = parseFloat((100 - finalSum).toFixed(1));
   if (Math.abs(residual) > 0.05 && instruments.length > 0) {
     const eligibleForResidual = instruments.filter(inv => {
-      const cap = CONCENTRATION_CAPS[inv.id]?.maxPct;
-      return cap === undefined || inv.allocation_pct + residual <= cap + 0.01;
+      const capInfo = resolveConcentrationCap(inv);
+      if (!capInfo) return true;
+      // Check individual cap
+      if (inv.allocation_pct + residual > capInfo.maxPct) return false;
+      // Check group aggregate cap
+      const groupAllocs = instruments.filter(x => resolveConcentrationCap(x)?.key === capInfo.key).reduce((s, x) => s + x.allocation_pct, 0);
+      return groupAllocs + residual <= capInfo.maxPct + 0.001;
     });
     const targetInst = eligibleForResidual.length > 0
       ? eligibleForResidual.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b)
-      : instruments.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b);
-    targetInst.allocation_pct = parseFloat(Math.max(0, targetInst.allocation_pct + residual).toFixed(1));
+      : instruments.filter(inv => !resolveConcentrationCap(inv)).reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b, instruments[0]);
+    if (targetInst) {
+      targetInst.allocation_pct = parseFloat(Math.max(0, targetInst.allocation_pct + residual).toFixed(1));
+    }
+  }
+
+  // Round all allocation_pct to 1 decimal place first
+  instruments.forEach(inv => {
+    inv.allocation_pct = parseFloat(Math.max(0, inv.allocation_pct).toFixed(1));
+  });
+
+  // Strict post-rounding category group clamp: ensure no group ever exceeds maxPct by even 0.01%
+  const finalCategoryGroups = new Map();
+  instruments.forEach(inv => {
+    const capInfo = resolveConcentrationCap(inv);
+    if (capInfo) {
+      if (!finalCategoryGroups.has(capInfo.key)) {
+        finalCategoryGroups.set(capInfo.key, { maxPct: capInfo.maxPct, items: [] });
+      }
+      finalCategoryGroups.get(capInfo.key).items.push(inv);
+    }
+  });
+
+  for (const [, group] of finalCategoryGroups.entries()) {
+    let groupSum = parseFloat(group.items.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+    while (groupSum > group.maxPct + 0.001) {
+      const diff = parseFloat((groupSum - group.maxPct).toFixed(1));
+      const step = Math.min(diff, 0.1);
+      const largestInGroup = group.items.reduce((a, b) => a.allocation_pct >= b.allocation_pct ? a : b);
+      largestInGroup.allocation_pct = parseFloat(Math.max(0, largestInGroup.allocation_pct - step).toFixed(1));
+      const uncappedInst = instruments.find(i => !resolveConcentrationCap(i));
+      if (uncappedInst) {
+        uncappedInst.allocation_pct = parseFloat((uncappedInst.allocation_pct + step).toFixed(1));
+      }
+      groupSum = parseFloat(group.items.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+    }
+  }
+
+  // Final 100.0% sum normalization after adjustments
+  const roundedSum = parseFloat(instruments.reduce((s, i) => s + i.allocation_pct, 0).toFixed(1));
+  const finalResidual = parseFloat((100.0 - roundedSum).toFixed(1));
+  if (Math.abs(finalResidual) > 0.01 && instruments.length > 0) {
+    const uncappedInst = instruments.find(i => !resolveConcentrationCap(i)) || instruments[0];
+    uncappedInst.allocation_pct = parseFloat((uncappedInst.allocation_pct + finalResidual).toFixed(1));
   }
 
   instruments.forEach(inv => {
@@ -1153,6 +1261,7 @@ export function runPipeline(profile, mlResult, options = {}) {
 
   // Section 7 metadata (response-only, not persisted — see Recommendation.create() comment in routes/recommend.js)
   const riskReconciliation = {
+    final_score: riskResult.final_score,
     final_risk_tier: riskResult.final_risk_tier,
     capacity_score: riskResult.capacity_score,
     preference_score: riskResult.preference_score,
