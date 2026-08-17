@@ -58,9 +58,17 @@ describe('Phase 1: Agentic AI Self-Correction & Replanning Loop Tests', () => {
       }),
     });
 
-    ConversationHistory.findOne = async () => null;
-    ConversationHistory.prototype.save = async function() { return this; };
+    savedMessages = [];
+    ConversationHistory.findOne = async () => ({
+      userId: testUserId,
+      profileId: '64b0f0000000000000000002',
+      session_id: testSessionId,
+      messages: savedMessages,
+      save: async function () { return this; },
+    });
   });
+
+  let savedMessages = [];
 
   it('1. Tool Validation Error Self-Correction: Pass 1 has invalid args, Replan #1 corrects args and succeeds', async () => {
     let passCount = 0;
@@ -120,11 +128,14 @@ describe('Phase 1: Agentic AI Self-Correction & Replanning Loop Tests', () => {
     });
 
     assert.equal(res.grounded, true);
-    assert.equal(res.audit.replan_count, 1);
-    assert.equal(res.audit.replans.length, 1);
-    assert.equal(res.audit.replans[0].trigger, 'TOOL_FAILURE_CORRECTION');
-    assert.equal(res.audit.tool_outputs.length, 2); // 1 failed + 1 corrected
-    assert.equal(res.audit.tool_outputs[1].success, true);
+    assert.equal(res.audit, undefined, 'Client DTO must not leak internal audit metadata');
+    const lastModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    const auditMeta = lastModelMsg.metadata;
+    assert.equal(auditMeta.replan_count, 1);
+    assert.equal(auditMeta.replans.length, 1);
+    assert.equal(auditMeta.replans[0].trigger, 'TOOL_FAILURE_CORRECTION');
+    assert.equal(auditMeta.tool_outputs.length, 2); // 1 failed + 1 corrected
+    assert.equal(auditMeta.tool_outputs[1].success, true);
     assert.match(res.response, /₹11.62 Lakhs|11,61,695/);
   });
 
@@ -183,9 +194,12 @@ describe('Phase 1: Agentic AI Self-Correction & Replanning Loop Tests', () => {
     });
 
     assert.equal(res.grounded, true);
-    assert.equal(res.audit.replan_count, 1);
-    assert.equal(res.audit.replans[0].trigger, 'REASONING_DRIVEN_TOOL_ADJUSTMENT');
-    assert.equal(res.audit.tool_outputs.some(t => t.tool === 'reverse_sip' && t.success), true);
+    assert.equal(res.audit, undefined);
+    const lastModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    const auditMeta = lastModelMsg.metadata;
+    assert.equal(auditMeta.replan_count, 1);
+    assert.equal(auditMeta.replans[0].trigger, 'REASONING_DRIVEN_TOOL_ADJUSTMENT');
+    assert.equal(auditMeta.tool_outputs.some(t => t.tool === 'reverse_sip' && t.success), true);
     assert.match(res.response, /₹19,819/);
   });
 
@@ -216,9 +230,12 @@ describe('Phase 1: Agentic AI Self-Correction & Replanning Loop Tests', () => {
       sessionId: testSessionId,
     });
 
-    assert.equal(res.audit.replan_count, 2);
-    assert.equal(res.audit.safety_limit_triggered, true);
-    assert.equal(res.audit.safety_limit_reason, 'MAX_REPLANS_EXHAUSTED_WITH_FAILURES');
+    assert.equal(res.audit, undefined);
+    const lastModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    const auditMeta = lastModelMsg.metadata;
+    assert.equal(auditMeta.replan_count, 2);
+    assert.equal(auditMeta.safety_limit_triggered, true);
+    assert.equal(auditMeta.safety_limit_reason, 'MAX_REPLANS_EXHAUSTED_WITH_FAILURES');
     assert.match(res.response, /Session Safety Limit Notice/);
   });
 });

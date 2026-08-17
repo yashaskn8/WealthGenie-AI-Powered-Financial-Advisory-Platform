@@ -154,13 +154,22 @@ describe('Chat Routes Integration & Input Validation Tests', () => {
       assert.equal(typeof data.response, 'string');
       assert.equal(typeof data.session_id, 'string');
       assert.equal(data.version, '3.0');
-      assert.ok(Array.isArray(data.tool_calls), 'Response must contain tool_calls array');
-      assert.ok(Array.isArray(data.tool_results), 'Response must contain tool_results array');
+      assert.equal(typeof data.latency_ms, 'number');
+      assert.equal(typeof data.grounded, 'boolean');
+      assert.ok(Array.isArray(data.citations), 'Response must contain citations array');
       assert.ok(Array.isArray(data.action_cards), 'Response must contain action_cards array');
-      assert.ok(data.governance, 'Response must contain governance metadata');
-      assert.ok(data.explainability, 'Response must contain explainability metadata');
-      assert.ok(data.verification, 'Response must contain verification metadata');
-      assert.ok(data.audit, 'Response must contain audit metadata');
+
+      // Negative Security Assertions: Internal audit/governance/raw LLM fields MUST NOT leak to client
+      assert.equal(data.audit, undefined, 'Response must NOT contain internal audit object');
+      assert.equal(data.original_llm_response, undefined, 'Response must NOT contain raw pre-compliance LLM output');
+      assert.equal(data.execution_graph, undefined, 'Response must NOT contain internal execution graph');
+      assert.equal(data.tool_outputs, undefined, 'Response must NOT contain raw tool outputs');
+      assert.equal(data.tool_requests, undefined, 'Response must NOT contain raw tool requests');
+      assert.equal(data.tool_calls, undefined, 'Response must NOT contain raw function calling payload');
+      assert.equal(data.tool_results, undefined, 'Response must NOT contain raw tool execution results');
+      assert.equal(data.governance, undefined, 'Response must NOT contain trace graph governance metadata');
+      assert.equal(data.verification, undefined, 'Response must NOT contain internal verification metadata');
+      assert.equal(data.explainability, undefined, 'Response must NOT contain internal explainability object');
     });
   });
 
@@ -225,9 +234,9 @@ describe('Chat Routes Integration & Input Validation Tests', () => {
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(callCount, 2, 'Route handler must execute 2-pass LLM cycle for tool calls');
-        assert.equal(data.tool_results.length, 1);
-        assert.equal(data.tool_results[0].result.futureValue, 2323391);
         assert.match(data.response, /₹23,23,391/);
+        assert.equal(data.tool_results, undefined, 'Tool results must not leak to client response');
+        assert.equal(data.audit, undefined, 'Audit metadata must not leak to client response');
       });
     } finally {
       (await import('axios')).default.post = originalPost;

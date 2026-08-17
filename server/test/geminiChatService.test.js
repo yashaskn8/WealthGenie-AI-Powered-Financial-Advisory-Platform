@@ -141,8 +141,11 @@ describe('GenieChat V3 Enterprise Architecture Tests', () => {
 
     assert.equal(result.version, '3.0');
     assert.equal(result.provider, 'gemini');
-    assert.ok(result.explainability);
-    assert.ok(result.governance);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.ok(lastSavedModelMsg.metadata.explainability);
+    assert.ok(lastSavedModelMsg.metadata.governance);
+    assert.equal(result.explainability, undefined);
+    assert.equal(result.governance, undefined);
     assert.match(result.response, /Gemini V3 advice/);
   });
 
@@ -272,8 +275,10 @@ describe('GenieChat V3 Enterprise Architecture Tests', () => {
     });
 
     assert.equal(callCount, 2, 'processChat must invoke provider twice for tool-grounded query');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].result.futureValue, 2323391);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].result.futureValue, 2323391);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /₹23,23,391/);
   });
 
@@ -305,7 +310,7 @@ describe('GenieChat V3 Enterprise Architecture Tests', () => {
     });
 
     assert.equal(callCount, 1, 'Direct answer path must use exactly 1 LLM call');
-    assert.equal(result.tool_results.length, 0);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /Direct financial answer/);
   });
 
@@ -322,7 +327,7 @@ describe('GenieChat V3 Enterprise Architecture Tests', () => {
     });
 
     assert.equal(result.provider, 'local_fallback');
-    assert.equal(result.tool_results.length, 0);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /connectivity issues|Portfolio Allocation/i);
   });
 });

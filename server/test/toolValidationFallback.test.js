@@ -208,6 +208,7 @@ describe('Tool Execution Error & Parameter Validation Fallback Tests', () => {
   let originalGoalFind;
   let originalUserFindById;
   let originalConvFindOne;
+  let savedMessages = [];
 
   beforeEach(() => {
     originalPost = axios.post;
@@ -216,6 +217,7 @@ describe('Tool Execution Error & Parameter Validation Fallback Tests', () => {
     originalGoalFind = Goal.find;
     originalUserFindById = User.findById;
     originalConvFindOne = ConversationHistory.findOne;
+    savedMessages = [];
 
     process.env.GEMINI_API_KEY = 'mock-gemini-key';
     process.env.GROQ_API_KEY = 'mock-groq-key';
@@ -230,7 +232,7 @@ describe('Tool Execution Error & Parameter Validation Fallback Tests', () => {
     ConversationHistory.findOne = async () => ({
       userId: mockUserId,
       session_id: mockSessionId,
-      messages: [],
+      messages: savedMessages,
       save: async function () { return true; },
     });
   });
@@ -292,9 +294,11 @@ describe('Tool Execution Error & Parameter Validation Fallback Tests', () => {
     });
 
     assert.equal(callCount, 2, 'Pass 2 must still run even when tool execution fails');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].success, false, 'Unknown tool must report failure');
-    assert.match(result.tool_results[0].error, /Unknown tool|not found|cryptocurrency_predictor/i);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].success, false, 'Unknown tool must report failure');
+    assert.match(lastSavedModelMsg.metadata.tool_outputs[0].error, /Unknown tool|not found|cryptocurrency_predictor/i);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /could not compute|general|advice/i);
   });
 
@@ -350,8 +354,10 @@ describe('Tool Execution Error & Parameter Validation Fallback Tests', () => {
     });
 
     assert.equal(callCount, 2, 'Pass 2 must run for grounded error recovery');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].success, false);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].success, false);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /parameter|valid|issues/i);
   });
 
@@ -368,7 +374,7 @@ describe('Tool Execution Error & Parameter Validation Fallback Tests', () => {
     });
 
     assert.equal(result.provider, 'local_fallback');
-    assert.equal(result.tool_results.length, 0);
+    assert.equal(result.tool_results, undefined);
     assert.ok(result.response.length > 50, 'Fallback must generate a meaningful response');
     assert.match(result.response, /Portfolio Allocation|profile|investment/i);
   });

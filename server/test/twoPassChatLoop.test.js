@@ -146,8 +146,10 @@ describe('Phase 3: Two-Pass Tool-Grounded Chat Loop Tests', () => {
 
     assert.equal(callCount, 2, 'Must execute exactly two passes for tool-grounded query');
     assert.equal(pass2ReceivedToolResult, true, 'Pass 2 must receive tool execution result in conversation history');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].result.futureValue, 2323391);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].result.futureValue, 2323391);
+    assert.equal(result.tool_results, undefined, 'Raw tool results must not leak in client DTO');
     assert.match(result.response, /₹23,23,391/);
     assert.notEqual(result.response, pass1ResponseText, 'Pass 2 response must differ from ungrounded Pass 1 text');
   });
@@ -184,7 +186,7 @@ describe('Phase 3: Two-Pass Tool-Grounded Chat Loop Tests', () => {
 
     assert.equal(callCount, 1, 'Direct non-computational query must complete in Pass 1');
     assert.match(result.response, /invest in stocks/);
-    assert.equal(result.tool_results.length, 0);
+    assert.equal(result.tool_results, undefined);
   });
 
   it('Groq Provider Fallback: Groq executes native tool call and Pass 2 grounding when Gemini fails', async () => {
@@ -251,8 +253,10 @@ describe('Phase 3: Two-Pass Tool-Grounded Chat Loop Tests', () => {
 
     assert.equal(groqCallCount, 2, 'Groq provider must execute 2 passes when invoked');
     assert.equal(result.provider, 'groq');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].result.futureValue, 3485086);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].result.futureValue, 3485086);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /Groq Grounded/);
   });
 
@@ -310,8 +314,10 @@ describe('Phase 3: Two-Pass Tool-Grounded Chat Loop Tests', () => {
     });
 
     assert.equal(callCount, 2, 'Pass 2 must run even when tool execution returns failure status');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].success, false);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].success, false);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /general advice/);
   });
 });

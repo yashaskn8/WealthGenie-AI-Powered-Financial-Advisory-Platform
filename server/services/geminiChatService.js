@@ -53,6 +53,43 @@ async function checkRateLimit(userId) {
   return { allowed: true, count: 1 };
 }
 
+/**
+ * Constructs the client-facing Chat Response DTO.
+ * 
+ * Explicitly sanitizes and restricts the payload sent over the wire to only
+ * fields consumed by the UI (response text, session ID, latency, citations,
+ * action cards, and rate limiting status).
+ * 
+ * Internal execution graphs, raw tool outputs, replan traces, governance graphs,
+ * pre-compliance raw LLM strings, and raw vector store embeddings are strictly
+ * omitted from this DTO and retained exclusively in MongoDB conversation audit metadata.
+ */
+export function buildClientResponseDTO({
+  version = '3.0',
+  response,
+  session_id,
+  latency_ms = 0,
+  grounded = true,
+  provider = 'gemini',
+  messages_this_hour = 1,
+  rate_limit_remaining = 30,
+  citations = [],
+  action_cards = [],
+}) {
+  return {
+    version,
+    response,
+    session_id,
+    latency_ms,
+    grounded,
+    provider,
+    messages_this_hour,
+    rate_limit_remaining,
+    citations,
+    action_cards,
+  };
+}
+
 export async function processChat({ userId, user, message, sessionId }) {
   const rateCheck = await checkRateLimit(userId);
   if (!rateCheck.allowed) {
@@ -61,12 +98,17 @@ export async function processChat({ userId, user, message, sessionId }) {
 
   const profile = await FinancialProfile.findOne({ userId }).sort({ createdAt: -1 }).lean();
   if (!profile) {
-    return {
+    return buildClientResponseDTO({
       version: '3.0',
       response: "I don't have your financial profile yet. Please complete the profile setup on the home page so I can give you personalised advice.",
-      session_id: sessionId, grounded: false,
-      messages_this_hour: rateCheck.count, rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
-    };
+      session_id: sessionId,
+      grounded: false,
+      provider: 'system',
+      messages_this_hour: rateCheck.count,
+      rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
+      citations: [],
+      action_cards: [],
+    });
   }
 
   // Phase 5: Multi-layer Immutable Security Pipeline
@@ -109,32 +151,48 @@ export async function processChat({ userId, user, message, sessionId }) {
 
       const responseText = ImmutableSecurityPipeline.enforceCompliance(ragResult.answer);
 
-      // Persist conversation turn in MongoDB
+      const ragAuditMetadata = {
+        strategy: 'rag_retrieval',
+        provider: 'rag',
+        grounded: ragResult.grounded !== undefined ? ragResult.grounded : true,
+        citations: ragResult.citations || [],
+        retrieved_chunks: ragResult.retrieved_chunks || [],
+        metrics: ragResult.metrics || {},
+        governance: { compliance: 'SEBI/AMFI grounded RAG retrieval', trust_tier: 'verified' },
+        explainability: { rag_citations: ragResult.citations || [] },
+        verification: { verification_status: 'grounded_rag', verified: true, source: 'fastapi_rag' },
+        timestamp: new Date().toISOString(),
+      };
+
+      // Persist full audit record in MongoDB conversation history
       conversation.messages.push({ role: 'user', content: securityContext.sanitizedMessage, timestamp: new Date() });
-      conversation.messages.push({ role: 'model', content: responseText, timestamp: new Date() });
+      conversation.messages.push({ role: 'model', content: responseText, metadata: ragAuditMetadata, timestamp: new Date() });
       await conversation.save();
 
       try { PrometheusMetrics.inc('rag_queries_total'); } catch (_) {}
 
-      return {
+      // Sanitize citations: expose only user-facing display fields
+      const sanitizedCitations = (ragResult.citations || []).map((c, i) => ({
+        citation_id: c.citation_id ?? i + 1,
+        document_title: c.document_title || 'Regulatory Document',
+        source: c.source || 'Knowledge Base',
+        chunk_id: c.chunk_id || `chunk_${i + 1}`,
+        excerpt: c.excerpt || '',
+        relevance_score: c.relevance_score ?? 1.0,
+      }));
+
+      return buildClientResponseDTO({
         version: '3.0',
         response: responseText,
         session_id: sessionId,
+        latency_ms: ragResult.metrics?.total_latency_ms || 100,
         grounded: ragResult.grounded !== undefined ? ragResult.grounded : true,
         provider: 'rag',
-        citations: ragResult.citations || [],
-        retrieved_chunks: ragResult.retrieved_chunks || [],
-        metrics: ragResult.metrics || {},
-        tool_calls: [],
-        tool_results: [],
-        action_cards: [],
-        governance: { compliance: 'SEBI/AMFI grounded RAG retrieval', trust_tier: 'verified' },
-        explainability: { rag_citations: ragResult.citations || [] },
-        verification: { verification_status: 'grounded_rag', verified: true, source: 'fastapi_rag' },
-        audit: { strategy: 'rag_retrieval', timestamp: new Date().toISOString() },
         messages_this_hour: rateCheck.count,
         rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
-      };
+        citations: sanitizedCitations,
+        action_cards: [],
+      });
     } else {
       console.warn('[Chat] RAG service unavailable or returned empty answer. Falling back to dual-provider LLM pipeline.');
     }
@@ -152,25 +210,31 @@ export async function processChat({ userId, user, message, sessionId }) {
     const fallbackText = generateLocalFallbackResponse(fullUser, profile, goals, message);
     const finalMsg = `${safetyNotice}\n\n${fallbackText}`;
 
-    return {
+    const safetyAuditMetadata = {
+      safety_limit_triggered: true,
+      safety_limit_reason: 'SESSION_CUMULATIVE_TOKEN_CAP_EXCEEDED',
+      cumulative_session_tokens: conversation.cumulative_tokens,
+      provider: 'safety_circuit_breaker',
+      state: 'SafetyTerminated',
+      timestamp: new Date().toISOString(),
+    };
+
+    conversation.messages.push({ role: 'user', content: message, metadata: { grounded_on_profile: true } });
+    conversation.messages.push({ role: 'model', content: finalMsg, metadata: safetyAuditMetadata, timestamp: new Date() });
+    await conversation.save();
+
+    return buildClientResponseDTO({
       version: '3.0',
       response: finalMsg,
       session_id: sessionId,
       latency_ms: 50,
-      tokens_used: 0,
-      messages_this_hour: rateCheck.count,
-      rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
       grounded: true,
       provider: 'safety_circuit_breaker',
-      state: 'SafetyTerminated',
-      tool_calls: [],
-      tool_results: [],
-      audit: {
-        safety_limit_triggered: true,
-        safety_limit_reason: 'SESSION_CUMULATIVE_TOKEN_CAP_EXCEEDED',
-        cumulative_session_tokens: conversation.cumulative_tokens,
-      },
-    };
+      messages_this_hour: rateCheck.count,
+      rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
+      citations: [],
+      action_cards: [],
+    });
   }
 
   const recentHistory = conversation.messages.slice(-HISTORY_WINDOW).map(m => ({ role: m.role, parts: [{ text: m.content }] }));
@@ -411,26 +475,28 @@ export async function processChat({ userId, user, message, sessionId }) {
   });
   await conversation.save();
 
-  return {
+  // Sanitize citations if any explainability citations exist
+  const clientCitations = (explanationMetadata?.rag_citations || []).map((c, i) => ({
+    citation_id: c.citation_id ?? i + 1,
+    document_title: c.document_title || 'Regulatory Document',
+    source: c.source || 'Knowledge Base',
+    chunk_id: c.chunk_id || `chunk_${i + 1}`,
+    excerpt: c.excerpt || '',
+    relevance_score: c.relevance_score ?? 1.0,
+  }));
+
+  return buildClientResponseDTO({
     version: '3.0',
     response: responseText,
     session_id: sessionId,
     latency_ms: latencyMs,
-    tokens_used: totalTurnTokens,
-    cumulative_session_tokens: conversation.cumulative_tokens,
-    messages_this_hour: rateCheck.count,
-    rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
     grounded: true,
     provider,
-    state: stateTransition.nextState,
-    tool_calls: v2Protocol.tool_calls,
-    tool_results: toolResults,
+    messages_this_hour: rateCheck.count,
+    rate_limit_remaining: CHAT_RATE_LIMIT - rateCheck.count,
+    citations: clientCitations,
     action_cards: validCards,
-    verification: verificationMetadata,
-    explainability: explanationMetadata,
-    governance: traceGraph.governance,
-    audit: auditMetadata,
-  };
+  });
 }
 
 function generateLocalFallbackResponse(user, profile, goals, message) {

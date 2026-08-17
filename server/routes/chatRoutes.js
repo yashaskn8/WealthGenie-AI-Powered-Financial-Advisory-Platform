@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { verifyJWT, isValidObjectId } from '../middleware/authMiddleware.js';
 import { asyncHandler, createError } from '../middleware/errorHandler.js';
 import { validate, chatMessageSchema } from '../validation/schemas.js';
-import { processChat } from '../services/geminiChatService.js';
+import { processChat, buildClientResponseDTO } from '../services/geminiChatService.js';
 import { checkTokenBudget, recordTokenUsage } from '../middleware/tokenBudget.js';
 import ConversationHistory from '../models/ConversationHistory.js';
 
@@ -33,7 +33,7 @@ router.post('/message', verifyJWT, checkTokenBudget(), validate(chatMessageSchem
   const tokensUsed = result?.usage?.totalTokens || result?.tokenCount || Math.ceil(message.length / 4);
   recordTokenUsage(req, tokensUsed);
 
-  res.json(result);
+  res.json(buildClientResponseDTO(result));
 }));
 
 /**

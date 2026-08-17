@@ -294,8 +294,10 @@ describe('Groq Provider Native Tool-Calling Integration Tests', () => {
 
     assert.equal(groqCallCount, 2, 'Groq must execute 2 passes for tool-grounded query');
     assert.equal(result.provider, 'groq');
-    assert.equal(result.tool_results.length, 1);
-    assert.equal(result.tool_results[0].result.futureValue, 1610510);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 1);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].result.futureValue, 1610510);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /Groq Grounded/);
   });
 
@@ -361,11 +363,13 @@ describe('Groq Provider Native Tool-Calling Integration Tests', () => {
 
     assert.equal(groqCallCount, 2, 'Groq must execute 2 passes');
     assert.equal(result.provider, 'groq');
-    assert.equal(result.tool_results.length, 2, 'Must have 2 tool results');
-    assert.equal(result.tool_results[0].tool, 'sip_projection');
-    assert.equal(result.tool_results[0].success, true);
-    assert.equal(result.tool_results[1].tool, 'tax_calculator');
-    assert.equal(result.tool_results[1].success, true);
+    const lastSavedModelMsg = savedMessages.filter(m => m.role === 'model').slice(-1)[0];
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs.length, 2, 'Must have 2 tool results');
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].tool, 'sip_projection');
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[0].success, true);
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[1].tool, 'tax_calculator');
+    assert.equal(lastSavedModelMsg.metadata.tool_outputs[1].success, true);
+    assert.equal(result.tool_results, undefined);
   });
 
   it('Groq direct answer: non-tool query completes in single pass without Pass 2', async () => {
@@ -402,7 +406,7 @@ describe('Groq Provider Native Tool-Calling Integration Tests', () => {
 
     assert.equal(groqCallCount, 1, 'Non-tool query must complete in single Groq pass');
     assert.equal(result.provider, 'groq');
-    assert.equal(result.tool_results.length, 0);
+    assert.equal(result.tool_results, undefined);
     assert.match(result.response, /debt mutual funds|bonds/i);
   });
 });
