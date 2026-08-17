@@ -131,14 +131,52 @@ export class GroqProviderAdapter extends BaseProviderAdapter {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...recentHistory.map(m => {
-        const content = m.parts ? m.parts.map(p => p.text || '').join('') : (m.content || '');
-        return {
-          role: m.role === 'model' ? 'assistant' : m.role,
-          content,
-        };
-      }),
     ];
+
+    for (const m of recentHistory) {
+      if (m.parts && Array.isArray(m.parts)) {
+        const functionCallParts = m.parts.filter(p => p.functionCall);
+        const functionResponseParts = m.parts.filter(p => p.functionResponse);
+        const textParts = m.parts.filter(p => p.text).map(p => p.text).join('\n');
+
+        if (functionCallParts.length > 0) {
+          messages.push({
+            role: 'assistant',
+            content: textParts || null,
+            tool_calls: functionCallParts.map((p, idx) => ({
+              id: `call_${idx}_${p.functionCall.name}`,
+              type: 'function',
+              function: {
+                name: p.functionCall.name,
+                arguments: typeof p.functionCall.args === 'string' ? p.functionCall.args : JSON.stringify(p.functionCall.args || {}),
+              },
+            })),
+          });
+        } else if (functionResponseParts.length > 0) {
+          for (let idx = 0; idx < functionResponseParts.length; idx++) {
+            const p = functionResponseParts[idx];
+            messages.push({
+              role: 'tool',
+              tool_call_id: `call_${idx}_${p.functionResponse.name}`,
+              name: p.functionResponse.name,
+              content: typeof p.functionResponse.response === 'string'
+                ? p.functionResponse.response
+                : JSON.stringify(p.functionResponse.response || {}),
+            });
+          }
+        } else {
+          messages.push({
+            role: m.role === 'model' ? 'assistant' : m.role,
+            content: textParts || m.content || '',
+          });
+        }
+      } else {
+        messages.push({
+          role: m.role === 'model' ? 'assistant' : m.role,
+          content: m.content || '',
+        });
+      }
+    }
 
     const body = {
       model: GROQ_MODEL,

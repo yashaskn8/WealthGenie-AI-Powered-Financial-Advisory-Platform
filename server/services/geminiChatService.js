@@ -175,36 +175,103 @@ export async function processChat({ userId, user, message, sessionId }) {
   let toolResults = [];
   let orchestration = { toolResults: [], executionGraph: { status: 'NO_TOOLS' } };
   let executedTwoPass = false;
+  const MAX_REPLANS = 2;
+  const MAX_SESSION_CUMULATIVE_TOKENS = 12000;
 
-  // ── PASS 2: Execute Tools & Call LLM Again Grounded in Calculation Outputs ──
-  if (nativeToolCalls.length > 0 && !isFallback) {
-    console.info(`[Chat] Native function calls requested (${nativeToolCalls.length} tools): ${nativeToolCalls.map(t => t.tool).join(', ')}. Executing DAG orchestration...`);
-    orchestration = await AIToolOrchestrator.orchestrate(nativeToolCalls, { profile, user: fullUser });
-    toolResults = orchestration.toolResults;
+  let replanCount = 0;
+  let totalSessionTokens = result.tokensUsed || 0;
+  const replanTrace = [];
+  let currentToolCalls = nativeToolCalls;
+  const allExecutedToolResults = [];
+  let safetyLimitTriggered = false;
+  let safetyLimitReason = null;
 
-    // Append Pass 1 function call and tool result turns to conversation history for Pass 2
+  // ── PASS 2 & REPLANNING LOOP: Execute Tools & Self-Correct / Replan Grounded in Outputs ──
+  while (currentToolCalls.length > 0 && replanCount <= MAX_REPLANS && !isFallback) {
+    console.info(`[Chat] Executing Tool Batch (Pass ${replanCount + 1}, ${currentToolCalls.length} tool(s): ${currentToolCalls.map(t => t.tool).join(', ')})...`);
+    orchestration = await AIToolOrchestrator.orchestrate(currentToolCalls, { profile, user: fullUser });
+    const stepResults = orchestration.toolResults;
+    allExecutedToolResults.push(...stepResults);
+    toolResults = allExecutedToolResults;
+
+    // Append functionCall turn to history
     recentHistory.push({
       role: 'model',
-      parts: nativeToolCalls.map(tc => ({ functionCall: { name: tc.tool, args: tc.arguments } })),
+      parts: currentToolCalls.map(tc => ({ functionCall: { name: tc.tool, args: tc.arguments } })),
     });
 
+    // Append functionResponse turn to history
     recentHistory.push({
       role: 'user',
-      parts: toolResults.map(tr => ({
+      parts: stepResults.map(tr => ({
         functionResponse: {
           name: tr.tool,
-          response: tr.success ? tr.result : { error: tr.error },
+          response: tr.success ? tr.result : {
+            error: tr.error,
+            status: 'FAILED',
+            hint: 'Check required parameters, value boundaries (e.g. annualRate must be decimal <= 0.50), or select an alternative tool.',
+          },
         },
       })),
     });
 
-    console.info(`[Chat] Executing Pass 2 LLM generation grounded in ${toolResults.length} tool result(s)...`);
-    const pass2Result = await ProviderManager.gemini.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS })
-      || await ProviderManager.groq.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS });
+    // Check token safety budget before calling LLM
+    if (totalSessionTokens >= MAX_SESSION_CUMULATIVE_TOKENS) {
+      safetyLimitTriggered = true;
+      safetyLimitReason = 'MAX_SESSION_CUMULATIVE_TOKENS_EXCEEDED';
+      console.warn(`[Chat:SafetyLimit] Cumulative session token budget exceeded (${totalSessionTokens} >= ${MAX_SESSION_CUMULATIVE_TOKENS}). Terminating replanning loop gracefully.`);
+      break;
+    }
 
-    if (pass2Result && pass2Result.text) {
-      result = pass2Result;
-      executedTwoPass = true;
+    console.info(`[Chat] Calling LLM grounded in tool outputs (Pass/Replan #${replanCount + 1})...`);
+    let nextResult = await ProviderManager.gemini.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS, tools: mcpTools })
+      || await ProviderManager.groq.generate({ systemPrompt, recentHistory, maxTokens: MAX_OUTPUT_TOKENS, tools: mcpTools });
+
+    if (!nextResult) {
+      console.warn('[Chat] LLM replan pass returned null, terminating tool loop.');
+      break;
+    }
+
+    totalSessionTokens += nextResult.tokensUsed || 0;
+    executedTwoPass = true;
+
+    // Inspect if LLM requested another tool call (replanning / tool chaining / parameter correction)
+    let nextToolCalls = nextResult.tool_calls || [];
+    if (nextToolCalls.length === 0 && nextResult.text) {
+      const parsed = validateAndSanitizeStructuredResponse(nextResult.text);
+      if (parsed.tool_calls && parsed.tool_calls.length > 0) {
+        nextToolCalls = parsed.tool_calls;
+      }
+    }
+
+    const hasFailures = stepResults.some(r => !r.success);
+
+    if (nextToolCalls.length > 0) {
+      if (replanCount < MAX_REPLANS) {
+        replanCount++;
+        const triggerReason = hasFailures ? 'TOOL_FAILURE_CORRECTION' : 'REASONING_DRIVEN_TOOL_ADJUSTMENT';
+        console.info(`[Chat:Replan] Triggered Replan #${replanCount} (trigger: ${triggerReason}). Next tool(s): ${nextToolCalls.map(t => t.tool).join(', ')}`);
+
+        replanTrace.push({
+          replanIndex: replanCount,
+          trigger: triggerReason,
+          failedTools: stepResults.filter(r => !r.success).map(r => ({ tool: r.tool, error: r.error })),
+          previousToolCalls: currentToolCalls,
+          nextToolCalls: nextToolCalls,
+        });
+
+        currentToolCalls = nextToolCalls;
+      } else {
+        console.info(`[Chat:Replan] Max replans reached (${MAX_REPLANS}). Forcing final grounded response.`);
+        safetyLimitTriggered = hasFailures;
+        if (hasFailures) safetyLimitReason = 'MAX_REPLANS_EXHAUSTED_WITH_FAILURES';
+        result = nextResult;
+        currentToolCalls = [];
+      }
+    } else {
+      // LLM generated final grounded text response without further tool requests
+      result = nextResult;
+      currentToolCalls = [];
     }
   }
 
@@ -217,6 +284,11 @@ export async function processChat({ userId, user, message, sessionId }) {
   PrometheusMetrics.recordLatency(provider, latencyMs);
 
   let responseText = rawResponseText;
+
+  // User-facing Safety Limit Notification if replan loop was terminated by budget/replan caps with failures
+  if (safetyLimitTriggered && safetyLimitReason) {
+    responseText = `⚠️ **Session Safety Limit Notice**: The automated reasoning engine reached the maximum calculation depth limit (${safetyLimitReason.replace(/_/g, ' ')}). Below is the guidance compiled from verified steps:\n\n${responseText}`;
+  }
 
   // Server-Side ACTION_CARD Validation
   const { cleanedText, validCards, validationSummary } = validateAndSanitizeActionCards(responseText);
@@ -260,7 +332,7 @@ export async function processChat({ userId, user, message, sessionId }) {
     responseText,
   });
 
-  console.info(`[Chat] [${provider}] State: ${stateTransition.nextState}. Response: ${responseText.length} chars. Tools: ${toolResults.length}. Verif: ${verificationMetadata.verification_status}.`);
+  console.info(`[Chat] [${provider}] State: ${stateTransition.nextState}. Response: ${responseText.length} chars. Tools: ${toolResults.length}. Replans: ${replanCount}. Verif: ${verificationMetadata.verification_status}.`);
 
   // Phase 7 & Phase 16: Complete Multi-Stage Governance Audit Persistence
   const auditMetadata = {
@@ -268,6 +340,10 @@ export async function processChat({ userId, user, message, sessionId }) {
     validated_v2_protocol: v2Protocol,
     tool_requests: v2Protocol.tool_calls,
     tool_outputs: toolResults,
+    replans: replanTrace,
+    replan_count: replanCount,
+    safety_limit_triggered: safetyLimitTriggered,
+    safety_limit_reason: safetyLimitReason,
     execution_graph: orchestration.executionGraph,
     corrections_applied: verificationMetadata.corrected_fields,
     final_response: responseText,
@@ -275,7 +351,7 @@ export async function processChat({ userId, user, message, sessionId }) {
     state: stateTransition.nextState,
     explainability: explanationMetadata,
     governance: traceGraph.governance,
-    tokens_used: tokensUsed,
+    tokens_used: totalSessionTokens,
     latency_ms: latencyMs,
     grounded_on_profile: true,
     disclaimer_appended: true,
