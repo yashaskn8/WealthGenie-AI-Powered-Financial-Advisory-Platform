@@ -24,9 +24,8 @@ from rag.vector_store.memory_vector_store import PersistentVectorStore
 REGISTRY_PATH = RAGConfig().document_registry_path
 logger = logging.getLogger("wealthgenie.rag.lifecycle")
 
-# Process-wide registry lock and state pool keyed by canonical path
+# Process-wide registry lock pool keyed by canonical path
 _REGISTRY_LOCKS: Dict[str, threading.RLock] = {}
-_SHARED_REGISTRIES: Dict[str, Dict[str, Any]] = {}
 _REGISTRY_GUARD = threading.Lock()
 
 
@@ -40,18 +39,6 @@ def _get_registry_lock(path: Path) -> threading.RLock:
         if resolved_key not in _REGISTRY_LOCKS:
             _REGISTRY_LOCKS[resolved_key] = threading.RLock()
         return _REGISTRY_LOCKS[resolved_key]
-
-
-def _get_shared_registry(path: Path) -> Dict[str, Dict[str, Any]]:
-    """Returns the shared in-memory registry dictionary for a specific registry path."""
-    try:
-        resolved_key = str(path.resolve())
-    except Exception:
-        resolved_key = str(path)
-    with _REGISTRY_GUARD:
-        if resolved_key not in _SHARED_REGISTRIES:
-            _SHARED_REGISTRIES[resolved_key] = {}
-        return _SHARED_REGISTRIES[resolved_key]
 
 
 class DocumentLifecycleManager:
@@ -73,12 +60,8 @@ class DocumentLifecycleManager:
         self.reconcile_registry_and_vector_store()
 
     def _sync_registry_unlocked(self) -> None:
-        """Reloads registry from disk if file exists to synchronize across instances under lock."""
-        if self.registry_path.exists():
-            try:
-                self._load_from_path(self.registry_path)
-            except Exception as e:
-                logger.warning(f"Could not sync registry from {self.registry_path}: {e}")
+        """Reloads registry from disk if file exists with checksum validation and backup recovery under lock."""
+        self._load_registry_unlocked()
 
     def register_document(
         self,
@@ -379,46 +362,50 @@ class DocumentLifecycleManager:
     def load_registry(self) -> None:
         """Loads registry from JSON file with checksum verification and backup snapshot recovery."""
         with self._lock:
-            if not self.registry_path.exists() and not self.backup_path.exists():
-                return
+            self._load_registry_unlocked()
 
-            try:
-                if self.registry_path.exists():
-                    self._load_from_path(self.registry_path)
+    def _load_registry_unlocked(self) -> None:
+        """Internal helper to load/resync registry with checksum validation and backup recovery while lock is held."""
+        if not self.registry_path.exists() and not self.backup_path.exists():
+            return
+
+        try:
+            if self.registry_path.exists():
+                self._load_from_path(self.registry_path)
+                logger.info(
+                    f"Loaded {len(self._registry)} document records into DocumentLifecycleManager from {self.registry_path}"
+                )
+                return
+            else:
+                raise FileNotFoundError(f"Primary registry file missing: {self.registry_path}")
+        except Exception as e:
+            logger.error(f"Failed to load primary document registry from {self.registry_path}: {e}")
+            if self.backup_path.exists():
+                logger.warning(f"Attempting registry corruption recovery from backup: {self.backup_path}")
+                try:
+                    self._load_from_path(self.backup_path)
                     logger.info(
-                        f"Loaded {len(self._registry)} document records into DocumentLifecycleManager from {self.registry_path}"
+                        f"Successfully recovered {len(self._registry)} document records from backup snapshot: {self.backup_path}"
                     )
-                    return
-                else:
-                    raise FileNotFoundError(f"Primary registry file missing: {self.registry_path}")
-            except Exception as e:
-                logger.error(f"Failed to load primary document registry from {self.registry_path}: {e}")
-                if self.backup_path.exists():
-                    logger.warning(f"Attempting registry corruption recovery from backup: {self.backup_path}")
                     try:
-                        self._load_from_path(self.backup_path)
-                        logger.info(
-                            f"Successfully recovered {len(self._registry)} document records from backup snapshot: {self.backup_path}"
-                        )
-                        try:
-                            self._save_registry_unlocked()
-                        except Exception as restore_err:
-                            logger.warning(f"Could not restore primary registry from backup: {restore_err}")
-                        return
-                    except Exception as backup_err:
-                        logger.critical(
-                            f"Fatal: Document registry backup recovery also failed: {backup_err}"
-                        )
-                        raise RuntimeError(
-                            f"Corrupted document registry and backup recovery failed: primary_err={e}, backup_err={backup_err}"
-                        ) from e
-                else:
+                        self._save_registry_unlocked()
+                    except Exception as restore_err:
+                        logger.warning(f"Could not restore primary registry from backup: {restore_err}")
+                    return
+                except Exception as backup_err:
                     logger.critical(
-                        f"Fatal: No backup snapshot available for document registry recovery: {e}"
+                        f"Fatal: Document registry backup recovery also failed: {backup_err}"
                     )
                     raise RuntimeError(
-                        f"Corrupted document registry and no backup available: {e}"
+                        f"Corrupted document registry and backup recovery failed: primary_err={e}, backup_err={backup_err}"
                     ) from e
+            else:
+                logger.critical(
+                    f"Fatal: No backup snapshot available for document registry recovery: {e}"
+                )
+                raise RuntimeError(
+                    f"Corrupted document registry and no backup available: {e}"
+                ) from e
 
     def _load_from_path(self, file_path: Path) -> None:
         """Helper to parse and validate registry file format (v1.0 raw dict vs v2.0 wrapped dict), with backward compatibility migration."""
