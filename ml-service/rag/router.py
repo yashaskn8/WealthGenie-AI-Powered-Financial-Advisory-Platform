@@ -20,15 +20,20 @@ logger = logging.getLogger("wealthgenie.rag.router")
 
 rag_router = APIRouter(prefix="/rag", tags=["Retrieval-Augmented Generation"], dependencies=[Depends(verify_api_key)])
 
-# Instantiate RAG Subsystem instances
+# Instantiate RAG Subsystem instances with shared singleton lifecycle_manager
 rag_config = RAGConfig()
-ingestion_pipeline = IngestionPipeline()
+from store_factory import get_vector_store
+vector_store = get_vector_store()
+lifecycle_manager = DocumentLifecycleManager(vector_store=vector_store)
+ingestion_pipeline = IngestionPipeline(
+    vector_store=vector_store,
+    lifecycle_manager=lifecycle_manager,
+)
 query_pipeline = RAGPipeline(
     embedder=ingestion_pipeline.embedder,
-    vector_store=ingestion_pipeline.vector_store,
+    vector_store=vector_store,
     config=rag_config,
 )
-lifecycle_manager = DocumentLifecycleManager(vector_store=ingestion_pipeline.vector_store)
 
 # In-memory simple rate limiting: IP -> List of request timestamps
 _RATE_LIMIT_STORE: Dict[str, List[float]] = {}

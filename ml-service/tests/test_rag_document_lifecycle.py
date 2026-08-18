@@ -293,6 +293,47 @@ def test_concurrent_document_mutations_maintain_consistency(tmp_path):
     assert len(all_docs) > 0
 
 
+def test_concurrent_multi_instance_mutations_across_pipeline_and_manager(tmp_path):
+    """
+    Proves that separate DocumentLifecycleManager instances targeting the same registry file
+    share a process-wide path-keyed lock and safely synchronize without lost updates or corruption.
+    """
+    reg_file = tmp_path / "multi_instance_registry.json"
+    store = PersistentVectorStore(index_path=tmp_path / "multi_instance_store.json")
+
+    num_instances = 12
+    store_lock = threading.Lock()
+
+    def worker(i):
+        # Create an independent DocumentLifecycleManager instance per thread targeting the same registry path
+        inst_mgr = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
+        doc = Document(
+            document_id=f"multi_doc_{i}",
+            content=f"Content for multi doc {i}",
+            metadata=DocumentMetadata(title=f"Multi Doc {i}", source=f"src_{i}.md", author=f"Author {i}"),
+        )
+        meta = ChunkMetadata(chunk_id=f"mc_{i}", document_id=f"multi_doc_{i}", chunk_index=0, title=f"Multi Doc {i}", source=f"src_{i}.md")
+        chunk = TextChunk(chunk_id=f"mc_{i}", document_id=f"multi_doc_{i}", content=f"Content {i}", metadata=meta, embedding=[0.1, 0.2])
+        with store_lock:
+            store.add_chunks([chunk])
+        inst_mgr.register_document(doc, chunk_count=1)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [executor.submit(worker, i) for i in range(num_instances)]
+        concurrent.futures.wait(futures)
+
+    # Verify final on-disk state via a fresh manager
+    final_mgr = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
+    docs = final_mgr.list_documents(include_inactive=True)
+    assert len(docs) == num_instances
+
+    with open(reg_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    assert data["version"] == "2.0"
+    assert "sha256" in data
+    assert len(data["documents"]) == num_instances
+
+
 # ==============================================================================
 # TENANCY ISOLATION & OWNERSHIP PROOF TESTS
 # ==============================================================================

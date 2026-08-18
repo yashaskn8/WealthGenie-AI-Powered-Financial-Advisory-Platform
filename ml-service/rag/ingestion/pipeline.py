@@ -57,11 +57,13 @@ class IngestionPipeline:
         chunker: Optional[BaseChunker] = None,
         embedder: Optional[BaseEmbeddingProvider] = None,
         vector_store: Optional[BaseVectorStore] = None,
+        lifecycle_manager: Optional[DocumentLifecycleManager] = None,
     ):
         self.loader = DocumentLoader()
         self.chunker = chunker or FixedSizeChunker(chunk_size=512, chunk_overlap=64)
         self.embedder = embedder or get_embedding_provider()
         self.vector_store = vector_store or get_vector_store()
+        self.lifecycle_manager = lifecycle_manager
 
     def is_source_trusted(self, document: Document) -> bool:
         """Validates if the document source or trust tier is from an approved trusted domain/corpus file."""
@@ -176,7 +178,7 @@ class IngestionPipeline:
         added_count = self.vector_store.add_chunks(chunks)
 
         # 5. Register Document Metadata in DocumentLifecycleManager
-        lifecycle_mgr = DocumentLifecycleManager(vector_store=self.vector_store)
+        lifecycle_mgr = self.lifecycle_manager or DocumentLifecycleManager(vector_store=self.vector_store)
         lifecycle_mgr.register_document(document, len(chunks))
 
         return {

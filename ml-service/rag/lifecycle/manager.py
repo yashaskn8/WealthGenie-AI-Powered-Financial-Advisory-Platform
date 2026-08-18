@@ -24,6 +24,35 @@ from rag.vector_store.memory_vector_store import PersistentVectorStore
 REGISTRY_PATH = RAGConfig().document_registry_path
 logger = logging.getLogger("wealthgenie.rag.lifecycle")
 
+# Process-wide registry lock and state pool keyed by canonical path
+_REGISTRY_LOCKS: Dict[str, threading.RLock] = {}
+_SHARED_REGISTRIES: Dict[str, Dict[str, Any]] = {}
+_REGISTRY_GUARD = threading.Lock()
+
+
+def _get_registry_lock(path: Path) -> threading.RLock:
+    """Returns a shared process-wide re-entrant lock for a specific registry path."""
+    try:
+        resolved_key = str(path.resolve())
+    except Exception:
+        resolved_key = str(path)
+    with _REGISTRY_GUARD:
+        if resolved_key not in _REGISTRY_LOCKS:
+            _REGISTRY_LOCKS[resolved_key] = threading.RLock()
+        return _REGISTRY_LOCKS[resolved_key]
+
+
+def _get_shared_registry(path: Path) -> Dict[str, Dict[str, Any]]:
+    """Returns the shared in-memory registry dictionary for a specific registry path."""
+    try:
+        resolved_key = str(path.resolve())
+    except Exception:
+        resolved_key = str(path)
+    with _REGISTRY_GUARD:
+        if resolved_key not in _SHARED_REGISTRIES:
+            _SHARED_REGISTRIES[resolved_key] = {}
+        return _SHARED_REGISTRIES[resolved_key]
+
 
 class DocumentLifecycleManager:
     """Manages document CRUD operations, version history, soft/hard deletion, and re-indexing."""
@@ -38,10 +67,18 @@ class DocumentLifecycleManager:
         self.vector_store = vector_store or PersistentVectorStore()
         self.registry_path = Path(registry_path)
         self.backup_path = self.registry_path.with_suffix(".json.bak")
-        self._lock = threading.Lock()
+        self._lock = _get_registry_lock(self.registry_path)
         self._registry: Dict[str, Dict[str, Any]] = {}
         self.load_registry()
         self.reconcile_registry_and_vector_store()
+
+    def _sync_registry_unlocked(self) -> None:
+        """Reloads registry from disk if file exists to synchronize across instances under lock."""
+        if self.registry_path.exists():
+            try:
+                self._load_from_path(self.registry_path)
+            except Exception as e:
+                logger.warning(f"Could not sync registry from {self.registry_path}: {e}")
 
     def register_document(
         self,
@@ -51,6 +88,7 @@ class DocumentLifecycleManager:
     ) -> None:
         """Registers or updates document entry in the document registry with scope and owner tracking."""
         with self._lock:
+            self._sync_registry_unlocked()
             doc_id = document.document_id
             is_existing = doc_id in self._registry
 
@@ -86,6 +124,7 @@ class DocumentLifecycleManager:
     def soft_delete_document(self, document_id: str, requesting_user_id: Optional[str] = None) -> bool:
         """Soft deletes document by marking it inactive in registry with ownership check."""
         with self._lock:
+            self._sync_registry_unlocked()
             if document_id not in self._registry:
                 return False
 
@@ -126,6 +165,7 @@ class DocumentLifecycleManager:
         Thus, vector store purging MUST always precede registry deletion.
         """
         with self._lock:
+            self._sync_registry_unlocked()
             found_in_registry = document_id in self._registry
             chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
             has_matching_chunks = any(c.document_id == document_id for c in chunks)
@@ -208,6 +248,7 @@ class DocumentLifecycleManager:
         reconciliation flags the drift.
         """
         with self._lock:
+            self._sync_registry_unlocked()
             found_in_reg = document_id in self._registry
             chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
             has_matching_chunks = any(c.document_id == document_id for c in chunks)
@@ -280,6 +321,7 @@ class DocumentLifecycleManager:
         Uses is_scope_accessible() to guarantee users only see global documents + their own user-scoped documents.
         """
         with self._lock:
+            self._sync_registry_unlocked()
             docs = list(self._registry.values())
             if not include_inactive:
                 docs = [d for d in docs if d.get("is_active", True)]
@@ -338,7 +380,6 @@ class DocumentLifecycleManager:
         """Loads registry from JSON file with checksum verification and backup snapshot recovery."""
         with self._lock:
             if not self.registry_path.exists() and not self.backup_path.exists():
-                self._registry = {}
                 return
 
             try:
@@ -416,7 +457,8 @@ class DocumentLifecycleManager:
                 if "tenant_id" not in doc_data:
                     doc_data["tenant_id"] = "default"
 
-        self._registry = raw_docs
+        self._registry.clear()
+        self._registry.update(raw_docs)
 
     def reconcile_registry_and_vector_store(
         self,
@@ -429,6 +471,7 @@ class DocumentLifecycleManager:
         (caller's user:{user_id} scope + global documents) to prevent cross-tenant enumeration.
         """
         with self._lock:
+            self._sync_registry_unlocked()
             # Filter registry documents accessible to requesting identity
             accessible_registry = self._registry
             if requesting_user_id is not None or requesting_scope is not None:
