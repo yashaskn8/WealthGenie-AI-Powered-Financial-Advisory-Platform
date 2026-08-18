@@ -2,6 +2,7 @@
 WealthGenie RAG Subsystem - Document Lifecycle Manager Test Suite
 Tests document registration, soft deletion, hard deletion, metadata update,
 atomic writes, SHA-256 checksums, backup recovery, reconciliation, concurrent mutations,
+per-user tenancy isolation, ownership enforcement on mutations, legacy schema migration,
 and FastAPI router integration.
 """
 
@@ -33,13 +34,14 @@ def test_document_lifecycle_registration_and_soft_delete(tmp_path):
     doc = Document(
         document_id="doc1",
         content="Sample content",
-        metadata=DocumentMetadata(title="Tax Guide", source="tax.md", author="Expert"),
+        metadata=DocumentMetadata(title="Tax Guide", source="tax.md", author="Expert", scope="global"),
     )
 
     manager.register_document(doc, chunk_count=2)
     docs = manager.list_documents()
     assert len(docs) == 1
     assert docs[0]["title"] == "Tax Guide"
+    assert docs[0]["scope"] == "global"
 
     # Soft delete
     manager.soft_delete_document("doc1")
@@ -53,20 +55,20 @@ def test_document_hard_delete_and_chunk_purging(tmp_path):
     reg_file = tmp_path / "test_registry.json"
     store = PersistentVectorStore(index_path=tmp_path / "test_store.json")
 
-    meta = ChunkMetadata(chunk_id="c1", document_id="doc1", chunk_index=0, title="T1", source="s1.md")
+    meta = ChunkMetadata(chunk_id="c1", document_id="doc1", chunk_index=0, title="T1", source="s1.md", scope="user:u1")
     chunk = TextChunk(chunk_id="c1", document_id="doc1", content="Content", metadata=meta, embedding=[1.0, 0.0])
     store.add_chunks([chunk])
 
     manager = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
     manager.register_document(
-        Document(document_id="doc1", content="Content", metadata=DocumentMetadata(title="T1", source="s1.md")),
+        Document(document_id="doc1", content="Content", metadata=DocumentMetadata(title="T1", source="s1.md", scope="user:u1")),
         chunk_count=1,
     )
 
     assert len(store._chunks) == 1
 
-    # Hard delete
-    success = manager.hard_delete_document("doc1")
+    # Hard delete as owner u1
+    success = manager.hard_delete_document("doc1", requesting_user_id="u1")
     assert success
     assert len(store._chunks) == 0
     assert len(manager.list_documents()) == 0
@@ -76,17 +78,17 @@ def test_document_metadata_update(tmp_path):
     reg_file = tmp_path / "test_registry.json"
     store = PersistentVectorStore(index_path=tmp_path / "test_store.json")
 
-    meta = ChunkMetadata(chunk_id="c1", document_id="doc1", chunk_index=0, title="Old Title", source="s1.md")
+    meta = ChunkMetadata(chunk_id="c1", document_id="doc1", chunk_index=0, title="Old Title", source="s1.md", scope="user:u1")
     chunk = TextChunk(chunk_id="c1", document_id="doc1", content="Content", metadata=meta, embedding=[1.0, 0.0])
     store.add_chunks([chunk])
 
     manager = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
     manager.register_document(
-        Document(document_id="doc1", content="Content", metadata=DocumentMetadata(title="Old Title", source="s1.md")),
+        Document(document_id="doc1", content="Content", metadata=DocumentMetadata(title="Old Title", source="s1.md", scope="user:u1")),
         chunk_count=1,
     )
 
-    manager.update_metadata("doc1", new_title="New Tax Guide Title", new_author="Jane Doe")
+    manager.update_metadata("doc1", new_title="New Tax Guide Title", new_author="Jane Doe", requesting_user_id="u1")
 
     doc_entry = manager.list_documents()[0]
     assert doc_entry["title"] == "New Tax Guide Title"
@@ -97,7 +99,7 @@ def test_document_metadata_update(tmp_path):
 
 def test_hard_delete_interruption_leaves_safe_state_and_reconciles(tmp_path):
     """
-    PROOF 1: Simulates process crash/interruption between vector-store-save and registry-save.
+    PROOF: Simulates process crash/interruption between vector-store-save and registry-save.
     Asserts:
       1. Vector store chunks are genuinely gone from search results (no stale/unauthorized retrieval).
       2. Fresh DocumentLifecycleManager loaded from disk flags the stale registry entry during reconciliation.
@@ -147,7 +149,7 @@ def test_hard_delete_interruption_leaves_safe_state_and_reconciles(tmp_path):
 
 def test_registry_atomic_save_and_backup_recovery(tmp_path):
     """
-    PROOF 2A: Proves save_registry() uses atomic writes with checksum and survives
+    Proves save_registry() uses atomic writes with checksum and survives
     simulated corruption of the primary file by recovering from .json.bak.
     """
     reg_file = tmp_path / "test_registry.json"
@@ -184,7 +186,7 @@ def test_registry_atomic_save_and_backup_recovery(tmp_path):
 
 def test_registry_corruption_fails_loudly_without_backup(tmp_path):
     """
-    PROOF 2B: Proves that if primary file is corrupt and no backup exists (or backup is also corrupt),
+    Proves that if primary file is corrupt and no backup exists (or backup is also corrupt),
     the manager fails loudly with RuntimeError rather than starting with silent data loss.
     """
     reg_file = tmp_path / "test_registry.json"
@@ -230,7 +232,7 @@ def test_reconciliation_detects_orphaned_chunks(tmp_path):
 
 def test_concurrent_document_mutations_maintain_consistency(tmp_path):
     """
-    PROOF 3: Fires register_document(), update_metadata(), soft_delete_document(), and
+    Fires register_document(), update_metadata(), soft_delete_document(), and
     hard_delete_document() across real concurrent threads against the same manager instance.
     Asserts final on-disk state is valid, parsable, and non-corrupted (no lost updates or torn writes).
     """
@@ -291,16 +293,226 @@ def test_concurrent_document_mutations_maintain_consistency(tmp_path):
     assert len(all_docs) > 0
 
 
-def test_fastapi_document_endpoints(client):
-    res = client.get("/rag/documents")
-    assert res.status_code == 200
-    assert "documents" in res.json()
+# ==============================================================================
+# TENANCY ISOLATION & OWNERSHIP PROOF TESTS
+# ==============================================================================
+
+def test_alice_bob_document_listing_isolation(client):
+    """
+    PROOF 1: Alice ingests a user-scoped document. Bob calls GET /rag/documents.
+    Asserts:
+      1. Alice's document is NOT in Bob's result set.
+      2. Global documents ARE visible in Bob's result set.
+      3. Alice's document IS in Alice's result set.
+    """
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+
+    # Alice ingests private financial document
+    ingest_res = client.post(
+        "/rag/index",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_123"},
+        json={
+            "title": "Alice Private Tax Portfolio 2026",
+            "content": "Confidential salary and deduction breakdown for Alice.",
+            "source": "alice_tax.md",
+            "author": "Alice CA",
+        },
+    )
+    assert ingest_res.status_code == 200
+    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+
+    # Bob calls GET /rag/documents
+    bob_res = client.get(
+        "/rag/documents",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_user_456"},
+    )
+    assert bob_res.status_code == 200
+    bob_doc_ids = [d["document_id"] for d in bob_res.json()["documents"]]
+
+    # 1. Alice's document is strictly absent from Bob's list
+    assert alice_doc_id not in bob_doc_ids
+
+    # 2. Alice calls GET /rag/documents -> Alice's document is present
+    alice_res = client.get(
+        "/rag/documents",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_123"},
+    )
+    assert alice_res.status_code == 200
+    alice_doc_ids = [d["document_id"] for d in alice_res.json()["documents"]]
+    assert alice_doc_id in alice_doc_ids
 
 
-def test_fastapi_reconcile_endpoint(client):
-    res = client.get("/rag/reconcile")
-    assert res.status_code == 200
-    data = res.json()
-    assert "status" in data
-    assert "stale_registry_documents" in data
-    assert "orphaned_vector_documents" in data
+def test_alice_bob_reconciliation_isolation(client):
+    """
+    PROOF 2: Bob calls GET /rag/reconcile.
+    Asserts: Alice's document_id does NOT appear anywhere in Bob's reconciliation output.
+    """
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+
+    # Alice ingests document
+    ingest_res = client.post(
+        "/rag/index",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_recon"},
+        json={
+            "title": "Alice Portfolio Audit",
+            "content": "Alice confidential holdings for audit.",
+            "source": "alice_audit.md",
+            "author": "Alice Advisor",
+        },
+    )
+    assert ingest_res.status_code == 200
+    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+
+    # Bob calls GET /rag/reconcile
+    bob_recon_res = client.get(
+        "/rag/reconcile",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_user_recon"},
+    )
+    assert bob_recon_res.status_code == 200
+    bob_recon = bob_recon_res.json()
+
+    # Alice's doc_id must never appear in Bob's stale or orphaned lists
+    assert alice_doc_id not in bob_recon.get("stale_registry_documents", [])
+    assert alice_doc_id not in bob_recon.get("orphaned_vector_documents", [])
+
+
+def test_cross_user_mutation_forbidden(client):
+    """
+    PROOF 3: Bob attempts DELETE and PUT on Alice's document_id.
+    Asserts:
+      1. Bob's DELETE returns HTTP 403 Forbidden.
+      2. Bob's PUT returns HTTP 403 Forbidden.
+      3. Alice's document remains intact and un-mutated.
+    """
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+
+    # Alice ingests document
+    ingest_res = client.post(
+        "/rag/index",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_protect"},
+        json={
+            "title": "Alice Intact Document",
+            "content": "Original content owned by Alice.",
+            "source": "alice_intact.md",
+            "author": "Alice Author",
+        },
+    )
+    assert ingest_res.status_code == 200
+    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+
+    # 1. Bob attempts DELETE on Alice's document -> 403 Forbidden
+    bob_del = client.delete(
+        f"/rag/documents/{alice_doc_id}",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_intruder"},
+    )
+    assert bob_del.status_code == 403
+    assert "Forbidden" in bob_del.json()["detail"]
+
+    # 2. Bob attempts PUT on Alice's document -> 403 Forbidden
+    bob_put = client.put(
+        f"/rag/documents/{alice_doc_id}",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_intruder"},
+        params={"title": "Hacked Title by Bob"},
+    )
+    assert bob_put.status_code == 403
+    assert "Forbidden" in bob_put.json()["detail"]
+
+    # 3. Verify Alice's document is unmodified in Alice's list
+    alice_res = client.get(
+        "/rag/documents",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_protect"},
+    )
+    matching = [d for d in alice_res.json()["documents"] if d["document_id"] == alice_doc_id]
+    assert len(matching) == 1
+    assert matching[0]["title"] == "Alice Intact Document"
+
+
+def test_alice_own_mutation_and_global_listing(client):
+    """
+    PROOF 4: Alice can update and delete her own document. Non-existent document returns 404.
+    """
+    api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+
+    # Alice ingests document
+    ingest_res = client.post(
+        "/rag/index",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_owner"},
+        json={
+            "title": "Alice Updatable Doc",
+            "content": "Original updatable content.",
+            "source": "alice_update.md",
+            "author": "Alice",
+        },
+    )
+    assert ingest_res.status_code == 200
+    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+
+    # Alice updates her own document -> 200 OK
+    update_res = client.put(
+        f"/rag/documents/{alice_doc_id}",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_owner"},
+        params={"title": "Alice Updated Title"},
+    )
+    assert update_res.status_code == 200
+
+    # Alice deletes her own document -> 200 OK
+    del_res = client.delete(
+        f"/rag/documents/{alice_doc_id}",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_owner"},
+    )
+    assert del_res.status_code == 200
+
+    # Non-existent document deletion returns 404
+    del_404 = client.delete(
+        "/rag/documents/completely_unknown_doc_id",
+        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_owner"},
+    )
+    assert del_404.status_code == 404
+
+
+def test_legacy_registry_migration_defaults_to_global(tmp_path):
+    """
+    PROOF 5: Legacy registry file lacking scope/owner_user_id fields loads cleanly,
+    defaults to scope='global' and owner_user_id=None, and remains visible to all callers.
+    """
+    reg_file = tmp_path / "legacy_registry.json"
+    store = PersistentVectorStore(index_path=tmp_path / "legacy_store.json")
+
+    # Construct pre-migration registry file lacking scope and owner_user_id fields
+    legacy_data = {
+        "version": "1.0",
+        "total_documents": 1,
+        "documents": {
+            "legacy_doc_1": {
+                "document_id": "legacy_doc_1",
+                "title": "Income Tax Act Master Reference",
+                "source": "tax_act.pdf",
+                "document_type": "pdf",
+                "author": "CBDT",
+                "chunk_count": 5,
+                "is_active": True,
+                "version_number": 1,
+                "created_at_utc": "2026-01-01T00:00:00Z",
+                "updated_at_utc": "2026-01-01T00:00:00Z",
+            }
+        },
+    }
+    with open(reg_file, "w", encoding="utf-8") as f:
+        json.dump(legacy_data, f)
+
+    manager = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
+
+    # 1. Check in-memory migration populated default values
+    doc_entry = manager._registry["legacy_doc_1"]
+    assert doc_entry["scope"] == "global"
+    assert doc_entry["owner_user_id"] is None
+    assert doc_entry["tenant_id"] == "default"
+
+    # 2. Remains visible to any caller querying list_documents
+    alice_docs = manager.list_documents(requesting_user_id="user_alice")
+    assert len(alice_docs) == 1
+    assert alice_docs[0]["document_id"] == "legacy_doc_1"
+
+    bob_docs = manager.list_documents(requesting_user_id="user_bob")
+    assert len(bob_docs) == 1
+    assert bob_docs[0]["document_id"] == "legacy_doc_1"

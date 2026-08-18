@@ -1,9 +1,23 @@
 import axios from 'axios';
 import { PrometheusMetrics } from './metricsCollector.js';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
+
+/**
+ * Strips JSON schema fields unsupported by Google Gemini FunctionDeclarations API (e.g. additionalProperties, patternProperties).
+ */
+function sanitizeGeminiSchema(schema) {
+  if (!schema || typeof schema !== 'object') return schema;
+  if (Array.isArray(schema)) return schema.map(sanitizeGeminiSchema);
+  const clean = {};
+  for (const [k, v] of Object.entries(schema)) {
+    if (k === 'additionalProperties' || k === 'patternProperties') continue;
+    clean[k] = sanitizeGeminiSchema(v);
+  }
+  return clean;
+}
 
 /**
  * Abstract Base Provider Adapter (Phase 9)
@@ -65,7 +79,7 @@ export class GeminiProviderAdapter extends BaseProviderAdapter {
           functionDeclarations: tools.map(t => ({
             name: t.name,
             description: t.description,
-            parameters: t.parameters,
+            parameters: sanitizeGeminiSchema(t.parameters),
           })),
         },
       ];
@@ -94,6 +108,7 @@ export class GeminiProviderAdapter extends BaseProviderAdapter {
           toolCalls.push({
             tool: part.functionCall.name,
             arguments: part.functionCall.args || {},
+            raw_part: part,
           });
         }
       }

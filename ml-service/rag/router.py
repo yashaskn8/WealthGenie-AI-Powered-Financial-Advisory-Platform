@@ -145,6 +145,9 @@ def index_document(
             scope=f"user:{verified_user_id}",
             manual_override=True,
         )
+        # Sync the router's lifecycle_manager with disk state written by the pipeline's
+        # ephemeral DocumentLifecycleManager during ingest_document().
+        lifecycle_manager.load_registry()
         return {"status": "success", "ingestion_result": res}
     except Exception as e:
         logger.error(f"Document ingestion failed: {e}")
@@ -156,8 +159,11 @@ def list_documents(
     include_inactive: bool = False,
     verified_user_id: str = Depends(verify_verified_user_id),
 ):
-    """Lists all registered documents in the knowledge base."""
-    return {"documents": lifecycle_manager.list_documents(include_inactive=include_inactive)}
+    """Lists registered documents accessible to the verified user (global + user:{verified_user_id})."""
+    return {"documents": lifecycle_manager.list_documents(
+        include_inactive=include_inactive,
+        requesting_user_id=verified_user_id,
+    )}
 
 
 @rag_router.delete("/documents/{doc_id}")
@@ -166,15 +172,18 @@ def delete_document(
     hard_delete: bool = True,
     verified_user_id: str = Depends(verify_verified_user_id),
 ):
-    """Deletes or soft-deletes a document and purges vector index chunks."""
-    if hard_delete:
-        success = lifecycle_manager.hard_delete_document(doc_id)
-    else:
-        success = lifecycle_manager.soft_delete_document(doc_id)
+    """Deletes or soft-deletes a document and purges vector index chunks with caller ownership enforcement."""
+    try:
+        if hard_delete:
+            success = lifecycle_manager.hard_delete_document(doc_id, requesting_user_id=verified_user_id)
+        else:
+            success = lifecycle_manager.soft_delete_document(doc_id, requesting_user_id=verified_user_id)
 
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
-    return {"status": "success", "message": f"Document '{doc_id}' deleted successfully."}
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
+        return {"status": "success", "message": f"Document '{doc_id}' deleted successfully."}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @rag_router.put("/documents/{doc_id}")
@@ -184,17 +193,28 @@ def update_document(
     author: Optional[str] = None,
     verified_user_id: str = Depends(verify_verified_user_id),
 ):
-    """Updates metadata across document registry and vector store chunks."""
-    success = lifecycle_manager.update_metadata(doc_id, new_title=title, new_author=author)
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
-    return {"status": "success", "message": f"Metadata updated for document '{doc_id}'."}
+    """Updates metadata across document registry and vector store chunks with caller ownership enforcement."""
+    try:
+        success = lifecycle_manager.update_metadata(
+            doc_id,
+            new_title=title,
+            new_author=author,
+            requesting_user_id=verified_user_id,
+        )
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
+        return {"status": "success", "message": f"Metadata updated for document '{doc_id}'."}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @rag_router.get("/reconcile")
 def reconcile_documents(
     verified_user_id: str = Depends(verify_verified_user_id),
 ):
-    """Reconciles document registry entries against vector store chunks."""
-    return lifecycle_manager.reconcile_registry_and_vector_store()
+    """Reconciles document registry entries against vector store chunks within verified user's scope."""
+    return lifecycle_manager.reconcile_registry_and_vector_store(
+        requesting_user_id=verified_user_id
+    )
+
 

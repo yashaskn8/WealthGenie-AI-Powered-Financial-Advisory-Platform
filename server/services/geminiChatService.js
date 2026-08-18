@@ -292,7 +292,7 @@ export async function processChat({ userId, user, message, sessionId }) {
     // Append functionCall turn to history
     recentHistory.push({
       role: 'model',
-      parts: currentToolCalls.map(tc => ({ functionCall: { name: tc.tool, args: tc.arguments } })),
+      parts: currentToolCalls.map(tc => tc.raw_part || { functionCall: { name: tc.tool, args: tc.arguments } }),
     });
 
     // Append functionResponse turn to history

@@ -1,7 +1,8 @@
 """
 WealthGenie RAG Subsystem - Document Lifecycle Manager
 Manages document version history, soft/hard deletion, incremental re-indexing, duplicate detection, and metadata updates.
-Hardened with atomic writes, SHA-256 checksum validation, backup recovery, reconciliation, and thread-safe synchronization.
+Hardened with atomic writes, SHA-256 checksum validation, backup recovery, reconciliation, thread-safe synchronization,
+and per-user tenant ownership isolation.
 """
 
 import hashlib
@@ -16,7 +17,7 @@ from typing import Dict, Any, List, Optional, Set
 
 from model.config import BASE_DIR
 from rag.config import RAGConfig
-from rag.schema import Document, DocumentMetadata, TextChunk
+from rag.schema import Document, DocumentMetadata, TextChunk, is_scope_accessible
 from rag.vector_store.base import BaseVectorStore
 from rag.vector_store.memory_vector_store import PersistentVectorStore
 
@@ -42,13 +43,25 @@ class DocumentLifecycleManager:
         self.load_registry()
         self.reconcile_registry_and_vector_store()
 
-    def register_document(self, document: Document, chunk_count: int) -> None:
-        """Registers or updates document entry in the document registry."""
+    def register_document(
+        self,
+        document: Document,
+        chunk_count: int,
+        owner_user_id: Optional[str] = None,
+    ) -> None:
+        """Registers or updates document entry in the document registry with scope and owner tracking."""
         with self._lock:
             doc_id = document.document_id
             is_existing = doc_id in self._registry
 
             version = int(self._registry[doc_id].get("version_number", 1)) + 1 if is_existing else 1
+
+            doc_scope = getattr(document.metadata, "scope", "global") or "global"
+            resolved_owner = owner_user_id
+            if not resolved_owner:
+                resolved_owner = getattr(document.metadata, "custom_metadata", {}).get("owner_user_id")
+            if not resolved_owner and doc_scope.startswith("user:"):
+                resolved_owner = doc_scope[5:]
 
             self._registry[doc_id] = {
                 "document_id": doc_id,
@@ -57,28 +70,52 @@ class DocumentLifecycleManager:
                 "document_type": document.metadata.document_type,
                 "author": document.metadata.author,
                 "chunk_count": chunk_count,
+                "scope": doc_scope,
+                "owner_user_id": resolved_owner,
+                "tenant_id": getattr(document.metadata, "tenant_id", "default") or "default",
                 "is_active": True,
                 "version_number": version,
                 "created_at_utc": self._registry[doc_id].get("created_at_utc") if is_existing else datetime.now(timezone.utc).isoformat(),
                 "updated_at_utc": datetime.now(timezone.utc).isoformat(),
             }
             self._save_registry_unlocked()
-            logger.info(f"Registered document '{document.metadata.title}' (v{version}) in DocumentRegistry.")
+            logger.info(
+                f"Registered document '{document.metadata.title}' (v{version}, scope={doc_scope}, owner={resolved_owner}) in DocumentRegistry."
+            )
 
-    def soft_delete_document(self, document_id: str) -> bool:
-        """Soft deletes document by marking it inactive in registry."""
+    def soft_delete_document(self, document_id: str, requesting_user_id: Optional[str] = None) -> bool:
+        """Soft deletes document by marking it inactive in registry with ownership check."""
         with self._lock:
             if document_id not in self._registry:
                 return False
-            self._registry[document_id]["is_active"] = False
-            self._registry[document_id]["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
+
+            doc_entry = self._registry[document_id]
+            doc_scope = doc_entry.get("scope", "global")
+            owner = doc_entry.get("owner_user_id")
+            if not owner and doc_scope.startswith("user:"):
+                owner = doc_scope[5:]
+
+            if requesting_user_id is not None:
+                if doc_scope.startswith("user:") or owner is not None:
+                    if owner != requesting_user_id:
+                        raise PermissionError(
+                            f"Forbidden: User '{requesting_user_id}' does not own document '{document_id}'"
+                        )
+                else:
+                    raise PermissionError(
+                        "Forbidden: Global documents cannot be modified or deleted by standard users"
+                    )
+
+            doc_entry["is_active"] = False
+            doc_entry["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
             self._save_registry_unlocked()
             logger.info(f"Soft-deleted document '{document_id}' in DocumentRegistry.")
             return True
 
-    def hard_delete_document(self, document_id: str) -> bool:
+    def hard_delete_document(self, document_id: str, requesting_user_id: Optional[str] = None) -> bool:
         """
         Hard deletes document from vector store chunks FIRST, then from registry SECOND.
+        Enforces caller ownership when requesting_user_id is provided.
         
         ORDERING JUSTIFICATION:
         In a financial advisory RAG system, having content indexed in the vector store without
@@ -90,11 +127,41 @@ class DocumentLifecycleManager:
         """
         with self._lock:
             found_in_registry = document_id in self._registry
+            chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
+            has_matching_chunks = any(c.document_id == document_id for c in chunks)
+
+            if not found_in_registry and not has_matching_chunks:
+                return False
+
+            # Determine document scope and ownership
+            doc_scope = "global"
+            owner = None
+            if found_in_registry:
+                doc_entry = self._registry[document_id]
+                doc_scope = doc_entry.get("scope", "global")
+                owner = doc_entry.get("owner_user_id")
+                if not owner and doc_scope.startswith("user:"):
+                    owner = doc_scope[5:]
+            elif has_matching_chunks:
+                matching_c = [c for c in chunks if c.document_id == document_id][0]
+                doc_scope = getattr(matching_c, "scope", getattr(matching_c.metadata, "scope", "global"))
+                if doc_scope.startswith("user:"):
+                    owner = doc_scope[5:]
+
+            # Enforce ownership check
+            if requesting_user_id is not None:
+                if doc_scope.startswith("user:") or owner is not None:
+                    if owner != requesting_user_id:
+                        raise PermissionError(
+                            f"Forbidden: User '{requesting_user_id}' does not own document '{document_id}'"
+                        )
+                else:
+                    raise PermissionError(
+                        "Forbidden: Global documents cannot be modified or deleted by standard users"
+                    )
 
             # 1. Purge chunks and embeddings from vector store FIRST
-            chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
             embeddings: List[List[float]] = getattr(self.vector_store, "_embeddings", [])
-
             initial_count = len(chunks)
             filtered_chunks = []
             filtered_embeddings = []
@@ -120,16 +187,18 @@ class DocumentLifecycleManager:
                 self._save_registry_unlocked()
                 logger.info(f"Removed document '{document_id}' from DocumentRegistry.")
 
-            return found_in_registry or (purged_chunks_count > 0)
+            return True
 
     def update_metadata(
         self,
         document_id: str,
         new_title: Optional[str] = None,
         new_author: Optional[str] = None,
+        requesting_user_id: Optional[str] = None,
     ) -> bool:
         """
         Updates metadata in vector store chunks FIRST, then in document registry SECOND.
+        Enforces caller ownership when requesting_user_id is provided.
         
         ORDERING JUSTIFICATION:
         Vector store chunks provide the citation titles and authors directly returned to users
@@ -140,14 +209,40 @@ class DocumentLifecycleManager:
         """
         with self._lock:
             found_in_reg = document_id in self._registry
-            found_in_store = any(
-                c.document_id == document_id for c in getattr(self.vector_store, "_chunks", [])
-            )
-            if not found_in_reg and not found_in_store:
+            chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
+            has_matching_chunks = any(c.document_id == document_id for c in chunks)
+
+            if not found_in_reg and not has_matching_chunks:
                 return False
 
+            # Determine document scope and ownership
+            doc_scope = "global"
+            owner = None
+            if found_in_reg:
+                doc_entry = self._registry[document_id]
+                doc_scope = doc_entry.get("scope", "global")
+                owner = doc_entry.get("owner_user_id")
+                if not owner and doc_scope.startswith("user:"):
+                    owner = doc_scope[5:]
+            elif has_matching_chunks:
+                matching_c = [c for c in chunks if c.document_id == document_id][0]
+                doc_scope = getattr(matching_c, "scope", getattr(matching_c.metadata, "scope", "global"))
+                if doc_scope.startswith("user:"):
+                    owner = doc_scope[5:]
+
+            # Enforce ownership check
+            if requesting_user_id is not None:
+                if doc_scope.startswith("user:") or owner is not None:
+                    if owner != requesting_user_id:
+                        raise PermissionError(
+                            f"Forbidden: User '{requesting_user_id}' does not own document '{document_id}'"
+                        )
+                else:
+                    raise PermissionError(
+                        "Forbidden: Global documents cannot be modified or deleted by standard users"
+                    )
+
             # 1. Update metadata in vector store chunks FIRST
-            chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
             chunks_modified = False
             for c in chunks:
                 if c.document_id == document_id:
@@ -174,12 +269,32 @@ class DocumentLifecycleManager:
 
             return True
 
-    def list_documents(self, include_inactive: bool = False) -> List[Dict[str, Any]]:
-        """Returns list of registered documents."""
+    def list_documents(
+        self,
+        include_inactive: bool = False,
+        requesting_user_id: Optional[str] = None,
+        requesting_scope: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns list of registered documents filtered by tenant/user scope.
+        Uses is_scope_accessible() to guarantee users only see global documents + their own user-scoped documents.
+        """
         with self._lock:
             docs = list(self._registry.values())
             if not include_inactive:
                 docs = [d for d in docs if d.get("is_active", True)]
+
+            if requesting_user_id is not None or requesting_scope is not None:
+                docs = [
+                    d for d in docs
+                    if is_scope_accessible(
+                        chunk_scope=d.get("scope", "global"),
+                        chunk_tenant_id=d.get("tenant_id", "default"),
+                        requesting_scope=requesting_scope,
+                        requesting_user_id=requesting_user_id,
+                        tenant_id="default",
+                    )
+                ]
             return docs
 
     def save_registry(self) -> None:
@@ -244,7 +359,6 @@ class DocumentLifecycleManager:
                         logger.info(
                             f"Successfully recovered {len(self._registry)} document records from backup snapshot: {self.backup_path}"
                         )
-                        # Restore primary file from valid backup
                         try:
                             self._save_registry_unlocked()
                         except Exception as restore_err:
@@ -266,7 +380,7 @@ class DocumentLifecycleManager:
                     ) from e
 
     def _load_from_path(self, file_path: Path) -> None:
-        """Helper to parse and validate registry file format (v1.0 raw dict vs v2.0 wrapped dict)."""
+        """Helper to parse and validate registry file format (v1.0 raw dict vs v2.0 wrapped dict), with backward compatibility migration."""
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
@@ -282,36 +396,81 @@ class DocumentLifecycleManager:
                     raise ValueError(
                         f"Document registry checksum mismatch! Expected {expected_hash[:8]}, got {actual_hash[:8]}"
                     )
-            self._registry = docs
+            raw_docs = docs
         elif isinstance(data, dict):
             # Format v1.0 (backward compatibility for raw dict of document_id -> metadata)
-            self._registry = data
+            raw_docs = data
         else:
             raise ValueError(f"Invalid document registry structure in {file_path}")
 
-    def reconcile_registry_and_vector_store(self) -> Dict[str, Any]:
+        # Migration: Ensure all loaded documents have scope, owner_user_id, and tenant_id
+        for doc_id, doc_data in raw_docs.items():
+            if isinstance(doc_data, dict):
+                if "scope" not in doc_data or not doc_data["scope"]:
+                    doc_data["scope"] = "global"
+                if "owner_user_id" not in doc_data:
+                    if doc_data["scope"].startswith("user:"):
+                        doc_data["owner_user_id"] = doc_data["scope"][5:]
+                    else:
+                        doc_data["owner_user_id"] = None
+                if "tenant_id" not in doc_data:
+                    doc_data["tenant_id"] = "default"
+
+        self._registry = raw_docs
+
+    def reconcile_registry_and_vector_store(
+        self,
+        requesting_user_id: Optional[str] = None,
+        requesting_scope: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Reconciles registry documents with vector store chunks to detect orphan chunks and stale registry entries.
-        Reports anomalies at WARNING level with counts and IDs.
+        When requesting_user_id is provided, scopes the reconciliation view strictly to accessible documents
+        (caller's user:{user_id} scope + global documents) to prevent cross-tenant enumeration.
         """
         with self._lock:
-            registry_doc_ids: Set[str] = set(self._registry.keys())
-            chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
-            vector_doc_ids: Set[str] = {c.document_id for c in chunks if c.document_id}
+            # Filter registry documents accessible to requesting identity
+            accessible_registry = self._registry
+            if requesting_user_id is not None or requesting_scope is not None:
+                accessible_registry = {
+                    doc_id: d for doc_id, d in self._registry.items()
+                    if is_scope_accessible(
+                        chunk_scope=d.get("scope", "global"),
+                        chunk_tenant_id=d.get("tenant_id", "default"),
+                        requesting_scope=requesting_scope,
+                        requesting_user_id=requesting_user_id,
+                        tenant_id="default",
+                    )
+                }
+            registry_doc_ids: Set[str] = set(accessible_registry.keys())
+
+            # Filter vector store chunks accessible to requesting identity
+            all_chunks: List[TextChunk] = getattr(self.vector_store, "_chunks", [])
+            accessible_chunks = all_chunks
+            if requesting_user_id is not None or requesting_scope is not None:
+                accessible_chunks = [
+                    c for c in all_chunks
+                    if is_scope_accessible(
+                        chunk_scope=getattr(c, "scope", getattr(c.metadata, "scope", "global")),
+                        chunk_tenant_id=getattr(c, "tenant_id", getattr(c.metadata, "tenant_id", "default")),
+                        requesting_scope=requesting_scope,
+                        requesting_user_id=requesting_user_id,
+                        tenant_id="default",
+                    )
+                ]
+            vector_doc_ids: Set[str] = {c.document_id for c in accessible_chunks if c.document_id}
 
             # 1. Stale registry entries: document in registry but 0 chunks in vector store
-            # (can happen if hard_delete crashed after purging vector store, or doc registered with 0 chunks)
             stale_registry_docs = sorted(list(registry_doc_ids - vector_doc_ids))
 
             # 2. Orphaned vector chunks: chunks exist in vector store but document_id not in registry
-            # (can happen if ingestion failed before registering doc, or doc was delisted without vector purge in legacy code)
             orphaned_vector_docs = sorted(list(vector_doc_ids - registry_doc_ids))
 
             reconciliation_result = {
                 "status": "CLEAN" if not stale_registry_docs and not orphaned_vector_docs else "ANOMALIES_DETECTED",
                 "registry_document_count": len(registry_doc_ids),
                 "vector_unique_document_count": len(vector_doc_ids),
-                "total_chunks": len(chunks),
+                "total_chunks": len(accessible_chunks),
                 "stale_registry_documents": stale_registry_docs,
                 "stale_registry_count": len(stale_registry_docs),
                 "orphaned_vector_documents": orphaned_vector_docs,

@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL_NAME = 'llama-3.3-70b-versatile';
-const GEMINI_CHAT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_CHAT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
 function hashProfile(profile) {
   return crypto.createHash('md5').update(JSON.stringify(profile)).digest('hex');
