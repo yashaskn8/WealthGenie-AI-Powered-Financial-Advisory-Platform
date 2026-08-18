@@ -210,6 +210,77 @@ def test_registry_corruption_fails_loudly_without_backup(tmp_path):
     assert "backup recovery failed" in str(exc_info2.value)
 
 
+def test_mid_operation_resync_recovers_from_valid_backup(tmp_path):
+    """
+    Proves that an ALREADY-INITIALIZED, live DocumentLifecycleManager instance
+    recovers from .bak snapshot when _sync_registry_unlocked() encounters a corrupted
+    primary file during a subsequent critical-section mutation/query without creating a new instance.
+    """
+    reg_file = tmp_path / "mid_op_resync_registry.json"
+    store = PersistentVectorStore(index_path=tmp_path / "mid_op_resync_store.json")
+
+    # 1. Instantiate manager ONCE and register two documents sequentially
+    manager = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
+
+    doc1 = Document(document_id="doc_live_1", content="Text 1", metadata=DocumentMetadata(title="Live Doc 1", source="s1.md"))
+    doc2 = Document(document_id="doc_live_2", content="Text 2", metadata=DocumentMetadata(title="Live Doc 2", source="s2.md"))
+    doc3 = Document(document_id="doc_live_3", content="Text 3", metadata=DocumentMetadata(title="Live Doc 3", source="s3.md"))
+
+    manager.register_document(doc1, chunk_count=1)
+    # Second registration creates valid .bak snapshot containing doc_live_1
+    manager.register_document(doc2, chunk_count=1)
+    assert manager.backup_path.exists()
+
+    # 2. Corrupt ONLY the primary registry file on disk after initialization
+    with open(reg_file, "w", encoding="utf-8") as f:
+        f.write("{ INVALID TRUNCATED JSON CORRUPT MID OPERATION ///")
+
+    # 3. Call critical-section method on that SAME live manager instance (triggers _sync_registry_unlocked)
+    manager.register_document(doc3, chunk_count=1)
+
+    # 4. Assert successful recovery from .bak (has doc_live_1) plus the new mutation (doc_live_3)
+    docs = manager.list_documents(include_inactive=True)
+    doc_ids = {d["document_id"] for d in docs}
+    assert doc_ids == {"doc_live_1", "doc_live_3"}
+    assert "doc_live_2" not in doc_ids
+
+
+def test_mid_operation_resync_raises_when_backup_also_corrupted(tmp_path):
+    """
+    Proves that an ALREADY-INITIALIZED, live DocumentLifecycleManager instance
+    raises RuntimeError with both primary and backup failure details when
+    _sync_registry_unlocked() encounters corruption on both primary and .bak during mid-operation resync.
+    """
+    reg_file = tmp_path / "mid_op_fail_registry.json"
+    store = PersistentVectorStore(index_path=tmp_path / "mid_op_fail_store.json")
+
+    # 1. Instantiate manager ONCE and register two documents sequentially
+    manager = DocumentLifecycleManager(vector_store=store, registry_path=reg_file)
+
+    doc1 = Document(document_id="doc_fail_1", content="Text 1", metadata=DocumentMetadata(title="Fail Doc 1", source="s1.md"))
+    doc2 = Document(document_id="doc_fail_2", content="Text 2", metadata=DocumentMetadata(title="Fail Doc 2", source="s2.md"))
+    doc3 = Document(document_id="doc_fail_3", content="Text 3", metadata=DocumentMetadata(title="Fail Doc 3", source="s3.md"))
+
+    manager.register_document(doc1, chunk_count=1)
+    manager.register_document(doc2, chunk_count=1)
+    assert manager.backup_path.exists()
+
+    # 2. Corrupt BOTH the primary registry file and .bak on disk after initialization
+    with open(reg_file, "w", encoding="utf-8") as f:
+        f.write("{ CORRUPT PRIMARY MID OPERATION")
+
+    with open(manager.backup_path, "w", encoding="utf-8") as f:
+        f.write("{ CORRUPT BACKUP MID OPERATION")
+
+    # 3. Call critical-section method on that SAME live instance - must raise RuntimeError
+    with pytest.raises(RuntimeError) as exc_info:
+        manager.register_document(doc3, chunk_count=1)
+
+    assert "Corrupted document registry and backup recovery failed" in str(exc_info.value)
+    assert "primary_err" in str(exc_info.value)
+    assert "backup_err" in str(exc_info.value)
+
+
 def test_reconciliation_detects_orphaned_chunks(tmp_path):
     """
     Reconciliation test: asserts chunks existing in vector store with missing registry entries
