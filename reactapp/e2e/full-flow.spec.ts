@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 test.describe('WealthGenie Complete E2E Lifecycle Flow', () => {
   const timestamp = Date.now();
@@ -174,7 +174,7 @@ test.describe('WealthGenie Complete E2E Lifecycle Flow', () => {
     const responseText = await assistantBubble.textContent();
     console.log(`[E2E] Genie Response finalized (${responseText?.length || 0} chars):\n"${responseText?.slice(0, 200)}..."`);
     expect(responseText).toBeTruthy();
-    expect(responseText.length).toBeGreaterThan(15);
+    expect(responseText?.length).toBeGreaterThan(15);
 
     console.log('[E2E] Complete user lifecycle verified successfully with zero errors!');
   });
