@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Trash2, Sparkles, RefreshCw, Scale, Coins, Percent, Target, ArrowLeft, ExternalLink, Mic, MicOff, ChevronRight, TrendingUp } from 'lucide-react';
+import { X, Send, Trash2, Sparkles, RefreshCw, Scale, Coins, Percent, Target, ArrowLeft, ExternalLink, Mic, MicOff, ChevronRight, TrendingUp, Maximize2, Minimize2 } from 'lucide-react';
 import JargonTooltip from './JargonTooltip';
 import './GenieChat.css';
 import * as api from '../services/api';
@@ -20,6 +20,7 @@ import {
 // ── Main Component ────────────────────────────────────────────────
 const GenieChat = ({ profile, onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -184,7 +185,7 @@ const GenieChat = ({ profile, onNavigate }) => {
     <>
       {!isOpen && <GenieFAB onClick={() => setIsOpen(true)} hasNudge={!!profile} />}
       {isOpen && (
-        <div className={`genie-panel ${activeWorkspace ? 'genie-panel--with-workspace' : ''}`}>
+        <div className={`genie-panel ${activeWorkspace ? 'genie-panel--with-workspace' : ''} ${isExpanded ? 'genie-panel--expanded' : ''}`}>
           <div className="genie-panel-chat-pane">
             {/* Header */}
             <div className="genie-panel-header">
@@ -197,6 +198,9 @@ const GenieChat = ({ profile, onNavigate }) => {
               </div>
               <div className="genie-header-actions">
                 <span className={`rate-limit-badge ${rateLimit.remaining <= 5 ? 'rate-limit-warning' : ''}`}>{rateLimit.remaining <= 0 ? 'Limit reached' : `${rateLimit.remaining}/${rateLimit.total}`}</span>
+                <button onClick={() => setIsExpanded(prev => !prev)} title={isExpanded ? "Restore compact size" : "Expand size"} aria-label={isExpanded ? "Restore compact size" : "Expand size"}>
+                  {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
                 <button onClick={clearChat} title="Clear chat" aria-label="Clear chat conversation"><Trash2 size={16} /></button>
                 <button onClick={() => setIsOpen(false)} title="Close" aria-label="Close chat helper"><X size={18} /></button>
               </div>
