@@ -189,3 +189,12 @@ def update_document(
     if not success:
         raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
     return {"status": "success", "message": f"Metadata updated for document '{doc_id}'."}
+
+
+@rag_router.get("/reconcile")
+def reconcile_documents(
+    verified_user_id: str = Depends(verify_verified_user_id),
+):
+    """Reconciles document registry entries against vector store chunks."""
+    return lifecycle_manager.reconcile_registry_and_vector_store()
+
