@@ -30,6 +30,12 @@ export async function verifyJWT(req, res, next) {
       }
     }
 
+    // Backward compatibility: tokens issued before the role field was added
+    // will not contain a role claim — default them to 'user'.
+    if (!decoded.role) {
+      decoded.role = 'user';
+    }
+
     req.user = decoded;
     next();
   } catch (err) {
@@ -38,6 +44,22 @@ export async function verifyJWT(req, res, next) {
     }
     return res.status(401).json({ error: 'Invalid or expired token.' });
   }
+}
+
+/**
+ * Role-gating middleware factory.
+ * Usage: router.post('/admin-only', verifyJWT, requireRole('admin'), handler)
+ *
+ * @param {string} role - Required role (e.g. 'admin')
+ * @returns {Function} Express middleware
+ */
+export function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user || req.user.role !== role) {
+      return res.status(403).json({ error: `Access denied. Requires ${role} role.` });
+    }
+    next();
+  };
 }
 
 /**

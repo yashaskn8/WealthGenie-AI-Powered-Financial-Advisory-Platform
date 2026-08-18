@@ -58,7 +58,7 @@ function hasUsablePrediction(result) {
     .some(pick => typeof pick === 'string' && pick.trim().length > 0);
 }
 
-export async function getMLPrediction(profileData, correlationId = null, userId = null) {
+export async function getMLPrediction(profileData, correlationId = null, userId = null, userRole = null) {
   if (!isCircuitHealthy()) {
     console.warn('[MLClient] Circuit breaker OPEN — fast-failing to rule-based fallback.');
     return getRuleBasedFallback(profileData);
@@ -100,6 +100,7 @@ export async function getMLPrediction(profileData, correlationId = null, userId 
       headers: {
         ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
         ...(effectiveUserId ? { 'X-Verified-User-Id': String(effectiveUserId) } : {}),
+        ...(userRole ? { 'X-Verified-User-Role': String(userRole) } : {}),
         ...getTracingHeaders(correlationId),
       }
     });

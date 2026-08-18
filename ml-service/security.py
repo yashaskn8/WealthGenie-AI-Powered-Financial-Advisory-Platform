@@ -85,3 +85,24 @@ async def verify_verified_user_id(
             detail="Missing or empty X-Verified-User-Id header"
         )
     return user_id.strip()
+
+
+VERIFIED_USER_ROLE_HEADER = "X-Verified-User-Role"
+verified_user_role_header = APIKeyHeader(name=VERIFIED_USER_ROLE_HEADER, auto_error=False)
+
+
+async def verify_admin_role(
+    user_role: Optional[str] = Security(verified_user_role_header),
+) -> str:
+    """Verify that the caller possesses the 'admin' role via X-Verified-User-Role.
+
+    Returns 403 Forbidden if the header is missing or contains any value
+    other than 'admin'.  This dependency is additive — it does NOT replace
+    verify_api_key, which must still gate the router.
+    """
+    if not user_role or user_role.strip().lower() != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Requires admin role.",
+        )
+    return user_role.strip()

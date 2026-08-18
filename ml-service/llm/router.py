@@ -14,7 +14,7 @@ from llm.inference.tools import ToolCallingEngine
 from llm.registry import llm_registry
 from llm.schema import LLMGenerateRequest, LLMGenerateResponse, LLMMetadata
 from rag.schema import RAGQueryRequest, RAGQueryResponse
-from security import verify_api_key, verify_verified_user_id
+from security import verify_api_key, verify_verified_user_id, verify_admin_role
 
 logger = logging.getLogger("wealthgenie.llm.router")
 
@@ -137,7 +137,7 @@ def list_financial_tools():
     return {"tools": tool_engine.list_tools()}
 
 
-@llm_router.post("/switch")
+@llm_router.post("/switch", dependencies=[Depends(verify_admin_role)])
 def switch_model(request: SwitchModelRequest):
     """Switches the active LLM provider dynamically at runtime."""
     success = llm_registry.set_active_provider(request.provider_key)

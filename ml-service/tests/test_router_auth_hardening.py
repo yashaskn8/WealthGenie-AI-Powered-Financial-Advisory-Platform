@@ -176,6 +176,40 @@ def test_llm_switch_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
+def test_llm_switch_rejects_missing_admin_role_header():
+    """POST /llm/switch MUST return 403 when called with valid X-API-Key but without X-Verified-User-Role."""
+    headers = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/llm/switch", json={"provider_key": "mock"})
+        assert res.status_code == 403, f"Expected 403 Forbidden, got {res.status_code}"
+        assert "Requires admin role" in res.json()["detail"]
+
+
+def test_llm_switch_rejects_non_admin_role():
+    """POST /llm/switch MUST return 403 when called with standard 'user' role."""
+    headers = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Role": "user",
+    }
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/llm/switch", json={"provider_key": "mock"})
+        assert res.status_code == 403, f"Expected 403 Forbidden, got {res.status_code}"
+        assert "Requires admin role" in res.json()["detail"]
+
+
+def test_llm_switch_succeeds_with_admin_role():
+    """POST /llm/switch MUST succeed with 200 when called with X-Verified-User-Role: admin."""
+    headers = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Role": "admin",
+    }
+    with TestClient(app, headers=headers) as client:
+        res = client.post("/llm/switch", json={"provider_key": "mock"})
+        assert res.status_code == 200, f"Expected 200 OK, got {res.status_code}: {res.text}"
+        assert res.json()["status"] == "success"
+
+
+
 def test_llm_routes_succeed_with_valid_api_key_and_verified_user_header():
     """LLM routes MUST succeed when provided with valid X-API-Key and X-Verified-User-Id headers."""
     headers = {

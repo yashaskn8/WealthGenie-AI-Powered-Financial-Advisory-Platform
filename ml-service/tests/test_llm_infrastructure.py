@@ -130,6 +130,6 @@ def test_fastapi_llm_endpoints(client):
     assert res_gen.json()["completion_tokens"] > 0
 
     # Switch endpoint
-    res_switch = client.post("/llm/switch", json={"provider_key": "mock"})
+    res_switch = client.post("/llm/switch", json={"provider_key": "mock"}, headers={"X-Verified-User-Role": "admin"})
     assert res_switch.status_code == 200
     assert res_switch.json()["status"] == "success"

@@ -54,7 +54,7 @@ function recordFailure() {
  * @param {string|null} correlationId - Optional correlation ID for tracing
  * @returns {Promise<Object|null>} Grounded RAG query response or null on failure
  */
-export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = null }, correlationId = null) {
+export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = null, userRole = null }, correlationId = null) {
   if (!query || typeof query !== 'string' || !query.trim()) {
     return null;
   }
@@ -80,6 +80,7 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = nul
           'Content-Type': 'application/json',
           ...(apiKey ? { 'X-API-Key': apiKey } : {}),
           ...(userId ? { 'X-Verified-User-Id': String(userId) } : {}),
+          ...(userRole ? { 'X-Verified-User-Role': String(userRole) } : {}),
           ...getTracingHeaders(correlationId),
         },
       }

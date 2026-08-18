@@ -42,7 +42,7 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
 
   const jti = crypto.randomUUID();
   const token = jwt.sign(
-    { userId: user._id, email: user.email, jti },
+    { userId: user._id, email: user.email, role: user.role, jti },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -53,6 +53,7 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       createdAt: user.createdAt,
     },
   });
@@ -88,7 +89,7 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
 
   const jti = crypto.randomUUID();
   const token = jwt.sign(
-    { userId: user._id, email: user.email, jti },
+    { userId: user._id, email: user.email, role: user.role || 'user', jti },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -99,6 +100,7 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role || 'user',
       createdAt: user.createdAt,
     },
   });
