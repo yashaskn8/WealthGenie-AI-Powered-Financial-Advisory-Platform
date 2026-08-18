@@ -60,10 +60,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
         setBackendFallback(null);
         let activeProfileId = userProfile.profileId;
         if (!activeProfileId) {
-          const profileResponse = await api.buildProfile(
-            userProfile.monthly_income, userProfile.age, userProfile.monthly_savings,
-            userProfile.taxRegime || 'new', userProfile.investment_horizon || 15
-          );
+          const profileResponse = await api.buildProfile(userProfile);
           activeProfileId = profileResponse.profileId;
           if (activeProfileId) {
             onProfileUpdate?.({ ...userProfile, profileId: activeProfileId });
@@ -182,10 +179,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
     try {
       let profileId = backendRecs?.profileId || userProfile.profileId;
       if (!profileId) {
-        const profileResponse = await api.buildProfile(
-          userProfile.monthly_income, userProfile.age, userProfile.monthly_savings,
-          userProfile.taxRegime || 'new', userProfile.investment_horizon || 15
-        );
+        const profileResponse = await api.buildProfile(userProfile);
         profileId = profileResponse.profileId;
         if (profileId) {
           const recResponse = await api.getRecommendations(profileId);

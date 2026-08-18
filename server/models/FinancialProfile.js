@@ -37,6 +37,16 @@ const financialProfileSchema = new mongoose.Schema({
   lumpSumAmount: { type: Number, default: 0, min: 0, max: 10000000000 },
   /** One-time investable capital derived from available lump sum (WG-013) */
   oneTimeInvestableAmount: { type: Number, default: 0, min: 0 },
+  /** Tax deduction fields (WG-DEDUCTIONS-COLLECTION) */
+  section80C: { type: Number, default: 0, min: 0, max: 150000 },
+  section80CCD1B: { type: Number, default: 0, min: 0, max: 50000 },
+  section80D_self: { type: Number, default: 0, min: 0, max: 50000 },
+  section80D_parents: { type: Number, default: 0, min: 0, max: 50000 },
+  parentsSenior: { type: Boolean, default: false },
+  hra: { type: Number, default: 0, min: 0, max: 10000000 },
+  homeLoanInterest: { type: Number, default: 0, min: 0, max: 200000 },
+  section80EEA: { type: Number, default: 0, min: 0, max: 150000 },
+  incomeSource: { type: String, enum: ['salary', 'pension', 'family_pension', 'other'], default: 'salary' },
   lastGoalCreatedAt: { type: Date },
   version: { type: Number, default: 1 },
   createdAt: { type: Date, default: Date.now },
@@ -69,6 +79,47 @@ financialProfileSchema.virtual('existing_debt')
 financialProfileSchema.virtual('investable_amount_onetime')
   .get(function() { return this.oneTimeInvestableAmount; })
   .set(function(v) { this.oneTimeInvestableAmount = v; });
+
+// Backwards-compatible virtual getters/setters for deduction fields (WG-DEDUCTIONS-COLLECTION)
+financialProfileSchema.virtual('section_80c')
+  .get(function() { return this.section80C; })
+  .set(function(v) { this.section80C = v; });
+
+financialProfileSchema.virtual('section_80ccd1b')
+  .get(function() { return this.section80CCD1B; })
+  .set(function(v) { this.section80CCD1B = v; });
+
+financialProfileSchema.virtual('nps80CCD1B')
+  .get(function() { return this.section80CCD1B; })
+  .set(function(v) { this.section80CCD1B = v; });
+
+financialProfileSchema.virtual('section80CCD')
+  .get(function() { return this.section80CCD1B; })
+  .set(function(v) { this.section80CCD1B = v; });
+
+financialProfileSchema.virtual('section_80d_self')
+  .get(function() { return this.section80D_self; })
+  .set(function(v) { this.section80D_self = v; });
+
+financialProfileSchema.virtual('section_80d_parents')
+  .get(function() { return this.section80D_parents; })
+  .set(function(v) { this.section80D_parents = v; });
+
+financialProfileSchema.virtual('parents_senior')
+  .get(function() { return this.parentsSenior; })
+  .set(function(v) { this.parentsSenior = v; });
+
+financialProfileSchema.virtual('home_loan_interest')
+  .get(function() { return this.homeLoanInterest; })
+  .set(function(v) { this.homeLoanInterest = v; });
+
+financialProfileSchema.virtual('section_80eea')
+  .get(function() { return this.section80EEA; })
+  .set(function(v) { this.section80EEA = v; });
+
+financialProfileSchema.virtual('income_source')
+  .get(function() { return this.incomeSource; })
+  .set(function(v) { this.incomeSource = v; });
 
 financialProfileSchema.index({ userId: 1, createdAt: -1 });
 

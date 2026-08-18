@@ -19,6 +19,15 @@ const DEFAULT_PROFILE = {
   emergency_fund_months: 0,
   risk_tolerance: 'Moderate',
   goal_type: 'wealth-building',
+  section80C: 0,
+  section80CCD1B: 0,
+  section80D_self: 0,
+  section80D_parents: 0,
+  parentsSenior: false,
+  hra: 0,
+  homeLoanInterest: 0,
+  section80EEA: 0,
+  incomeSource: 'salary',
 };
 
 const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
@@ -81,7 +90,16 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
     { key: 'liquid_savings', label: 'Liquid Savings', icon: <PiggyBank size={20} color="#34d399" />, type: 'currency', min: 0, max: 1000000000, help: 'Savings held in liquid accounts or bank balances.' },
     { key: 'existing_debt', label: 'Existing Debt (EMI % of Income)', icon: <CreditCard size={20} color="#f87171" />, type: 'number', min: 0, max: 100, suffix: '%', help: 'Monthly debt EMI commitments as a percentage of income.' },
     { key: 'dependents', label: 'Dependents', icon: <Users size={20} color="#fbbf24" />, type: 'number', min: 0, max: 20, help: 'Number of financial dependents (spouse, children, parents).' },
-    { key: 'emergency_fund_months', label: 'Emergency Fund (Months)', icon: <ShieldCheck size={20} color="#38bdf8" />, type: 'number', min: 0, max: 60, suffix: ' months', help: 'Months of living expenses saved for emergencies.' }
+    { key: 'emergency_fund_months', label: 'Emergency Fund (Months)', icon: <ShieldCheck size={20} color="#38bdf8" />, type: 'number', min: 0, max: 60, suffix: ' months', help: 'Months of living expenses saved for emergencies.' },
+
+    // Deduction fields (WG-DEDUCTIONS-COLLECTION)
+    { key: 'section80C', label: 'Section 80C (ELSS/PPF/EPF)', icon: <Banknote size={20} color="#34d399" />, type: 'currency', min: 0, max: 150000, help: 'ELSS, PPF, EPF, Life Insurance deductions (Max ₹1,50,000).' },
+    { key: 'section80CCD1B', label: 'Section 80CCD(1B) NPS', icon: <Banknote size={20} color="#38bdf8" />, type: 'currency', min: 0, max: 50000, help: 'NPS self-contribution deduction (Max ₹50,000).' },
+    { key: 'section80D_self', label: 'Section 80D Health (Self)', icon: <ShieldCheck size={20} color="#fbbf24" />, type: 'currency', min: 0, max: 50000, help: 'Health insurance premium for self and family (Max ₹25k / ₹50k for seniors).' },
+    { key: 'section80D_parents', label: 'Section 80D Health (Parents)', icon: <ShieldCheck size={20} color="#fb7185" />, type: 'currency', min: 0, max: 50000, help: 'Health insurance premium for parents (Max ₹25k / ₹50k for senior parents).' },
+    { key: 'hra', label: 'HRA Exemption', icon: <Wallet size={20} color="#a78bfa" />, type: 'currency', min: 0, max: 10000000, help: 'Annual House Rent Allowance exemption amount.' },
+    { key: 'homeLoanInterest', label: 'Home Loan Interest (Sec 24b)', icon: <CreditCard size={20} color="#f87171" />, type: 'currency', min: 0, max: 200000, help: 'Home loan interest deduction (Max ₹2,00,000).' },
+    { key: 'section80EEA', label: 'Section 80EEA Interest', icon: <CreditCard size={20} color="#38bdf8" />, type: 'currency', min: 0, max: 150000, help: 'First-time home buyer additional interest deduction (Max ₹1,50,000).' },
   ];
 
   const handleEdit = () => {
@@ -155,19 +173,37 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
         total_ctc: draft.total_ctc || (numIncome * 12),
         basic_component: draft.basic_component || ((draft.total_ctc || (numIncome * 12)) * 0.5),
         monthly_take_home: draft.monthly_take_home || numIncome,
-        sold_property_amount: draft.sold_property_amount || 0,
-        has_lump_sum: Boolean(draft.has_lump_sum),
-        lump_sum_amount: draft.has_lump_sum ? (draft.lump_sum_amount || 0) : 0,
+        soldPropertyAmount: draft.sold_property_amount || draft.soldPropertyAmount || 0,
+        sold_property_amount: draft.sold_property_amount || draft.soldPropertyAmount || 0,
+        hasLumpSum: Boolean(draft.has_lump_sum || draft.hasLumpSum),
+        has_lump_sum: Boolean(draft.has_lump_sum || draft.hasLumpSum),
+        lumpSumAmount: (draft.has_lump_sum || draft.hasLumpSum) ? (draft.lump_sum_amount || draft.lumpSumAmount || 0) : 0,
+        lump_sum_amount: (draft.has_lump_sum || draft.hasLumpSum) ? (draft.lump_sum_amount || draft.lumpSumAmount || 0) : 0,
+        // Deduction fields (WG-DEDUCTIONS-COLLECTION)
+        section80C: Number(draft.section80C !== undefined ? draft.section80C : (draft.section_80c || 0)),
+        section_80c: Number(draft.section80C !== undefined ? draft.section80C : (draft.section_80c || 0)),
+        section80CCD1B: Number(draft.section80CCD1B !== undefined ? draft.section80CCD1B : (draft.section_80ccd1b || draft.nps80CCD1B || 0)),
+        section_80ccd1b: Number(draft.section80CCD1B !== undefined ? draft.section80CCD1B : (draft.section_80ccd1b || draft.nps80CCD1B || 0)),
+        section80D_self: Number(draft.section80D_self !== undefined ? draft.section80D_self : (draft.section_80d_self || 0)),
+        section_80d_self: Number(draft.section80D_self !== undefined ? draft.section80D_self : (draft.section_80d_self || 0)),
+        section80D_parents: Number(draft.section80D_parents !== undefined ? draft.section80D_parents : (draft.section_80d_parents || 0)),
+        section_80d_parents: Number(draft.section80D_parents !== undefined ? draft.section80D_parents : (draft.section_80d_parents || 0)),
+        parentsSenior: Boolean(draft.parentsSenior !== undefined ? draft.parentsSenior : draft.parents_senior),
+        parents_senior: Boolean(draft.parentsSenior !== undefined ? draft.parentsSenior : draft.parents_senior),
+        hra: Number(draft.hra || 0),
+        homeLoanInterest: Number(draft.homeLoanInterest !== undefined ? draft.homeLoanInterest : (draft.home_loan_interest || 0)),
+        home_loan_interest: Number(draft.homeLoanInterest !== undefined ? draft.homeLoanInterest : (draft.home_loan_interest || 0)),
+        section80EEA: Number(draft.section80EEA !== undefined ? draft.section80EEA : (draft.section_80eea || 0)),
+        section_80eea: Number(draft.section80EEA !== undefined ? draft.section80EEA : (draft.section_80eea || 0)),
+        incomeSource: draft.incomeSource || draft.income_source || 'salary',
+        income_source: draft.incomeSource || draft.income_source || 'salary',
         version: draft.version || 1,
       };
 
       if (profileId) {
         response = await api.updateProfile(profileId, payload);
       } else {
-        response = await api.buildProfile(
-          numIncome, numAge, numSavings, draft.taxRegime || 'new', draft.investment_horizon || 15,
-          numLiquid, numDebt, numDeps, numEf, draft.risk_tolerance || 'Moderate', draft.goal_type || 'wealth-building'
-        );
+        response = await api.buildProfile(payload);
       }
       onProfileUpdate({ ...draft, ...(response || {}), profileId: response?.profileId || profileId || null, version: response?.version || (draft.version || 1) + 1 });
       setIsEditing(false);

@@ -61,11 +61,40 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
   // Defensive zeroing: force lump sum to 0 if has_lump_sum flag is false
   const safeLumpSumAmount = safeHasLumpSum ? (Number(lump_sum_amount) || 0) : 0;
 
-  // Compute tax with basicSalary passed to calculate 80CCD(2) employer-NPS deduction cap
-  const taxDeductions = { basicSalary: safeBasicComponent };
-  const taxResult = computeTax(annualIncome, taxRegime, taxDeductions);
-  const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions);
-  const taxComparison = compareTaxRegimes(annualIncome, taxDeductions);
+  // Extract deduction fields (WG-DEDUCTIONS-COLLECTION)
+  const safeSection80C = Number(req.body.section80C !== undefined ? req.body.section80C : (req.body.section_80c || 0));
+  const safeSection80CCD1B = Number(
+    req.body.section80CCD1B !== undefined ? req.body.section80CCD1B : (
+      req.body.section_80ccd1b || req.body.nps80CCD1B || req.body.section80CCD || req.body.section_80ccd || 0
+    )
+  );
+  const safeSection80D_self = Number(req.body.section80D_self !== undefined ? req.body.section80D_self : (req.body.section_80d_self || 0));
+  const safeSection80D_parents = Number(req.body.section80D_parents !== undefined ? req.body.section80D_parents : (req.body.section_80d_parents || 0));
+  const safeParentsSenior = Boolean(req.body.parentsSenior !== undefined ? req.body.parentsSenior : req.body.parents_senior);
+  const safeHra = Number(req.body.hra || 0);
+  const safeHomeLoanInterest = Number(req.body.homeLoanInterest !== undefined ? req.body.homeLoanInterest : (req.body.home_loan_interest || 0));
+  const safeSection80EEA = Number(req.body.section80EEA !== undefined ? req.body.section80EEA : (req.body.section_80eea || 0));
+  const safeIncomeSource = req.body.incomeSource || req.body.income_source || 'salary';
+
+  // Compute tax with full deductions passed
+  const taxDeductions = {
+    basicSalary: safeBasicComponent,
+    age,
+    section80C: safeSection80C,
+    section80CCD1B: safeSection80CCD1B,
+    nps80CCD1B: safeSection80CCD1B,
+    section80CCD: safeSection80CCD1B,
+    section80D_self: safeSection80D_self,
+    section80D_parents: safeSection80D_parents,
+    parentsSenior: safeParentsSenior,
+    parents_senior: safeParentsSenior,
+    hra: safeHra,
+    homeLoanInterest: safeHomeLoanInterest,
+    section80EEA: safeSection80EEA,
+  };
+  const taxResult = computeTax(annualIncome, taxRegime, taxDeductions, safeIncomeSource);
+  const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions, safeIncomeSource);
+  const taxComparison = compareTaxRegimes(annualIncome, taxDeductions, safeIncomeSource);
 
   const safeExistingDebt = Number(req.body.existing_debt_emi_ratio_pct !== undefined ? req.body.existing_debt_emi_ratio_pct : (req.body.existing_debt || 0));
 
@@ -127,6 +156,15 @@ router.post('/build', verifyJWT, idempotency(), validate(profileSchema), asyncHa
     hasLumpSum: safeHasLumpSum,
     lumpSumAmount: safeLumpSumAmount,
     oneTimeInvestableAmount: safeLumpSumAmount + safeSoldPropertyAmount,
+    section80C: safeSection80C,
+    section80CCD1B: safeSection80CCD1B,
+    section80D_self: safeSection80D_self,
+    section80D_parents: safeSection80D_parents,
+    parentsSenior: safeParentsSenior,
+    hra: safeHra,
+    homeLoanInterest: safeHomeLoanInterest,
+    section80EEA: safeSection80EEA,
+    incomeSource: safeIncomeSource,
   });
 
   // Invalidate ALL chatbot system prompt caches for this user
@@ -185,9 +223,44 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
   const safeLumpSumAmount = safeHasLumpSum ? (Number(lump_sum_amount) || 0) : 0;
   const taxRegime = regime || 'new';
 
-  const taxDeductions = { basicSalary: safeBasicComponent };
-  const taxResult = computeTax(annualIncome, taxRegime, taxDeductions);
-  const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions);
+  // Extract deduction fields for update (WG-DEDUCTIONS-COLLECTION)
+  const safeSection80C = Number(req.body.section80C !== undefined ? req.body.section80C : (req.body.section_80c !== undefined ? req.body.section_80c : (existingProfile.section80C || 0)));
+  const safeSection80CCD1B = Number(
+    req.body.section80CCD1B !== undefined ? req.body.section80CCD1B : (
+      req.body.section_80ccd1b !== undefined ? req.body.section_80ccd1b : (
+        req.body.nps80CCD1B !== undefined ? req.body.nps80CCD1B : (
+          req.body.section80CCD !== undefined ? req.body.section80CCD : (
+            req.body.section_80ccd !== undefined ? req.body.section_80ccd : (existingProfile.section80CCD1B || 0)
+          )
+        )
+      )
+    )
+  );
+  const safeSection80D_self = Number(req.body.section80D_self !== undefined ? req.body.section80D_self : (req.body.section_80d_self !== undefined ? req.body.section_80d_self : (existingProfile.section80D_self || 0)));
+  const safeSection80D_parents = Number(req.body.section80D_parents !== undefined ? req.body.section80D_parents : (req.body.section_80d_parents !== undefined ? req.body.section_80d_parents : (existingProfile.section80D_parents || 0)));
+  const safeParentsSenior = Boolean(req.body.parentsSenior !== undefined ? req.body.parentsSenior : (req.body.parents_senior !== undefined ? req.body.parents_senior : existingProfile.parentsSenior));
+  const safeHra = Number(req.body.hra !== undefined ? req.body.hra : (existingProfile.hra || 0));
+  const safeHomeLoanInterest = Number(req.body.homeLoanInterest !== undefined ? req.body.homeLoanInterest : (req.body.home_loan_interest !== undefined ? req.body.home_loan_interest : (existingProfile.homeLoanInterest || 0)));
+  const safeSection80EEA = Number(req.body.section80EEA !== undefined ? req.body.section80EEA : (req.body.section_80eea !== undefined ? req.body.section_80eea : (existingProfile.section80EEA || 0)));
+  const safeIncomeSource = req.body.incomeSource || req.body.income_source || existingProfile.incomeSource || 'salary';
+
+  const taxDeductions = {
+    basicSalary: safeBasicComponent,
+    age,
+    section80C: safeSection80C,
+    section80CCD1B: safeSection80CCD1B,
+    nps80CCD1B: safeSection80CCD1B,
+    section80CCD: safeSection80CCD1B,
+    section80D_self: safeSection80D_self,
+    section80D_parents: safeSection80D_parents,
+    parentsSenior: safeParentsSenior,
+    parents_senior: safeParentsSenior,
+    hra: safeHra,
+    homeLoanInterest: safeHomeLoanInterest,
+    section80EEA: safeSection80EEA,
+  };
+  const taxResult = computeTax(annualIncome, taxRegime, taxDeductions, safeIncomeSource);
+  const marginalRate = getTaxSlab(annualIncome, taxRegime, taxDeductions, safeIncomeSource);
   const monthlyIncomeVal = monthly_income;
   const safeExistingDebtPut = Number(req.body.existing_debt_emi_ratio_pct !== undefined ? req.body.existing_debt_emi_ratio_pct : (req.body.existing_debt || 0));
   const impliedMonthlyDebtVal = monthlyIncomeVal > 0 ? ((safeExistingDebtPut / 100) * monthlyIncomeVal) : 0;
@@ -229,6 +302,15 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
     recommendedEquityAllocation: riskProfile.recommendedEquityAllocation,
     investableAmount,
     oneTimeInvestableAmount: safeLumpSumAmount + safeSoldPropertyAmount,
+    section80C: safeSection80C,
+    section80CCD1B: safeSection80CCD1B,
+    section80D_self: safeSection80D_self,
+    section80D_parents: safeSection80D_parents,
+    parentsSenior: safeParentsSenior,
+    hra: safeHra,
+    homeLoanInterest: safeHomeLoanInterest,
+    section80EEA: safeSection80EEA,
+    incomeSource: safeIncomeSource,
   };
   if (incomingGoalsPut !== undefined) {
     updateFields.goals = incomingGoalsPut;
@@ -290,6 +372,24 @@ export function formatProfileResponse(profile, extra = {}) {
     hasLumpSum: p.hasLumpSum,
     lumpSumAmount: p.lumpSumAmount,
     goals: p.goals || [],
+    section80C: p.section80C !== undefined ? p.section80C : (p.section_80c || 0),
+    section_80c: p.section80C !== undefined ? p.section80C : (p.section_80c || 0),
+    section80CCD1B: p.section80CCD1B !== undefined ? p.section80CCD1B : (p.section_80ccd1b || p.nps80CCD1B || 0),
+    section_80ccd1b: p.section80CCD1B !== undefined ? p.section80CCD1B : (p.section_80ccd1b || p.nps80CCD1B || 0),
+    nps80CCD1B: p.section80CCD1B !== undefined ? p.section80CCD1B : (p.section_80ccd1b || p.nps80CCD1B || 0),
+    section80D_self: p.section80D_self !== undefined ? p.section80D_self : (p.section_80d_self || 0),
+    section_80d_self: p.section80D_self !== undefined ? p.section80D_self : (p.section_80d_self || 0),
+    section80D_parents: p.section80D_parents !== undefined ? p.section80D_parents : (p.section_80d_parents || 0),
+    section_80d_parents: p.section80D_parents !== undefined ? p.section80D_parents : (p.section_80d_parents || 0),
+    parentsSenior: Boolean(p.parentsSenior !== undefined ? p.parentsSenior : p.parents_senior),
+    parents_senior: Boolean(p.parentsSenior !== undefined ? p.parentsSenior : p.parents_senior),
+    hra: p.hra || 0,
+    homeLoanInterest: p.homeLoanInterest !== undefined ? p.homeLoanInterest : (p.home_loan_interest || 0),
+    home_loan_interest: p.homeLoanInterest !== undefined ? p.homeLoanInterest : (p.home_loan_interest || 0),
+    section80EEA: p.section80EEA !== undefined ? p.section80EEA : (p.section_80eea || 0),
+    section_80eea: p.section80EEA !== undefined ? p.section80EEA : (p.section_80eea || 0),
+    incomeSource: p.incomeSource || p.income_source || 'salary',
+    income_source: p.incomeSource || p.income_source || 'salary',
   };
 
   // WG-012: Auto-generate snake_case aliases via caseConverter (not manual mapping)

@@ -184,14 +184,14 @@ const TaxScreen = ({ profile, onLearnMore }) => {
   const defaultIncome = (profile?.monthly_income || 65000) * 12;
   const [annualIncome, setAnnualIncome] = useState(defaultIncome);
   const [regime, setRegime] = useState(profile?.taxRegime || 'new');
-  const [existing80C, setExisting80C] = useState('');
-  const [existing80CCD, setExisting80CCD] = useState('');
-  const [existingHRA, setExistingHRA] = useState('');
-  const [existingHomeLoan, setExistingHomeLoan] = useState('');
+  const [existing80C, setExisting80C] = useState(profile?.section80C || profile?.section_80c ? String(profile?.section80C || profile?.section_80c) : '');
+  const [existing80CCD, setExisting80CCD] = useState(profile?.section80CCD1B || profile?.section_80ccd1b || profile?.nps80CCD1B ? String(profile?.section80CCD1B || profile?.section_80ccd1b || profile?.nps80CCD1B) : '');
+  const [existingHRA, setExistingHRA] = useState(profile?.hra ? String(profile.hra) : '');
+  const [existingHomeLoan, setExistingHomeLoan] = useState(profile?.homeLoanInterest || profile?.home_loan_interest ? String(profile?.homeLoanInterest || profile?.home_loan_interest) : '');
   const [existingOther, setExistingOther] = useState('');
-  const [existing80DSelf, setExisting80DSelf] = useState('');
-  const [existing80DParents, setExisting80DParents] = useState('');
-  const [parentsSenior, setParentsSenior] = useState(false);
+  const [existing80DSelf, setExisting80DSelf] = useState(profile?.section80D_self || profile?.section_80d_self ? String(profile?.section80D_self || profile?.section_80d_self) : '');
+  const [existing80DParents, setExisting80DParents] = useState(profile?.section80D_parents || profile?.section_80d_parents ? String(profile?.section80D_parents || profile?.section_80d_parents) : '');
+  const [parentsSenior, setParentsSenior] = useState(Boolean(profile?.parentsSenior !== undefined ? profile.parentsSenior : profile?.parents_senior));
   const [showSlabBreakdown, setShowSlabBreakdown] = useState(false);
 
   // Server state tracking
@@ -205,6 +205,13 @@ const TaxScreen = ({ profile, onLearnMore }) => {
     setPrevIncome(defaultIncome);
     setAnnualIncome(defaultIncome);
     setRegime(profile?.taxRegime || 'new');
+    setExisting80C(profile?.section80C || profile?.section_80c ? String(profile?.section80C || profile?.section_80c) : '');
+    setExisting80CCD(profile?.section80CCD1B || profile?.section_80ccd1b || profile?.nps80CCD1B ? String(profile?.section80CCD1B || profile?.section_80ccd1b || profile?.nps80CCD1B) : '');
+    setExistingHRA(profile?.hra ? String(profile.hra) : '');
+    setExistingHomeLoan(profile?.homeLoanInterest || profile?.home_loan_interest ? String(profile?.homeLoanInterest || profile?.home_loan_interest) : '');
+    setExisting80DSelf(profile?.section80D_self || profile?.section_80d_self ? String(profile?.section80D_self || profile?.section_80d_self) : '');
+    setExisting80DParents(profile?.section80D_parents || profile?.section_80d_parents ? String(profile?.section80D_parents || profile?.section_80d_parents) : '');
+    setParentsSenior(Boolean(profile?.parentsSenior !== undefined ? profile.parentsSenior : profile?.parents_senior));
   }
 
   // ── Debounced API Synchronisation ──

@@ -84,7 +84,7 @@ const riskValueToLabel = (v) => {
   return 'Aggressive';
 };
 
-const RecommendationDashboard = ({ userProfile, recommendations: propRecommendations, onExploreAll, onRebalance, onNavigate, onLearnMore, isLoading: isLoadingProp, explanation, fallbackNotice, onDismissFallbackNotice }) => {
+const RecommendationDashboard = ({ userProfile, recommendations: propRecommendations, onExploreAll, onRebalance, onNavigate, onLearnMore, isLoading: isLoadingProp, explanation: _explanation, fallbackNotice, onDismissFallbackNotice }) => {
   const defaultHorizon = userProfile?.investment_horizon || 15;
   const [horizon, setHorizon] = useState(defaultHorizon);
   const [initialCapital, _setInitialCapital] = useState(Number(userProfile?.existing_savings) || 0);

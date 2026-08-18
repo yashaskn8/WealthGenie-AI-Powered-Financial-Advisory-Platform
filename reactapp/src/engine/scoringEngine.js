@@ -98,10 +98,19 @@ function parseProfile(profile) {
       : (profile.goal_type ? [profile.goal_type] : []);
   const annualIncome = income * 12;
   const annualSavings = savings * 12;
-  const taxRegime = profile.taxRegime || 'new';
+  const taxRegime = profile.taxRegime || profile.regime || 'new';
   const deductions = profile.deductions || {
     basicSalary: profile.basic_component || profile.basicSalary,
     age,
+    section80C: profile.section80C !== undefined ? profile.section80C : profile.section_80c,
+    section80CCD1B: profile.section80CCD1B !== undefined ? profile.section80CCD1B : (profile.section_80ccd1b || profile.nps80CCD1B || profile.section80CCD),
+    section80D_self: profile.section80D_self !== undefined ? profile.section80D_self : profile.section_80d_self,
+    section80D_parents: profile.section80D_parents !== undefined ? profile.section80D_parents : profile.section_80d_parents,
+    parentsSenior: profile.parentsSenior !== undefined ? profile.parentsSenior : profile.parents_senior,
+    parents_senior: profile.parentsSenior !== undefined ? profile.parentsSenior : profile.parents_senior,
+    hra: profile.hra,
+    homeLoanInterest: profile.homeLoanInterest !== undefined ? profile.homeLoanInterest : profile.home_loan_interest,
+    section80EEA: profile.section80EEA !== undefined ? profile.section80EEA : profile.section_80eea,
   };
   const incomeSource = profile.incomeSource || profile.income_source || 'salary';
   const mr = getMarginalRate(annualIncome, taxRegime, deductions, incomeSource);
@@ -327,8 +336,13 @@ export function computeScore(inv, profile) {
   // RecommendationPipeline.deriveWeights().
   const w = profile?.computedWeights || profile?.computed_weights || deriveWeights(p, profile);
 
-  // Reuse existing tax computation
-  const { postTaxRate } = computePostTaxReturn(inv, p.annualSavings, p.annualIncome, profile);
+  // Reuse existing tax computation with fully-extracted profile deductions
+  const { postTaxRate } = computePostTaxReturn(inv, p.annualSavings, p.annualIncome, {
+    ...profile,
+    deductions: p.deductions,
+    taxRegime: p.taxRegime,
+    incomeSource: p.incomeSource,
+  });
 
   // Compute each factor
   const returnScore     = computeReturnScore(postTaxRate, inv);

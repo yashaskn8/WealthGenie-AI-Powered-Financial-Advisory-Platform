@@ -42,9 +42,9 @@ describe('Automated Accessibility (a11y) Verification Suite with axe-core', () =
         'color-contrast': { enabled: false }
       }
     });
-    console.log(`[A11Y AUDIT] TaxScreen violations: ${results.violations.length}`);
+    console.warn(`[A11Y AUDIT] TaxScreen violations: ${results.violations.length}`);
     if (results.violations.length > 0) {
-      console.log(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
+      console.warn(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
     }
     expect(results.violations).toEqual([]);
   });
@@ -54,9 +54,9 @@ describe('Automated Accessibility (a11y) Verification Suite with axe-core', () =
     const results = await axe.run(container, {
       rules: { 'color-contrast': { enabled: false } }
     });
-    console.log(`[A11Y AUDIT] AllocationPlanner violations: ${results.violations.length}`);
+    console.warn(`[A11Y AUDIT] AllocationPlanner violations: ${results.violations.length}`);
     if (results.violations.length > 0) {
-      console.log(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
+      console.warn(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
     }
     expect(results.violations).toEqual([]);
   });
@@ -66,9 +66,9 @@ describe('Automated Accessibility (a11y) Verification Suite with axe-core', () =
     const results = await axe.run(container, {
       rules: { 'color-contrast': { enabled: false } }
     });
-    console.log(`[A11Y AUDIT] RebalancerScreen violations: ${results.violations.length}`);
+    console.warn(`[A11Y AUDIT] RebalancerScreen violations: ${results.violations.length}`);
     if (results.violations.length > 0) {
-      console.log(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
+      console.warn(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
     }
     expect(results.violations).toEqual([]);
   });
@@ -78,9 +78,9 @@ describe('Automated Accessibility (a11y) Verification Suite with axe-core', () =
     const results = await axe.run(container, {
       rules: { 'color-contrast': { enabled: false } }
     });
-    console.log(`[A11Y AUDIT] GenieChat violations: ${results.violations.length}`);
+    console.warn(`[A11Y AUDIT] GenieChat violations: ${results.violations.length}`);
     if (results.violations.length > 0) {
-      console.log(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
+      console.warn(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
     }
     expect(results.violations).toEqual([]);
   });
@@ -99,9 +99,9 @@ describe('Automated Accessibility (a11y) Verification Suite with axe-core', () =
     const results = await axe.run(container, {
       rules: { 'color-contrast': { enabled: false } }
     });
-    console.log(`[A11Y AUDIT] DeepDiveModal violations: ${results.violations.length}`);
+    console.warn(`[A11Y AUDIT] DeepDiveModal violations: ${results.violations.length}`);
     if (results.violations.length > 0) {
-      console.log(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
+      console.warn(JSON.stringify(results.violations.map(v => ({ id: v.id, impact: v.impact, description: v.description, help: v.help })), null, 2));
     }
     expect(results.violations).toEqual([]);
   });

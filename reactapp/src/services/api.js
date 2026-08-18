@@ -120,12 +120,58 @@ export async function login(email, password) {
 
 // ─── PROFILE ─────────────────────────────────────────────
 export async function buildProfile(
-  monthlyIncome, age, monthlySavings, regime = 'new', investmentHorizon = 15,
+  firstArg, age, monthlySavings, regime = 'new', investmentHorizon = 15,
   liquidSavings = 0, existingDebt = 0, dependents = 0, emergencyFundMonths = 0,
   riskTolerance = 'Moderate', goalType = 'wealth-building',
   totalCTC = 0, basicComponent = 0, monthlyTakeHome = 0,
   soldPropertyAmount = 0, hasLumpSum = false, lumpSumAmount = 0
 ) {
+  if (typeof firstArg === 'object' && firstArg !== null) {
+    const p = firstArg;
+    const monthlyIncome = Number(p.monthly_income !== undefined ? p.monthly_income : (p.monthlyIncome || 0));
+    const annualIncome = monthlyIncome * 12;
+    const totalCtcVal = Number(p.total_ctc !== undefined ? p.total_ctc : (p.totalCTC || annualIncome));
+    const basicCompVal = Number(p.basic_component !== undefined ? p.basic_component : (p.basicComponent || (totalCtcVal * 0.5)));
+    const takeHomeVal = Number(p.monthly_take_home !== undefined ? p.monthly_take_home : (p.monthlyTakeHome || monthlyIncome));
+    const hasLump = Boolean(p.has_lump_sum !== undefined ? p.has_lump_sum : p.hasLumpSum);
+    const lumpAmount = hasLump ? Number(p.lump_sum_amount !== undefined ? p.lump_sum_amount : (p.lumpSumAmount || 0)) : 0;
+
+    const payload = {
+      monthly_income: monthlyIncome,
+      age: Number(p.age || 30),
+      monthly_savings: Number(p.monthly_savings !== undefined ? p.monthly_savings : (p.monthlySavings || 0)),
+      regime: p.regime || p.taxRegime || 'new',
+      investment_horizon: Number(p.investment_horizon !== undefined ? p.investment_horizon : (p.investmentHorizon || 15)),
+      liquid_savings: Number(p.liquid_savings !== undefined ? p.liquid_savings : (p.liquidSavings || 0)),
+      existing_debt: Number(p.existing_debt !== undefined ? p.existing_debt : (p.existingDebt || 0)),
+      dependents: Number(p.dependents !== undefined ? p.dependents : 0),
+      emergency_fund_months: Number(p.emergency_fund_months !== undefined ? p.emergency_fund_months : (p.emergencyFundMonths || 0)),
+      risk_tolerance: p.risk_tolerance || p.riskTolerance || 'Moderate',
+      goal_type: p.goal_type || p.goalType || 'wealth-building',
+      total_ctc: totalCtcVal,
+      basic_component: basicCompVal,
+      monthly_take_home: takeHomeVal,
+      sold_property_amount: Number(p.sold_property_amount !== undefined ? p.sold_property_amount : (p.soldPropertyAmount || 0)),
+      has_lump_sum: hasLump,
+      lump_sum_amount: lumpAmount,
+      goals: p.goals || p.investment_goals || undefined,
+      investment_goals: p.investment_goals || p.goals || undefined,
+      // Tax deduction fields (WG-DEDUCTIONS-COLLECTION)
+      section_80c: Number(p.section80C !== undefined ? p.section80C : (p.section_80c || 0)),
+      section_80ccd1b: Number(p.section80CCD1B !== undefined ? p.section80CCD1B : (p.section_80ccd1b || p.nps80CCD1B || p.section80CCD || 0)),
+      section_80d_self: Number(p.section80D_self !== undefined ? p.section80D_self : (p.section_80d_self || 0)),
+      section_80d_parents: Number(p.section80D_parents !== undefined ? p.section80D_parents : (p.section_80d_parents || 0)),
+      parents_senior: Boolean(p.parentsSenior !== undefined ? p.parentsSenior : p.parents_senior),
+      hra: Number(p.hra || 0),
+      home_loan_interest: Number(p.homeLoanInterest !== undefined ? p.homeLoanInterest : (p.home_loan_interest || 0)),
+      section_80eea: Number(p.section80EEA !== undefined ? p.section80EEA : (p.section_80eea || 0)),
+      income_source: p.incomeSource || p.income_source || 'salary',
+    };
+    return request('POST', '/profile/build', payload);
+  }
+
+  // Backward-compatible positional arguments handling
+  const monthlyIncome = firstArg;
   return request('POST', '/profile/build', {
     monthly_income: monthlyIncome,
     age,

@@ -55,7 +55,7 @@ CURRENT_FY = _get_current_fiscal_year()
 
 
 def _get_regime_slabs(regime: str, fiscal_year: str = CURRENT_FY):
-    entry = TAX_SLABS_BY_FY.get(fiscal_year, TAX_SLABS_BY_FY.get(CURRENT_FY))
+    entry = TAX_SLABS_BY_FY.get(fiscal_year) or TAX_SLABS_BY_FY[CURRENT_FY]
     return entry["old"] if regime == "old" else entry["new"]
 
 
@@ -83,57 +83,57 @@ def _calculate_taxable_income(
     deductions = deductions or {}
 
     # Standard deduction
-    standard_deduction = 0
+    standard_deduction: float = 0.0
     if income_source in ("salary", "pension"):
-        standard_deduction = 75_000 if regime == "new" else 50_000
+        standard_deduction = 75_000.0 if regime == "new" else 50_000.0
     elif income_source == "family_pension":
-        standard_deduction = min(annual_income / 3, 15_000)
+        standard_deduction = min(float(annual_income) / 3.0, 15_000.0)
 
     # Section 80CCD(2) — Employer NPS Contribution (available under BOTH regimes)
-    basic_salary = deductions.get("basic_salary", deductions.get("basicSalary", annual_income * 0.5))
-    is_govt_employee = deductions.get("is_govt_employee", deductions.get("isGovtEmployee", False))
-    nps_80ccd2_limit_pct = 0.14 if is_govt_employee else 0.10
-    max_80ccd2 = basic_salary * nps_80ccd2_limit_pct
-    nps_80ccd2 = min(deductions.get("nps_80ccd2", deductions.get("nps80CCD2", 0)), max_80ccd2)
+    basic_salary: float = float(deductions.get("basic_salary") or deductions.get("basicSalary") or annual_income * 0.5)
+    is_govt_employee: bool = bool(deductions.get("is_govt_employee") or deductions.get("isGovtEmployee"))
+    nps_80ccd2_limit_pct: float = 0.14 if is_govt_employee else 0.10
+    max_80ccd2: float = basic_salary * nps_80ccd2_limit_pct
+    nps_80ccd2: float = min(float(deductions.get("nps_80ccd2") or deductions.get("nps80CCD2") or 0.0), max_80ccd2)
 
     # Old-regime-only deductions
-    section_80c = min(deductions.get("section_80c", deductions.get("section80C", 0)), 150_000)
-    nps_80ccd1b = min(
-        deductions.get("nps_80ccd1b", deductions.get("nps80CCD1B",
-            deductions.get("section_80ccd", deductions.get("section80CCD", 0)))), 50_000)
+    section_80c: float = min(float(deductions.get("section_80c") or deductions.get("section80C") or 0.0), 150_000.0)
+    nps_80ccd1b: float = min(
+        float(deductions.get("nps_80ccd1b") or deductions.get("nps80CCD1B") or
+            deductions.get("section_80ccd") or deductions.get("section80CCD") or 0.0), 50_000.0)
 
     # Section 80D — Granular self vs parents
-    age = deductions.get("age", 30)
-    self_senior = age >= 60 or deductions.get("self_senior", False)
-    parents_senior = deductions.get("parents_senior", False)
-    max_80d_self = 50_000 if self_senior else 25_000
-    max_80d_parents = 50_000 if parents_senior else 25_000
+    age: int = int(deductions.get("age") or 30)
+    self_senior: bool = age >= 60 or bool(deductions.get("self_senior"))
+    parents_senior: bool = bool(deductions.get("parents_senior"))
+    max_80d_self: float = 50_000.0 if self_senior else 25_000.0
+    max_80d_parents: float = 50_000.0 if parents_senior else 25_000.0
 
     if "section80D_self" in deductions or "section_80d_self" in deductions or \
        "section80D_parents" in deductions or "section_80d_parents" in deductions:
-        allowed_80d_self = min(
-            deductions.get("section_80d_self", deductions.get("section80D_self", 0)), max_80d_self)
-        allowed_80d_parents = min(
-            deductions.get("section_80d_parents", deductions.get("section80D_parents", 0)), max_80d_parents)
-        allowed_80d = allowed_80d_self + allowed_80d_parents
+        allowed_80d_self: float = min(
+            float(deductions.get("section_80d_self") or deductions.get("section80D_self") or 0), max_80d_self)
+        allowed_80d_parents: float = min(
+            float(deductions.get("section_80d_parents") or deductions.get("section80D_parents") or 0), max_80d_parents)
+        allowed_80d: float = allowed_80d_self + allowed_80d_parents
     else:
-        allowed_80d = min(deductions.get("section_80d", deductions.get("section80D", 0)), 100_000)
+        allowed_80d: float = min(float(deductions.get("section_80d") or deductions.get("section80D") or 0), 100_000)
 
-    hra = deductions.get("hra", 0)
-    home_loan_interest = min(deductions.get("home_loan_interest", deductions.get("homeLoanInterest", 0)), 200_000)
-    section_80eea = min(deductions.get("section_80eea", deductions.get("section80EEA", 0)), 150_000)
-    other_deductions = deductions.get("other", 0)
+    hra: float = float(deductions.get("hra") or 0)
+    home_loan_interest: float = min(float(deductions.get("home_loan_interest") or deductions.get("homeLoanInterest") or 0), 200_000)
+    section_80eea: float = min(float(deductions.get("section_80eea") or deductions.get("section80EEA") or 0), 150_000)
+    other_deductions: float = float(deductions.get("other") or 0)
 
-    savings_interest = deductions.get("savings_interest", deductions.get("savingsInterest", 0))
-    section_80tta = deductions.get("section_80tta", deductions.get("section80TTA", 0))
-    section_80ttb = deductions.get("section_80ttb", deductions.get("section80TTB", 0))
+    savings_interest: float = float(deductions.get("savings_interest") or deductions.get("savingsInterest") or 0)
+    section_80tta: float = float(deductions.get("section_80tta") or deductions.get("section80TTA") or 0)
+    section_80ttb: float = float(deductions.get("section_80ttb") or deductions.get("section80TTB") or 0)
     if savings_interest > 0:
         if age >= 60:
             section_80ttb = max(section_80ttb, savings_interest)
         else:
             section_80tta = max(section_80tta, savings_interest)
-    allowed_80tta = min(section_80tta, 10_000) if age < 60 else 0
-    allowed_80ttb = min(section_80ttb, 50_000) if age >= 60 else 0
+    allowed_80tta: float = min(section_80tta, 10_000) if age < 60 else 0.0
+    allowed_80ttb: float = min(section_80ttb, 50_000) if age >= 60 else 0.0
 
     old_regime_deductions = 0.0
     if regime == "old":
@@ -286,7 +286,7 @@ class ToolCallingEngine:
         fy = fiscal_year or CURRENT_FY
 
         # Determine taxable income
-        safe_annual = annual_income
+        safe_annual: float = annual_income if annual_income is not None else 0.0
         standard_deduction = 0.0
         old_regime_deductions = 0.0
         nps_80ccd2_applied = 0.0

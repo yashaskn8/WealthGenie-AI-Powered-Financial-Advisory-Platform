@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { calculateTaxableIncome, computeTaxLiability, getMarginalRate, computePostTaxReturn } from '../taxComputation.js';
-import { computeScore } from '../scoringEngine.js';
 
 describe('P0 #5: Client-Side Tax Engine Parity & Deduction Scoring Proof', () => {
   // Machine-generated golden vectors from canonical server/services/taxEngine.js computeTax()

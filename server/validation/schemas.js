@@ -1,4 +1,4 @@
-﻿import Joi from 'joi';
+import Joi from 'joi';
 
 /**
  * WealthGenie Request Validation Schemas
@@ -91,6 +91,43 @@ export const profileSchema = Joi.object({
   }),
   goals: Joi.array().items(Joi.string()).optional(),
   investment_goals: Joi.array().items(Joi.string()).optional(),
+  // Tax deduction fields (WG-DEDUCTIONS-COLLECTION)
+  section_80c: Joi.number().min(0).max(150000).optional()
+    .messages({ 'number.min': 'Section 80C deduction must be at least ₹0', 'number.max': 'Section 80C deduction cannot exceed statutory cap of ₹1,50,000' }),
+  section80C: Joi.number().min(0).max(150000).optional()
+    .messages({ 'number.min': 'Section 80C deduction must be at least ₹0', 'number.max': 'Section 80C deduction cannot exceed statutory cap of ₹1,50,000' }),
+  section_80ccd1b: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80CCD(1B) deduction must be at least ₹0', 'number.max': 'Section 80CCD(1B) deduction cannot exceed statutory cap of ₹50,000' }),
+  section80CCD1B: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80CCD(1B) deduction must be at least ₹0', 'number.max': 'Section 80CCD(1B) deduction cannot exceed statutory cap of ₹50,000' }),
+  nps80CCD1B: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80CCD(1B) deduction must be at least ₹0', 'number.max': 'Section 80CCD(1B) deduction cannot exceed statutory cap of ₹50,000' }),
+  section80CCD: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80CCD(1B) deduction must be at least ₹0', 'number.max': 'Section 80CCD(1B) deduction cannot exceed statutory cap of ₹50,000' }),
+  section_80ccd: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80CCD(1B) deduction must be at least ₹0', 'number.max': 'Section 80CCD(1B) deduction cannot exceed statutory cap of ₹50,000' }),
+  section_80d_self: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80D (Self) deduction must be at least ₹0', 'number.max': 'Section 80D (Self) deduction cannot exceed ₹50,000' }),
+  section80D_self: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80D (Self) deduction must be at least ₹0', 'number.max': 'Section 80D (Self) deduction cannot exceed ₹50,000' }),
+  section_80d_parents: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80D (Parents) deduction must be at least ₹0', 'number.max': 'Section 80D (Parents) deduction cannot exceed ₹50,000' }),
+  section80D_parents: Joi.number().min(0).max(50000).optional()
+    .messages({ 'number.min': 'Section 80D (Parents) deduction must be at least ₹0', 'number.max': 'Section 80D (Parents) deduction cannot exceed ₹50,000' }),
+  parents_senior: Joi.boolean().optional(),
+  parentsSenior: Joi.boolean().optional(),
+  hra: Joi.number().min(0).max(10000000).optional()
+    .messages({ 'number.min': 'HRA exemption must be at least ₹0' }),
+  home_loan_interest: Joi.number().min(0).max(200000).optional()
+    .messages({ 'number.min': 'Home loan interest deduction must be at least ₹0', 'number.max': 'Section 24(b) home loan interest deduction cannot exceed statutory cap of ₹2,00,000' }),
+  homeLoanInterest: Joi.number().min(0).max(200000).optional()
+    .messages({ 'number.min': 'Home loan interest deduction must be at least ₹0', 'number.max': 'Section 24(b) home loan interest deduction cannot exceed statutory cap of ₹2,00,000' }),
+  section_80eea: Joi.number().min(0).max(150000).optional()
+    .messages({ 'number.min': 'Section 80EEA deduction must be at least ₹0', 'number.max': 'Section 80EEA deduction cannot exceed statutory cap of ₹1,50,000' }),
+  section80EEA: Joi.number().min(0).max(150000).optional()
+    .messages({ 'number.min': 'Section 80EEA deduction must be at least ₹0', 'number.max': 'Section 80EEA deduction cannot exceed statutory cap of ₹1,50,000' }),
+  income_source: Joi.string().valid('salary', 'pension', 'family_pension', 'other').optional(),
+  incomeSource: Joi.string().valid('salary', 'pension', 'family_pension', 'other').optional(),
   version: Joi.number().integer().min(0).optional(),
 }).custom((value, helpers) => {
   if (value.monthly_savings >= value.monthly_income) {

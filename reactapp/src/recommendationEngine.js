@@ -181,6 +181,15 @@ export function getEligibleInvestments(profile) {
   const deductions = profile.deductions || {
     basicSalary: profile.basic_component || profile.basicSalary,
     age,
+    section80C: profile.section80C !== undefined ? profile.section80C : profile.section_80c,
+    section80CCD1B: profile.section80CCD1B !== undefined ? profile.section80CCD1B : (profile.section_80ccd1b || profile.nps80CCD1B || profile.section80CCD),
+    section80D_self: profile.section80D_self !== undefined ? profile.section80D_self : profile.section_80d_self,
+    section80D_parents: profile.section80D_parents !== undefined ? profile.section80D_parents : profile.section_80d_parents,
+    parentsSenior: profile.parentsSenior !== undefined ? profile.parentsSenior : profile.parents_senior,
+    parents_senior: profile.parentsSenior !== undefined ? profile.parentsSenior : profile.parents_senior,
+    hra: profile.hra,
+    homeLoanInterest: profile.homeLoanInterest !== undefined ? profile.homeLoanInterest : profile.home_loan_interest,
+    section80EEA: profile.section80EEA !== undefined ? profile.section80EEA : profile.section_80eea,
   };
   const incomeSource = profile.incomeSource || profile.income_source || 'salary';
   const mr = getMarginalRate(annualIncome, profile.taxRegime || profile.regime || 'new', deductions, incomeSource);
@@ -274,7 +283,22 @@ export function generateRecommendations(userProfile) {
     return buildEmergencyFundPortfolio(userProfile);
   }
 
+  const profileDeductions = userProfile?.deductions || {
+    basicSalary: userProfile.basic_component || userProfile.basicSalary,
+    age: Number(age) || 25,
+    section80C: userProfile.section80C !== undefined ? userProfile.section80C : userProfile.section_80c,
+    section80CCD1B: userProfile.section80CCD1B !== undefined ? userProfile.section80CCD1B : (userProfile.section_80ccd1b || userProfile.nps80CCD1B || userProfile.section80CCD),
+    section80D_self: userProfile.section80D_self !== undefined ? userProfile.section80D_self : userProfile.section_80d_self,
+    section80D_parents: userProfile.section80D_parents !== undefined ? userProfile.section80D_parents : userProfile.section_80d_parents,
+    parentsSenior: userProfile.parentsSenior !== undefined ? userProfile.parentsSenior : userProfile.parents_senior,
+    parents_senior: userProfile.parentsSenior !== undefined ? userProfile.parentsSenior : userProfile.parents_senior,
+    hra: userProfile.hra,
+    homeLoanInterest: userProfile.homeLoanInterest !== undefined ? userProfile.homeLoanInterest : userProfile.home_loan_interest,
+    section80EEA: userProfile.section80EEA !== undefined ? userProfile.section80EEA : userProfile.section_80eea,
+  };
+
   const profile = {
+    ...userProfile,
     age: Number(age) || 25,
     monthly_income: Number(monthly_income) || 0,
     income: Number(monthly_income) || 0,
@@ -286,7 +310,9 @@ export function generateRecommendations(userProfile) {
     investment_goals: userGoals,
     investment_horizon: Number(investment_horizon) || 10,
     horizon: Number(investment_horizon) || 10,
-    taxRegime: userProfile.taxRegime || "new",
+    taxRegime: userProfile.taxRegime || userProfile.regime || "new",
+    incomeSource: userProfile.incomeSource || userProfile.income_source || 'salary',
+    deductions: profileDeductions,
   };
 
   let eligible = getEligibleInvestments(profile);

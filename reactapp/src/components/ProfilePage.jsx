@@ -47,6 +47,17 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
   const [riskTolerance, setRiskTolerance] = useState(savedProfile?.risk_tolerance || 'Moderate');
   const [goalType, setGoalType] = useState(savedProfile?.goal_type || 'wealth-building');
 
+  // Tax deduction fields (WG-DEDUCTIONS-COLLECTION):
+  const [section80C, setSection80C] = useState(savedProfile?.section80C !== undefined ? savedProfile.section80C : (savedProfile?.section_80c ?? ''));
+  const [section80CCD1B, setSection80CCD1B] = useState(savedProfile?.section80CCD1B !== undefined ? savedProfile.section80CCD1B : (savedProfile?.section_80ccd1b ?? savedProfile?.nps80CCD1B ?? savedProfile?.section80CCD ?? ''));
+  const [section80DSelf, setSection80DSelf] = useState(savedProfile?.section80D_self !== undefined ? savedProfile.section80D_self : (savedProfile?.section_80d_self ?? ''));
+  const [section80DParents, setSection80DParents] = useState(savedProfile?.section80D_parents !== undefined ? savedProfile.section80D_parents : (savedProfile?.section_80d_parents ?? ''));
+  const [parentsSenior, setParentsSenior] = useState(savedProfile?.parentsSenior !== undefined ? Boolean(savedProfile.parentsSenior) : (Boolean(savedProfile?.parents_senior)));
+  const [hra, setHRA] = useState(savedProfile?.hra !== undefined ? savedProfile.hra : '');
+  const [homeLoanInterest, setHomeLoanInterest] = useState(savedProfile?.homeLoanInterest !== undefined ? savedProfile.homeLoanInterest : (savedProfile?.home_loan_interest ?? ''));
+  const [section80EEA, setSection80EEA] = useState(savedProfile?.section80EEA !== undefined ? savedProfile.section80EEA : (savedProfile?.section_80eea ?? ''));
+  const [incomeSource, setIncomeSource] = useState(savedProfile?.incomeSource || savedProfile?.income_source || 'salary');
+
   const toggleGoal = (goal) => {
     setInvestmentGoals((prev) =>
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
@@ -73,10 +84,29 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     sold_property_amount: Number(soldPropertyAmount),
     has_lump_sum: Boolean(hasLumpSum),
     lump_sum_amount: hasLumpSum ? Number(lumpSumAmount) : 0,
+    // Tax deduction fields (WG-DEDUCTIONS-COLLECTION)
+    section80C: section80C === '' ? 0 : Number(section80C),
+    section_80c: section80C === '' ? 0 : Number(section80C),
+    section80CCD1B: section80CCD1B === '' ? 0 : Number(section80CCD1B),
+    section_80ccd1b: section80CCD1B === '' ? 0 : Number(section80CCD1B),
+    section80D_self: section80DSelf === '' ? 0 : Number(section80DSelf),
+    section_80d_self: section80DSelf === '' ? 0 : Number(section80DSelf),
+    section80D_parents: section80DParents === '' ? 0 : Number(section80DParents),
+    section_80d_parents: section80DParents === '' ? 0 : Number(section80DParents),
+    parentsSenior: Boolean(parentsSenior),
+    parents_senior: Boolean(parentsSenior),
+    hra: hra === '' ? 0 : Number(hra),
+    homeLoanInterest: homeLoanInterest === '' ? 0 : Number(homeLoanInterest),
+    home_loan_interest: homeLoanInterest === '' ? 0 : Number(homeLoanInterest),
+    section80EEA: section80EEA === '' ? 0 : Number(section80EEA),
+    section_80eea: section80EEA === '' ? 0 : Number(section80EEA),
+    incomeSource: incomeSource || 'salary',
+    income_source: incomeSource || 'salary',
   }), [
     age, monthlyIncome, monthlySavings, investmentGoals, horizon, taxRegime, profileId,
     liquidSavings, existingDebt, dependents, emergencyFundMonths, riskTolerance, goalType,
-    totalCTC, basicComponent, monthlyTakeHome, soldPropertyAmount, hasLumpSum, lumpSumAmount
+    totalCTC, basicComponent, monthlyTakeHome, soldPropertyAmount, hasLumpSum, lumpSumAmount,
+    section80C, section80CCD1B, section80DSelf, section80DParents, parentsSenior, hra, homeLoanInterest, section80EEA, incomeSource
   ]);
 
   const handleSaveProfile = async (e) => {
@@ -84,17 +114,12 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
     // ── Frontend validation (catch errors before API call) ──
     const numAge = Number(age);
-    const numIncome = Number(monthlyIncome || monthlyTakeHome);
     const numSavings = Number(monthlySavings);
     const numLiquid = Number(liquidSavings);
     const numDebt = Number(existingDebt);
     const numDeps = Number(dependents);
     const numEf = Number(emergencyFundMonths);
     const numTakeHome = Number(monthlyTakeHome || monthlyIncome);
-    const numCTC = Math.max(totalCTC ? Number(totalCTC) : 0, numTakeHome * 12);
-    const numBasic = (basicComponent && basicComponent >= numCTC * 0.2 && basicComponent <= numCTC * 0.6)
-      ? Number(basicComponent)
-      : Math.round(numCTC * 0.5);
     const numPropSale = Number(soldPropertyAmount);
     const numLumpSum = Number(lumpSumAmount);
 
@@ -139,12 +164,46 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
       return;
     }
 
+    // Deduction statutory bounds validation
+    const num80C = Number(section80C || 0);
+    const num80CCD = Number(section80CCD1B || 0);
+    const num80DSelf = Number(section80DSelf || 0);
+    const num80DParents = Number(section80DParents || 0);
+    const numHomeLoan = Number(homeLoanInterest || 0);
+    const num80EEA = Number(section80EEA || 0);
+    const numHRA = Number(hra || 0);
+
+    if (num80C < 0 || num80C > 150000) {
+      alert('Section 80C deduction must be between ₹0 and statutory limit ₹1,50,000.');
+      return;
+    }
+    if (num80CCD < 0 || num80CCD > 50000) {
+      alert('Section 80CCD(1B) NPS deduction must be between ₹0 and statutory limit ₹50,000.');
+      return;
+    }
+    if (num80DSelf < 0 || num80DSelf > 50000) {
+      alert('Section 80D (Self) health insurance deduction must be between ₹0 and ₹50,000.');
+      return;
+    }
+    if (num80DParents < 0 || num80DParents > 50000) {
+      alert('Section 80D (Parents) health insurance deduction must be between ₹0 and ₹50,000.');
+      return;
+    }
+    if (numHomeLoan < 0 || numHomeLoan > 200000) {
+      alert('Section 24(b) Home loan interest deduction must be between ₹0 and statutory limit ₹2,00,000.');
+      return;
+    }
+    if (num80EEA < 0 || num80EEA > 150000) {
+      alert('Section 80EEA deduction must be between ₹0 and statutory limit ₹1,50,000.');
+      return;
+    }
+    if (numHRA < 0) {
+      alert('HRA exemption must be 0 or a positive number.');
+      return;
+    }
+
     try {
-      const response = await api.buildProfile(
-        numIncome, numAge, numSavings, taxRegime, horizon,
-        numLiquid, numDebt, numDeps, numEf, riskTolerance, goalType,
-        numCTC, numBasic, numTakeHome, numPropSale, hasLumpSum, hasLumpSum ? numLumpSum : 0
-      );
+      const response = await api.buildProfile(userProfilePayload);
       // Persist profile to localStorage, scoped to the current user
       const currentUser = api.getUserInfo();
       const nextProfileId = response.profileId || null;
@@ -166,7 +225,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     setHorizon(updatedProfile.investment_horizon);
     setTaxRegime(updatedProfile.taxRegime);
     
-    // New fields:
+    // Core fields:
     if (updatedProfile.liquid_savings !== undefined) setLiquidSavings(updatedProfile.liquid_savings);
     if (updatedProfile.existing_debt !== undefined) setExistingDebt(updatedProfile.existing_debt);
     if (updatedProfile.dependents !== undefined) setDependents(updatedProfile.dependents);
@@ -179,6 +238,33 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     if (updatedProfile.sold_property_amount !== undefined) setSoldPropertyAmount(updatedProfile.sold_property_amount);
     if (updatedProfile.has_lump_sum !== undefined) setHasLumpSum(updatedProfile.has_lump_sum);
     if (updatedProfile.lump_sum_amount !== undefined) setLumpSumAmount(updatedProfile.lump_sum_amount);
+
+    // Deduction fields (WG-DEDUCTIONS-COLLECTION):
+    if (updatedProfile.section80C !== undefined || updatedProfile.section_80c !== undefined) {
+      setSection80C(updatedProfile.section80C !== undefined ? updatedProfile.section80C : updatedProfile.section_80c);
+    }
+    if (updatedProfile.section80CCD1B !== undefined || updatedProfile.section_80ccd1b !== undefined || updatedProfile.nps80CCD1B !== undefined) {
+      setSection80CCD1B(updatedProfile.section80CCD1B !== undefined ? updatedProfile.section80CCD1B : (updatedProfile.section_80ccd1b || updatedProfile.nps80CCD1B));
+    }
+    if (updatedProfile.section80D_self !== undefined || updatedProfile.section_80d_self !== undefined) {
+      setSection80DSelf(updatedProfile.section80D_self !== undefined ? updatedProfile.section80D_self : updatedProfile.section_80d_self);
+    }
+    if (updatedProfile.section80D_parents !== undefined || updatedProfile.section_80d_parents !== undefined) {
+      setSection80DParents(updatedProfile.section80D_parents !== undefined ? updatedProfile.section80D_parents : updatedProfile.section_80d_parents);
+    }
+    if (updatedProfile.parentsSenior !== undefined || updatedProfile.parents_senior !== undefined) {
+      setParentsSenior(Boolean(updatedProfile.parentsSenior !== undefined ? updatedProfile.parentsSenior : updatedProfile.parents_senior));
+    }
+    if (updatedProfile.hra !== undefined) setHRA(updatedProfile.hra);
+    if (updatedProfile.homeLoanInterest !== undefined || updatedProfile.home_loan_interest !== undefined) {
+      setHomeLoanInterest(updatedProfile.homeLoanInterest !== undefined ? updatedProfile.homeLoanInterest : updatedProfile.home_loan_interest);
+    }
+    if (updatedProfile.section80EEA !== undefined || updatedProfile.section_80eea !== undefined) {
+      setSection80EEA(updatedProfile.section80EEA !== undefined ? updatedProfile.section80EEA : updatedProfile.section_80eea);
+    }
+    if (updatedProfile.incomeSource || updatedProfile.income_source) {
+      setIncomeSource(updatedProfile.incomeSource || updatedProfile.income_source);
+    }
 
     const nextProfileId = updatedProfile.profileId || profileId || null;
     setProfileId(nextProfileId);
@@ -448,6 +534,137 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
                 </div>
               </div>
             )}
+
+            {/* Tax Deductions & Exemptions Section (WG-DEDUCTIONS-COLLECTION) */}
+            <div className="pf-field pf-field-full" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.95rem', fontWeight: '600', color: '#e2e8f0' }}>Tax Deductions & Exemptions (Optional)</span>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Used for Old Regime & 80CCD(2) optimization</span>
+              </div>
+            </div>
+
+            {/* 80C & 80CCD(1B) */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Section 80C (ELSS, PPF, EPF) (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input
+                    type="number"
+                    placeholder="0 (Max ₹1.5L)"
+                    value={section80C}
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      let num = val === '' ? '' : Math.min(150000, Number(val));
+                      setSection80C(num);
+                    }}
+                    max="150000"
+                  />
+                </div>
+              </div>
+              <div className="pf-field">
+                <label>Section 80CCD(1B) NPS (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input
+                    type="number"
+                    placeholder="0 (Max ₹50k)"
+                    value={section80CCD1B}
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      let num = val === '' ? '' : Math.min(50000, Number(val));
+                      setSection80CCD1B(num);
+                    }}
+                    max="50000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 80D Self & 80D Parents */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Section 80D Health - Self/Family (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input
+                    type="number"
+                    placeholder="0 (Max ₹25k/50k)"
+                    value={section80DSelf}
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      let num = val === '' ? '' : Math.min(50000, Number(val));
+                      setSection80DSelf(num);
+                    }}
+                    max="50000"
+                  />
+                </div>
+              </div>
+              <div className="pf-field">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label>Section 80D - Parents (₹)</label>
+                  <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={parentsSenior}
+                      onChange={e => setParentsSenior(e.target.checked)}
+                      style={{ width: '13px', height: '13px' }}
+                    />
+                    Senior (60+)
+                  </label>
+                </div>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input
+                    type="number"
+                    placeholder="0 (Max ₹25k/50k)"
+                    value={section80DParents}
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      let num = val === '' ? '' : Math.min(50000, Number(val));
+                      setSection80DParents(num);
+                    }}
+                    max="50000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* HRA & Home Loan Interest */}
+            <div className="pf-grid-2">
+              <div className="pf-field">
+                <label>Annual HRA Exemption (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={hra}
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      setHRA(val === '' ? '' : Number(val));
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="pf-field">
+                <label>Home Loan Interest Sec 24(b) (₹)</label>
+                <div className="pf-input-prefix">
+                  <span className="prefix-symbol">₹</span>
+                  <input
+                    type="number"
+                    placeholder="0 (Max ₹2L)"
+                    value={homeLoanInterest}
+                    onChange={e => {
+                      let val = e.target.value.replace(/^0+/, '');
+                      let num = val === '' ? '' : Math.min(200000, Number(val));
+                      setHomeLoanInterest(num);
+                    }}
+                    max="200000"
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Row 3: Goal Checkboxes */}
             <div className="pf-field pf-field-full">
