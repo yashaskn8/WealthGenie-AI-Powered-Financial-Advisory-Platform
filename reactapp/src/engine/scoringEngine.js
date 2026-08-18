@@ -99,9 +99,14 @@ function parseProfile(profile) {
   const annualIncome = income * 12;
   const annualSavings = savings * 12;
   const taxRegime = profile.taxRegime || 'new';
-  const mr = getMarginalRate(annualIncome, taxRegime);
+  const deductions = profile.deductions || {
+    basicSalary: profile.basic_component || profile.basicSalary,
+    age,
+  };
+  const incomeSource = profile.incomeSource || profile.income_source || 'salary';
+  const mr = getMarginalRate(annualIncome, taxRegime, deductions, incomeSource);
 
-  return { income, savings, risk, horizon, age, goals, annualIncome, annualSavings, taxRegime, mr };
+  return { income, savings, risk, horizon, age, goals, annualIncome, annualSavings, taxRegime, deductions, incomeSource, mr };
 }
 
 // ═══════════════════════════════════════════════════════════════════

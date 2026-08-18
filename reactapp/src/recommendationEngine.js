@@ -178,7 +178,12 @@ export function getEligibleInvestments(profile) {
   const risk = (profile.riskCategory || profile.risk_tolerance || "Moderate").toLowerCase();
   const horizon = Number(profile.investment_horizon || profile.horizon) || 10;
   const annualIncome = income * 12;
-  const mr = getMarginalRate(annualIncome, profile.taxRegime || profile.regime || 'new');
+  const deductions = profile.deductions || {
+    basicSalary: profile.basic_component || profile.basicSalary,
+    age,
+  };
+  const incomeSource = profile.incomeSource || profile.income_source || 'salary';
+  const mr = getMarginalRate(annualIncome, profile.taxRegime || profile.regime || 'new', deductions, incomeSource);
 
   let result = investmentDatabase.filter(inv => {
     if (!_checkBasicEligibility(inv, age, annualIncome, savings)) return false;
@@ -416,7 +421,12 @@ export function generateRecommendations(userProfile) {
     const ptResult = computePostTaxReturn(inv, annualSavings, annualIncome, profile);
     inv.nominalReturn = inv.rate;
     if (inv.id === 'hybrid_mf') {
-      const marginal = getMarginalRate(annualIncome, profile.taxRegime || 'new');
+      const deductions = profile?.deductions || {
+        basicSalary: profile?.basic_component || profile?.basicSalary,
+        age: Number(profile?.age) || 30,
+      };
+      const incomeSource = profile?.incomeSource || profile?.income_source || 'salary';
+      const marginal = getMarginalRate(annualIncome, profile?.taxRegime || 'new', deductions, incomeSource);
       const blendedTaxDrag = (0.65 * 0.125) + (0.35 * marginal);
       inv.postTaxReturn = parseFloat((inv.rate * (1 - blendedTaxDrag)).toFixed(1));
     } else {

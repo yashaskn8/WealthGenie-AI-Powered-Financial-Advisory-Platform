@@ -5,18 +5,18 @@
  * Contains marginal rate computation, equity LTCG estimation,
  * and post-tax return calculation for all instrument tax types.
  *
- * ℹ️ WG-043: getMarginalRate() is a client-side port of
- * server/services/taxEngine.js's getEffectiveMarginalRate(). It is kept in
- * sync manually so that synchronous client-side UI features (AllocationPlanner,
- * RecommendationDashboard, UserContext, App) produce identical tax drag results
- * to the backend without asynchronous API round-trips.
+ * ℹ️ WG-043: Full deduction-aware port of server/services/taxEngine.js.
+ * Accepts optional deductions object. When deductions are not provided
+ * (current default — deduction fields not yet collected in profile),
+ * behavior is identical to prior version. Deduction-aware scoring will
+ * activate once profile collection is extended (see WG-DEDUCTIONS-COLLECTION).
  *
  * ⚠️ MAINTENANCE RISK: Any future changes to server/services/taxEngine.js's
  * tax computation logic (e.g. Union Budget slab/rebate updates) MUST be
  * manually mirrored here as well to avoid client/backend calculation drift.
  */
 
-function calculateTaxFromSlabs(taxableIncome, slabs) {
+export function calculateTaxFromSlabs(taxableIncome, slabs) {
   let tax = 0;
   for (const slab of slabs) {
     if (taxableIncome <= slab.min) break;
@@ -26,12 +26,80 @@ function calculateTaxFromSlabs(taxableIncome, slabs) {
   return tax;
 }
 
-function computeTaxLiability(annualIncome, regime = 'new') {
+/**
+ * Helper to compute allowed standard and section-wise deductions and taxable income.
+ * Canonical port of server/services/taxEngine.js calculateTaxableIncome().
+ */
+export function calculateTaxableIncome(annualIncome, regime = 'new', deductions = {}, incomeSource = 'salary') {
+  let standardDeduction = 0;
+  if (incomeSource === 'salary' || incomeSource === 'pension') {
+    standardDeduction = regime === 'new' ? 75000 : 50000;
+  } else if (incomeSource === 'family_pension') {
+    standardDeduction = Math.min(annualIncome / 3, 15000);
+  }
+
+  // Section 80CCD(2) - Employer NPS Contribution (available under both regimes)
+  const basicSalary = deductions.basicSalary || deductions.basic_salary || (annualIncome * 0.5);
+  const isGovtEmployee = deductions.isGovtEmployee === true || deductions.is_govt_employee === true;
+  const nps80CCD2LimitPercent = isGovtEmployee ? 0.14 : 0.10;
+  const max80CCD2 = basicSalary * nps80CCD2LimitPercent;
+  const nps80CCD2 = Math.min(deductions.nps80CCD2 || deductions.nps_80ccd2 || 0, max80CCD2);
+
+  const section80C = Math.min(deductions.section80C || deductions.section_80c || 0, 150000);
+  const nps80CCD1B = Math.min(
+    deductions.nps80CCD1B || deductions.nps_80ccd1b ||
+    deductions.section80CCD || deductions.section_80ccd || 0,
+    50000
+  );
+
+  // Section 80D Granular Self vs. Parents
+  const age = deductions.age || 30;
+  const selfSenior = age >= 60 || deductions.self_senior === true;
+  const parentsSenior = deductions.parents_senior === true;
+  const max80D_self = selfSenior ? 50000 : 25000;
+  const max80D_parents = parentsSenior ? 50000 : 25000;
+  let allowed80D = 0;
+  if (
+    deductions.section80D_self !== undefined || deductions.section_80d_self !== undefined ||
+    deductions.section80D_parents !== undefined || deductions.section_80d_parents !== undefined
+  ) {
+    const allowed80D_self = Math.min(deductions.section80D_self || deductions.section_80d_self || 0, max80D_self);
+    const allowed80D_parents = Math.min(deductions.section80D_parents || deductions.section_80d_parents || 0, max80D_parents);
+    allowed80D = allowed80D_self + allowed80D_parents;
+  } else {
+    allowed80D = Math.min(deductions.section80D || deductions.section_80d || 0, 100000);
+  }
+
+  const hra = deductions.hra || 0;
+  const homeLoanInterest = Math.min(deductions.homeLoanInterest || deductions.home_loan_interest || 0, 200000);
+  const section80EEA = Math.min(deductions.section80EEA || deductions.section_80eea || 0, 150000);
+  const otherDeductions = deductions.other || 0;
+  const savingsInterest = deductions.savingsInterest || deductions.savings_interest || 0;
+  let section80TTA = deductions.section80TTA || deductions.section_80tta || 0;
+  let section80TTB = deductions.section80TTB || deductions.section_80ttb || 0;
+  if (savingsInterest > 0) {
+    if (age >= 60) {
+      section80TTB = Math.max(section80TTB, savingsInterest);
+    } else {
+      section80TTA = Math.max(section80TTA, savingsInterest);
+    }
+  }
+  const allowed80TTA = age < 60 ? Math.min(section80TTA, 10000) : 0;
+  const allowed80TTB = age >= 60 ? Math.min(section80TTB, 50000) : 0;
+
+  const oldRegimeDeductions = regime === 'old'
+    ? (section80C + nps80CCD1B + allowed80D + hra + homeLoanInterest + section80EEA + allowed80TTA + allowed80TTB + otherDeductions)
+    : 0;
+
+  const taxableIncome = Math.max(0, annualIncome - standardDeduction - nps80CCD2 - oldRegimeDeductions);
+  return { standardDeduction, oldRegimeDeductions, taxableIncome, nps80CCD2, allowed80D };
+}
+
+export function computeTaxLiability(annualIncome, regime = 'new', deductions = {}, incomeSource = 'salary') {
   let safeIncome = annualIncome;
   if (!Number.isFinite(safeIncome) || safeIncome < 0) safeIncome = 0;
   const safeRegime = regime === 'old' ? 'old' : 'new';
-  const standardDeduction = safeRegime === 'new' ? 75000 : 50000;
-  const taxableIncome = Math.max(0, safeIncome - standardDeduction);
+  const { taxableIncome } = calculateTaxableIncome(safeIncome, safeRegime, deductions, incomeSource);
 
   const slabs = safeRegime === 'new' ? [
     { min: 0, max: 400000, rate: 0 },
@@ -53,7 +121,7 @@ function computeTaxLiability(annualIncome, regime = 'new') {
 
   if (taxableIncome <= rebateLimit) {
     taxBeforeCess = 0;
-  } else {
+  } else if (safeRegime === 'new') {
     // Marginal relief for Section 87A: tax cannot exceed excess over rebate limit
     const excessOverLimit = taxableIncome - rebateLimit;
     if (taxBeforeCess > excessOverLimit) {
@@ -107,15 +175,15 @@ function computeTaxLiability(annualIncome, regime = 'new') {
 }
 
 // ─── MARGINAL RATE (Client-Side Port of taxEngine.js getEffectiveMarginalRate) ───
-export function getMarginalRate(annualIncome, regime = 'new') {
-  const actualTax = computeTaxLiability(annualIncome, regime);
+export function getMarginalRate(annualIncome, regime = 'new', deductions = {}, incomeSource = 'salary') {
+  const actualTax = computeTaxLiability(annualIncome, regime, deductions, incomeSource);
   if (actualTax === 0) return 0;
 
   const delta = 10000;
   const highIncome = annualIncome + delta;
   const lowIncome = Math.max(0, annualIncome - delta);
-  const highTax = computeTaxLiability(highIncome, regime);
-  const lowTax = computeTaxLiability(lowIncome, regime);
+  const highTax = computeTaxLiability(highIncome, regime, deductions, incomeSource);
+  const lowTax = computeTaxLiability(lowIncome, regime, deductions, incomeSource);
   const deltaIncome = highIncome - lowIncome;
   if (deltaIncome <= 0) return 0;
   const deltaTax = highTax - lowTax;
@@ -156,7 +224,12 @@ export function estimateEquityLTCGTaxRate(nominalRate, monthlySIP, holdingYears)
 // to the postTaxRate. The taxEquivalentYield is provided separately
 // for comparison purposes only — it must NEVER populate postTaxReturn.
 export function computePostTaxReturn(inv, annualSavings, annualIncome, profile) {
-  const mr = getMarginalRate(annualIncome, profile?.taxRegime || 'new');
+  const deductions = profile?.deductions || {
+    basicSalary: profile?.basic_component || profile?.basicSalary,
+    age: Number(profile?.age) || 30,
+  };
+  const incomeSource = profile?.incomeSource || profile?.income_source || 'salary';
+  const mr = getMarginalRate(annualIncome, profile?.taxRegime || 'new', deductions, incomeSource);
   const rate = typeof inv === 'number' ? inv : inv.rate;
   const taxType = typeof inv === 'object' ? inv.taxType : 'slab';
   const invId = typeof inv === 'object' ? inv.id : null;

@@ -62,8 +62,49 @@ def test_tool_calling_engine_tax_rebate():
         "taxable_income": 600000, "regime": "new",
     })
     assert result.success
-    assert result.result["net_tax_liability"] == 0.0
-    assert result.result["section_87a_rebate"] > 0
+    assert result.result["net_tax_liability"] == 0
+    assert result.result["rebate_applied"] is True
+
+
+def test_tax_tool_high_income_nonzero():
+    """Prove Task 1 fix: High income (₹25L new) must calculate non-zero tax, NOT 0."""
+    engine = ToolCallingEngine()
+    result = engine.execute_tool("calculate_tax_rebate", {
+        "annual_income": 2500000, "regime": "new", "income_source": "salary",
+    })
+    assert result.success
+    assert result.result["net_tax_liability"] == 319800
+    assert result.result["taxable_income"] == 2425000
+    assert result.result["standard_deduction"] == 75000
+
+
+def test_tax_tool_golden_vector_parity():
+    """Parity test across all 11 machine-generated golden vectors from taxEngine.js."""
+    engine = ToolCallingEngine()
+    vectors = [
+        {"id": "GV-1", "income": 1275000, "regime": "new", "deductions": {}, "source": "salary", "expected_tax": 0, "expected_taxable": 1200000},
+        {"id": "GV-2", "income": 1275100, "regime": "new", "deductions": {}, "source": "salary", "expected_tax": 104, "expected_taxable": 1200100},
+        {"id": "GV-3", "income": 1500000, "regime": "new", "deductions": {}, "source": "salary", "expected_tax": 97500, "expected_taxable": 1425000},
+        {"id": "GV-4", "income": 2500000, "regime": "new", "deductions": {}, "source": "salary", "expected_tax": 319800, "expected_taxable": 2425000},
+        {"id": "GV-5", "income": 550000, "regime": "old", "deductions": {}, "source": "salary", "expected_tax": 0, "expected_taxable": 500000},
+        {"id": "GV-6", "income": 550100, "regime": "old", "deductions": {}, "source": "salary", "expected_tax": 13021, "expected_taxable": 500100},
+        {"id": "GV-7", "income": 2500000, "regime": "old", "deductions": {"section80C": 150000, "section80D_self": 25000, "section80D_parents": 25000, "nps80CCD1B": 50000, "homeLoanInterest": 200000}, "source": "salary", "expected_tax": 429000, "expected_taxable": 2000000},
+        {"id": "GV-8", "income": 8000000, "regime": "new", "deductions": {}, "source": "salary", "expected_tax": 2239380, "expected_taxable": 7925000},
+        {"id": "GV-9", "income": 5100000, "regime": "new", "deductions": {}, "source": "salary", "expected_tax": 1149200, "expected_taxable": 5025000},
+        {"id": "GV-10", "income": 60000000, "regime": "old", "deductions": {}, "source": "salary", "expected_tax": 25357878, "expected_taxable": 59950000},
+        {"id": "GV-11", "income": 1800000, "regime": "new", "deductions": {"basicSalary": 900000, "nps80CCD2": 90000, "section80D_parents": 50000, "parents_senior": True}, "source": "salary", "expected_tax": 132080, "expected_taxable": 1635000},
+    ]
+
+    for v in vectors:
+        res = engine.execute_tool("calculate_tax_rebate", {
+            "annual_income": v["income"],
+            "regime": v["regime"],
+            "deductions": v["deductions"],
+            "income_source": v["source"],
+        })
+        assert res.success, f"Failed on {v['id']}: {res.result}"
+        assert res.result["taxable_income"] == v["expected_taxable"], f"{v['id']} taxable income mismatch: {res.result['taxable_income']} vs {v['expected_taxable']}"
+        assert res.result["net_tax_liability"] == v["expected_tax"], f"{v['id']} tax liability mismatch: {res.result['net_tax_liability']} vs {v['expected_tax']}"
 
 
 def test_tool_calling_engine_unknown_tool():
