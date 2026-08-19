@@ -218,8 +218,9 @@ async def lifespan(app: FastAPI):
     global model, label_encoder, model_accuracy, confidence_threshold, git_commit_hash, model_version, dataset_version, explainer_instance
     
     # 0. Fail-Closed Security & Config Validation
-    from security import validate_ml_service_config
+    from security import validate_ml_service_config, validate_ml_operator_config
     validate_ml_service_config()
+    validate_ml_operator_config()
 
     # 0. Instantiate Version Registry via Store Factory & attach to serving ModelRegistry
     version_registry = get_model_registry()

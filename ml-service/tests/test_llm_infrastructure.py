@@ -16,8 +16,11 @@ from llm.registry import LLMModelRegistry, llm_registry
 from llm.schema import LLMGenerateRequest, LLMProviderType
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
     api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    operator_key = os.environ.get("ML_OPERATOR_KEY", "wealthgenie_operator_secret_key_9999")
+    monkeypatch.setenv("ML_SERVICE_API_KEY", api_key)
+    monkeypatch.setenv("ML_OPERATOR_KEY", operator_key)
     with TestClient(app, headers={"X-API-Key": api_key, "X-Verified-User-Id": "test-user-id"}) as c:
         yield c
 
@@ -130,6 +133,7 @@ def test_fastapi_llm_endpoints(client):
     assert res_gen.json()["completion_tokens"] > 0
 
     # Switch endpoint
-    res_switch = client.post("/llm/switch", json={"provider_key": "mock"}, headers={"X-Verified-User-Role": "admin"})
+    operator_key = os.environ.get("ML_OPERATOR_KEY", "wealthgenie_operator_secret_key_9999")
+    res_switch = client.post("/llm/switch", json={"provider_key": "mock"}, headers={"X-Operator-Key": operator_key})
     assert res_switch.status_code == 200
     assert res_switch.json()["status"] == "success"

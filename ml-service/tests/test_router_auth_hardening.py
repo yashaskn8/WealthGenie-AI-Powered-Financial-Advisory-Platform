@@ -9,12 +9,14 @@ from fastapi.testclient import TestClient
 from main import app
 
 API_KEY = "wealthgenie_secret_api_key_2026"
+OPERATOR_KEY = "wealthgenie_operator_secret_key_9999"
 
 
 @pytest.fixture(autouse=True)
 def ensure_auth_environment(monkeypatch):
-    """Ensure tests run with valid API key configured and non-local environment by default."""
+    """Ensure tests run with valid API key & Operator key configured and non-local environment by default."""
     monkeypatch.setenv("ML_SERVICE_API_KEY", API_KEY)
+    monkeypatch.setenv("ML_OPERATOR_KEY", OPERATOR_KEY)
     monkeypatch.setenv("ENVIRONMENT", "production")
 
 
@@ -176,37 +178,71 @@ def test_llm_switch_rejects_unauthenticated_request():
         assert res.json()["detail"] == "Invalid or missing API Key"
 
 
-def test_llm_switch_rejects_missing_admin_role_header():
-    """POST /llm/switch MUST return 403 when called with valid X-API-Key but without X-Verified-User-Role."""
+def test_llm_switch_rejects_missing_operator_key_header():
+    """POST /llm/switch MUST return 401 when called with valid X-API-Key but without X-Operator-Key."""
     headers = {"X-API-Key": API_KEY}
     with TestClient(app, headers=headers) as client:
         res = client.post("/llm/switch", json={"provider_key": "mock"})
-        assert res.status_code == 403, f"Expected 403 Forbidden, got {res.status_code}"
-        assert "Requires admin role" in res.json()["detail"]
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert res.json()["detail"] == "Invalid or missing Operator Key"
 
 
-def test_llm_switch_rejects_non_admin_role():
-    """POST /llm/switch MUST return 403 when called with standard 'user' role."""
+def test_llm_switch_rejects_wrong_operator_key():
+    """POST /llm/switch MUST return 401 when called with wrong X-Operator-Key."""
     headers = {
         "X-API-Key": API_KEY,
-        "X-Verified-User-Role": "user",
+        "X-Operator-Key": "invalid_wrong_operator_token_123",
     }
     with TestClient(app, headers=headers) as client:
         res = client.post("/llm/switch", json={"provider_key": "mock"})
-        assert res.status_code == 403, f"Expected 403 Forbidden, got {res.status_code}"
-        assert "Requires admin role" in res.json()["detail"]
+        assert res.status_code == 401, f"Expected 401 Unauthorized, got {res.status_code}"
+        assert res.json()["detail"] == "Invalid or missing Operator Key"
 
 
-def test_llm_switch_succeeds_with_admin_role():
-    """POST /llm/switch MUST succeed with 200 when called with X-Verified-User-Role: admin."""
+def test_llm_switch_succeeds_with_valid_operator_key():
+    """POST /llm/switch MUST succeed with 200 when called with distinct, valid X-Operator-Key."""
     headers = {
         "X-API-Key": API_KEY,
-        "X-Verified-User-Role": "admin",
+        "X-Operator-Key": OPERATOR_KEY,
     }
+    assert API_KEY != OPERATOR_KEY, "Test invariant: OPERATOR_KEY must be distinct from API_KEY"
     with TestClient(app, headers=headers) as client:
         res = client.post("/llm/switch", json={"provider_key": "mock"})
         assert res.status_code == 200, f"Expected 200 OK, got {res.status_code}: {res.text}"
         assert res.json()["status"] == "success"
+
+
+def test_llm_switch_proves_api_key_alone_cannot_switch_model_forgery_gap_closed():
+    """
+    PROOF: Proves that possessing X-API-Key alone (or attempting role-header forgery)
+    is NOT sufficient to invoke /llm/switch without holding the distinct ML_OPERATOR_KEY secret.
+    """
+    # 1. Attacker has legitimate service API key only
+    headers_service_key_only = {"X-API-Key": API_KEY}
+    with TestClient(app, headers=headers_service_key_only) as client:
+        res = client.post("/llm/switch", json={"provider_key": "mock"})
+        assert res.status_code == 401
+        assert res.json()["detail"] == "Invalid or missing Operator Key"
+
+    # 2. Attacker attempts to forge admin role via X-Verified-User-Role with service key
+    headers_forged_role = {
+        "X-API-Key": API_KEY,
+        "X-Verified-User-Role": "admin",
+    }
+    with TestClient(app, headers=headers_forged_role) as client:
+        res = client.post("/llm/switch", json={"provider_key": "mock"})
+        assert res.status_code == 401
+        assert res.json()["detail"] == "Invalid or missing Operator Key"
+
+    # 3. Attacker uses service API key as the operator key (should fail because they are distinct)
+    headers_reused_api_key = {
+        "X-API-Key": API_KEY,
+        "X-Operator-Key": API_KEY,
+    }
+    with TestClient(app, headers=headers_reused_api_key) as client:
+        res = client.post("/llm/switch", json={"provider_key": "mock"})
+        assert res.status_code == 401
+        assert res.json()["detail"] == "Invalid or missing Operator Key"
 
 
 
@@ -252,10 +288,23 @@ def test_invalid_api_key_rejected_on_all_subsystems():
 def test_fail_closed_when_api_key_unset_in_production(monkeypatch):
     """When ML_SERVICE_API_KEY is unset in production, FastAPI startup fails closed with RuntimeError."""
     monkeypatch.delenv("ML_SERVICE_API_KEY", raising=False)
+    monkeypatch.setenv("ML_OPERATOR_KEY", OPERATOR_KEY)
     monkeypatch.setenv("ENVIRONMENT", "production")
 
     headers = {"X-Verified-User-Id": "user_123"}
     with pytest.raises(RuntimeError, match="FATAL Startup Misconfiguration: ML_SERVICE_API_KEY is required in production"):
+        with TestClient(app, headers=headers):
+            pass
+
+
+def test_fail_closed_when_operator_key_unset_in_production(monkeypatch):
+    """When ML_OPERATOR_KEY is unset in production, FastAPI startup fails closed with RuntimeError."""
+    monkeypatch.setenv("ML_SERVICE_API_KEY", API_KEY)
+    monkeypatch.delenv("ML_OPERATOR_KEY", raising=False)
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    headers = {"X-Verified-User-Id": "user_123"}
+    with pytest.raises(RuntimeError, match="FATAL Startup Misconfiguration: ML_OPERATOR_KEY is required in production"):
         with TestClient(app, headers=headers):
             pass
 

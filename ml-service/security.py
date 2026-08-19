@@ -87,6 +87,67 @@ async def verify_verified_user_id(
     return user_id.strip()
 
 
+def validate_ml_operator_config(environ: Optional[dict] = None) -> None:
+    """Validate ML operator security configuration at startup.
+
+    Raises RuntimeError if ML_OPERATOR_KEY is missing or set to
+    insecure placeholder values in non-local environments.
+    """
+    env_dict = environ if environ is not None else os.environ
+    env_mode = env_dict.get("ENVIRONMENT", "").strip().lower()
+    operator_key = env_dict.get("ML_OPERATOR_KEY", "").strip()
+
+    if env_mode not in ("local", "test", "development"):
+        if not operator_key:
+            raise RuntimeError(
+                "FATAL Startup Misconfiguration: ML_OPERATOR_KEY is required in production environments. "
+                "Set ENVIRONMENT=local to permit dev-mode bypass."
+            )
+        if operator_key.startswith("CHANGE_ME"):
+            raise RuntimeError(
+                "FATAL Startup Misconfiguration: Insecure placeholder ML_OPERATOR_KEY configured in production environment."
+            )
+
+
+OPERATOR_KEY_NAME = "X-Operator-Key"
+operator_key_header = APIKeyHeader(name=OPERATOR_KEY_NAME, auto_error=False)
+
+
+async def verify_operator_key(operator_key: str = Security(operator_key_header)) -> str:
+    """Authenticate operator-only administrative requests via constant-time key comparison.
+
+    Uses hmac.compare_digest for timing-attack-resistant string equality checks
+    against the ML_OPERATOR_KEY environment variable.
+
+    OPERATIONAL NOTE:
+    ML_OPERATOR_KEY is an out-of-band credential intended exclusively for direct
+    operational management (deploy scripts, CI/CD promotion pipelines, infrastructure
+    runbooks, or authorized human operators via curl/CLI). It is NOT held, known, or
+    forwarded by the Express backend or any customer-facing application services.
+    """
+    expected_key = os.environ.get("ML_OPERATOR_KEY", "").strip()
+    env_mode = os.environ.get("ENVIRONMENT", "").strip().lower()
+
+    if not expected_key:
+        if env_mode in ("local", "test"):
+            return operator_key or "dev-mode-operator"
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server Misconfiguration: ML_OPERATOR_KEY is not set. Set ENVIRONMENT=local to permit dev-mode bypass."
+        )
+    if expected_key.startswith("CHANGE_ME") and env_mode not in ("local", "test"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server Misconfiguration: Insecure placeholder ML_OPERATOR_KEY configured in production."
+        )
+    if not operator_key or not hmac.compare_digest(operator_key, expected_key):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing Operator Key"
+        )
+    return operator_key
+
+
 VERIFIED_USER_ROLE_HEADER = "X-Verified-User-Role"
 verified_user_role_header = APIKeyHeader(name=VERIFIED_USER_ROLE_HEADER, auto_error=False)
 
