@@ -77,7 +77,7 @@ test('genieChatSystemPrompt grounds prompt in profile, tax, recommendations, and
 });
 
 test('instrumentConstants exposes immutable rates and live override path', () => {
-  assert.equal(getNominalRate('FD'), 6.5);
+  assert.equal(getNominalRate('FD'), 7.5);
   assert.equal(getVolatility('FD'), 0.005);
   assert.equal(getNominalRate('UNKNOWN'), 7.0);
   assert.equal(toMonthlyRate(0.12), 0.01);

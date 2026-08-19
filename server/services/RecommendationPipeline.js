@@ -1334,12 +1334,31 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
     const highlightLower = (item.highlight || '').toLowerCase();
     const badge = item.badge || '';
 
-    // Extract return rate
-    const rateMatch = String(item.rate || '').match(/(\d+\.?\d*)/);
-    const nominalRate = rateMatch ? parseFloat(rateMatch[1]) : 0;
-
     // Infer risk score: first try server-side authoritative catalog lookup using item.id
     const catalogInst = investmentDatabase.find(c => c.id === item.id);
+
+    // Extract return rate: directly use numeric expectedReturn from item, or parse candidate rate, or fallback to authoritative catalog expectedReturn
+    let candidateRate = typeof item.expectedReturn === 'number' && !isNaN(item.expectedReturn)
+      ? item.expectedReturn
+      : (typeof item.rate === 'number' && !isNaN(item.rate)
+          ? item.rate
+          : (typeof item.rate === 'string' && item.rate.trim()
+              ? (parseFloat(item.rate.match(/(\d+\.?\d*)/)?.[1]) || null)
+              : null));
+
+    let nominalRate = candidateRate !== null && !isNaN(candidateRate)
+      ? candidateRate
+      : (typeof catalogInst?.expectedReturn === 'number' && !isNaN(catalogInst.expectedReturn)
+          ? catalogInst.expectedReturn
+          : (typeof catalogInst?.dynamicData?.expectedReturn?.avg === 'number' && !isNaN(catalogInst.dynamicData.expectedReturn.avg)
+              ? catalogInst.dynamicData.expectedReturn.avg
+              : null));
+
+    if (nominalRate === null || nominalRate === undefined || isNaN(nominalRate)) {
+      console.warn(`[RecommendationPipeline] Missing expectedReturn for instrument id '${item.id || item.name}'. Data quality defect.`);
+      nominalRate = 0;
+    }
+
     let productRisk = 5;
     const catalogRiskValue = catalogInst?.dynamicData?.risk?.value;
     if (typeof catalogRiskValue === 'number') {
