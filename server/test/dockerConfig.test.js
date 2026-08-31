@@ -38,6 +38,9 @@ test('Docker full-stack wiring proxies frontend API calls and supplies ML operat
   assert.match(nginxConfig, /location\s+\/api\//);
   assert.match(nginxConfig, /proxy_pass\s+http:\/\/server:5000;/);
   assert.match(composeConfig, /ML_OPERATOR_KEY=\$\{ML_OPERATOR_KEY:-\}/);
+  assert.match(composeConfig, /METRICS_TOKEN=\$\{METRICS_TOKEN:-\}/);
+  assert.match(composeConfig, /CORS_ORIGINS=\$\{CORS_ORIGINS:-https:\/\/localhost\}/);
+  assert.match(composeConfig, /MONGODB_URI=mongodb:\/\/mongodb:27017\/wealthgenie\?replicaSet=rs0/);
 });
 
 test('Docker build contexts exclude local secrets, caches, and host dependencies', () => {
@@ -59,6 +62,7 @@ test('Kubernetes supplies every production ML credential using the expected vari
     ? process.cwd()
     : path.resolve(process.cwd(), '..');
   const mlDeployment = fs.readFileSync(path.join(rootDir, 'k8s', 'ml-service', 'deployment.yaml'), 'utf8');
+  const serverDeployment = fs.readFileSync(path.join(rootDir, 'k8s', 'server', 'deployment.yaml'), 'utf8');
   const secretExample = fs.readFileSync(path.join(rootDir, 'k8s', 'secrets.example.yaml'), 'utf8');
   const configMap = fs.readFileSync(path.join(rootDir, 'k8s', 'configmap.yaml'), 'utf8');
   const kustomization = fs.readFileSync(path.join(rootDir, 'k8s', 'kustomization.yaml'), 'utf8');
@@ -66,7 +70,11 @@ test('Kubernetes supplies every production ML credential using the expected vari
 
   assert.match(mlDeployment, /name:\s*ML_OPERATOR_KEY[\s\S]*key:\s*ML_OPERATOR_KEY/);
   assert.match(secretExample, /^\s*ML_OPERATOR_KEY:\s*"CHANGE_ME_ML_OPERATOR_KEY"/m);
-  assert.doesNotMatch(configMap, /^\s*CORS_ORIGIN:/m);
+  assert.match(serverDeployment, /name:\s*METRICS_TOKEN[\s\S]*key:\s*METRICS_TOKEN/);
+  assert.match(secretExample, /^\s*METRICS_TOKEN:\s*"CHANGE_ME_METRICS_TOKEN/m);
+  assert.match(configMap, /^\s*CORS_ORIGINS:\s*"https:\/\//m);
   assert.doesNotMatch(kustomization, /secrets\.example\.yaml/);
   assert.match(cdWorkflow, /--from-literal=ML_OPERATOR_KEY="\$EPHEMERAL_ML_OPERATOR_KEY"/);
+  assert.match(cdWorkflow, /--from-literal=METRICS_TOKEN="\$EPHEMERAL_METRICS_TOKEN"/);
+  assert.match(cdWorkflow, /MONGODB_URI="mongodb:\/\/wealthgenie-mongodb[^"\s]+\?replicaSet=rs0"/);
 });

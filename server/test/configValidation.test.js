@@ -79,6 +79,30 @@ test('Config Validation: Valid production configuration passes', () => {
   assert.equal(result.errors.length, 0);
 });
 
+test('Config Validation: every required production value fails clearly when missing', () => {
+  const complete = {
+    JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
+    MONGODB_URI: 'mongodb://mongodb:27017/wealthgenie?replicaSet=rs0',
+    ML_SERVICE_API_KEY: 'production-secret-api-key-value-secure',
+    METRICS_TOKEN: 'production-metrics-token-at-least-32-characters',
+    CORS_ORIGINS: 'https://wealthgenie.example',
+    NODE_ENV: 'production',
+  };
+  const expected = {
+    JWT_SECRET: 'JWT_SECRET',
+    MONGODB_URI: 'MONGODB_URI',
+    ML_SERVICE_API_KEY: 'ML_SERVICE_API_KEY',
+    METRICS_TOKEN: 'METRICS_TOKEN',
+    CORS_ORIGINS: 'CORS_ORIGINS',
+  };
+
+  for (const [name, message] of Object.entries(expected)) {
+    const result = validateEnvironmentConfig({ ...complete, [name]: '' });
+    assert.equal(result.valid, false, `${name} must be required in production`);
+    assert.ok(result.errors.some(error => error.includes(message)), `${name} error must be explicit`);
+  }
+});
+
 test('Config Validation: Production requires an explicit HTTPS browser origin', () => {
   const base = {
     JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',

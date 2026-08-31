@@ -19,6 +19,7 @@ spec:
       containers:
         - name: mongodb
           image: mongo:7.0
+          args: ["--replSet", "rs0", "--bind_ip_all"]
           ports:
             - containerPort: 27017
               name: mongodb
@@ -42,9 +43,11 @@ spec:
           readinessProbe:
             exec:
               command:
-                - mongosh
-                - --eval
-                - "db.adminCommand('ping')"
+                - sh
+                - -c
+                - >-
+                  mongosh --quiet --eval 'try { quit(rs.status().ok ? 0 : 1) }
+                  catch (e) { rs.initiate({_id:"rs0",members:[{_id:0,host:"wealthgenie-mongodb.wealthgenie.svc.cluster.local:27017"}]}); quit(1) }'
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3

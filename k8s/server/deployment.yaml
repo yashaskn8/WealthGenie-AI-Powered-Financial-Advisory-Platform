@@ -48,6 +48,11 @@ spec:
                 secretKeyRef:
                   name: wealthgenie-secrets
                   key: ML_SERVICE_API_KEY
+            - name: METRICS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: wealthgenie-secrets
+                  key: METRICS_TOKEN
           resources:
             requests:
               cpu: 100m

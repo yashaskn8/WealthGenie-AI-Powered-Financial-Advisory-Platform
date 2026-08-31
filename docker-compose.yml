@@ -45,6 +45,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ML_SERVICE_API_KEY=${ML_SERVICE_API_KEY:-}
+      - METRICS_TOKEN=${METRICS_TOKEN:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://localhost}
     depends_on:
       mongodb:
         condition: service_healthy

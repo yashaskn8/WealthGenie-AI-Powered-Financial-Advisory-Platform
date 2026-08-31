@@ -13,7 +13,8 @@ data:
   LLM_DEFAULT_PROVIDER: "mock"
   ML_SERVICE_URL: "http://wealthgenie-ml-service.wealthgenie.svc.cluster.local:8000"
   REDIS_URL: "redis://wealthgenie-redis.wealthgenie.svc.cluster.local:6379"
-  # The bundled ingress is same-origin. Set CORS_ORIGINS in an environment
-  # overlay only when a separate frontend origin must call the API.
+  # Kind/demo ingress origin. Production overlays must replace this with the
+  # real HTTPS frontend origin; validation intentionally rejects HTTP origins.
+  CORS_ORIGINS: "https://wealthgenie.local"
   RATE_LIMIT_WINDOW_MS: "900000"
   RATE_LIMIT_MAX_REQUESTS: "100"
