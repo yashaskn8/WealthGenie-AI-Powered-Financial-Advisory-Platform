@@ -1,537 +1,435 @@
 openapi: 3.1.0
 info:
-  title: WealthGenie API
-  version: 1.0.0
-  description: >
-    Production-grade financial planning and investment advice engine API.
-    Provides automated portfolio recommendation, Monte Carlo wealth projection,
-    Indian tax optimization (FY2025-26), and XIRR goal calculations.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-
+  title: WealthGenie Public API
+  version: 2.0.0
+  description: Canonical contract for the supported public Express API. Internal metrics and MCP routes are intentionally excluded.
 servers:
-  - url: http://localhost:5000
-    description: Local Development Server
-  - url: https://api.wealthgenie.io
-    description: Production Cluster Gateway
+  - { url: 'http://localhost:5000', description: Local development }
+  - { url: '/', description: Same-origin production gateway }
 
 paths:
-  /api/health:
-    get:
-      operationId: getHealth
-      summary: Deep Health Check
-      description: Returns health status of API, MongoDB connection state, and Redis availability.
-      tags:
-        - Observability
-      responses:
-        '200':
-          description: System healthy
-          content:
-            application/json:
-              example:
-                status: UP
-                timestamp: '2026-07-25T00:00:00.000Z'
-                services:
-                  database: UP
-                  redis: UP
-                  version: 1.0.0
-        '503':
-          $ref: '#/components/responses/ServerError'
-
   /api/auth/register:
     post:
       operationId: registerUser
-      summary: Register User
-      description: Registers a new user account with bcrypt password hashing.
-      tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: user@example.com
-                password:
-                  type: string
-                  minLength: 8
-                  example: Password123!
-      responses:
-        '201':
-          description: User registered successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
+      tags: [Authentication]
+      security: []
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/Register' }
+      responses: { '201': { $ref: '#/components/responses/AuthSession' }, '400': { $ref: '#/components/responses/BadRequest' }, '409': { $ref: '#/components/responses/Conflict' } }
   /api/auth/login:
     post:
       operationId: loginUser
-      summary: User Login
-      description: Authenticates user credentials and issues a signed JWT token.
-      tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-      responses:
-        '200':
-          description: Login successful
-          content:
-            application/json:
-              example:
-                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                user:
-                  id: 60d5ecb8b3b3a214c8d5ecb8
-                  email: user@example.com
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
+      tags: [Authentication]
+      security: []
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/Login' }
+      responses: { '200': { $ref: '#/components/responses/AuthSession' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
   /api/auth/logout:
     post:
       operationId: logoutUser
-      summary: User Logout
-      description: Revokes current JWT token by adding jti to Redis blacklist.
-      tags:
-        - Authentication
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Token revoked successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/profile:
+      tags: [Authentication]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      responses: { '200': { $ref: '#/components/responses/Message' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/auth/session:
     get:
-      operationId: getProfile
-      summary: Get Financial Profile
-      description: Retrieves the financial profile for the authenticated user.
-      tags:
-        - User Profile
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Profile retrieved successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+      operationId: restoreSession
+      tags: [Authentication]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/AuthSession' }, '401': { $ref: '#/components/responses/Unauthorized' } }
 
   /api/profile/build:
     post:
-      operationId: createProfile
-      summary: Create / Build Profile
-      description: Creates or updates the user's financial profile.
-      tags:
-        - User Profile
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfileRequest'
-      responses:
-        '200':
-          description: Profile saved successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/profile/{id}:
+      operationId: buildProfile
+      tags: [Profiles]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      x-idempotency-key: optional
+      requestBody: { $ref: '#/components/requestBodies/ProfileCreate' }
+      responses: { '201': { $ref: '#/components/responses/Profile' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /api/profile/{profileId}:
     put:
       operationId: updateProfile
-      summary: Update Profile by ID
-      description: Updates an existing profile by document ID with ownership check.
-      tags:
-        - User Profile
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfileRequest'
-      responses:
-        '200':
-          description: Profile updated
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+      tags: [Profiles]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      parameters: [{ $ref: '#/components/parameters/ProfileId' }]
+      requestBody: { $ref: '#/components/requestBodies/ProfileUpdate' }
+      responses: { '200': { $ref: '#/components/responses/Profile' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } }
 
   /api/recommend:
     post:
-      operationId: generateRecommendations
-      summary: Generate Recommendations
-      description: Generates automated 5-instrument asset allocation picks using Rule/ML pipeline.
-      tags:
-        - Recommendation Engine
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfileRequest'
-      responses:
-        '200':
-          description: Recommendations generated
-        '400':
-          $ref: '#/components/responses/BadRequest'
+      operationId: createRecommendation
+      tags: [Advisory]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      x-idempotency-key: required
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { $ref: '#/components/requestBodies/Recommendation' }
+      responses: { '200': { $ref: '#/components/responses/Recommendation' }, '201': { $ref: '#/components/responses/Recommendation' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /api/recommend/audit:
+    get:
+      operationId: listRecommendationAudits
+      tags: [Advisory]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      parameters:
+        - { name: profileId, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses: { '200': { description: Owned audit records, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/AuditMetadata' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/recommend/audit/verify:
+    get:
+      operationId: verifyRecommendationAuditChain
+      tags: [Advisory]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      responses: { '200': { description: Tamper-evident chain status, content: { application/json: { schema: { $ref: '#/components/schemas/AuditVerification' } } } }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/recommend/audit/{id}:
+    get:
+      operationId: getRecommendationAudit
+      tags: [Advisory]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Owned audit record, content: { application/json: { schema: { $ref: '#/components/schemas/AuditMetadata' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/recommend/weights:
+    post:
+      operationId: updateRecommendationWeights
+      tags: [Advisory]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/RecommendationWeights' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
 
+  /api/goals/create:
+    post:
+      operationId: createGoal
+      tags: [Goals]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      x-idempotency-key: optional
+      requestBody: { $ref: '#/components/requestBodies/GoalCreate' }
+      responses: { '201': { $ref: '#/components/responses/Goal' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
   /api/goals:
     get:
       operationId: listGoals
-      summary: List User Goals
-      description: Returns all financial goals for the authenticated user.
-      tags:
-        - Goals
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Goals list retrieved
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    post:
-      operationId: createGoal
-      summary: Create Financial Goal
-      description: Creates a new financial goal with reverse SIP calculation.
-      tags:
-        - Goals
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GoalRequest'
-      responses:
-        '201':
-          description: Goal created
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/goals/{id}:
-    put:
+      tags: [Goals]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      responses: { '200': { description: Owned goals, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Goal' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/goals/{goalId}/refresh-advice:
+    patch:
+      operationId: refreshGoalAdvice
+      tags: [Goals]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      parameters: [{ $ref: '#/components/parameters/GoalId' }]
+      responses: { '200': { $ref: '#/components/responses/Goal' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/goals/{goalId}:
+    patch:
       operationId: updateGoal
-      summary: Update Goal
-      tags:
-        - Goals
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Goal updated
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+      tags: [Goals]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      parameters: [{ $ref: '#/components/parameters/GoalId' }]
+      requestBody: { $ref: '#/components/requestBodies/GoalUpdate' }
+      responses: { '200': { $ref: '#/components/responses/Goal' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
     delete:
       operationId: deleteGoal
-      summary: Delete Goal
-      tags:
-        - Goals
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Goal deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/portfolio:
-    get:
-      operationId: getPortfolio
-      summary: Get User Portfolio
-      tags:
-        - Portfolio
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Portfolio retrieved
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/portfolio/optimise:
-    post:
-      operationId: optimizePortfolio
-      summary: Optimize Portfolio Weights
-      description: Computes Markowitz minimum-variance asset weights.
-      tags:
-        - Portfolio
-      responses:
-        '200':
-          description: Optimal weights calculated
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /api/portfolio/rebalance:
-    post:
-      operationId: rebalancePortfolio
-      summary: Calculate Rebalance Drift
-      description: Computes portfolio drift index and rebalancing trade directives.
-      tags:
-        - Portfolio
-      responses:
-        '200':
-          description: Rebalancing analysis complete
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /api/tax/calculate:
-    post:
-      operationId: calculateTax
-      summary: Compute Tax Liabilities
-      description: Calculates FY2025-26 tax liability for Old/New regime.
-      tags:
-        - Tax Engine
-      responses:
-        '200':
-          description: Tax calculated
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /api/tax/compare:
-    post:
-      operationId: compareTaxRegimes
-      summary: Compare Tax Regimes
-      description: Compares Old vs New tax regime and recommends optimal regime.
-      tags:
-        - Tax Engine
-      responses:
-        '200':
-          description: Tax regime comparison complete
-        '400':
-          $ref: '#/components/responses/BadRequest'
+      tags: [Goals]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      parameters: [{ $ref: '#/components/parameters/GoalId' }]
+      responses: { '200': { $ref: '#/components/responses/Message' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
 
   /api/instruments:
     get:
       operationId: listInstruments
-      summary: List Supported Instruments
-      tags:
-        - Market Instruments
-      responses:
-        '200':
-          description: Instruments list retrieved
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /api/instruments/{id}:
-    get:
-      operationId: getInstrumentById
-      summary: Get Instrument Details
-      tags:
-        - Market Instruments
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Instrument details retrieved
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/market/freshness:
-    get:
-      operationId: getMarketFreshness
-      summary: Market Data Freshness Bar
-      tags:
-        - Market Instruments
-      responses:
-        '200':
-          description: Freshness status retrieved
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /api/montecarlo/simulate:
+      tags: [Instruments]
+      security: []
+      responses: { '200': { description: Canonical investment catalog, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Instrument' } } } } } }
+  /api/instruments/rank-wti:
     post:
-      operationId: runMonteCarloSimulation
-      summary: Run Monte Carlo Simulation
-      tags:
-        - Projections
-      responses:
-        '200':
-          description: Simulation complete
-        '400':
-          $ref: '#/components/responses/BadRequest'
+      operationId: rankInstruments
+      tags: [Instruments]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/RankInstruments' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
 
-  /api/projection/simulate:
+  /api/projection:
     post:
-      operationId: runWealthProjection
-      summary: Generate Wealth Projection
-      tags:
-        - Projections
-      responses:
-        '200':
-          description: Projection generated
-        '400':
-          $ref: '#/components/responses/BadRequest'
+      operationId: createProjection
+      tags: [Projections]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/Projection' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/projection/xirr:
+    post:
+      operationId: calculateXirr
+      tags: [Projections]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/Xirr' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/montecarlo/montecarlo:
+    post:
+      operationId: runMonteCarlo
+      tags: [Projections]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/MonteCarlo' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
 
-  /api/chat:
+  /api/market/rates:
+    get: { operationId: getMarketRates, tags: [Market], security: [], responses: { '200': { $ref: '#/components/responses/Object' } } }
+  /api/market/params:
+    get: { operationId: getMarketParameters, tags: [Market], security: [], responses: { '200': { $ref: '#/components/responses/Object' } } }
+  /api/market/refresh:
+    post:
+      operationId: refreshMarketData
+      tags: [Market]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      responses: { '200': { $ref: '#/components/responses/Object' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+
+  /api/tax/compute:
+    get:
+      operationId: computeTax
+      tags: [Tax]
+      security: []
+      parameters: [{ $ref: '#/components/parameters/Income' }, { name: regime, in: query, schema: { type: string, enum: [new, old], default: new } }]
+      responses: { '200': { $ref: '#/components/responses/TaxCalculation' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /api/tax/compare:
+    get:
+      operationId: compareTaxRegimes
+      tags: [Tax]
+      security: []
+      parameters: [{ $ref: '#/components/parameters/Income' }]
+      responses: { '200': { $ref: '#/components/responses/TaxComparison' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /api/tax/post-tax-return:
+    post:
+      operationId: calculatePostTaxReturn
+      tags: [Tax]
+      security: []
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/PostTaxReturn' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /api/tax/post-tax-return/batch:
+    post:
+      operationId: calculatePostTaxReturns
+      tags: [Tax]
+      security: []
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/PostTaxReturnBatch' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' } }
+
+  /api/portfolio/optimise:
+    post:
+      operationId: optimisePortfolio
+      tags: [Portfolio]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/PortfolioOptimise' }
+      responses: { '200': { $ref: '#/components/responses/Portfolio' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/portfolio/rebalance:
+    post:
+      operationId: rebalancePortfolio
+      tags: [Portfolio]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/Rebalance' }
+      responses: { '200': { $ref: '#/components/responses/Portfolio' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+
+  /api/chat/message:
     post:
       operationId: sendChatMessage
-      summary: AI Assistant Chat
-      tags:
-        - AI Assistant
-      responses:
-        '200':
-          description: AI response generated
-        '400':
-          $ref: '#/components/responses/BadRequest'
+      tags: [Chat]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/Chat' }
+      responses: { '200': { $ref: '#/components/responses/Chat' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/chat/history:
+    get:
+      operationId: getChatHistory
+      tags: [Chat]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      responses: { '200': { description: Current user's history, content: { application/json: { schema: { type: array, items: { type: object, additionalProperties: true } } } } }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /api/chat/session/{sessionId}:
+    delete:
+      operationId: deleteChatSession
+      tags: [Chat]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      x-csrf-protection: cookie-session
+      parameters: [{ name: sessionId, in: path, required: true, schema: { type: string, maxLength: 100 } }]
+      responses: { '200': { $ref: '#/components/responses/Message' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
+
+  /api/regime/current:
+    get: { operationId: getCurrentRegime, tags: [Regime], security: [], parameters: [{ $ref: '#/components/parameters/MacroRegime' }], responses: { '200': { $ref: '#/components/responses/Object' } } }
+  /api/regime/tilts:
+    get: { operationId: getRegimeTilts, tags: [Regime], security: [], parameters: [{ $ref: '#/components/parameters/MacroRegime' }], responses: { '200': { $ref: '#/components/responses/Object' } } }
+  /api/regime/adjust:
+    post:
+      operationId: adjustAllocationForRegime
+      tags: [Regime]
+      security: []
+      x-csrf-protection: cookie-session
+      requestBody: { $ref: '#/components/requestBodies/RegimeAdjust' }
+      responses: { '200': { $ref: '#/components/responses/Object' }, '400': { $ref: '#/components/responses/BadRequest' } }
+
+  /health:
+    get: { operationId: getHealth, tags: [Health], security: [], responses: { '200': { $ref: '#/components/responses/Health' } } }
+  /health/deep:
+    get: { operationId: getDeepHealth, tags: [Health], security: [], responses: { '200': { $ref: '#/components/responses/Health' }, '503': { $ref: '#/components/responses/Unavailable' } } }
+  /health/ready:
+    get: { operationId: getReadiness, tags: [Health], security: [], responses: { '200': { $ref: '#/components/responses/Health' }, '503': { $ref: '#/components/responses/Unavailable' } } }
+  /health/live:
+    get: { operationId: getLiveness, tags: [Health], security: [], responses: { '200': { $ref: '#/components/responses/Health' } } }
+  /ready:
+    get: { operationId: redirectReadiness, tags: [Health], security: [], responses: { '307': { description: Redirect to /health/ready } } }
+  /live:
+    get: { operationId: redirectLiveness, tags: [Health], security: [], responses: { '307': { description: Redirect to /health/live } } }
+  /healthz:
+    get: { operationId: getLegacyLiveness, tags: [Health], security: [], responses: { '200': { $ref: '#/components/responses/Health' } } }
+  /readyz:
+    get: { operationId: redirectLegacyReadiness, tags: [Health], security: [], responses: { '307': { description: Redirect to /health/ready } } }
+  /api/health:
+    get: { operationId: getApiHealth, tags: [Health], security: [], responses: { '200': { $ref: '#/components/responses/Health' } } }
 
 components:
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
+    CookieAuth: { type: apiKey, in: cookie, name: wg_session, description: Secure HttpOnly browser session cookie. }
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT, description: Explicitly configured non-browser compatibility authentication. }
+  parameters:
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+    ProfileId: { name: profileId, in: path, required: true, schema: { type: string, pattern: '^[0-9a-fA-F]{24}$' } }
+    GoalId: { name: goalId, in: path, required: true, schema: { type: string, pattern: '^[0-9a-fA-F]{24}$' } }
+    Income: { name: income, in: query, required: true, schema: { type: number, minimum: 0, maximum: 1000000000 } }
+    MacroRegime: { name: regime, in: query, schema: { type: string, enum: [normal, geopolitical_conflict, pandemic_health_crisis, broad_market_crash, inflation_spike, rate_cut_cycle] } }
+  requestBodies:
+    Register: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' } } } }
+    Login: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } } }
+    ProfileCreate: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/FinancialProfileInput' } } } }
+    ProfileUpdate: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/FinancialProfileUpdate' } } } }
+    Recommendation: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RecommendationRequest' } } } }
+    RecommendationWeights: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RecommendationWeightsRequest' } } } }
+    GoalCreate: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/GoalCreateRequest' } } } }
+    GoalUpdate: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/GoalUpdateRequest' } } } }
+    RankInstruments: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RankInstrumentsRequest' } } } }
+    Projection: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProjectionRequest' } } } }
+    Xirr: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/XirrRequest' } } } }
+    MonteCarlo: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MonteCarloRequest' } } } }
+    PostTaxReturn: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PostTaxReturnRequest' } } } }
+    PostTaxReturnBatch: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PostTaxReturnBatchRequest' } } } }
+    PortfolioOptimise: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PortfolioOptimiseRequest' } } } }
+    Rebalance: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RebalanceRequest' } } } }
+    Chat: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ChatRequest' } } } }
+    RegimeAdjust: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RegimeAdjustRequest' } } } }
   responses:
-    BadRequest:
-      description: Bad request / validation error
-      content:
-        application/json:
-          example:
-            error: Invalid request parameters
-    Unauthorized:
-      description: Authentication required or token expired
-      content:
-        application/json:
-          example:
-            error: Access denied. No token provided.
-    Forbidden:
-      description: Access forbidden / ownership check failed
-      content:
-        application/json:
-          example:
-            error: Access denied. Resource ownership mismatch.
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          example:
-            error: Requested resource not found
-    ServerError:
-      description: Internal server error
-      content:
-        application/json:
-          example:
-            error: Internal server error
-
+    Object: { description: Successful structured response, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+    Message: { description: Successful operation, content: { application/json: { schema: { type: object, required: [message], properties: { message: { type: string } } } } } }
+    AuthSession: { description: Authenticated session, content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } } }
+    Profile: { description: Authoritative financial profile, content: { application/json: { schema: { $ref: '#/components/schemas/FinancialProfile' } } } }
+    Recommendation: { description: Recommendation and audit identifiers, content: { application/json: { schema: { $ref: '#/components/schemas/RecommendationResponse' } } } }
+    Goal: { description: Goal state, content: { application/json: { schema: { $ref: '#/components/schemas/Goal' } } } }
+    TaxCalculation: { description: Authoritative tax calculation, content: { application/json: { schema: { $ref: '#/components/schemas/TaxCalculation' } } } }
+    TaxComparison: { description: Authoritative regime comparison, content: { application/json: { schema: { $ref: '#/components/schemas/TaxComparison' } } } }
+    Portfolio: { description: Server-authoritative portfolio decision, content: { application/json: { schema: { $ref: '#/components/schemas/PortfolioResult' } } } }
+    Chat: { description: Assistant response, content: { application/json: { schema: { $ref: '#/components/schemas/ChatResponse' } } } }
+    Health: { description: Service health, content: { application/json: { schema: { $ref: '#/components/schemas/HealthStatus' } } } }
+    BadRequest: { description: Invalid request, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unauthorized: { description: Authentication required or invalid, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: Resource not found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Conflict: { description: Request conflicts with current state, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unavailable: { description: Service or dependency unavailable, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   schemas:
-    ProfileRequest:
+    Error:
       type: object
-      required: [age, monthly_income, monthly_savings, risk_tolerance, total_ctc, basic_component, monthly_take_home]
+      required: [error, message, code, request_id]
       properties:
-        age:
-          type: integer
-          minimum: 18
-          maximum: 80
-          example: 30
-        monthly_income:
-          type: number
-          minimum: 1000
-          maximum: 100000000
-          example: 150000
-        monthly_savings:
-          type: number
-          minimum: 500
-          example: 50000
-        total_ctc:
-          type: number
-          minimum: 100000
-          maximum: 1000000000
-          example: 2400000
-        basic_component:
-          type: number
-          minimum: 20000
-          maximum: 1000000000
-          example: 1200000
-        monthly_take_home:
-          type: number
-          minimum: 1000
-          example: 140000
-        sold_property_amount:
-          type: number
-          minimum: 0
-          maximum: 10000000000
-          example: 2000000
-        has_lump_sum:
-          type: boolean
-          default: false
-          example: true
-        lump_sum_amount:
-          type: number
-          minimum: 0
-          maximum: 10000000000
-          example: 2000000
-        risk_tolerance:
-          type: string
-          enum: [Conservative, Moderate, Aggressive]
-          example: Moderate
-
-    GoalRequest:
+        error: { type: string, description: Backward-compatible summary }
+        message: { type: string }
+        code: { type: string, pattern: '^[A-Z0-9_]+$' }
+        request_id: { type: string }
+        details: { oneOf: [{ type: array, items: { type: string } }, { type: object, additionalProperties: true }] }
+    User:
       type: object
-      required: [goal_name, target_amount, horizon_years]
+      required: [id, name, email, role]
+      properties: { id: { type: string }, name: { type: string }, email: { type: string, format: email }, mobile: { type: [string, 'null'] }, role: { type: string }, createdAt: { type: string, format: date-time } }
+    AuthSession:
+      type: object
+      required: [csrfToken, user]
       properties:
-        goal_name:
-          type: string
-          example: Retirement Fund
-        target_amount:
-          type: number
-          minimum: 1000
-          example: 10000000
-        horizon_years:
-          type: integer
-          minimum: 1
-          maximum: 40
-          example: 15
+        csrfToken: { type: string, writeOnly: true }
+        user: { $ref: '#/components/schemas/User' }
+        token: { type: string, writeOnly: true, description: Development-only compatibility field; never emitted in production. }
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [name, email, password]
+      properties: { name: { type: string, minLength: 2, maxLength: 100 }, email: { type: string, format: email }, password: { type: string, minLength: 8, maxLength: 128, writeOnly: true }, mobile: { type: string, minLength: 10, maxLength: 15 } }
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties: { email: { type: string, format: email }, password: { type: string, minLength: 8, maxLength: 128, writeOnly: true } }
+    FinancialProfileInput:
+      type: object
+      required: [monthly_income, age, monthly_savings, liquid_savings, dependents, emergency_fund_months, risk_tolerance, goal_type]
+      properties:
+        monthly_income: { type: number, minimum: 1000 }
+        age: { type: integer, minimum: 18, maximum: 80 }
+        monthly_savings: { type: number, minimum: 500 }
+        regime: { type: string, enum: [new, old] }
+        investment_horizon: { type: integer, minimum: 1, maximum: 40 }
+        liquid_savings: { type: number, minimum: 0 }
+        existing_debt: { type: number, minimum: 0 }
+        dependents: { type: integer, minimum: 0, maximum: 15 }
+        emergency_fund_months: { type: number, minimum: 0, maximum: 120 }
+        risk_tolerance: { type: string, enum: [Conservative, Moderate, Aggressive] }
+        goal_type: { type: string, enum: [retirement, house purchase, education, wealth-building] }
+        total_ctc: { type: number, minimum: 100000 }
+        basic_component: { type: number, minimum: 20000 }
+        monthly_take_home: { type: number, minimum: 1000 }
+        sold_property_amount: { type: number, minimum: 0 }
+        has_lump_sum: { type: boolean }
+        lump_sum_amount: { type: number, minimum: 0 }
+        goals: { type: array, items: { type: string } }
+    FinancialProfileUpdate:
+      allOf: [{ $ref: '#/components/schemas/FinancialProfileInput' }, { type: object, required: [version], properties: { version: { type: integer, minimum: 1 } } }]
+    FinancialProfile:
+      allOf: [{ $ref: '#/components/schemas/FinancialProfileInput' }, { type: object, required: [_id, version, riskCategory, riskScore, taxRegime], properties: { _id: { type: string }, version: { type: integer }, riskCategory: { type: string }, riskScore: { type: number }, taxRegime: { type: string, enum: [new, old] }, taxResult: { type: object, additionalProperties: true }, taxComparison: { type: object, additionalProperties: true } } }]
+    RecommendationRequest: { type: object, additionalProperties: false, required: [profileId], properties: { profileId: { type: string, pattern: '^[0-9a-fA-F]{24}$' } } }
+    RecommendationResponse:
+      type: object
+      required: [recommendationId, auditId]
+      properties: { recommendationId: { type: string }, auditId: { type: string }, recommendations: { type: array, items: { type: object, additionalProperties: true } }, confidence: { type: object, additionalProperties: true }, modelVersion: { type: string }, fallback: { type: boolean }, audit: { $ref: '#/components/schemas/AuditMetadata' } }
+      additionalProperties: true
+    AuditMetadata:
+      type: object
+      properties: { _id: { type: string }, recommendationId: { type: string }, modelVersion: { type: string }, ruleVersion: { type: string }, citedRagChunkIds: { type: array, items: { type: string } }, previous_hash: { type: [string, 'null'] }, record_hash: { type: string }, hash_algorithm: { type: string }, schema_version: { type: string }, correlationId: { type: string }, createdAt: { type: string, format: date-time } }
+      additionalProperties: true
+    AuditVerification: { type: object, required: [valid], properties: { valid: { type: boolean }, checked: { type: integer }, reason: { type: string } } }
+    RecommendationWeightsRequest: { type: object, required: [profileId, weights], properties: { profileId: { type: string }, weights: { type: object, additionalProperties: { type: number, minimum: 0, maximum: 1 } } } }
+    GoalCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [goal_name, target_amount, target_date]
+      properties: { goal_name: { type: string, minLength: 2, maxLength: 100 }, target_amount: { type: number, minimum: 1000 }, target_date: { type: string, format: date }, current_savings: { type: number, minimum: 0, default: 0 }, profileId: { type: string }, priority: { type: string, enum: [Critical, High, Medium, Low], default: Medium } }
+    GoalUpdateRequest: { type: object, minProperties: 1, properties: { target_amount: { type: number, minimum: 1000 }, current_savings: { type: number, minimum: 0 }, priority: { type: string, enum: [Critical, High, Medium, Low] } } }
+    Goal:
+      allOf: [{ $ref: '#/components/schemas/GoalCreateRequest' }, { type: object, properties: { _id: { type: string }, monthly_sip_required: { type: number }, probability: { type: number }, status: { type: string } } }]
+    Instrument: { type: object, required: [id, name], properties: { id: { type: string }, name: { type: string }, type: { type: string }, expectedReturn: { type: number }, risk: { type: string } }, additionalProperties: true }
+    RankInstrumentsRequest: { type: object, properties: { userProfile: { type: object, additionalProperties: true }, candidates: { type: array, maxItems: 50, items: { type: object, required: [name], properties: { name: { type: string }, id: { type: string }, rate: { oneOf: [{ type: number }, { type: string }] } } } }, options: { type: object, additionalProperties: true } } }
+    ProjectionRequest: { type: object, required: [profileId], properties: { profileId: { type: string }, instruments: { type: array, minItems: 1, maxItems: 10, items: { type: string } }, monthly_investment: { type: number, minimum: 500 }, years: { type: array, minItems: 1, maxItems: 10, items: { type: integer, minimum: 1, maximum: 50 } } } }
+    XirrRequest: { type: object, required: [cashflows, dates], properties: { cashflows: { type: array, minItems: 2, items: { type: number } }, dates: { type: array, minItems: 2, items: { type: string, format: date } }, guess: { type: number } } }
+    MonteCarloRequest: { type: object, required: [instrument, monthly_investment, years], properties: { instrument: { type: string }, monthly_investment: { type: number, minimum: 500 }, years: { type: integer, minimum: 1, maximum: 40 }, target_amount: { type: number, minimum: 1000 }, current_savings: { type: number, minimum: 0 }, profileId: { type: string } } }
+    TaxCalculation: { type: object, properties: { regime: { type: string }, tax: { type: number }, effectiveRate: { type: number } }, additionalProperties: true }
+    TaxComparison: { type: object, properties: { old: { $ref: '#/components/schemas/TaxCalculation' }, new: { $ref: '#/components/schemas/TaxCalculation' }, recommendedRegime: { type: string, enum: [old, new] } }, additionalProperties: true }
+    PostTaxInstrument: { type: object, required: [instrumentType, nominalRate], properties: { instrumentType: { type: string }, nominalRate: { type: number, minimum: 0, maximum: 1 }, holdingYears: { type: number, minimum: 0.01, maximum: 100, default: 3 }, monthlySIP: { type: number, minimum: 0, default: 10000 } } }
+    PostTaxReturnRequest: { allOf: [{ $ref: '#/components/schemas/PostTaxInstrument' }, { type: object, required: [annualIncome], properties: { annualIncome: { type: number, minimum: 0 }, regime: { type: string, enum: [new, old], default: new }, userAge: { type: integer, minimum: 0, maximum: 120, default: 30 } } }] }
+    PostTaxReturnBatchRequest: { type: object, required: [instruments, annualIncome], properties: { instruments: { type: array, minItems: 1, maxItems: 50, items: { $ref: '#/components/schemas/PostTaxInstrument' } }, annualIncome: { type: number, minimum: 0 }, regime: { type: string, enum: [new, old], default: new }, userAge: { type: integer, minimum: 0, maximum: 120, default: 30 } } }
+    PortfolioOptimiseRequest: { type: object, required: [profileId], properties: { profileId: { type: string }, assets: { type: array, items: { type: string } }, strategy: { type: string } } }
+    RebalanceRequest: { type: object, required: [current_allocation, target_allocation], properties: { current_allocation: { type: object, additionalProperties: { type: number, minimum: 0 } }, target_allocation: { type: object, additionalProperties: { type: number, minimum: 0, maximum: 100 } }, threshold: { type: number, minimum: 0, maximum: 50, default: 2 }, partial_ratio: { type: number, minimum: 0.1, maximum: 1, default: 1 }, holding_months: { type: number, minimum: 0, maximum: 600, default: 24 } } }
+    PortfolioResult: { type: object, properties: { weights: { type: object, additionalProperties: { type: number } }, trades: { type: array, items: { type: object, additionalProperties: true } } }, additionalProperties: true }
+    ChatRequest: { type: object, additionalProperties: false, required: [message], properties: { message: { type: string, minLength: 1, maxLength: 1000 }, session_id: { type: string, maxLength: 100 } } }
+    ChatResponse: { type: object, properties: { response: { type: string }, session_id: { type: string }, citations: { type: array, items: { type: string } } }, additionalProperties: true }
+    RegimeAdjustRequest: { type: object, required: [baseWeights], properties: { baseWeights: { type: object, minProperties: 1, additionalProperties: { type: number, minimum: 0, maximum: 1 } }, regimeKey: { type: string, default: normal } } }
+    HealthStatus: { type: object, required: [status], properties: { status: { type: string }, timestamp: { type: string, format: date-time }, service: { type: string } }, additionalProperties: true }
