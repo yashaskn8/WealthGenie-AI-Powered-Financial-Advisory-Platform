@@ -5,14 +5,14 @@ Exposes dedicated endpoints (/llm/generate, /llm/rag-query, /llm/batch-generate,
 
 import logging
 from typing import Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from llm.config import LLMConfig
 from llm.inference.rag_integration import RAGLLMPipeline
 from llm.inference.tools import ToolCallingEngine
 from llm.registry import llm_registry
-from llm.schema import LLMGenerateRequest, LLMGenerateResponse, LLMMetadata
+from llm.schema import LLMGenerateRequest, LLMGenerateResponse
 from rag.schema import RAGQueryRequest, RAGQueryResponse
 from security import verify_api_key, verify_verified_user_id, verify_operator_key
 
@@ -108,7 +108,7 @@ def rag_llm_query(
     request: RAGQueryRequest,
     verified_user_id: str = Depends(verify_verified_user_id),
 ):
-    """Executes hybrid RAG retrieval combined with Open-Weight LLM answer synthesis."""
+    """Returns trust-gated extractive RAG evidence or explicit abstention."""
     request.user_id = verified_user_id
     request.scope = f"user:{verified_user_id}"
     request.tenant_id = "default"

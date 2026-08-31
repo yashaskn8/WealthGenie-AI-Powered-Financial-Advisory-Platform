@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """
 WealthGenie RAG Subsystem - Verification of Multi-Tenant Scope Isolation
 Ingests a private document for fake_user_123, queries as fake_user_999 (cross-tenant check),
@@ -5,8 +6,6 @@ queries as fake_user_123 (owner check), and queries global regulatory content.
 Prints actual query results for both cases.
 """
 
-import json
-import logging
 import sys
 import io
 from pathlib import Path
@@ -20,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag.config import RAGConfig
 from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
-from rag.ingestion.pipeline import IngestionPipeline
+from rag.ingestion.pipeline import AdministrativeIngestionOverride, IngestionPipeline
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest
 from rag.vector_store.memory_vector_store import PersistentVectorStore
@@ -45,11 +44,11 @@ def run_tenant_isolation_verification():
     global_res = ingestion.ingest_text(
         text="Under Income Tax Section 80C, individual taxpayers can claim deduction up to Rs 1,50,000 for ELSS, PPF, and EPF.",
         title="Income Tax Act Section 80C Master Reference",
-        source="incometaxindia.gov.in",
+        source="https://www.incometaxindia.gov.in/official/section-80c",
+        source_trust_tier="government_official",
         author="CBDT Official",
         scope="global",
         tenant_id="default",
-        manual_override=True,
     )
     print(f"    [OK] Global doc ingested: {global_res['title']} (Chunks: {global_res['chunks_added']}, Scope: global)")
 
@@ -64,7 +63,10 @@ def run_tenant_isolation_verification():
         user_id="fake_user_123",
         scope="user:fake_user_123",
         tenant_id="fake_user_123",
-        manual_override=True,
+        administrative_override=AdministrativeIngestionOverride(
+            operator_id="tenant-isolation-test",
+            reason="Quarantine a synthetic private document for isolation verification.",
+        ),
     )
     print(f"    [OK] Private doc ingested: {user123_res['title']} (Chunks: {user123_res['chunks_added']}, Scope: user:fake_user_123)")
 
@@ -101,7 +103,7 @@ def run_tenant_isolation_verification():
     print("\n" + "-" * 80)
     print("[4] TEST CASE B: Authorized Owner Retrieval (Query as 'fake_user_123')")
     print("    Question: 'What is the balance and ISIN of QuantumGrowthVault?'")
-    print("    Expected: Private document retrieved with high relevance score and citations.")
+    print("    Expected: Quarantined private input must not become advisory evidence, even for its owner.")
     print("-" * 80)
 
     req_owner = RAGQueryRequest(
@@ -116,13 +118,14 @@ def run_tenant_isolation_verification():
     print(f"    Retrieved Chunk Scope: {res_owner.retrieved_chunks[0].chunk.metadata.scope if res_owner.retrieved_chunks else 'None'}")
     print(f"    Top Match Title: {res_owner.retrieved_chunks[0].chunk.metadata.title if res_owner.retrieved_chunks else 'None'}")
     print(f"    Answer Output:\n{res_owner.answer}")
-    print(f"    Citations:")
+    print("    Citations:")
     for cit in res_owner.citations:
         print(f"      [{cit.citation_id}] {cit.document_title} (Source: {cit.source}, Score: {cit.relevance_score})")
 
-    assert len(res_owner.retrieved_chunks) > 0, "Owner user should retrieve their private document"
-    assert "QuantumGrowthVault" in res_owner.retrieved_chunks[0].chunk.content
-    print("    [PASS] OWNER RETRIEVAL VERIFIED: fake_user_123 successfully retrieved their own scoped document.")
+    assert len(res_owner.retrieved_chunks) == 0
+    assert not res_owner.grounded
+    assert not res_owner.citations
+    print("    [PASS] QUARANTINE VERIFIED: unverified private content cannot influence advisory output.")
 
     # 5. Query Global Public Content
     print("\n" + "-" * 80)

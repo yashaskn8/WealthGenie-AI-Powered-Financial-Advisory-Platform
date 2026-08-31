@@ -4,16 +4,16 @@ Calculates Recall@k, Precision@k, MRR, NDCG, Hit Rate, Context Precision/Recall,
 """
 
 import math
-from typing import Dict, Any, List, Set, Optional
+from typing import List, Set
 import numpy as np
 
-from rag.schema import RetrievedChunk, Citation, RAGQueryResponse
+from rag.schema import RetrievedChunk, Citation
 
 
 def compute_recall_at_k(retrieved_chunk_ids: List[str], ground_truth_ids: Set[str], k: int) -> float:
     """Computes Recall@k: proportion of ground truth relevant chunks retrieved in top k."""
     if not ground_truth_ids:
-        return 1.0
+        return 0.0
     top_k_ids = set(retrieved_chunk_ids[:k])
     relevant_retrieved = len(top_k_ids.intersection(ground_truth_ids))
     return float(relevant_retrieved / len(ground_truth_ids))
@@ -31,7 +31,7 @@ def compute_precision_at_k(retrieved_chunk_ids: List[str], ground_truth_ids: Set
 def compute_mrr(retrieved_chunk_ids: List[str], ground_truth_ids: Set[str]) -> float:
     """Computes Mean Reciprocal Rank (MRR): 1 / rank of first relevant chunk."""
     if not ground_truth_ids:
-        return 1.0
+        return 0.0
     for rank, cid in enumerate(retrieved_chunk_ids, start=1):
         if cid in ground_truth_ids:
             return float(1.0 / rank)
@@ -41,7 +41,7 @@ def compute_mrr(retrieved_chunk_ids: List[str], ground_truth_ids: Set[str]) -> f
 def compute_hit_rate(retrieved_chunk_ids: List[str], ground_truth_ids: Set[str], k: int) -> float:
     """Computes Hit Rate@k: 1.0 if at least 1 relevant chunk is in top k, else 0.0."""
     if not ground_truth_ids:
-        return 1.0
+        return 0.0
     top_k_ids = set(retrieved_chunk_ids[:k])
     return 1.0 if len(top_k_ids.intersection(ground_truth_ids)) > 0 else 0.0
 
@@ -49,7 +49,7 @@ def compute_hit_rate(retrieved_chunk_ids: List[str], ground_truth_ids: Set[str],
 def compute_ndcg(retrieved_chunk_ids: List[str], ground_truth_ids: Set[str], k: int) -> float:
     """Computes Normalized Discounted Cumulative Gain (NDCG@k)."""
     if not ground_truth_ids or k <= 0:
-        return 1.0
+        return 0.0
 
     dcg = 0.0
     for idx, cid in enumerate(retrieved_chunk_ids[:k]):
@@ -93,9 +93,9 @@ def compute_chunk_diversity(embeddings: List[List[float]]) -> float:
 
 
 def compute_citation_accuracy(citations: List[Citation], retrieved_chunks: List[RetrievedChunk]) -> float:
-    """Computes Citation Accuracy: percentage of citations that correctly map to top retrieved chunks."""
+    """Compute citation-ID validity; this does not measure factual entailment."""
     if not citations:
-        return 1.0
+        return 0.0
     retrieved_chunk_ids = {r.chunk.chunk_id for r in retrieved_chunks}
     valid_citations = sum(1 for c in citations if c.chunk_id in retrieved_chunk_ids)
     return float(valid_citations / len(citations))
@@ -108,7 +108,7 @@ def compute_grounding_score(response_text: str, retrieved_texts: List[str]) -> f
     """
     sentences = [s.strip() for s in response_text.split(".") if len(s.strip()) > 10]
     if not sentences or not retrieved_texts:
-        return 1.0
+        return 0.0
 
     combined_context = " ".join(retrieved_texts).lower()
     grounded_count = 0

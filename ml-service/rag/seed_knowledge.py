@@ -5,7 +5,6 @@ and RBI/DICGC regulatory frameworks from real corpus documents into the vector s
 """
 
 import logging
-from pathlib import Path
 from rag.chunking.fixed_chunker import FixedSizeChunker
 from rag.config import BASE_DIR
 from rag.ingestion.pipeline import IngestionPipeline
@@ -56,7 +55,7 @@ def seed_default_knowledge_base(force_reingest: bool = False) -> int:
     total_ingested_chunks = 0
     for file_path in corpus_files:
         try:
-            res = pipeline.ingest_file(file_path, manual_override=True)
+            res = pipeline.ingest_file(file_path)
             total_ingested_chunks += res.get("chunks_added", 0)
         except Exception as e:
             logger.error(f"Error seeding {file_path.name}: {e}")

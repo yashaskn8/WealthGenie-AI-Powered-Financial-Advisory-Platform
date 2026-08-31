@@ -3,11 +3,8 @@ WealthGenie RAG Subsystem - Multi-Tenant Isolation Test Suite
 Verifies strict tenant and user scope data boundary guarantees across vector store search, retrievers, and RAGPipeline.
 """
 
-import pytest
 from rag.config import RAGConfig
 from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
-from rag.retrievers.dense_retriever import DenseRetriever
-from rag.retrievers.hybrid_retriever import HybridRetriever
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import TextChunk, ChunkMetadata, RAGQueryRequest, is_scope_accessible
 from rag.vector_store.memory_vector_store import PersistentVectorStore
@@ -75,6 +72,7 @@ def test_user_scoped_vs_global_corpus_isolation(tmp_path):
         chunk_index=0,
         title="Income Tax Act 80C",
         source="incometax.gov.in",
+        source_trust_tier="government_official",
         scope="global",
         tenant_id="default"
     )
@@ -123,15 +121,16 @@ def test_user_scoped_vs_global_corpus_isolation(tmp_path):
     retrieved_ids_other = [c.chunk.chunk_id for c in res_other_user.retrieved_chunks]
     assert "user123_portfolio" not in retrieved_ids_other, "LEAK DETECTED: fake_user_999 retrieved private user_123 content!"
 
-    # CASE B: Query as OWNER user (fake_user_123) asking about SecretAssetXYZ
+    # CASE B: Even the owner cannot use unverified private uploads as regulatory evidence.
     req_owner_user = RAGQueryRequest(
         question="What is the confidential balance of SecretAssetXYZ?",
         user_id="fake_user_123",
     )
     res_owner_user = pipeline.query(req_owner_user)
     retrieved_ids_owner = [c.chunk.chunk_id for c in res_owner_user.retrieved_chunks]
-    assert "user123_portfolio" in retrieved_ids_owner, "Owner user fake_user_123 should retrieve their own document"
-    assert "SecretAssetXYZ" in res_owner_user.answer
+    assert "user123_portfolio" not in retrieved_ids_owner
+    assert not res_owner_user.grounded
+    assert res_owner_user.citations == []
 
     # CASE C: Both users CAN retrieve global regulatory content
     req_global_999 = RAGQueryRequest(question="What is Section 80C deduction limit?", user_id="fake_user_999")

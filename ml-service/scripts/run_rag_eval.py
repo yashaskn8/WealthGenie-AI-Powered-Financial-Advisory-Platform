@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """
 WealthGenie RAG Evaluation Suite
 Executes empirical RAG evaluation against hand-labeled ground truth queries,
@@ -9,7 +10,7 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, List, Set
+from typing import Set
 
 # Ensure sys.stdout handles UTF-8 on Windows PowerShell
 if hasattr(sys.stdout, "reconfigure"):
@@ -296,15 +297,14 @@ def run_eval():
 
     per_query_results = []
 
-    total_recall_4 = 0.0
-    total_precision_4 = 0.0
-    total_mrr = 0.0
-    total_hit_rate = 0.0
-    total_ndcg_4 = 0.0
     total_coverage = 0.0
     total_diversity = 0.0
-    total_citation_acc = 0.0
-    total_grounding = 0.0
+    citation_validity_sum = 0.0
+    citation_validity_count = 0
+    lexical_support_sum = 0.0
+    lexical_support_count = 0
+    correct_abstentions = 0
+    abstention_controls = 0
 
     in_domain_recall_sum = 0.0
     in_domain_precision_sum = 0.0
@@ -324,7 +324,7 @@ def run_eval():
         eval_res = evaluator.evaluate_query_response(
             query=q,
             response=resp,
-            ground_truth_chunk_ids=gt_ids if gt_ids else None,
+            ground_truth_chunk_ids=gt_ids,
             k=4,
         )
 
@@ -353,32 +353,30 @@ def run_eval():
 
         per_query_results.append(query_record)
 
-        total_recall_4 += metrics["recall_at_4"]
-        total_precision_4 += metrics["precision_at_4"]
-        total_mrr += metrics["mrr"]
-        total_hit_rate += metrics["hit_rate"]
-        total_ndcg_4 += metrics["ndcg_at_4"]
         total_coverage += metrics["context_coverage"]
         total_diversity += metrics["chunk_diversity"]
-        total_citation_acc += metrics["citation_accuracy"]
-        total_grounding += metrics["grounding_score"]
+        if metrics["citation_id_validity"] is not None:
+            citation_validity_sum += metrics["citation_id_validity"]
+            citation_validity_count += 1
+        if metrics["lexical_support"] is not None:
+            lexical_support_sum += metrics["lexical_support"]
+            lexical_support_count += 1
+        if metrics["abstention_correctness"] is not None:
+            abstention_controls += 1
+            correct_abstentions += int(metrics["abstention_correctness"])
 
     num_queries = len(EVALUATION_DATASET)
 
     aggregate_metrics = {
-        "mean_recall_at_4_all": round(total_recall_4 / num_queries, 4),
-        "mean_precision_at_4_all": round(total_precision_4 / num_queries, 4),
-        "mean_mrr_all": round(total_mrr / num_queries, 4),
-        "mean_hit_rate_all": round(total_hit_rate / num_queries, 4),
         "in_domain_recall_at_4": round(in_domain_recall_sum / in_domain_count, 4) if in_domain_count > 0 else 0.0,
         "in_domain_precision_at_4": round(in_domain_precision_sum / in_domain_count, 4) if in_domain_count > 0 else 0.0,
         "in_domain_mrr": round(in_domain_mrr_sum / in_domain_count, 4) if in_domain_count > 0 else 0.0,
         "in_domain_hit_rate": round(in_domain_hit_sum / in_domain_count, 4) if in_domain_count > 0 else 0.0,
-        "mean_ndcg_at_4": round(total_ndcg_4 / num_queries, 4),
         "mean_context_coverage": round(total_coverage / num_queries, 4),
         "mean_chunk_diversity": round(total_diversity / num_queries, 4),
-        "mean_citation_accuracy": round(total_citation_acc / num_queries, 4),
-        "mean_grounding_score": round(total_grounding / num_queries, 4),
+        "mean_citation_id_validity": round(citation_validity_sum / citation_validity_count, 4) if citation_validity_count else None,
+        "mean_lexical_support": round(lexical_support_sum / lexical_support_count, 4) if lexical_support_count else None,
+        "abstention_correctness": round(correct_abstentions / abstention_controls, 4) if abstention_controls else None,
     }
 
     hits_count = sum(1 for q in per_query_results if q["hit_status"] == "HIT")
@@ -417,10 +415,10 @@ def run_eval():
     print(f"In-Domain Precision@4:   {aggregate_metrics['in_domain_precision_at_4']}")
     print(f"In-Domain MRR:           {aggregate_metrics['in_domain_mrr']}")
     print(f"In-Domain Hit Rate:      {aggregate_metrics['in_domain_hit_rate']}")
-    print(f"Mean NDCG@4:             {aggregate_metrics['mean_ndcg_at_4']}")
     print(f"Mean Context Coverage:   {aggregate_metrics['mean_context_coverage']}")
-    print(f"Mean Citation Accuracy:  {aggregate_metrics['mean_citation_accuracy']}")
-    print(f"Mean Grounding Score:    {aggregate_metrics['mean_grounding_score']}")
+    print(f"Citation-ID Validity:    {aggregate_metrics['mean_citation_id_validity']}")
+    print(f"Mean Lexical Support:    {aggregate_metrics['mean_lexical_support']}")
+    print(f"Abstention Correctness:  {aggregate_metrics['abstention_correctness']}")
     print("=============================================================\n")
 
 if __name__ == "__main__":

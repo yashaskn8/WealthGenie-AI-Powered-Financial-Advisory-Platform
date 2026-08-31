@@ -3,8 +3,6 @@ WealthGenie RAG Subsystem - Evaluation Framework Test Suite
 Tests RAG metrics calculations (Recall, Precision, MRR, NDCG, Diversity, Grounding) and RAGEvaluator report persistence.
 """
 
-import json
-from pathlib import Path
 import pytest
 
 from rag.evaluation.metrics import (
@@ -51,6 +49,13 @@ def test_retrieval_ranking_metrics():
     # NDCG@4: > 0.0
     ndcg = compute_ndcg(retrieved_ids, ground_truth, k=4)
     assert ndcg > 0.0
+
+
+def test_empty_expected_list_never_awards_perfect_retrieval_scores():
+    assert compute_recall_at_k(["c1"], set(), k=1) == 0.0
+    assert compute_mrr(["c1"], set()) == 0.0
+    assert compute_hit_rate(["c1"], set(), k=1) == 0.0
+    assert compute_ndcg(["c1"], set(), k=1) == 0.0
 
 
 def test_context_coverage_and_diversity():
@@ -141,3 +146,18 @@ def test_rag_evaluator_persistence(tmp_path):
     reports = evaluator.list_evaluation_reports()
     assert len(reports) == 1
     assert reports[0]["query"] == "What is Section 87A?"
+
+
+def test_evaluator_distinguishes_abstention_from_retrieval_metrics(tmp_path):
+    evaluator = RAGEvaluator(evals_dir=tmp_path)
+    response = RAGQueryResponse(
+        answer="No trustworthy evidence.", citations=[], retrieved_chunks=[], grounded=False
+    )
+    result = evaluator.evaluate_query_response(
+        query="Who won a football match?",
+        response=response,
+        ground_truth_chunk_ids=set(),
+    )
+    assert result["metrics"]["abstention_correctness"] is True
+    assert result["metrics"]["citation_id_validity"] is None
+    assert result["metrics"]["factual_support"] is None

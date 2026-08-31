@@ -4,14 +4,13 @@ Measures ingestion throughput, query latency percentiles (P50, P90, P99), QPS, a
 """
 
 import logging
-import math
 import time
 from typing import Dict, Any, List
 import numpy as np
 
 from rag.config import RAGConfig
 from rag.embeddings.dense_embedding import get_embedding_provider
-from rag.ingestion.pipeline import IngestionPipeline
+from rag.ingestion.pipeline import AdministrativeIngestionOverride, IngestionPipeline
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest
 from rag.vector_store.memory_vector_store import PersistentVectorStore
@@ -61,6 +60,10 @@ class RAGBenchmarkSuite:
                 text=content,
                 title=f"Doc {i}",
                 source=f"synth_{i}.txt",
+                administrative_override=AdministrativeIngestionOverride(
+                    operator_id="benchmark-suite",
+                    reason="Quarantined synthetic content used only for latency benchmarking.",
+                ),
             )
             total_chunks += res["chunks_created"]
 

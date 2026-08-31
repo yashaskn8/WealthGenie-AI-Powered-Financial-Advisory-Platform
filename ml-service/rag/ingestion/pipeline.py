@@ -4,8 +4,10 @@ Executes end-to-end ingestion: Loader -> Cleaning -> Chunking -> Embedding -> Ve
 """
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from urllib.parse import urlparse
 
 from rag.chunking.base import BaseChunker
 from rag.chunking.fixed_chunker import FixedSizeChunker
@@ -15,7 +17,6 @@ from rag.ingestion.cleaner import clean_text
 from rag.ingestion.loaders import DocumentLoader
 from rag.schema import Document, TextChunk
 from rag.vector_store.base import BaseVectorStore
-from rag.vector_store.memory_vector_store import PersistentVectorStore
 from store_factory import get_vector_store
 
 from rag.lifecycle.manager import DocumentLifecycleManager
@@ -40,8 +41,19 @@ ALLOWED_TRUSTED_FILES = [
 ALLOWED_TRUST_TIERS = {
     "government_official",
     "regulatory_circular",
-    "research_report",
 }
+
+
+@dataclass(frozen=True)
+class AdministrativeIngestionOverride:
+    """Explicit internal capability for quarantined administrative ingestion."""
+
+    operator_id: str
+    reason: str
+
+    def __post_init__(self):
+        if not self.operator_id.strip() or len(self.reason.strip()) < 10:
+            raise ValueError("Administrative ingestion override requires an operator ID and a substantive reason.")
 
 
 class UntrustedSourceError(ValueError):
@@ -66,34 +78,24 @@ class IngestionPipeline:
         self.lifecycle_manager = lifecycle_manager
 
     def is_source_trusted(self, document: Document) -> bool:
-        """Validates if the document source or trust tier is from an approved trusted domain/corpus file."""
+        """Validate source provenance without trusting caller-controlled titles or tiers."""
         source = (document.metadata.source or "").lower()
-        tier = (document.metadata.source_trust_tier or "").lower()
-        title = (document.metadata.title or "").lower()
+        parsed = urlparse(source)
+        hostname = (parsed.hostname or "").lower()
+        source_stem = Path(parsed.path or source).stem.lower()
 
-        # Check explicit pre-approved corpus filenames / stems
-        if any(f in source or f in title for f in ALLOWED_TRUSTED_FILES):
+        if source_stem in ALLOWED_TRUSTED_FILES:
             return True
 
-        # Check pre-approved trusted domains in source
-        if any(domain in source for domain in ALLOWED_TRUSTED_DOMAINS):
-            return True
-
-        # Check custom_metadata domain if present
-        domain_meta = str(document.metadata.custom_metadata.get("domain", "")).lower()
-        if any(domain in domain_meta for domain in ALLOWED_TRUSTED_DOMAINS):
-            return True
-
-        # Check trust tier: if explicitly designated with an allowed trust tier
-        if tier in ALLOWED_TRUST_TIERS:
-            return True
-
-        # Check standard document sources, test fixtures, or regulatory sources
-        trusted_keywords = ["tax", "official", "synth", "direct_input", "api_test", "incometax", "sebi", "rbi", "cbdt", "corpus", ".txt", ".pdf", ".md"]
-        if any(kw in source or kw in title for kw in trusted_keywords):
+        if any(hostname == domain or hostname.endswith(f".{domain}") for domain in ALLOWED_TRUSTED_DOMAINS):
             return True
 
         return False
+
+    @staticmethod
+    def _trusted_tier_for(document: Document) -> str:
+        supplied = (document.metadata.source_trust_tier or "").lower()
+        return supplied if supplied in ALLOWED_TRUST_TIERS else "government_official"
 
     def ingest_file(
         self,
@@ -105,7 +107,7 @@ class IngestionPipeline:
         tenant_id: str = "default",
         user_id: Optional[str] = None,
         scope: Optional[str] = None,
-        manual_override: bool = False,
+        administrative_override: Optional[AdministrativeIngestionOverride] = None,
     ) -> Dict[str, Any]:
         """Loads and ingests a single document file into the RAG vector store."""
         resolved_scope = scope or (f"user:{user_id}" if user_id else "global")
@@ -118,7 +120,7 @@ class IngestionPipeline:
             tenant_id=tenant_id,
             scope=resolved_scope,
         )
-        return self.ingest_document(document, manual_override=manual_override)
+        return self.ingest_document(document, administrative_override=administrative_override)
 
     def ingest_text(
         self,
@@ -131,7 +133,7 @@ class IngestionPipeline:
         tenant_id: str = "default",
         user_id: Optional[str] = None,
         scope: Optional[str] = None,
-        manual_override: bool = False,
+        administrative_override: Optional[AdministrativeIngestionOverride] = None,
     ) -> Dict[str, Any]:
         """Ingests raw text directly into the RAG vector store."""
         resolved_scope = scope or (f"user:{user_id}" if user_id else "global")
@@ -145,15 +147,33 @@ class IngestionPipeline:
             tenant_id=tenant_id,
             scope=resolved_scope,
         )
-        return self.ingest_document(document, manual_override=manual_override)
+        return self.ingest_document(document, administrative_override=administrative_override)
 
-    def ingest_document(self, document: Document, manual_override: bool = False) -> Dict[str, Any]:
+    def ingest_document(
+        self,
+        document: Document,
+        administrative_override: Optional[AdministrativeIngestionOverride] = None,
+    ) -> Dict[str, Any]:
         """Cleans, chunks, embeds, and stores a Document object after trust tiering validation."""
-        if not manual_override and not self.is_source_trusted(document):
+        trusted = self.is_source_trusted(document)
+        if not trusted and administrative_override is None:
             logger.error(f"Ingestion rejected for untrusted source: '{document.metadata.source}' (tier: '{document.metadata.source_trust_tier}')")
             raise UntrustedSourceError(
                 f"Ingestion rejected: document source '{document.metadata.source}' (trust tier: '{document.metadata.source_trust_tier}') "
-                f"is not from an approved trusted domain {ALLOWED_TRUSTED_DOMAINS}. Set manual_override=True to bypass."
+                f"does not have verified provenance from an approved source."
+            )
+        if trusted:
+            document.metadata.source_trust_tier = self._trusted_tier_for(document)
+        else:
+            document.metadata.source_trust_tier = "administrative_override_untrusted"
+            document.metadata.custom_metadata.update({
+                "override_operator_id": administrative_override.operator_id,
+                "override_reason": administrative_override.reason,
+                "quarantined_from_advisory": True,
+            })
+            logger.warning(
+                "Administratively overridden RAG document quarantined from advisory retrieval: "
+                f"operator={administrative_override.operator_id}, source={document.metadata.source}"
             )
         logger.info(f"Ingesting document '{document.metadata.title}' (ID: {document.document_id})...")
 

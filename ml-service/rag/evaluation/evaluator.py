@@ -1,6 +1,6 @@
 """
-WealthGenie RAG Subsystem - RAG Evaluation Engine
-Evaluates retrieval and grounded generation quality, generating and persisting structured evaluation reports.
+WealthGenie RAG Subsystem - Retrieval and Abstention Evaluation Engine
+Evaluates retrieval, citation-ID validity, lexical support, and abstention behavior.
 """
 
 import json
@@ -21,7 +21,7 @@ from rag.evaluation.metrics import (
     compute_citation_accuracy,
     compute_grounding_score,
 )
-from rag.schema import RAGQueryResponse, RetrievedChunk
+from rag.schema import RAGQueryResponse
 
 EVALS_DIR = BASE_DIR / "reports" / "rag_evals"
 EVALS_DIR.mkdir(parents=True, exist_ok=True)
@@ -30,7 +30,7 @@ logger = logging.getLogger("wealthgenie.rag.evaluation")
 
 
 class RAGEvaluator:
-    """Production evaluation engine for measuring retrieval quality and answer grounding."""
+    """Evaluation engine that keeps retrieval, citations, support, and abstention distinct."""
 
     def __init__(self, evals_dir: Path = EVALS_DIR):
         self.evals_dir = evals_dir
@@ -44,7 +44,7 @@ class RAGEvaluator:
         k: int = 4,
     ) -> Dict[str, Any]:
         """
-        Evaluates a single RAG query response across all retrieval and generation quality metrics.
+        Evaluate one response without treating citation validity as factual entailment.
         """
         retrieved_ids = [r.chunk.chunk_id for r in response.retrieved_chunks]
         retrieved_texts = [r.chunk.content for r in response.retrieved_chunks]
@@ -55,6 +55,7 @@ class RAGEvaluator:
         # for every metric. When no ground truth is provided, skip chunk-level IR metrics.
         gt_ids = ground_truth_chunk_ids
         has_ground_truth = gt_ids is not None and len(gt_ids) > 0
+        expected_abstention = gt_ids is not None and len(gt_ids) == 0
 
         if has_ground_truth:
             recall_k = compute_recall_at_k(retrieved_ids, gt_ids, k)
@@ -72,8 +73,22 @@ class RAGEvaluator:
 
         coverage = compute_context_coverage(query, retrieved_texts)
         diversity = compute_chunk_diversity(embeddings) if embeddings else 1.0
-        citation_acc = compute_citation_accuracy(response.citations, response.retrieved_chunks)
-        grounding = compute_grounding_score(response.answer, retrieved_texts)
+        citation_id_validity = (
+            compute_citation_accuracy(response.citations, response.retrieved_chunks)
+            if response.citations else None
+        )
+        lexical_support = (
+            compute_grounding_score(response.answer, retrieved_texts)
+            if response.grounded else None
+        )
+        abstention_correctness = (
+            (not response.grounded and not response.citations)
+            if expected_abstention else None
+        )
+        retrieval_hit = (
+            bool(set(retrieved_ids[:k]).intersection(gt_ids))
+            if has_ground_truth else None
+        )
 
         eval_results = {
             "query": query,
@@ -85,8 +100,11 @@ class RAGEvaluator:
                 f"ndcg_at_{k}": round(ndcg, 4),
                 "context_coverage": round(coverage, 4),
                 "chunk_diversity": round(diversity, 4),
-                "citation_accuracy": round(citation_acc, 4),
-                "grounding_score": round(grounding, 4),
+                "retrieval_hit": retrieval_hit,
+                "citation_id_validity": round(citation_id_validity, 4) if citation_id_validity is not None else None,
+                "factual_support": None,
+                "lexical_support": round(lexical_support, 4) if lexical_support is not None else None,
+                "abstention_correctness": abstention_correctness,
             },
             "retrieved_chunk_count": len(retrieved_ids),
             "citations_count": len(response.citations),
@@ -134,7 +152,7 @@ class RAGEvaluator:
                     "eval_id": data.get("eval_id"),
                     "timestamp": data.get("timestamp_utc"),
                     "query": data.get("query"),
-                    "grounding_score": data.get("metrics", {}).get("grounding_score"),
+                    "lexical_support": data.get("metrics", {}).get("lexical_support"),
                     "mrr": data.get("metrics", {}).get("mrr"),
                     "file_path": str(path),
                 })

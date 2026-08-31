@@ -285,8 +285,20 @@ def test_rag_80c_elss_citation_regression():
     from rag.seed_knowledge import TAX_REGULATIONS_2025, MUTUAL_FUNDS_SUITABILITY
 
     pipeline = IngestionPipeline()
-    pipeline.ingest_text(text=TAX_REGULATIONS_2025, title="Income Tax Regulations FY 2025-26", source="Income Tax Dept", author="CBDT")
-    pipeline.ingest_text(text=MUTUAL_FUNDS_SUITABILITY, title="SEBI & AMFI Guidelines", source="SEBI", author="SEBI")
+    pipeline.ingest_text(
+        text=TAX_REGULATIONS_2025,
+        title="Income Tax Regulations FY 2025-26",
+        source="https://www.incometaxindia.gov.in/official/regulations",
+        source_trust_tier="government_official",
+        author="CBDT",
+    )
+    pipeline.ingest_text(
+        text=MUTUAL_FUNDS_SUITABILITY,
+        title="SEBI & AMFI Guidelines",
+        source="https://www.sebi.gov.in/legal/circulars/guidelines",
+        source_trust_tier="regulatory_circular",
+        author="SEBI",
+    )
 
     config = RAGConfig()
     rag = RAGPipeline(embedder=pipeline.embedder, vector_store=pipeline.vector_store, config=config)
@@ -340,5 +352,4 @@ def test_ft_transformer_reglu_vs_gelu_activations():
     model_gelu.train()
     loss_gelu = model_gelu(x).sum()
     loss_gelu.backward()
-
 

@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """
 WealthGenie RAG Subsystem - Embedding Provider Ablation Study (Phase 5)
 ======================================================================
@@ -198,7 +199,7 @@ def evaluate_provider(embedder_instance, provider_name):
         eval_res = evaluator.evaluate_query_response(
             query=q,
             response=resp,
-            ground_truth_chunk_ids=gt_ids if gt_ids else None,
+            ground_truth_chunk_ids=gt_ids,
             k=4,
         )
 
@@ -222,7 +223,7 @@ def evaluate_provider(embedder_instance, provider_name):
             "recall": metrics["recall_at_4"],
             "mrr": metrics["mrr"],
             "ndcg": metrics["ndcg_at_4"],
-            "grounding_score": metrics["grounding_score"],
+            "lexical_support": metrics["lexical_support"],
         })
 
     total_time = time.perf_counter() - t0

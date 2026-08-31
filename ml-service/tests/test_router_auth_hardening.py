@@ -3,7 +3,6 @@ WealthGenie ML Microservice - Router Authentication Hardening Test Suite
 Verifies closing of anonymous-access gap on /rag and /llm routers and audits tenant scoping.
 """
 
-import os
 import pytest
 from fastapi.testclient import TestClient
 from main import app
@@ -17,7 +16,8 @@ def ensure_auth_environment(monkeypatch):
     """Ensure tests run with valid API key & Operator key configured and non-local environment by default."""
     monkeypatch.setenv("ML_SERVICE_API_KEY", API_KEY)
     monkeypatch.setenv("ML_OPERATOR_KEY", OPERATOR_KEY)
-    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.setenv("ML_STATE_BACKEND", "local")
 
 
 # ==============================================================================
@@ -313,7 +313,7 @@ def test_fail_closed_when_operator_key_unset_in_production(monkeypatch):
 # 4. TASK 2 & 3 PROOFS — VERIFIED IDENTITY HEADER SCOPING & BODY OVERRIDE
 # ==============================================================================
 
-def test_header_user_id_wins_and_ignores_conflicting_body_fields():
+def test_forged_body_identity_cannot_turn_direct_input_into_authoritative_evidence():
     """
     PROOFS:
     1. Valid API Key + X-Verified-User-Id header succeeds.
@@ -340,16 +340,16 @@ def test_header_user_id_wins_and_ignores_conflicting_body_fields():
             "scope": f"user:{forged_attacker_user_id}",
         }
 
-        # Ingest document
+        # Direct input is rejected regardless of forged identity/source fields.
         res_ingest = client_alice.post("/rag/index", json=payload)
-        assert res_ingest.status_code == 200, f"Expected 200 OK, got {res_ingest.status_code}: {res_ingest.text}"
-        assert res_ingest.json()["status"] == "success"
+        assert res_ingest.status_code == 400
 
-        # Query as Alice — should successfully find Alice's document
+        # The rejected document must never appear in Alice's evidence response.
         res_query_alice = client_alice.post("/rag/query", json={"question": "Alice Confidential Portfolio Plan"})
         assert res_query_alice.status_code == 200
-        answer_alice = res_query_alice.json()["answer"]
-        assert len(answer_alice) > 0
+        chunks_alice = res_query_alice.json().get("retrieved_chunks", [])
+        assert all(c["chunk"]["metadata"]["title"] != payload["title"] for c in chunks_alice)
+        assert all(citation["source"] != "api_test" for citation in res_query_alice.json()["citations"])
 
     # Query as Eve (using Eve's verified header) — must NOT access Alice's document
     headers_eve = {
@@ -364,4 +364,3 @@ def test_header_user_id_wins_and_ignores_conflicting_body_fields():
         for c in chunks_eve:
             assert c["chunk"]["metadata"]["title"] != "Alice Confidential Portfolio Plan", \
                 "Security Breach: Eve retrieved Alice's user-scoped document!"
-

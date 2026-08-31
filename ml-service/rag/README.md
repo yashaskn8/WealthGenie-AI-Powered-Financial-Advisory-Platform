@@ -1,6 +1,6 @@
-# 🚀 WealthGenie Production-Grade RAG Platform Architecture
+# WealthGenie Trust-Gated Retrieval Architecture
 
-Welcome to the **WealthGenie Enterprise Retrieval-Augmented Generation (RAG) Platform**. This platform transforms financial domain knowledge retrieval into a hardened, high-throughput, secure, multi-tenant, and observable search and synthesis engine.
+The current containment release is a multi-tenant, observable, trust-gated **extractive retrieval** engine. It returns verified excerpts and citation IDs or explicitly abstains. LLM-grounded synthesis is deliberately deferred until factual-support governance is implemented.
 
 ---
 
@@ -30,7 +30,7 @@ graph TD
     Dense & BM25 -->|6. Rank Fusion| Fusion[RRF / Weighted Score Fusion]
     Fusion -->|7. Relevance Reranking| Reranker[Relevance Reranker]
     
-    Reranker -->|8. Security Guardrails| Sanitizer[Prompt Security Sanitizer]
+    Reranker -->|8. Trust & Relevance Gates| Sanitizer[Evidence Sanitizer]
     Sanitizer --> Injection[Injection & Leakage Guard]
     Sanitizer --> Delimiters[Delimiter Escaping]
     
@@ -39,8 +39,8 @@ graph TD
     ContextMgr --> Merging[Adjacent Chunk Merging]
     ContextMgr --> Budgeting[Character Budgeting]
     
-    ContextMgr -->|10. Answer & Citation Synthesis| Builder[Prompt Builder & Citation Engine]
-    Builder --> Response[Grounded RAG Response Payload]
+    ContextMgr -->|10. Extract & Cite| Builder[Extractive Formatter & Citation Engine]
+    Builder --> Response[Verified Extracts or Abstention]
     
     Response -->|11. Cache & Telemetry| Telemetry[Observability Metrics & Response Cache]
 ```
@@ -51,7 +51,7 @@ graph TD
 
 | Module | Location | Description |
 |:---|:---|:---|
-| **Evaluation Framework** | `rag/evaluation/` | Offline & online retrieval metrics (Recall@K, Precision@K, MRR, NDCG@K, Diversity, Citation Accuracy, Grounding Score). |
+| **Evaluation Framework** | `rag/evaluation/` | Retrieval hit/recall, citation-ID validity, lexical support, and abstention correctness. Citation-ID validity is not factual entailment. |
 | **Reranking Pipeline** | `rag/reranking/` | Abstract `BaseReranker` with `NoOpReranker` and `RelevanceScoreReranker` for boosting exact keyword matches. |
 | **Hybrid Retrieval** | `rag/retrievers/` | Combines `DenseRetriever` and `BM25KeywordRetriever` with Reciprocal Rank Fusion (RRF) and Weighted Score Fusion. |
 | **Query Understanding** | `rag/query_understanding/` | Text normalization, spelling correction, financial acronym expansion, intent classification, and query rewriting. |
@@ -72,7 +72,7 @@ graph TD
 ## 🔌 3. REST API Specification
 
 ### `POST /rag/query`
-Executes a grounded RAG query search over authoritative knowledge base chunks.
+Executes trust-gated extractive search over authoritative knowledge-base chunks.
 - **Request Payload**:
   ```json
   {
@@ -84,18 +84,18 @@ Executes a grounded RAG query search over authoritative knowledge base chunks.
 - **Response Payload**:
   ```json
   {
-    "answer": "Based on authoritative financial documentation...",
+    "answer": "Extracts from verified financial or regulatory sources...",
     "citations": [
       { "citation_id": 1, "document_title": "Income Tax Act", "relevance_score": 1.0 }
     ],
     "retrieved_chunks": [...],
-    "metrics": { "total_latency_ms": 14.2, "chunks_retrieved": 2 },
+    "metrics": { "response_mode": "extractive_retrieval", "chunks_retrieved": 2 },
     "grounded": true
   }
   ```
 
 ### `POST /rag/index`
-Ingests a document into the vector store index incrementally.
+Direct user text is rejected as authoritative advisory evidence. Verified corpus ingestion occurs through the internal ingestion pipeline; explicit administrative overrides are quarantined and cannot influence advisory retrieval.
 - **Request Payload**:
   ```json
   {

@@ -74,6 +74,6 @@ def test_rag_pipeline_telemetry_integration(tmp_path):
     pipeline = RAGPipeline(embedder=embedder, vector_store=vector_store, telemetry=collector, config=config)
     res = pipeline.query(RAGQueryRequest(question="How much can I deduct under Section 80C?"))
 
-    assert "prompt_assembly_latency_ms" in res.metrics
-    assert "answer_synthesis_latency_ms" in res.metrics
+    assert res.metrics["response_mode"] == "abstention"
+    assert res.metrics["abstention_reason"] == "empty_evidence"
     assert len(collector._trace_records) == 1

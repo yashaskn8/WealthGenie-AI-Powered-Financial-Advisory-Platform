@@ -96,7 +96,7 @@ The FastAPI microservice implements a dense vector search pipeline indexing vect
 * **Precision@4**: **0.7367** (73.7% of all retrieved top-4 chunks belong to expected source document).
 * **Mean Reciprocal Rank (MRR)**: **0.9022** (first relevant document chunk returned at Rank 1 for most queries).
 * **NDCG@4**: **0.7564** (ranking quality with realistic score variance).
-* **Citation Accuracy**: **100.0%** (all returned citations resolve to valid seed chunk IDs).
+* **Citation-ID validity**: returned citations are checked against retrieved seed chunk IDs; this is not presented as factual entailment.
 * **Adversarial Control Discrimination**: Near-miss & out-of-scope questions show clear score separation (e.g., Precision@4 = 0.0 on Section 80D health insurance near-miss, 0.25 on SIP minimum near-miss).
 
 #### Embedding Provider Ablation Study (Dense Transformer vs Hash-Based):
@@ -154,7 +154,7 @@ The core recommendation engine ([`RecommendationPipeline.js`](server/services/Re
 * **Multi-Layer Prompt Injection Defense**: Two-tier pipeline shared between Node.js ([`promptSecurity.js`](server/services/promptSecurity.js)) and Python ([`prompt_sanitizer.py`](ml-service/rag/security/prompt_sanitizer.py)):
   1. **Regex blacklist** — fast pattern-match against known injection phrases, loaded from [`config/security_patterns.json`](config/security_patterns.json).
   2. **Semantic heuristic guard** — detects paraphrased injection attempts and Base64-encoded payloads that evade literal pattern matching. Verified by 9 red-team tests.
-* **Ingestion Trust Tiering**: [`pipeline.py`](ml-service/rag/ingestion/pipeline.py) gates document ingestion — only pre-approved government domains (SEBI, RBI, DICGC, Income Tax India) are auto-indexed. Untrusted sources are rejected unless an explicit `manual_override` flag is set. Verified by 3 unit tests and 1 end-to-end poisoning pipeline test.
+* **Ingestion Trust Tiering**: [`pipeline.py`](ml-service/rag/ingestion/pipeline.py) accepts only verified government sources into advisory retrieval. Direct user input is rejected; explicit internal administrative overrides are tagged and quarantined from advisory evidence.
 * **Per-User Token Budget**: [`tokenBudget.js`](server/middleware/tokenBudget.js) enforces a rolling-window cumulative token budget on `POST /api/chat/message`, independent of the request-count rate limiter. Prevents cost spikes from long prompts or automated abuse. Verified by 5 integration tests.
 * **Input Validation**: Joi schemas validate incoming API request bodies on Express routes (`profile.js`, `recommend.js`, `tax.js`).
 ---

@@ -72,7 +72,10 @@ class DocumentMetadata(BaseModel):
     version: str = Field("1.0", description="Document schema version")
     author: Optional[str] = Field(None, description="Authoring authority (e.g. Income Tax Dept, AMFI)")
     effective_date: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d"), description="Effective date of regulations (YYYY-MM-DD)")
-    source_trust_tier: str = Field("government_official", description="government_official, regulatory_circular, or internal_analysis")
+    source_trust_tier: str = Field(
+        "unverified_user_input",
+        description="Evidence provenance tier; direct input is unverified unless independently authorized and verified.",
+    )
     tenant_id: str = Field("default", description="Tenant isolation scope identifier")
     scope: str = Field("global", description="Tenant isolation scope: 'global' for public corpus or 'user:{user_id}' for user-specific documents")
     custom_metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -134,9 +137,9 @@ class RAGQueryRequest(BaseModel):
 
 
 class RAGQueryResponse(BaseModel):
-    """Grounded response returned by RAG query pipeline."""
-    answer: str = Field(..., description="Generated advisory response grounded in retrieved evidence")
+    """Extractive retrieval or explicit abstention returned by the RAG pipeline."""
+    answer: str = Field(..., description="Extractive evidence response or explicit abstention")
     citations: List[Citation] = Field(default_factory=list)
     retrieved_chunks: List[RetrievedChunk] = Field(default_factory=list)
-    metrics: Dict[str, Any] = Field(default_factory=dict, description="Retrieval, embedding, and generation latencies")
-    grounded: bool = Field(True, description="Flag indicating response is fully supported by evidence")
+    metrics: Dict[str, Any] = Field(default_factory=dict, description="Retrieval and response-construction diagnostics")
+    grounded: bool = Field(False, description="True only when trustworthy, sufficiently relevant evidence was returned")

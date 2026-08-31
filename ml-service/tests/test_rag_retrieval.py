@@ -6,7 +6,6 @@ Tests Dense, BM25 Keyword, and Hybrid (RRF & Weighted Fusion) retrievers.
 import pytest
 from rag.config import RAGConfig
 from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
-from rag.retrievers.base import BaseRetriever
 from rag.retrievers.bm25_retriever import BM25KeywordRetriever
 from rag.retrievers.dense_retriever import DenseRetriever
 from rag.retrievers.hybrid_retriever import HybridRetriever
@@ -30,21 +29,21 @@ def populated_vector_store(tmp_path):
             chunk_id="d1#0",
             document_id="d1",
             content=doc1_content,
-            metadata=ChunkMetadata(chunk_id="d1#0", document_id="d1", chunk_index=0, title="Tax 87A", source="tax.md"),
+            metadata=ChunkMetadata(chunk_id="d1#0", document_id="d1", chunk_index=0, title="Tax 87A", source="tax.md", source_trust_tier="government_official"),
             embedding=embedder.embed_text(doc1_content),
         ),
         TextChunk(
             chunk_id="d2#0",
             document_id="d2",
             content=doc2_content,
-            metadata=ChunkMetadata(chunk_id="d2#0", document_id="d2", chunk_index=0, title="ELSS 80C", source="elss.md"),
+            metadata=ChunkMetadata(chunk_id="d2#0", document_id="d2", chunk_index=0, title="ELSS 80C", source="elss.md", source_trust_tier="government_official"),
             embedding=embedder.embed_text(doc2_content),
         ),
         TextChunk(
             chunk_id="d3#0",
             document_id="d3",
             content=doc3_content,
-            metadata=ChunkMetadata(chunk_id="d3#0", document_id="d3", chunk_index=0, title="Fixed Deposit", source="fd.md"),
+            metadata=ChunkMetadata(chunk_id="d3#0", document_id="d3", chunk_index=0, title="Fixed Deposit", source="fd.md", source_trust_tier="government_official"),
             embedding=embedder.embed_text(doc3_content),
         ),
     ]

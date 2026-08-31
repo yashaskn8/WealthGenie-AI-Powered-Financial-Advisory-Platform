@@ -11,11 +11,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from rag.config import RAGConfig
-from rag.ingestion.pipeline import IngestionPipeline
+from rag.ingestion.pipeline import IngestionPipeline, UntrustedSourceError
 from rag.lifecycle.manager import DocumentLifecycleManager
 from rag.retrieval.pipeline import RAGPipeline
 from rag.schema import RAGQueryRequest, RAGQueryResponse
 from security import verify_api_key, verify_verified_user_id
+from store_factory import get_vector_store
 
 logger = logging.getLogger("wealthgenie.rag.router")
 
@@ -23,7 +24,6 @@ rag_router = APIRouter(prefix="/rag", tags=["Retrieval-Augmented Generation"], d
 
 # Instantiate RAG Subsystem instances with shared singleton lifecycle_manager
 rag_config = RAGConfig()
-from store_factory import get_vector_store
 vector_store = get_vector_store()
 lifecycle_manager = DocumentLifecycleManager(vector_store=vector_store)
 ingestion_pipeline = IngestionPipeline(
@@ -142,21 +142,25 @@ def index_document(
     check_rate_limit(client_ip)
 
     try:
-        # SECURITY: Identity is bound strictly to the verified header, ignoring body fields
+        # Direct user content is deliberately unverified. Claimed source/author fields
+        # cannot elevate it into the authoritative regulatory corpus.
         res = ingestion_pipeline.ingest_text(
             text=request.content,
             title=request.title,
-            source=request.source,
-            author=request.author,
+            source=f"user_supplied:{verified_user_id}",
+            author=None,
+            source_trust_tier="unverified_user_input",
             tenant_id="default",
             user_id=verified_user_id,
             scope=f"user:{verified_user_id}",
-            manual_override=True,
         )
         # Sync the router's lifecycle_manager with disk state written by the pipeline's
         # ephemeral DocumentLifecycleManager during ingest_document().
         lifecycle_manager.load_registry()
         return {"status": "success", "ingestion_result": res}
+    except UntrustedSourceError as e:
+        logger.warning(f"Rejected untrusted direct RAG ingestion: {e}")
+        raise HTTPException(status_code=400, detail="Direct user content is not accepted as authoritative advisory evidence.")
     except Exception as e:
         logger.error(f"Document ingestion failed: {e}")
         raise HTTPException(status_code=400, detail=f"Ingestion error: {str(e)}")

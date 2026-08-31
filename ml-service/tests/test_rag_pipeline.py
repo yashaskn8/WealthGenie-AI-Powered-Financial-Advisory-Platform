@@ -5,11 +5,9 @@ Tests document loading, text cleaning, chunking, embeddings, vector search, retr
 
 import pytest
 import numpy as np
-from pathlib import Path
 from fastapi.testclient import TestClient
 
-from rag.config import RAGConfig
-from rag.schema import Document, DocumentMetadata, RAGQueryRequest
+from rag.schema import RAGQueryRequest
 from rag.ingestion.loaders import DocumentLoader
 from rag.ingestion.cleaner import clean_text
 from rag.chunking.fixed_chunker import FixedSizeChunker
@@ -19,8 +17,6 @@ from rag.embeddings.cache import EmbeddingCache
 from rag.vector_store.memory_vector_store import PersistentVectorStore
 from rag.ingestion.pipeline import IngestionPipeline
 from rag.retrieval.pipeline import RAGPipeline
-from rag.prompts.builder import PromptBuilder
-from rag.citations.engine import CitationEngine
 import os
 from main import app
 
@@ -108,6 +104,8 @@ def test_ingestion_and_rag_pipeline(tmp_path):
         text="Under FY 2025-26 New Tax Regime, income up to 12 Lakhs incurs zero tax due to Section 87A rebate.",
         title="Tax Rebates 2025",
         author="CBDT",
+        source="https://www.incometaxindia.gov.in/official/section-87a",
+        source_trust_tier="government_official",
     )
     assert res["status"] == "success"
 
@@ -141,7 +139,8 @@ def test_fastapi_rag_endpoints(client):
             "source": "api_test",
         },
     )
-    assert res_index.status_code == 200
+    assert res_index.status_code == 400
+    assert "not accepted as authoritative" in res_index.json()["detail"]
 
     # 4. Query Endpoint
     res_query = client.post(

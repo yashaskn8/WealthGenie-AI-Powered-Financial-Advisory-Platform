@@ -1,17 +1,21 @@
 """
-WealthGenie RAG Subsystem - End-to-End Retrieval & Generation Pipeline
-Executes strategy retrieval (Dense, Keyword, Hybrid), reranking, prompt assembly, answer generation, and citation formatting.
+WealthGenie RAG Subsystem - Trust-Gated Extractive Retrieval Pipeline
+Executes domain classification, scoped retrieval, trust/relevance gating, abstention, and citation formatting.
 """
 
 import logging
+import re
 import time
 from typing import Dict, Any, List, Optional
 
 from rag.citations.engine import CitationEngine
+from rag.cache.manager import MultiLevelCacheManager
 from rag.config import RAGConfig
 from rag.embeddings.base import BaseEmbeddingProvider
 from rag.embeddings.dense_embedding import get_embedding_provider
 from rag.prompts.builder import PromptBuilder
+from rag.observability.metrics_collector import RAGObservabilityCollector
+from rag.query_understanding.pipeline import QueryUnderstandingPipeline
 from rag.reranking.base import BaseReranker
 from rag.reranking.noop_reranker import NoOpReranker
 from rag.reranking.relevance_reranker import RelevanceScoreReranker
@@ -26,9 +30,16 @@ from rag.vector_store.memory_vector_store import PersistentVectorStore
 
 logger = logging.getLogger("wealthgenie.rag.retrieval")
 
-from rag.cache.manager import MultiLevelCacheManager
-from rag.observability.metrics_collector import RAGObservabilityCollector
-from rag.query_understanding.pipeline import QueryUnderstandingPipeline
+TRUSTED_EVIDENCE_TIERS = {"government_official", "regulatory_circular"}
+_RELEVANCE_STOP_WORDS = {
+    "what", "which", "when", "where", "who", "why", "how", "does", "is", "are",
+    "the", "this", "that", "with", "from", "under", "about", "into", "for", "and",
+    "can", "could", "would", "should", "much", "limit", "allowed",
+}
+ABSTENTION_MESSAGE = (
+    "I cannot find sufficiently trustworthy, relevant evidence in the approved knowledge base. "
+    "No financial or regulatory claim has been generated."
+)
 
 # Registry of built-in reranker strategies
 _RERANKER_REGISTRY: Dict[str, type] = {
@@ -74,7 +85,7 @@ def get_retriever(
 
 
 class RAGPipeline:
-    """End-to-End Retrieval-Augmented Generation pipeline with strategy retrieval, reranking, and multi-level caching."""
+    """Trust-gated extractive retrieval pipeline with explicit abstention."""
 
     def __init__(
         self,
@@ -104,10 +115,14 @@ class RAGPipeline:
         self.citation_engine = CitationEngine()
 
     def query(self, request: RAGQueryRequest) -> RAGQueryResponse:
-        """Executes full RAG query workflow and returns grounded response with citations."""
+        """Return extractive evidence only when domain, trust, and relevance gates pass."""
         effective_scope = request.scope or (f"user:{request.user_id}" if request.user_id else request.tenant_id)
+        response_cache_key = (
+            f"{request.question}|top_k={request.top_k or self.config.top_k}"
+            f"|citations={request.include_citations}"
+        )
         # Check Response Cache
-        cached_response = self.cache_manager.get_response(request.question, tenant_id=effective_scope)
+        cached_response = self.cache_manager.get_response(response_cache_key, tenant_id=effective_scope)
         if cached_response is not None:
             logger.info(f"Serving cached RAG query response for '{request.question[:30]}...' (scope: {effective_scope})")
             return cached_response
@@ -121,17 +136,26 @@ class RAGPipeline:
         search_query = qu_result["search_query"]
         qu_latency = (time.perf_counter() - t0) * 1000.0
 
+        if qu_result["intent"] == "out_of_domain":
+            response = self._abstain("out_of_domain", qu_result, qu_latency)
+            self.cache_manager.put_response(response_cache_key, response, tenant_id=effective_scope)
+            return response
+
         # 2. Strategy Retrieval
         t1 = time.perf_counter()
         retrieval_top_k = top_k * 2 if self.reranker.reranker_name != "no_op" else top_k
-        retrieved_chunks = self.retriever.retrieve(
-            query=search_query,
-            top_k=retrieval_top_k,
-            threshold=self.config.similarity_threshold,
-            tenant_id=request.tenant_id,
-            user_id=request.user_id,
-            scope=request.scope,
-        )
+        try:
+            retrieved_chunks = self.retriever.retrieve(
+                query=search_query,
+                top_k=retrieval_top_k,
+                threshold=self.config.similarity_threshold,
+                tenant_id=request.tenant_id,
+                user_id=request.user_id,
+                scope=request.scope,
+            )
+        except Exception as exc:
+            logger.error("RAG retrieval unavailable; returning abstention without citations: %s", exc)
+            return self._abstain("retrieval_unavailable", qu_result, qu_latency)
         retrieval_latency = (time.perf_counter() - t1) * 1000.0
 
         # 3. Rerank Retrieved Chunks
@@ -139,26 +163,36 @@ class RAGPipeline:
         reranked_chunks = self.reranker.rerank(request.question, retrieved_chunks)
         reranking_latency = (time.perf_counter() - t2) * 1000.0
 
-        # Trim to final top_k after reranking
-        final_chunks = reranked_chunks[:top_k]
+        # Only verified regulatory evidence with a meaningful query match may
+        # influence the extractive response.
+        trustworthy_chunks = [
+            chunk for chunk in reranked_chunks
+            if self._is_trustworthy(chunk)
+            and self._has_sufficient_relevance(request.question, chunk)
+        ]
+        final_chunks = self._sanitize_chunks(trustworthy_chunks[:top_k])
 
-        # 4. Assemble Prompt Context
-        t3 = time.perf_counter()
-        prompt = self.prompt_builder.build_prompt(
-            question=request.question,
-            retrieved_chunks=final_chunks,
-            user_profile=request.user_profile,
-        )
-        prompt_latency = (time.perf_counter() - t3) * 1000.0
+        if not final_chunks:
+            reason = "empty_evidence" if not retrieved_chunks else "insufficient_trust_or_relevance"
+            response = self._abstain(
+                reason,
+                qu_result,
+                qu_latency,
+                retrieval_latency,
+                reranking_latency,
+                chunks_retrieved=len(retrieved_chunks),
+                top_score=retrieved_chunks[0].score if retrieved_chunks else 0.0,
+            )
+            self.cache_manager.put_response(response_cache_key, response, tenant_id=effective_scope)
+            return response
 
-        # 5. Generate Answer (Grounded Synthesis)
+        # Build a strictly extractive response. No LLM synthesis occurs here.
         t4 = time.perf_counter()
-        answer = self._generate_grounded_answer(request.question, final_chunks)
+        answer = self._build_extractive_answer(final_chunks)
         answer_latency = (time.perf_counter() - t4) * 1000.0
 
-        # 6. Extract Citations
-        citations = self.citation_engine.generate_citations(final_chunks)
-        if request.include_citations and citations:
+        citations = self.citation_engine.generate_citations(final_chunks) if request.include_citations else []
+        if citations:
             answer += self.citation_engine.format_citations_markdown(citations)
 
         total_latency = (time.perf_counter() - start_time) * 1000.0
@@ -178,8 +212,8 @@ class RAGPipeline:
                 "query_understanding": qu_latency,
                 "retrieval": retrieval_latency,
                 "reranking": reranking_latency,
-                "prompt_assembly": prompt_latency,
-                "answer_synthesis": answer_latency,
+                "prompt_assembly": 0.0,
+                "extractive_response": answer_latency,
             },
             chunks_retrieved=len(retrieved_chunks),
             chunks_after_rerank=len(final_chunks),
@@ -196,8 +230,9 @@ class RAGPipeline:
             "retrieval_strategy": self.retriever.strategy_name,
             "retrieval_latency_ms": round(retrieval_latency, 2),
             "reranking_latency_ms": round(reranking_latency, 2),
-            "prompt_assembly_latency_ms": round(prompt_latency, 2),
-            "answer_synthesis_latency_ms": round(answer_latency, 2),
+            "response_mode": "extractive_retrieval",
+            "abstention_reason": None,
+            "extractive_response_latency_ms": round(answer_latency, 2),
             "total_latency_ms": round(total_latency, 2),
             "chunks_retrieved": len(retrieved_chunks),
             "chunks_after_reranking": len(final_chunks),
@@ -210,23 +245,95 @@ class RAGPipeline:
             citations=citations,
             retrieved_chunks=final_chunks,
             metrics=metrics,
-            grounded=len(final_chunks) > 0,
+            grounded=True,
         )
-        self.cache_manager.put_response(request.question, response, tenant_id=effective_scope)
+        self.cache_manager.put_response(response_cache_key, response, tenant_id=effective_scope)
         return response
 
-    def _generate_grounded_answer(self, question: str, retrieved_chunks: List[RetrievedChunk]) -> str:
-        """Synthesizes an advisory answer strictly grounded in retrieved evidence."""
-        if not retrieved_chunks:
-            return (
-                "I cannot find authoritative details on this in the knowledge base. "
-                "Please consult a certified financial advisor or upload relevant documentation."
-            )
-
-        # Synthesize top evidence excerpts cleanly
+    def _build_extractive_answer(self, retrieved_chunks: List[RetrievedChunk]) -> str:
+        """Format retrieved excerpts without claiming generative synthesis."""
         excerpts = []
         for idx, ret in enumerate(retrieved_chunks, start=1):
             excerpts.append(f"According to **{ret.chunk.metadata.title}** [{idx}]:\n{ret.chunk.content}")
 
         body = "\n\n".join(excerpts)
-        return f"Based on authoritative financial documentation:\n\n{body}"
+        return f"Extracts from verified financial or regulatory sources:\n\n{body}"
+
+    def _is_trustworthy(self, retrieved: RetrievedChunk) -> bool:
+        metadata = retrieved.chunk.metadata
+        scope = (retrieved.chunk.scope or metadata.scope or "").lower()
+        tenant_id = (retrieved.chunk.tenant_id or metadata.tenant_id or "").lower()
+        return (
+            metadata.source_trust_tier.lower() in TRUSTED_EVIDENCE_TIERS
+            and scope in {"global", "public", "default"}
+            and tenant_id in {"default", "global", ""}
+        )
+
+    def _has_sufficient_relevance(self, question: str, retrieved: RetrievedChunk) -> bool:
+        if retrieved.score < self.config.similarity_threshold:
+            return False
+        query_terms = {
+            token for token in re.findall(r"[a-z0-9]+", question.lower())
+            if len(token) > 2 and token not in _RELEVANCE_STOP_WORDS
+        }
+        if not query_terms:
+            return False
+        evidence_text = f"{retrieved.chunk.metadata.title} {retrieved.chunk.content}".lower()
+        matches = query_terms.intersection(re.findall(r"[a-z0-9]+", evidence_text))
+        required_matches = 1 if len(query_terms) <= 2 else 2
+        return len(matches) >= required_matches
+
+    def _sanitize_chunks(self, chunks: List[RetrievedChunk]) -> List[RetrievedChunk]:
+        sanitized = []
+        for retrieved in chunks:
+            safe = retrieved.model_copy(deep=True)
+            safe.chunk.content = self.prompt_builder.sanitizer.sanitize_retrieved_context(
+                safe.chunk.content
+            )
+            sanitized.append(safe)
+        return sanitized
+
+    def _abstain(
+        self,
+        reason: str,
+        qu_result: Dict[str, Any],
+        qu_latency: float,
+        retrieval_latency: float = 0.0,
+        reranking_latency: float = 0.0,
+        chunks_retrieved: int = 0,
+        top_score: float = 0.0,
+    ) -> RAGQueryResponse:
+        self.telemetry.record_query_trace(
+            query=qu_result["raw_query"],
+            search_query=qu_result["search_query"],
+            retrieval_strategy=self.retriever.strategy_name,
+            reranker_strategy=self.reranker.reranker_name,
+            stage_latencies_ms={
+                "query_understanding": qu_latency,
+                "retrieval": retrieval_latency,
+                "reranking": reranking_latency,
+                "prompt_assembly": 0.0,
+                "answer_synthesis": 0.0,
+            },
+            chunks_retrieved=chunks_retrieved,
+            chunks_after_rerank=0,
+            context_char_count=0,
+            citation_count=0,
+            top_score=top_score,
+        )
+        return RAGQueryResponse(
+            answer=ABSTENTION_MESSAGE,
+            citations=[],
+            retrieved_chunks=[],
+            metrics={
+                "response_mode": "abstention",
+                "abstention_reason": reason,
+                "intent": qu_result["intent"],
+                "query_understanding_latency_ms": round(qu_latency, 2),
+                "retrieval_latency_ms": round(retrieval_latency, 2),
+                "reranking_latency_ms": round(reranking_latency, 2),
+                "chunks_retrieved": chunks_retrieved,
+                "chunks_after_reranking": 0,
+            },
+            grounded=False,
+        )

@@ -4,7 +4,6 @@ Verifies end-to-end flow from document ingestion, lifecycle management, multi-te
 reranking, prompt security, context management, observability logging, response caching, and recovery.
 """
 
-import pytest
 from rag.config import RAGConfig
 from rag.embeddings.dense_embedding import DenseVectorEmbeddingProvider
 from rag.ingestion.pipeline import IngestionPipeline
@@ -33,22 +32,23 @@ def test_full_rag_end_to_end_pipeline_workflow(tmp_path):
     ingest_res = ingestion_pipeline.ingest_text(
         text=tax_content,
         title="Income Tax Act Section 87A",
-        source="tax_code_2026.pdf",
+        source="https://www.incometaxindia.gov.in/official/section-87a",
+        source_trust_tier="government_official",
         author="CBDT India",
         tenant_id="tenant_alpha",
     )
     assert ingest_res["chunks_created"] > 0
     doc_id = ingest_res["document_id"]
 
-    # 2. Query Phase for Tenant Alpha -> Expect Grounded Response with Citations
+    # 2. Tenant-scoped content is not permitted to masquerade as global regulatory evidence.
     req_alpha = RAGQueryRequest(
         question="Section 87A rebate limit for income tax",
         tenant_id="tenant_alpha",
     )
     res_alpha = query_pipeline.query(req_alpha)
-    assert res_alpha.grounded
-    assert len(res_alpha.retrieved_chunks) > 0
-    assert len(res_alpha.citations) > 0
+    assert not res_alpha.grounded
+    assert len(res_alpha.retrieved_chunks) == 0
+    assert len(res_alpha.citations) == 0
     assert res_alpha.metrics["chunks_retrieved"] > 0
 
     # 3. Multi-Tenant Query Phase for Tenant Beta -> Expect 0 retrieved chunks

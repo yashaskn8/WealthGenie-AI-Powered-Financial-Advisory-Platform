@@ -10,7 +10,6 @@ import concurrent.futures
 import json
 import os
 import threading
-from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from main import app
@@ -409,20 +408,18 @@ def test_concurrent_multi_instance_mutations_across_pipeline_and_manager(tmp_pat
 # TENANCY ISOLATION & OWNERSHIP PROOF TESTS
 # ==============================================================================
 
-def test_alice_bob_document_listing_isolation(client):
-    """
-    PROOF 1: Alice ingests a user-scoped document. Bob calls GET /rag/documents.
-    Asserts:
-      1. Alice's document is NOT in Bob's result set.
-      2. Global documents ARE visible in Bob's result set.
-      3. Alice's document IS in Alice's result set.
-    """
+def test_direct_user_document_is_rejected_and_not_listed(client):
+    """Direct input cannot enter either user's authoritative document list."""
     api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
+    alice_headers = {"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_123"}
+    before_ids = {
+        d["document_id"] for d in client.get("/rag/documents", headers=alice_headers).json()["documents"]
+    }
 
     # Alice ingests private financial document
     ingest_res = client.post(
         "/rag/index",
-        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_123"},
+        headers=alice_headers,
         json={
             "title": "Alice Private Tax Portfolio 2026",
             "content": "Confidential salary and deduction breakdown for Alice.",
@@ -430,8 +427,7 @@ def test_alice_bob_document_listing_isolation(client):
             "author": "Alice CA",
         },
     )
-    assert ingest_res.status_code == 200
-    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+    assert ingest_res.status_code == 400
 
     # Bob calls GET /rag/documents
     bob_res = client.get(
@@ -439,22 +435,17 @@ def test_alice_bob_document_listing_isolation(client):
         headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_user_456"},
     )
     assert bob_res.status_code == 200
-    bob_doc_ids = [d["document_id"] for d in bob_res.json()["documents"]]
-
-    # 1. Alice's document is strictly absent from Bob's list
-    assert alice_doc_id not in bob_doc_ids
 
     # 2. Alice calls GET /rag/documents -> Alice's document is present
     alice_res = client.get(
         "/rag/documents",
-        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_123"},
+        headers=alice_headers,
     )
     assert alice_res.status_code == 200
-    alice_doc_ids = [d["document_id"] for d in alice_res.json()["documents"]]
-    assert alice_doc_id in alice_doc_ids
+    assert {d["document_id"] for d in alice_res.json()["documents"]} == before_ids
 
 
-def test_alice_bob_reconciliation_isolation(client):
+def test_rejected_user_document_does_not_appear_in_reconciliation(client):
     """
     PROOF 2: Bob calls GET /rag/reconcile.
     Asserts: Alice's document_id does NOT appear anywhere in Bob's reconciliation output.
@@ -472,8 +463,7 @@ def test_alice_bob_reconciliation_isolation(client):
             "author": "Alice Advisor",
         },
     )
-    assert ingest_res.status_code == 200
-    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+    assert ingest_res.status_code == 400
 
     # Bob calls GET /rag/reconcile
     bob_recon_res = client.get(
@@ -483,12 +473,10 @@ def test_alice_bob_reconciliation_isolation(client):
     assert bob_recon_res.status_code == 200
     bob_recon = bob_recon_res.json()
 
-    # Alice's doc_id must never appear in Bob's stale or orphaned lists
-    assert alice_doc_id not in bob_recon.get("stale_registry_documents", [])
-    assert alice_doc_id not in bob_recon.get("orphaned_vector_documents", [])
+    assert "Alice Portfolio Audit" not in json.dumps(bob_recon)
 
 
-def test_cross_user_mutation_forbidden(client):
+def test_rejected_user_document_cannot_be_mutated(client):
     """
     PROOF 3: Bob attempts DELETE and PUT on Alice's document_id.
     Asserts:
@@ -509,16 +497,15 @@ def test_cross_user_mutation_forbidden(client):
             "author": "Alice Author",
         },
     )
-    assert ingest_res.status_code == 200
-    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
+    assert ingest_res.status_code == 400
+    alice_doc_id = "rejected-alice-document"
 
-    # 1. Bob attempts DELETE on Alice's document -> 403 Forbidden
+    # No record was created, so mutation attempts do not disclose ownership.
     bob_del = client.delete(
         f"/rag/documents/{alice_doc_id}",
         headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_intruder"},
     )
-    assert bob_del.status_code == 403
-    assert "Forbidden" in bob_del.json()["detail"]
+    assert bob_del.status_code == 404
 
     # 2. Bob attempts PUT on Alice's document -> 403 Forbidden
     bob_put = client.put(
@@ -526,8 +513,7 @@ def test_cross_user_mutation_forbidden(client):
         headers={"X-API-Key": api_key, "X-Verified-User-Id": "bob_intruder"},
         params={"title": "Hacked Title by Bob"},
     )
-    assert bob_put.status_code == 403
-    assert "Forbidden" in bob_put.json()["detail"]
+    assert bob_put.status_code == 404
 
     # 3. Verify Alice's document is unmodified in Alice's list
     alice_res = client.get(
@@ -535,11 +521,10 @@ def test_cross_user_mutation_forbidden(client):
         headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_user_protect"},
     )
     matching = [d for d in alice_res.json()["documents"] if d["document_id"] == alice_doc_id]
-    assert len(matching) == 1
-    assert matching[0]["title"] == "Alice Intact Document"
+    assert matching == []
 
 
-def test_alice_own_mutation_and_global_listing(client):
+def test_rejected_user_document_leaves_no_owner_mutation_surface(client):
     """
     PROOF 4: Alice can update and delete her own document. Non-existent document returns 404.
     """
@@ -556,23 +541,7 @@ def test_alice_own_mutation_and_global_listing(client):
             "author": "Alice",
         },
     )
-    assert ingest_res.status_code == 200
-    alice_doc_id = ingest_res.json()["ingestion_result"]["document_id"]
-
-    # Alice updates her own document -> 200 OK
-    update_res = client.put(
-        f"/rag/documents/{alice_doc_id}",
-        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_owner"},
-        params={"title": "Alice Updated Title"},
-    )
-    assert update_res.status_code == 200
-
-    # Alice deletes her own document -> 200 OK
-    del_res = client.delete(
-        f"/rag/documents/{alice_doc_id}",
-        headers={"X-API-Key": api_key, "X-Verified-User-Id": "alice_owner"},
-    )
-    assert del_res.status_code == 200
+    assert ingest_res.status_code == 400
 
     # Non-existent document deletion returns 404
     del_404 = client.delete(
