@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import Recommendation from '../models/Recommendation.js';
 import AuditRecord from '../models/AuditRecord.js';
 import IdempotencyKey from '../models/IdempotencyKey.js';
+import AuditChainHead from '../models/AuditChainHead.js';
+import { prepareAuditChainEntry, advanceAuditChainHead } from './auditChain.js';
 
 let advisoryPersistenceReady = null;
 
@@ -11,6 +13,7 @@ async function ensureAdvisoryPersistenceReady() {
       await Promise.all([
         Recommendation.init(),
         AuditRecord.init(),
+        AuditChainHead.init(),
         IdempotencyKey.init(),
       ]);
       // Production disables general auto-index creation. This one uniqueness
@@ -21,6 +24,14 @@ async function ensureAdvisoryPersistenceReady() {
           name: 'unique_advisory_idempotency_operation',
           unique: true,
           partialFilterExpression: { idempotencyOperationId: { $type: 'string' } },
+        },
+      );
+      await AuditRecord.collection.createIndex(
+        { userId: 1, chain_sequence: 1 },
+        {
+          name: 'unique_user_audit_chain_sequence',
+          unique: true,
+          partialFilterExpression: { chain_sequence: { $type: 'number' } },
         },
       );
     })().catch(error => {
@@ -59,19 +70,23 @@ export async function persistAdvisoryAtomically({
 }) {
   await ensureAdvisoryPersistenceReady();
   const session = await mongoose.startSession();
+  let committedResponse = null;
   try {
     await session.withTransaction(async () => {
+      const chainEntry = await prepareAuditChainEntry(auditRecord, session);
+      committedResponse = { ...response, audit_hash: chainEntry.record.record_hash };
+
       await Recommendation.create([{
         ...recommendation,
         idempotencyOperationId: idempotencyClaim.operationId,
         idempotencyRequestHash: idempotencyClaim.requestHash,
-        responseSnapshot: response,
+        responseSnapshot: committedResponse,
       }], { session });
 
       await testHooks.afterRecommendationCreate?.(session);
 
       try {
-        await AuditRecord.create([auditRecord], { session });
+        await AuditRecord.create([chainEntry.record], { session });
       } catch (error) {
         if (error.hasErrorLabel?.('TransientTransactionError')) throw error;
         const auditError = new Error(`Required advisory audit write failed: ${error.message}`, { cause: error });
@@ -81,6 +96,7 @@ export async function persistAdvisoryAtomically({
         throw auditError;
       }
       await testHooks.afterAuditCreate?.(session);
+      await advanceAuditChainHead(chainEntry, session);
 
       const completion = await IdempotencyKey.updateOne({
         _id: idempotencyClaim.operationId,
@@ -92,7 +108,7 @@ export async function persistAdvisoryAtomically({
           response: {
             status: 200,
             headers: { 'content-type': 'application/json; charset=utf-8' },
-            body: response,
+            body: committedResponse,
           },
         },
       }, { session });
@@ -105,7 +121,7 @@ export async function persistAdvisoryAtomically({
       writeConcern: { w: 'majority' },
     });
 
-    return response;
+    return committedResponse;
   } catch (error) {
     throw transactionRequirementError(error);
   } finally {

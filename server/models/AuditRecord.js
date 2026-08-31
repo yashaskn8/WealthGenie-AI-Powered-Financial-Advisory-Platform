@@ -64,11 +64,44 @@ const auditRecordSchema = new mongoose.Schema({
     default: Date.now,
     index: true,
   },
+  previous_hash: {
+    type: String,
+    required: true,
+  },
+  record_hash: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  hash_algorithm: {
+    type: String,
+    required: true,
+    enum: ['sha256'],
+    default: 'sha256',
+  },
+  schema_version: {
+    type: String,
+    required: true,
+    default: '1.0',
+  },
+  chain_sequence: {
+    type: Number,
+    required: true,
+    min: 1,
+  },
 }, {
   timestamps: true,
 });
 
 // Regulatory composite audit indexes
 auditRecordSchema.index({ userId: 1, timestamp: -1 });
+auditRecordSchema.index(
+  { userId: 1, chain_sequence: 1 },
+  {
+    name: 'unique_user_audit_chain_sequence',
+    unique: true,
+    partialFilterExpression: { chain_sequence: { $type: 'number' } },
+  },
+);
 
 export default mongoose.model('AuditRecord', auditRecordSchema);

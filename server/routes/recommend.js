@@ -17,6 +17,8 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { setCache, delCache } from '../config/redis.js';
 import { RISK_FREE_RATE, DISCLAIMER } from '../services/instrumentConstants.js';
+import { canonicalSha256 } from '../utils/canonicalJson.js';
+import { verifyAuditChain } from '../services/auditChain.js';
 
 const router = Router();
 
@@ -140,7 +142,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     tax_regime: profile.taxRegime,
     investment_horizon: profile.investmentHorizon || 15,
   };
-    const inputHash = crypto.createHash('sha256').update(JSON.stringify(sanitizedInputs)).digest('hex');
+    const inputHash = canonicalSha256(sanitizedInputs);
     const correlationId = req.correlationId || req.traceId || crypto.randomUUID();
     const citedRagChunkIds = advisory.cited_chunks || mlResult.cited_chunk_ids || [];
     const recommendationData = {
@@ -205,7 +207,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     computedWeights: computedWeights,
     };
 
-    await persistAdvisoryAtomically({
+    const persistedResult = await persistAdvisoryAtomically({
       recommendation: recommendationData,
       auditRecord: auditRecordData,
       response: result,
@@ -215,11 +217,11 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     // This cache is an optimization only. Idempotent replay is sourced from
     // the transactionally persisted operation, never from Redis.
     const cacheKey = buildRecommendationCacheKey(req.user.userId, profile._id, profile);
-    await setCache(cacheKey, result, 86400).catch(error => {
+    await setCache(cacheKey, persistedResult, 86400).catch(error => {
       logger.warn('Recommendation cache write failed after committed advisory', { error: error.message });
     });
 
-    res.json(result);
+    res.json(persistedResult);
   } catch (error) {
     await releaseAdvisoryIdempotency(idempotencyClaim).catch(releaseError => {
       logger.error('Failed to release advisory idempotency claim', {
@@ -233,7 +235,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
 
 /**
  * GET /api/recommend/audit [Protected]
- * Retrieve immutable audit trail records for regulatory compliance.
+ * Retrieve tamper-evident audit-chain records for regulatory review.
  */
 router.get('/audit', verifyJWT, asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
@@ -263,6 +265,18 @@ router.get('/audit', verifyJWT, asyncHandler(async (req, res) => {
     skip,
     limit,
     records,
+  });
+}));
+
+/**
+ * GET /api/recommend/audit/verify [Protected]
+ * Verify the authenticated user's complete tamper-evident audit chain.
+ */
+router.get('/audit/verify', verifyJWT, asyncHandler(async (req, res) => {
+  const verification = await verifyAuditChain(req.user.userId);
+  res.status(verification.valid ? 200 : 409).json({
+    status: verification.valid ? 'valid' : 'invalid',
+    ...verification,
   });
 }));
 

@@ -87,7 +87,7 @@ async function runLiveRegulatoryAuditVerification() {
   assert.ok(latestRecord.version_id, 'version_id must be present');
   assert.ok(latestRecord.input_hash, 'input_hash must be present');
 
-  console.log(`✅ Verified: Regulatory rule version 'FY2025-26-v1.0' is successfully captured in recommendation responses and immutable AuditRecords!`);
+  console.log(`✅ Verified: Regulatory rule version 'FY2025-26-v1.0' is captured in the tamper-evident advisory audit chain.`);
 }
 
 runLiveRegulatoryAuditVerification().catch(err => {

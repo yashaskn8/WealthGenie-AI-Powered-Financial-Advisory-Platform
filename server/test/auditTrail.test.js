@@ -63,7 +63,7 @@ describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
     await teardownTestDatabase();
   });
 
-  it('1. Generates recommendation and synchronously creates immutable AuditRecord', async () => {
+  it('1. Generates recommendation and synchronously creates tamper-evident AuditRecord', async () => {
     await withServer(buildApp(), async (baseUrl) => {
       const { response, body } = await jsonRequest(`${baseUrl}/api/recommend`, {
         method: 'POST',
@@ -87,7 +87,10 @@ describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
       assert.equal(auditDoc.profileId.toString(), profile._id.toString());
       assert.equal(auditDoc.recommendationId.toString(), body.recommendationId.toString());
       assert.equal(auditDoc.correlationId, 'audit-test-corr-001');
-      assert.equal(auditDoc.input_hash, body.audit_hash);
+      assert.equal(auditDoc.record_hash, body.audit_hash);
+      assert.equal(auditDoc.previous_hash, 'GENESIS');
+      assert.equal(auditDoc.hash_algorithm, 'sha256');
+      assert.equal(auditDoc.schema_version, '1.0');
       assert.ok(auditDoc.version_id, 'Must have model/engine version_id');
       assert.ok(auditDoc.inputs, 'Must store sanitized inputs');
       assert.equal(auditDoc.inputs.age, 32);
@@ -113,6 +116,18 @@ describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
       assert.ok(body.records.length >= 1, 'Records array should not be empty');
       assert.equal(body.records[0].userId.toString(), testUserId.toString());
       assert.ok(body.records[0].input_hash, 'Record should have input_hash');
+    });
+  });
+
+  it('GET /api/recommend/audit/verify validates the authenticated user chain', async () => {
+    await withServer(buildApp(), async (baseUrl) => {
+      const { response, body } = await jsonRequest(`${baseUrl}/api/recommend/audit/verify`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${testToken}` },
+      });
+      assert.equal(response.status, 200);
+      assert.equal(body.valid, true, JSON.stringify(body.errors));
+      assert.ok(body.checkedRecords >= 1);
     });
   });
 
