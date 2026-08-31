@@ -4,7 +4,7 @@ Provides high-speed, domain-aware synthetic LLM generation for testing and offli
 """
 
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Generator
 from llm.providers.base import BaseLLMProvider
 from llm.schema import (
@@ -21,7 +21,7 @@ class MockLLMProvider(BaseLLMProvider):
 
     def __init__(self, model_name: str = "WealthGenie-Synthetic-LLM-0.5B"):
         self.model_name = model_name
-        self.loaded_at = datetime.utcnow().isoformat()
+        self.loaded_at = datetime.now(timezone.utc).isoformat()
 
     def generate(self, request: LLMGenerateRequest) -> LLMGenerateResponse:
         t0 = time.perf_counter()

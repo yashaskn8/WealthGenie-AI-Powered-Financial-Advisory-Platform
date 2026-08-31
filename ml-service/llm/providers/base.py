@@ -4,7 +4,7 @@ Defines the standard abstract contract for all LLM providers (Hugging Face, Loca
 """
 
 from abc import ABC, abstractmethod
-from typing import Generator, Optional
+from typing import Generator
 from llm.schema import LLMGenerateRequest, LLMGenerateResponse, LLMMetadata
 
 

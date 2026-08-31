@@ -17,6 +17,7 @@ import base64
 import json
 import logging
 import re
+import time
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 
@@ -108,6 +109,8 @@ class SemanticInjectionGuard:
         self._reference_vectors: Optional[np.ndarray] = None
         self.is_ready: bool = False
         self.initialization_error: Optional[str] = None
+        self._retry_after: float = 0.0
+        self._retry_delay_seconds: float = 60.0
 
     def initialize(self) -> bool:
         """
@@ -116,6 +119,8 @@ class SemanticInjectionGuard:
         """
         if self.is_ready and self._reference_vectors is not None:
             return True
+        if self.initialization_error and time.monotonic() < self._retry_after:
+            return False
 
         try:
             from rag.embeddings.dense_embedding import SentenceTransformerEmbeddingProvider
@@ -126,6 +131,7 @@ class SemanticInjectionGuard:
             self._reference_vectors = raw_vecs / np.maximum(norms, 1e-12)
             self.is_ready = True
             self.initialization_error = None
+            self._retry_after = 0.0
             logger.info(f"SemanticInjectionGuard initialized successfully with {len(CANONICAL_INJECTION_INTENTS)} reference vectors.")
             return True
         except Exception as e:
@@ -133,6 +139,7 @@ class SemanticInjectionGuard:
             self.initialization_error = f"Model load failure: {type(e).__name__}: {str(e)}"
             self._provider = None
             self._reference_vectors = None
+            self._retry_after = time.monotonic() + self._retry_delay_seconds
             logger.error(f"SemanticInjectionGuard CRITICAL: Model initialization failed: {self.initialization_error}")
             return False
 

@@ -263,8 +263,13 @@ The application client runs at `http://localhost:5173`.
 To spin up the full multi-container application stack (MongoDB, Redis, Express backend, FastAPI ML service, React frontend):
 
 ```bash
+cp .env.example .env
+# Replace the CHANGE_ME values for JWT_SECRET, ML_SERVICE_API_KEY, and ML_OPERATOR_KEY.
 docker-compose up --build -d
 ```
+
+Docker Compose reads the root `.env` file for secret substitution. The frontend
+serves `/api/*` through its Nginx reverse proxy to the Express container.
 
 Service mapping:
 * **Frontend**: `http://localhost:80`

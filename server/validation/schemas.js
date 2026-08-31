@@ -30,6 +30,8 @@ export const registerSchema = Joi.object({
     .messages({ 'string.min': 'Name must be at least 2 characters' }),
   email: Joi.string().trim().lowercase().email().max(254).required()
     .messages({ 'string.email': 'Please provide a valid email address' }),
+  mobile: Joi.string().trim().pattern(/^[6-9]\d{9}$/).optional()
+    .messages({ 'string.pattern.base': 'Please provide a valid 10-digit Indian mobile number' }),
   password: Joi.string().min(8).max(128).required()
     .pattern(/[A-Z]/, 'uppercase')
     .pattern(/[a-z]/, 'lowercase')

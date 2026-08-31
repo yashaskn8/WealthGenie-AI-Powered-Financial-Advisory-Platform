@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { trace } from '@opentelemetry/api';
 
-const getMlServiceUrl = () => process.env.ML_SERVICE_URL || 'http://localhost:8000';
+const getMlServiceUrl = () => (process.env.ML_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const getMlApiKey = () => process.env.ML_SERVICE_API_KEY || '';
 const RAG_TIMEOUT_MS = 8000;
 

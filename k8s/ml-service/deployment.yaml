@@ -40,6 +40,11 @@ spec:
                 secretKeyRef:
                   name: wealthgenie-secrets
                   key: ML_SERVICE_API_KEY
+            - name: ML_OPERATOR_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wealthgenie-secrets
+                  key: ML_OPERATOR_KEY
           resources:
             requests:
               cpu: 200m

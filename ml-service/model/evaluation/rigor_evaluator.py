@@ -11,11 +11,14 @@ Provides:
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
+logger = logging.getLogger("wealthgenie.rigor_evaluator")
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = REPOSITORY_ROOT / "ml-service" / "data"
@@ -107,6 +110,7 @@ def audit_formula_logic_overlap() -> Dict[str, Any]:
 
     # 0.40 is the only common numeric boundary value out of 14 total unique decision thresholds across both rules
     overlap_ratio = len(math_overlap) / len(labeler_math_components) * 100.0
+    threshold_overlap_ratio = len(threshold_intersection) / len(threshold_union) * 100.0
 
     return {
         "labeler_math_terms": sorted(list(labeler_math_components)),
@@ -116,6 +120,7 @@ def audit_formula_logic_overlap() -> Dict[str, Any]:
         "cfp_decision_thresholds": sorted(list(cfp_thresholds)),
         "shared_decision_thresholds": sorted(list(threshold_intersection)),
         "formula_overlap_percentage": round(overlap_ratio, 2),
+        "decision_threshold_overlap_percentage": round(threshold_overlap_ratio, 2),
         "audit_finding": "0.00% math formula overlap. The independent CFP benchmark uses 100-minus-age allocation logic and stated tolerance, completely decoupled from label_construction.py utility equations.",
         "disclosure_note": "Formula term sets and decision boundary constants are manually extracted from function source code, not dynamically auto-parsed via AST.",
     }
@@ -198,7 +203,7 @@ def evaluate_feature_ablation(
     for col in X_test.columns:
         X_ablated = X_test.copy()
         X_ablated[col] = X_test[col].mean()
-        preds = model.predict(X_ablated)
+        preds = model.predict(X_ablated.to_numpy(dtype=float))
         ablated_acc = float(accuracy_score(y_test, preds))
         drop = round(baseline_acc - ablated_acc, 4)
         ablation_results[col] = drop
@@ -235,7 +240,7 @@ def evaluate_noise_robustness(
                 noise = rng.normal(0, col_std * std_pct, size=len(X_noisy))
                 X_noisy[col] = X_noisy[col].to_numpy(dtype=float) + noise
 
-        preds = model.predict(X_noisy)
+        preds = model.predict(X_noisy.to_numpy(dtype=float))
         noisy_acc = float(accuracy_score(y_test, preds))
         robustness_results[f"noise_std_{int(std_pct * 100)}pct_accuracy"] = round(noisy_acc, 4)
 
@@ -276,7 +281,7 @@ def run_full_rigor_audit() -> Dict[str, Any]:
     y_indep_encoded = label_encoder.transform(independent_targets_str)
 
     # Model 1: Random Forest
-    rf_preds = rf_model.predict(X)
+    rf_preds = rf_model.predict(X_arr)
     rf_rule_fid = float(accuracy_score(y_rule_encoded, rf_preds))
     rf_indep_eval = evaluate_independent_organic_benchmark(rf_preds, y_indep_encoded, list(label_encoder.classes_))
 
@@ -291,8 +296,8 @@ def run_full_rigor_audit() -> Dict[str, Any]:
             mlp_preds = np.argmax(mlp_proba, axis=1)
             mlp_rule_fid = float(accuracy_score(y_rule_encoded, mlp_preds))
             mlp_indep_acc = float(accuracy_score(y_indep_encoded, mlp_preds))
-    except Exception as e:
-        pass
+    except Exception as exc:
+        logger.warning("PyTorch MLP rigor evaluation unavailable: %s", exc)
 
     # Model 3: FT-Transformer (Headline 97.05% claim model)
     ft_rule_fid = 0.0
@@ -306,8 +311,8 @@ def run_full_rigor_audit() -> Dict[str, Any]:
             ft_preds = np.argmax(ft_proba, axis=1)
             ft_rule_fid = float(accuracy_score(y_rule_encoded, ft_preds))
             ft_indep_acc = float(accuracy_score(y_indep_encoded, ft_preds))
-    except Exception as e:
-        pass
+    except Exception as exc:
+        logger.warning("FT-Transformer rigor evaluation unavailable: %s", exc)
 
     # 3. Feature Ablation
     ablation_impact = evaluate_feature_ablation(rf_model, X, y_rule_encoded, rf_rule_fid)
@@ -316,6 +321,7 @@ def run_full_rigor_audit() -> Dict[str, Any]:
     noise_robustness = evaluate_noise_robustness(rf_model, X, y_rule_encoded, noise_levels=[0.05, 0.10, 0.20])
 
     report = {
+        "formula_logic_overlap_audit": formula_audit,
         "metric_reframe": {
             "original_claimed_metric": "97.05% Prediction Accuracy (FT-Transformer)",
             "reframed_metric_name": "Rule-Approximation Fidelity",

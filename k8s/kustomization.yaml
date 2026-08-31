@@ -6,7 +6,6 @@ namespace: wealthgenie
 resources:
   - namespace.yaml
   - configmap.yaml
-  - secrets.example.yaml
   - mongodb/pvc.yaml
   - mongodb/statefulset.yaml
   - mongodb/service.yaml

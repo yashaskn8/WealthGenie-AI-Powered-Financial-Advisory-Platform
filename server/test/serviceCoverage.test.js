@@ -203,6 +203,48 @@ test('mlClient rule fallback produces usable picks and scores', () => {
   assert.ok(Object.values(fallback.confidence_scores).every(Number.isFinite));
 });
 
+test('mlClient reads the ML URL and API key at request time', async (t) => {
+  const originalPost = axios.post;
+  const originalUrl = process.env.ML_SERVICE_URL;
+  const originalKey = process.env.ML_SERVICE_API_KEY;
+  const calls = [];
+  axios.post = async (url, _payload, config) => {
+    calls.push({ url, headers: config.headers });
+    return { data: { primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS' } };
+  };
+  t.after(() => {
+    axios.post = originalPost;
+    if (originalUrl === undefined) delete process.env.ML_SERVICE_URL; else process.env.ML_SERVICE_URL = originalUrl;
+    if (originalKey === undefined) delete process.env.ML_SERVICE_API_KEY; else process.env.ML_SERVICE_API_KEY = originalKey;
+  });
+
+  const profile = {
+    age: 40,
+    annual_income: 1200000,
+    monthly_savings: 25000,
+    risk_category: 'Moderate',
+    liquid_savings: 50000,
+    existing_debt: 10,
+    dependents: 1,
+    emergency_fund_months: 3,
+    risk_tolerance: 'Moderate',
+    goal_type: 'wealth-building',
+  };
+
+  process.env.ML_SERVICE_URL = 'http://ml-one:8000/';
+  process.env.ML_SERVICE_API_KEY = 'first-key';
+  await getMLPrediction(profile);
+  process.env.ML_SERVICE_URL = 'http://ml-two:9000';
+  process.env.ML_SERVICE_API_KEY = 'second-key';
+  await getMLPrediction(profile);
+
+  assert.deepEqual(calls.map(call => call.url), [
+    'http://ml-one:8000/predict/enriched',
+    'http://ml-two:9000/predict/enriched',
+  ]);
+  assert.deepEqual(calls.map(call => call.headers['X-API-Key']), ['first-key', 'second-key']);
+});
+
 test('projectionEngine formulas are numerically stable and internally consistent', () => {
   const target = 1000000;
   const sip = reverseSIPFromFV(target, 0.10, 10);
@@ -242,12 +284,15 @@ test('postTaxCalculator respects EEE exemptions and taxable instruments', () => 
 
 test('ragClient and mlClient propagate verified X-Verified-User-Id header downstream', async (t) => {
   const originalPost = axios.post;
+  const originalMlUrl = process.env.ML_SERVICE_URL;
   let ragCapturedHeaders = null;
   let ragCapturedBody = null;
+  let ragCapturedUrl = null;
   let mlCapturedHeaders = null;
 
   axios.post = async (url, payload, config) => {
     if (url.includes('/rag/query')) {
+      ragCapturedUrl = url;
       ragCapturedHeaders = config?.headers;
       ragCapturedBody = payload;
       return { status: 200, data: { answer: 'Grounded tax advice', citations: [] } };
@@ -259,9 +304,13 @@ test('ragClient and mlClient propagate verified X-Verified-User-Id header downst
     return { data: {} };
   };
 
-  t.after(() => { axios.post = originalPost; });
+  t.after(() => {
+    axios.post = originalPost;
+    if (originalMlUrl === undefined) delete process.env.ML_SERVICE_URL; else process.env.ML_SERVICE_URL = originalMlUrl;
+  });
 
   const testUserId = '654321098765432109876543';
+  process.env.ML_SERVICE_URL = 'http://rag-service:8000/';
 
   // 1. Test ragClient queryRAG forwards verified user header and drops unverified body fields
   const ragRes = await queryRAG({
@@ -270,6 +319,7 @@ test('ragClient and mlClient propagate verified X-Verified-User-Id header downst
   }, 'test-corr-id-123');
 
   assert.ok(ragRes);
+  assert.equal(ragCapturedUrl, 'http://rag-service:8000/rag/query');
   assert.equal(ragCapturedHeaders?.['X-Verified-User-Id'], testUserId);
   assert.equal(ragCapturedBody?.tenant_id, undefined, 'tenant_id must not be sent in RAG request body');
 

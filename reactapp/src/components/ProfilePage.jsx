@@ -30,6 +30,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
   const [horizon, setHorizon] = useState(savedProfile?.investment_horizon || 15);
   const [taxRegime, setTaxRegime] = useState(savedProfile?.taxRegime || 'new');
   const [profileId, setProfileId] = useState(savedProfile?.profileId || null);
+  const [version, setVersion] = useState(savedProfile?.version || 1);
 
   // New fields (CTC, Basic, Take-Home, Property Sale, Lump Sum):
   const [totalCTC, setTotalCTC] = useState(savedProfile?.total_ctc !== undefined ? savedProfile.total_ctc : (savedProfile?.monthly_income ? savedProfile.monthly_income * 12 : 780000));
@@ -72,6 +73,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     investment_horizon: horizon,
     taxRegime,
     profileId,
+    version,
     liquid_savings: Number(liquidSavings),
     existing_debt: Number(existingDebt),
     dependents: Number(dependents),
@@ -103,7 +105,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     incomeSource: incomeSource || 'salary',
     income_source: incomeSource || 'salary',
   }), [
-    age, monthlyIncome, monthlySavings, investmentGoals, horizon, taxRegime, profileId,
+    age, monthlyIncome, monthlySavings, investmentGoals, horizon, taxRegime, profileId, version,
     liquidSavings, existingDebt, dependents, emergencyFundMonths, riskTolerance, goalType,
     totalCTC, basicComponent, monthlyTakeHome, soldPropertyAmount, hasLumpSum, lumpSumAmount,
     section80C, section80CCD1B, section80DSelf, section80DParents, parentsSenior, hra, homeLoanInterest, section80EEA, incomeSource
@@ -208,7 +210,15 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
       const currentUser = api.getUserInfo();
       const nextProfileId = response.profileId || null;
       setProfileId(nextProfileId);
-      const profileWithUser = { ...userProfilePayload, profileId: nextProfileId, _userId: currentUser?.id || null };
+      const nextVersion = response.version || 1;
+      setVersion(nextVersion);
+      const profileWithUser = {
+        ...userProfilePayload,
+        ...response,
+        profileId: nextProfileId,
+        version: nextVersion,
+        _userId: currentUser?.id || null,
+      };
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profileWithUser));
       setIsComplete(true);
     } catch (err) {
@@ -224,6 +234,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     setInvestmentGoals(updatedProfile.investment_goals);
     setHorizon(updatedProfile.investment_horizon);
     setTaxRegime(updatedProfile.taxRegime);
+    if (updatedProfile.version !== undefined) setVersion(updatedProfile.version);
     
     // Core fields:
     if (updatedProfile.liquid_savings !== undefined) setLiquidSavings(updatedProfile.liquid_savings);

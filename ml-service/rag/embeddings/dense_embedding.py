@@ -8,7 +8,9 @@ Contains:
 
 import logging
 import math
+import os
 import re
+import time
 from typing import List, Optional, cast
 
 import numpy as np
@@ -97,6 +99,9 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
     """
 
     DEFAULT_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+    _shared_models = {}
+    _load_failures = {}
+    _failure_retry_seconds = 60.0
 
     def __init__(self, model_name: Optional[str] = None, enable_cache: bool = True, batch_size: int = 32):
         self._model_name = model_name or self.DEFAULT_MODEL_NAME
@@ -104,16 +109,62 @@ class SentenceTransformerEmbeddingProvider(BaseEmbeddingProvider):
         self.enable_cache = enable_cache
         self.cache = EmbeddingCache() if enable_cache else None
 
-        logger.info(f"Loading sentence-transformer model '{self._model_name}'...")
-        from sentence_transformers import SentenceTransformer
-        self._model = SentenceTransformer(self._model_name)
-        dim = getattr(self._model, "get_embedding_dimension", lambda: 384)()
+        self._model = self._load_shared_model()
+        dimension_getter = getattr(
+            self._model,
+            "get_sentence_embedding_dimension",
+            lambda: 384,
+        )
+        dim = dimension_getter()
         self._dim: int = int(dim) if dim is not None else 384
 
         logger.info(
             f"Sentence-transformer model loaded: '{self._model_name}' "
             f"(dimension={self._dim}, batch_size={self._batch_size})"
         )
+
+    def _load_shared_model(self):
+        """Load one model per process, preferring an existing local snapshot.
+
+        Loading by repository ID can trigger a Hugging Face metadata request even
+        when the weights are already cached. Resolve the snapshot locally first so
+        service startup and request handling remain deterministic when offline.
+        """
+        cached_model = self._shared_models.get(self._model_name)
+        if cached_model is not None:
+            return cached_model
+
+        previous_failure = self._load_failures.get(self._model_name)
+        if previous_failure is not None:
+            failed_at, failure_message = previous_failure
+            if time.monotonic() - failed_at < self._failure_retry_seconds:
+                raise RuntimeError(failure_message)
+
+        logger.info(f"Loading sentence-transformer model '{self._model_name}'...")
+        from sentence_transformers import SentenceTransformer
+
+        try:
+            # Fast path for deployed images and developer machines with a warm cache.
+            model = SentenceTransformer(self._model_name, local_files_only=True)
+        except Exception as local_error:
+            offline = os.environ.get("HF_HUB_OFFLINE", "").lower() in {"1", "true", "yes"}
+            offline = offline or os.environ.get("TRANSFORMERS_OFFLINE", "").lower() in {"1", "true", "yes"}
+            if offline:
+                message = f"Local embedding model unavailable while offline: {local_error}"
+                self._load_failures[self._model_name] = (time.monotonic(), message)
+                raise RuntimeError(message) from local_error
+
+            try:
+                # Cold-start path: allow sentence-transformers to populate its cache once.
+                model = SentenceTransformer(self._model_name)
+            except Exception as download_error:
+                message = f"Embedding model load failed: {download_error}"
+                self._load_failures[self._model_name] = (time.monotonic(), message)
+                raise RuntimeError(message) from download_error
+
+        self._shared_models[self._model_name] = model
+        self._load_failures.pop(self._model_name, None)
+        return model
 
     @property
     def embedding_dimension(self) -> int:

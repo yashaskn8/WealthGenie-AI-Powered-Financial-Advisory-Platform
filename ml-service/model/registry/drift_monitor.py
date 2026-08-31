@@ -10,22 +10,19 @@ and registers a new NOT-yet-active candidate model version in the registry.
 """
 
 import collections
-import json
 import logging
-import os
 import threading
 import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from model.registry.drift_detection import (
     PSI_THRESHOLD_FAIL,
-    PSI_THRESHOLD_WARN,
     compute_reference_distributions,
     run_drift_check,
 )
@@ -34,6 +31,7 @@ from model.data.preprocessing import (
     compute_dataset_hash_from_arrays,
     get_dataset_generation_params,
 )
+from model.data.feature_engineering import engineer_features
 
 logger = logging.getLogger("wealthgenie.drift_monitor")
 
@@ -93,50 +91,36 @@ def generate_synthetic_feature_batch(
     If shift_feature is specified, alters that feature's distribution by shift_multiplier/offset.
     """
     np.random.seed(seed)
-    feature_cols = [
-        "age", "annual_income", "monthly_savings", "investment_horizon",
-        "liquid_savings", "existing_debt", "dependents", "emergency_fund_months",
-        "risk_score", "stated_tolerance_score", "savings_rate",
-        "debt_to_income_ratio", "emergency_fund_adequacy_ratio",
-        "risk_capacity_vs_stated_tolerance_gap", "horizon_adjusted_urgency_score",
-        "dependents_adjusted_burden_score",
-    ]
-
     age = np.random.randint(22, 60, size=n_samples).astype(float)
     annual_income = np.random.lognormal(mean=14.0, sigma=0.6, size=n_samples)  # ~1.2M - 3M INR
     monthly_savings = annual_income * np.random.uniform(0.10, 0.40, size=n_samples) / 12.0
     investment_horizon = np.random.randint(1, 30, size=n_samples).astype(float)
     liquid_savings = monthly_savings * np.random.uniform(3, 24, size=n_samples)
-    existing_debt = annual_income * np.random.uniform(0.0, 1.5, size=n_samples)
+    existing_debt = np.random.uniform(0.0, 50.0, size=n_samples)
     dependents = np.random.choice([0, 1, 2, 3, 4], size=n_samples, p=[0.3, 0.3, 0.25, 0.1, 0.05]).astype(float)
     emergency_fund_months = liquid_savings / np.maximum(monthly_savings * 1.5, 1000.0)
-    risk_score = np.random.uniform(1.0, 5.0, size=n_samples)
-    stated_tolerance_score = np.random.uniform(1.0, 5.0, size=n_samples)
-    savings_rate = (monthly_savings * 12.0) / np.maximum(annual_income, 1.0)
-    debt_to_income_ratio = existing_debt / np.maximum(annual_income, 1.0)
-    emergency_fund_adequacy_ratio = np.clip(emergency_fund_months / 6.0, 0.0, 2.0)
-    risk_gap = risk_score - stated_tolerance_score
-    horizon_urgency = 1.0 / np.maximum(investment_horizon, 1.0)
-    dependents_burden = dependents * 0.25
+    risk_tolerance = np.random.choice(
+        ["Conservative", "Moderate", "Aggressive"],
+        size=n_samples,
+        p=[0.3, 0.5, 0.2],
+    )
 
-    df = pd.DataFrame({
-        "age": age,
-        "annual_income": annual_income,
-        "monthly_savings": monthly_savings,
-        "investment_horizon": investment_horizon,
-        "liquid_savings": liquid_savings,
-        "existing_debt": existing_debt,
-        "dependents": dependents,
-        "emergency_fund_months": emergency_fund_months,
-        "risk_score": risk_score,
-        "stated_tolerance_score": stated_tolerance_score,
-        "savings_rate": savings_rate,
-        "debt_to_income_ratio": debt_to_income_ratio,
-        "emergency_fund_adequacy_ratio": emergency_fund_adequacy_ratio,
-        "risk_capacity_vs_stated_tolerance_gap": risk_gap,
-        "horizon_adjusted_urgency_score": horizon_urgency,
-        "dependents_adjusted_burden_score": dependents_burden,
-    })
+    # Use the serving-time feature pipeline so drift checks compare identical
+    # units and formulas instead of a second, divergent approximation.
+    df = pd.DataFrame([
+        engineer_features(
+            age=age[i],
+            annual_income=annual_income[i],
+            monthly_savings=monthly_savings[i],
+            investment_horizon=investment_horizon[i],
+            liquid_savings=liquid_savings[i],
+            existing_debt=existing_debt[i],
+            dependents=int(dependents[i]),
+            emergency_fund_months=emergency_fund_months[i],
+            risk_tolerance=str(risk_tolerance[i]),
+        )
+        for i in range(n_samples)
+    ])
 
     if shift_feature and shift_feature in df.columns:
         df[shift_feature] = (df[shift_feature] * shift_multiplier) + shift_offset
@@ -160,9 +144,6 @@ def trigger_candidate_retrain(
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-    from model.registry.registry_store import compute_file_hash
-
-    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     candidate_id = f"candidate_{uuid.uuid4().hex[:8]}"
 
     if architecture.lower() in ["randomforest", "rf", "random_forest"]:
@@ -259,9 +240,6 @@ def trigger_candidate_retrain(
 
     else:
         raise ValueError(f"Retraining for architecture '{architecture}' not supported in automated trigger.")
-
-
-import hashlib
 
 
 def check_drift_and_trigger_retrain(

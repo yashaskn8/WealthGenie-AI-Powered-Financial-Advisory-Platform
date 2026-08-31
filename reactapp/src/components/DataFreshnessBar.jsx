@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { getMarketRates, refreshMarketRates } from '../services/api';
 
 /**
  * DataFreshnessBar — displays live/static data source indicators
@@ -8,8 +9,6 @@ import { RefreshCw, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
  * Green dot = live (derived from Yahoo Finance index data)
  * Amber dot = static (hardcoded, manually reviewed)
  */
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
-
 const DataFreshnessBar = ({ instruments = [] }) => {
   const [dataSources, setDataSources] = useState(null);
   const [refreshCooldown, setRefreshCooldown] = useState(false);
@@ -17,11 +16,8 @@ const DataFreshnessBar = ({ instruments = [] }) => {
 
   const fetchSources = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/market/rates`);
-      if (res.ok) {
-        const data = await res.json();
-        setDataSources(data);
-      }
+      const data = await getMarketRates();
+      setDataSources(data);
     } catch {
       // Graceful degradation — hide bar if market API is unavailable
     }
@@ -35,11 +31,7 @@ const DataFreshnessBar = ({ instruments = [] }) => {
     if (refreshCooldown) return;
     setRefreshing(true);
     try {
-      const token = localStorage.getItem('wg_token');
-      await fetch(`${API_BASE}/market/refresh`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await refreshMarketRates();
       // Start cooldown (60s)
       setRefreshCooldown(true);
       setTimeout(() => setRefreshCooldown(false), 60000);

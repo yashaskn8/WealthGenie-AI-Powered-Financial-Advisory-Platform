@@ -8,7 +8,6 @@ from typing import Dict, Any, List, Optional
 from llm.config import LLMConfig
 from llm.providers.base import BaseLLMProvider
 from llm.providers.local_loader import LocalLLMLoader
-from llm.schema import LLMMetadata
 
 logger = logging.getLogger("wealthgenie.llm.registry")
 
@@ -33,7 +32,23 @@ class LLMModelRegistry:
             quantization=self.config.quantization,
             cache_dir=self.config.cache_dir,
         )
-        self.register_provider(self.config.default_provider, provider, make_active=True)
+        self.register_provider(
+            self.config.default_provider,
+            provider,
+            make_active=provider.is_healthy(),
+        )
+
+        if not provider.is_healthy():
+            # Keep the configured provider visible as degraded, but never leave the
+            # public inference endpoints pointing at a backend that can only raise.
+            from llm.providers.mock_provider import MockLLMProvider
+
+            logger.warning(
+                "Configured LLM provider '%s' is unhealthy; activating the local "
+                "deterministic fallback provider.",
+                self.config.default_provider,
+            )
+            self.register_provider("mock", MockLLMProvider(), make_active=True)
 
     def register_provider(self, key: str, provider: BaseLLMProvider, make_active: bool = False) -> None:
         """Registers an LLM provider backend under a unique key."""
@@ -56,8 +71,17 @@ class LLMModelRegistry:
         """Switches the active LLM provider dynamically at runtime."""
         if key not in self._providers:
             logger.warning(f"Provider key '{key}' not found in registry. Loading on demand...")
-            provider = LocalLLMLoader.load_provider(provider_type=key, model_id=self.config.model_id)
+            try:
+                provider = LocalLLMLoader.load_provider(provider_type=key, model_id=self.config.model_id)
+            except ValueError as exc:
+                logger.warning("Rejected unknown provider '%s': %s", key, exc)
+                return False
             self.register_provider(key, provider)
+
+        provider = self._providers[key]
+        if not provider.is_healthy():
+            logger.warning("Refusing to activate unhealthy LLM provider '%s'.", key)
+            return False
 
         self._active_provider_key = key
         logger.info(f"Active LLM provider switched to '{key}'.")

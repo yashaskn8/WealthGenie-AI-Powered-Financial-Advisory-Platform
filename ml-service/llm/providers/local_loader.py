@@ -5,7 +5,7 @@ Handles inspection, device binding, quantization setup, and local model weight i
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Optional
 from llm.config import auto_detect_device
 from llm.providers.base import BaseLLMProvider
 from llm.providers.huggingface_provider import HuggingFaceLLMProvider
@@ -30,7 +30,7 @@ class LocalLLMLoader:
 
         logger.info(f"LocalLLMLoader initializing provider '{provider_type}' on device '{target_device}'...")
 
-        if provider_type == "huggingface":
+        if provider_type in {"huggingface", "local"}:
             return HuggingFaceLLMProvider(
                 model_id=model_id,
                 device=target_device,
@@ -38,8 +38,12 @@ class LocalLLMLoader:
                 cache_dir=cache_dir,
                 load_weights=True,
             )
-        elif provider_type == "api":
+        if provider_type == "api":
             from llm.providers.api_provider import APILLMProvider
             return APILLMProvider(model_name=model_id)
-        else:
+        if provider_type == "mock":
             return MockLLMProvider(model_name=model_id)
+        raise ValueError(
+            f"Unknown LLM provider type '{provider_type}'. "
+            "Valid providers are: mock, huggingface, local, api."
+        )

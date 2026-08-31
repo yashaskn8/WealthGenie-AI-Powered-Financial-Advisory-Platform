@@ -12,7 +12,7 @@ from llm.providers.api_provider import APILLMProvider
 from llm.providers.huggingface_provider import HuggingFaceLLMProvider
 from llm.providers.local_loader import LocalLLMLoader
 from llm.providers.mock_provider import MockLLMProvider
-from llm.registry import LLMModelRegistry, llm_registry
+from llm.registry import LLMModelRegistry
 from llm.schema import LLMGenerateRequest, LLMProviderType
 
 @pytest.fixture
@@ -83,9 +83,51 @@ def test_huggingface_llm_provider_fallback():
     assert res.provider == "huggingface"
 
 
+def test_huggingface_provider_disables_remote_code_execution(monkeypatch, tmp_path):
+    """Model repositories must never execute arbitrary Python during loading."""
+    import sys
+    import types
+
+    calls = {}
+
+    class FakeTokenizer:
+        @staticmethod
+        def from_pretrained(_path, **kwargs):
+            calls["tokenizer"] = kwargs
+            return object()
+
+    class FakeModelInstance:
+        def to(self, _device):
+            return self
+
+    class FakeModel:
+        @staticmethod
+        def from_pretrained(_path, **kwargs):
+            calls["model"] = kwargs
+            return FakeModelInstance()
+
+    fake_transformers = types.ModuleType("transformers")
+    fake_transformers.AutoTokenizer = FakeTokenizer
+    fake_transformers.AutoModelForCausalLM = FakeModel
+    fake_hub = types.ModuleType("huggingface_hub")
+    fake_hub.snapshot_download = lambda **_kwargs: str(tmp_path)
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub)
+
+    provider = HuggingFaceLLMProvider(model_id=str(tmp_path), device="cpu", load_weights=True)
+
+    assert provider.is_healthy()
+    assert calls["tokenizer"]["trust_remote_code"] is False
+    assert calls["model"]["trust_remote_code"] is False
+    assert calls["model"]["use_safetensors"] is True
+
+
 def test_local_llm_loader():
     provider = LocalLLMLoader.load_provider(provider_type="mock", model_id="Local-Mock-1B")
     assert provider.get_metadata().model_name == "Local-Mock-1B"
+
+    with pytest.raises(ValueError, match="Unknown LLM provider"):
+        LocalLLMLoader.load_provider(provider_type="typo-provider")
 
 
 def test_llm_model_registry():
@@ -137,3 +179,10 @@ def test_fastapi_llm_endpoints(client):
     res_switch = client.post("/llm/switch", json={"provider_key": "mock"}, headers={"X-Operator-Key": operator_key})
     assert res_switch.status_code == 200
     assert res_switch.json()["status"] == "success"
+
+    invalid_switch = client.post(
+        "/llm/switch",
+        json={"provider_key": "typo-provider"},
+        headers={"X-Operator-Key": operator_key},
+    )
+    assert invalid_switch.status_code == 400

@@ -5,8 +5,8 @@ Executes generation calls against external API LLM endpoints with complete paylo
 
 import logging
 import time
-from datetime import datetime
-from typing import Generator, Optional
+from datetime import datetime, timezone
+from typing import Generator
 
 from llm.providers.base import BaseLLMProvider
 from llm.schema import (
@@ -26,7 +26,7 @@ class APILLMProvider(BaseLLMProvider):
     def __init__(self, api_endpoint: str = "https://api.wealthgenie.ai/v1/chat", model_name: str = "wealthgenie-api-v1"):
         self.api_endpoint = api_endpoint
         self.model_name = model_name
-        self.loaded_at = datetime.utcnow().isoformat()
+        self.loaded_at = datetime.now(timezone.utc).isoformat()
 
     def generate(self, request: LLMGenerateRequest) -> LLMGenerateResponse:
         t0 = time.perf_counter()

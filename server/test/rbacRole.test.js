@@ -126,6 +126,7 @@ test('PROOF 3: POST /api/auth/register enforces default "user" role and ignores 
     const registerPayload = {
       name: 'Adversary User',
       email: uniqueEmail,
+      mobile: '9876543210',
       password: 'SecurePassword123!',
       role: 'admin', // Malicious attempt to self-elevate
     };
@@ -138,6 +139,7 @@ test('PROOF 3: POST /api/auth/register enforces default "user" role and ignores 
     assert.equal(response.status, 201, `Register failed with ${response.status}: ${JSON.stringify(body)}`);
     assert.ok(body.token);
     assert.equal(body.user.role, 'user');
+    assert.equal(body.user.mobile, registerPayload.mobile);
 
     // Decode token and verify role claim
     const decoded = jwt.verify(body.token, process.env.JWT_SECRET);
@@ -147,6 +149,7 @@ test('PROOF 3: POST /api/auth/register enforces default "user" role and ignores 
     const dbUser = await User.findOne({ email: uniqueEmail }).lean();
     assert.ok(dbUser);
     assert.equal(dbUser.role, 'user');
+    assert.equal(dbUser.mobile, registerPayload.mobile);
 
     await User.deleteOne({ email: uniqueEmail });
   });

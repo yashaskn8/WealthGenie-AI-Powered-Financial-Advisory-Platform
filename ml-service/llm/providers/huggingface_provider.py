@@ -4,8 +4,10 @@ Executes open-weight LLMs (Qwen, Llama, Mistral) via Transformers with auto-devi
 """
 
 import logging
+import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Generator, Optional, Any
 
 from llm.providers.base import BaseLLMProvider
@@ -36,7 +38,7 @@ class HuggingFaceLLMProvider(BaseLLMProvider):
         self.quantization = quantization
         self.cache_dir = cache_dir
         self.load_weights = load_weights
-        self.loaded_at = datetime.utcnow().isoformat()
+        self.loaded_at = datetime.now(timezone.utc).isoformat()
 
         self.tokenizer = None
         self.model = None
@@ -50,6 +52,7 @@ class HuggingFaceLLMProvider(BaseLLMProvider):
         """Loads model weights and tokenizer from Hugging Face hub or local cache."""
         try:
             import torch
+            from huggingface_hub import snapshot_download
             from transformers import AutoTokenizer, AutoModelForCausalLM
 
             logger.info(f"Loading Hugging Face model '{self.model_id}' on device '{self.device}'...")
@@ -67,19 +70,44 @@ class HuggingFaceLLMProvider(BaseLLMProvider):
                 elif self.quantization in ("bfloat16", "bf16") and hasattr(torch, "bfloat16"):
                     torch_dtype = torch.bfloat16
 
+            model_path = Path(self.model_id)
+            if model_path.exists():
+                resolved_model_path = str(model_path.resolve())
+            else:
+                snapshot_kwargs = {
+                    "repo_id": self.model_id,
+                    "cache_dir": str(self.cache_dir) if self.cache_dir else None,
+                }
+                try:
+                    resolved_model_path = snapshot_download(
+                        **snapshot_kwargs,
+                        local_files_only=True,
+                    )
+                except Exception as local_error:
+                    offline = os.environ.get("HF_HUB_OFFLINE", "").lower() in {"1", "true", "yes"}
+                    offline = offline or os.environ.get("TRANSFORMERS_OFFLINE", "").lower() in {"1", "true", "yes"}
+                    if offline:
+                        raise RuntimeError(
+                            f"Local model snapshot is unavailable while offline: {local_error}"
+                        ) from local_error
+                    resolved_model_path = snapshot_download(**snapshot_kwargs)
+
+            # Passing the resolved directory (rather than a repository ID) avoids
+            # tokenizer metadata network calls after a snapshot is already cached.
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_id,
-                cache_dir=str(self.cache_dir) if self.cache_dir else None,
-                trust_remote_code=True,
+                resolved_model_path,
+                local_files_only=True,
+                trust_remote_code=False,
             )
 
             # Auto model loading
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_id,
+                resolved_model_path,
                 torch_dtype=torch_dtype,
                 device_map="auto" if self.device != "cpu" else None,
-                cache_dir=str(self.cache_dir) if self.cache_dir else None,
-                trust_remote_code=True,
+                local_files_only=True,
+                trust_remote_code=False,
+                use_safetensors=True,
             )
 
             if self.device == "cpu" and hasattr(self.model, "to"):

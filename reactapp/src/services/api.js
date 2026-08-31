@@ -5,7 +5,7 @@
  * across page refreshes and SPA navigation (with standard XSS risk mitigated via CSP/sanitization).
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
 // Restore token from localStorage on module load (survives page reload)
 let authToken = localStorage.getItem('wg_token') || null;
@@ -80,7 +80,12 @@ async function request(method, path, data = null, options = {}, retries = 2) {
   if (data) config.body = JSON.stringify(data);
   try {
     const res = await fetch(url, config);
-    const json = await res.json();
+    let json = null;
+    try {
+      json = await res.json();
+    } catch {
+      // Some proxies and valid 204 responses do not return a JSON body.
+    }
 
     if (!res.ok) {
       if (res.status === 401) {
@@ -89,7 +94,10 @@ async function request(method, path, data = null, options = {}, retries = 2) {
           window.location.href = '/login';
         }
       }
-      throw new Error(json.error || `Request failed with status ${res.status}`);
+      const validationDetails = Array.isArray(json?.details) ? json.details.join(' ') : null;
+      throw new Error(
+        json?.message || validationDetails || json?.error || `Request failed with status ${res.status}`
+      );
     }
     return json;
   } catch (err) {
@@ -104,8 +112,8 @@ async function request(method, path, data = null, options = {}, retries = 2) {
 }
 
 // ─── AUTH ─────────────────────────────────────────────────
-export async function register(name, email, password) {
-  const data = await request('POST', '/auth/register', { name, email, password });
+export async function register(name, email, password, mobile) {
+  const data = await request('POST', '/auth/register', { name, email, password, mobile });
   if (data.token) setAuthToken(data.token);
   if (data.user) setUserInfo(data.user);
   return data;
@@ -224,14 +232,17 @@ export async function getProjections(profileId, instruments, monthlyInvestment, 
 
 // ─── MONTE CARLO ─────────────────────────────────────────
 export async function runMonteCarlo(instrument, monthlyInvestment, years, targetAmount, profileId = null, currentSavings = 0) {
-  return request('POST', '/montecarlo/montecarlo', {
+  const payload = {
     instrument,
     monthly_investment: monthlyInvestment,
     years,
-    target_amount: targetAmount || null,
-    profileId: profileId || null,
     current_savings: currentSavings || 0,
-  });
+  };
+  if (targetAmount !== null && targetAmount !== undefined && targetAmount !== '') {
+    payload.target_amount = targetAmount;
+  }
+  if (profileId) payload.profileId = profileId;
+  return request('POST', '/montecarlo/montecarlo', payload);
 }
 
 // ─── GOALS ───────────────────────────────────────────────
@@ -254,6 +265,15 @@ export async function deleteGoal(goalId) {
 // ─── HEALTH ──────────────────────────────────────────────
 export async function healthCheck() {
   return request('GET', '/health');
+}
+
+// ─── MARKET DATA ─────────────────────────────────────────
+export async function getMarketRates() {
+  return request('GET', '/market/rates');
+}
+
+export async function refreshMarketRates() {
+  return request('POST', '/market/refresh');
 }
 
 // ─── CHAT (Genie) ────────────────────────────────────────
@@ -300,7 +320,14 @@ export async function rebalancePortfolio(currentAllocation, targetAllocation, th
 }
 
 export async function updateRecommendationWeights(profileId, weights) {
-  return request('POST', '/recommend/weights', { profileId, weights });
+  const numericWeights = Object.fromEntries(
+    Object.entries(weights || {}).map(([key, value]) => [key, Math.max(0, Number(value) || 0)])
+  );
+  const total = Object.values(numericWeights).reduce((sum, value) => sum + value, 0);
+  const normalizedWeights = total > 0
+    ? Object.fromEntries(Object.entries(numericWeights).map(([key, value]) => [key, value / total]))
+    : numericWeights;
+  return request('POST', '/recommend/weights', { profileId, weights: normalizedWeights });
 }
 
 export async function optimisePortfolio(profileId, assets, strategy = 'max_sharpe') {
@@ -328,8 +355,9 @@ export async function computePostTaxReturnBatch(instruments, annualIncome, regim
 const api = {
   register, login, setAuthToken, getAuthToken, clearAuthToken,
   setUserInfo, getUserInfo,
-  buildProfile, getRecommendations, getInstruments, getProjections,
+  buildProfile, updateProfile, getRecommendations, getInstruments, getProjections,
   runMonteCarlo, createGoal, getGoals, updateGoal, deleteGoal, healthCheck,
+  getMarketRates, refreshMarketRates,
   sendChatMessage, getChatHistory, clearChatSession, rebalancePortfolio,
   updateRecommendationWeights, optimisePortfolio,
   computeTax, compareTax, computePostTaxReturn, computePostTaxReturnBatch,

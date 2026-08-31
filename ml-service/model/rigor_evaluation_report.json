@@ -1,4 +1,47 @@
 {
+  "formula_logic_overlap_audit": {
+    "labeler_math_terms": [
+      "age_factor",
+      "debt_burden",
+      "horizon_factor",
+      "risk_capacity",
+      "savings_factor",
+      "utility_score"
+    ],
+    "cfp_benchmark_math_terms": [
+      "100_minus_age",
+      "max_equity_pct",
+      "target_equity_score",
+      "willingness_weight"
+    ],
+    "shared_math_terms": [],
+    "labeler_decision_thresholds": [
+      0.25,
+      0.4,
+      0.55,
+      0.7,
+      0.85
+    ],
+    "cfp_decision_thresholds": [
+      0.1,
+      0.35,
+      0.4,
+      0.5,
+      0.65,
+      3.0,
+      4.0,
+      5.0,
+      55.0,
+      60.0
+    ],
+    "shared_decision_thresholds": [
+      0.4
+    ],
+    "formula_overlap_percentage": 0.0,
+    "decision_threshold_overlap_percentage": 7.14,
+    "audit_finding": "0.00% math formula overlap. The independent CFP benchmark uses 100-minus-age allocation logic and stated tolerance, completely decoupled from label_construction.py utility equations.",
+    "disclosure_note": "Formula term sets and decision boundary constants are manually extracted from function source code, not dynamically auto-parsed via AST."
+  },
   "metric_reframe": {
     "original_claimed_metric": "97.05% Prediction Accuracy (FT-Transformer)",
     "reframed_metric_name": "Rule-Approximation Fidelity",
@@ -88,6 +131,7 @@
         0.4
       ],
       "formula_overlap_percentage": 0.0,
+      "decision_threshold_overlap_percentage": 7.14,
       "audit_finding": "0.00% math formula overlap. The independent CFP benchmark uses 100-minus-age allocation logic and stated tolerance, completely decoupled from label_construction.py utility equations.",
       "disclosure_note": "Formula term sets and decision boundary constants are manually extracted from function source code, not dynamically auto-parsed via AST."
     }

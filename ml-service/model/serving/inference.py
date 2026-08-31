@@ -8,7 +8,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 
 import joblib
 import numpy as np
@@ -116,7 +116,9 @@ class MLPPredictor(BasePredictor):
         config = PyTorchModelConfig(**model_config) if model_config else PyTorchModelConfig()
 
         self.model = FinancialMLP(config).to(self.device)
-        self.model.load_state_dict(torch.load(self.paths.model_weights, map_location=self.device))
+        self.model.load_state_dict(
+            torch.load(self.paths.model_weights, map_location=self.device, weights_only=True)
+        )
         self.model.eval()
         self._is_loaded = True
         logger.info(f"MLPPredictor loaded successfully from {self.paths.model_weights} on {self.device}.")
@@ -182,7 +184,9 @@ class FTTransformerPredictor(BasePredictor):
         self.preprocessor.load(self.scaler_path)
         config = FTTransformerConfig()
         self.model = FTTransformer(config).to(self.device)
-        self.model.load_state_dict(torch.load(self.weights_path, map_location=self.device))
+        self.model.load_state_dict(
+            torch.load(self.weights_path, map_location=self.device, weights_only=True)
+        )
         self.model.eval()
         self._is_loaded = True
         logger.info(f"FTTransformerPredictor loaded successfully from {self.weights_path} on {self.device}.")

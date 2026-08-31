@@ -73,6 +73,7 @@ services:
       - PORT=8000
       - ENVIRONMENT=production
       - ML_SERVICE_API_KEY=${ML_SERVICE_API_KEY:-}
+      - ML_OPERATOR_KEY=${ML_OPERATOR_KEY:-}
       - MONGODB_URI=mongodb://mongodb:27017/wealthgenie
     depends_on:
       mongodb:

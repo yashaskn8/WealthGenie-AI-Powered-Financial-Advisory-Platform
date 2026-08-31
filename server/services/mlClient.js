@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { trace } from '@opentelemetry/api';
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
-const ML_API_KEY = process.env.ML_SERVICE_API_KEY || '';
+const getMlServiceUrl = () => (process.env.ML_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '');
+const getMlApiKey = () => process.env.ML_SERVICE_API_KEY || '';
 
 function getTracingHeaders(correlationId = null) {
   const headers = {};
@@ -20,10 +20,6 @@ function getTracingHeaders(correlationId = null) {
     }
   }
   return headers;
-}
-
-if (!ML_API_KEY) {
-  console.warn('[MLClient] ML_SERVICE_API_KEY is not set. Inter-service requests will not include an API key. Set this variable in production.');
 }
 
 const ML_TIMEOUT_MS = 5000;
@@ -81,8 +77,11 @@ export async function getMLPrediction(profileData, correlationId = null, userId 
   const effectiveUserId = userId || profileData.userId;
 
   try {
+    const mlServiceUrl = getMlServiceUrl();
+    const mlApiKey = getMlApiKey();
     const mlEndpoint = process.env.ML_MODEL_ENDPOINT || '/predict/enriched';
-    const res = await axios.post(`${ML_SERVICE_URL}${mlEndpoint}`, {
+    const normalizedEndpoint = mlEndpoint.startsWith('/') ? mlEndpoint : `/${mlEndpoint}`;
+    const res = await axios.post(`${mlServiceUrl}${normalizedEndpoint}`, {
       age: profileData.age,
       annual_income: profileData.annual_income,
       monthly_savings: profileData.monthly_savings,
@@ -98,7 +97,7 @@ export async function getMLPrediction(profileData, correlationId = null, userId 
     }, {
       timeout: ML_TIMEOUT_MS,
       headers: {
-        ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
+        ...(mlApiKey ? { 'X-API-Key': mlApiKey } : {}),
         ...(effectiveUserId ? { 'X-Verified-User-Id': String(effectiveUserId) } : {}),
         ...(userRole ? { 'X-Verified-User-Role': String(userRole) } : {}),
         ...getTracingHeaders(correlationId),
@@ -119,10 +118,12 @@ export async function getMLPrediction(profileData, correlationId = null, userId 
 
 export async function checkMLHealth(correlationId = null) {
   try {
-    const res = await axios.get(`${ML_SERVICE_URL}/health`, {
+    const mlServiceUrl = getMlServiceUrl();
+    const mlApiKey = getMlApiKey();
+    const res = await axios.get(`${mlServiceUrl}/health`, {
       timeout: 3000,
       headers: {
-        ...(ML_API_KEY ? { 'X-API-Key': ML_API_KEY } : {}),
+        ...(mlApiKey ? { 'X-API-Key': mlApiKey } : {}),
         ...getTracingHeaders(correlationId),
       }
     });
@@ -133,7 +134,6 @@ export async function checkMLHealth(correlationId = null) {
 export function getRuleBasedFallback({ age, annual_income, monthly_savings, risk_category }) {
   const safeAge = Number(age) || 30;
   const safeIncome = Number(annual_income) || 600000;
-  const safeSavings = Number(monthly_savings) || 10000;
   const safeRisk = risk_category || 'Moderate';
 
   let primary, secondary, tertiary;
@@ -144,7 +144,6 @@ export function getRuleBasedFallback({ age, annual_income, monthly_savings, risk
   // Mid income (5-20L): balanced growth (ETF, Equity_MF)
   // Low income (<5L): safety-first (PPF, FD, Debt_MF)
   const isHighIncome = safeIncome >= 2000000;
-  const isMidIncome = safeIncome >= 500000 && safeIncome < 2000000;
   const isYoung = safeAge < 35;
   const isSenior = safeAge >= 55;
 

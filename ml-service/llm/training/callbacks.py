@@ -4,19 +4,27 @@ Provides custom Hugging Face Trainer callbacks for metrics tracking and loss tra
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from transformers import TrainerCallback
 from llm.training.schema import TrainingMetricsStep
 
 logger = logging.getLogger("wealthgenie.llm.training.callbacks")
 
 
-class MetricsTrackingCallback:
+class MetricsTrackingCallback(TrainerCallback):
     """Tracks training loss, learning rate, and step progression during fine-tuning."""
 
     def __init__(self):
         self.history: List[TrainingMetricsStep] = []
 
-    def on_log(self, args: Any, state: Any, control: Any, logs: Dict[str, Any] = None, **kwargs) -> None:
+    def on_log(
+        self,
+        args: Any,
+        state: Any,
+        control: Any,
+        logs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> None:
         """Called whenever Trainer logs metrics."""
         if logs and "loss" in logs:
             step = state.global_step

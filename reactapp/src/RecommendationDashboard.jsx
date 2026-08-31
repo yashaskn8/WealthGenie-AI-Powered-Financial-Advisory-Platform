@@ -8,7 +8,7 @@ import { INSTRUMENT_EXPLAINERS, CARD_SUBTITLES, RISK_PLAIN_LABELS, getLockInWarn
 import SebiDisclaimer from './components/SebiDisclaimer';
 import { formatCompactINR } from './utils/indianNumberFormat';
 import JargonTooltip from './components/JargonTooltip';
-import { computeSuitabilityMatch } from './ComparisonTableModal';
+import { computeSuitabilityMatch } from './utils/suitabilityMatch';
 
 import './Dashboard.css';
 

@@ -144,7 +144,7 @@ function AuthPage() {
 
     setIsRegistering(true);
     try {
-      await api.register(regName, regEmail, regPassword);
+      await api.register(regName, regEmail, regPassword, regMobile);
       // Clear any stale financial profile from a previous user session
       localStorage.removeItem(PROFILE_STORAGE_KEY);
       setIsRegistering(false);

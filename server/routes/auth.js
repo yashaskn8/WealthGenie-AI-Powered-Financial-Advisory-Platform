@@ -15,7 +15,7 @@ const router = Router();
  * Creates a new user account and returns a JWT.
  */
 router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, mobile } = req.body;
 
   // SECURITY: Hash password FIRST, before checking email existence.
   // This ensures both "email exists" and "email new" paths take the same ~250ms
@@ -31,7 +31,7 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
   // requests both pass the findOne check but only one can insert (unique index).
   let user;
   try {
-    user = await User.create({ name: name.trim(), email, passwordHash });
+    user = await User.create({ name: name.trim(), email, mobile, passwordHash });
   } catch (err) {
     if (err.code === 11000) {
       // MongoDB duplicate key error — concurrent registration with same email
@@ -53,6 +53,7 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
       id: user._id,
       name: user.name,
       email: user.email,
+      mobile: user.mobile,
       role: user.role,
       createdAt: user.createdAt,
     },
@@ -100,6 +101,7 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      mobile: user.mobile,
       role: user.role || 'user',
       createdAt: user.createdAt,
     },

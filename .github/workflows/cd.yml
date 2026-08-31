@@ -79,10 +79,12 @@ jobs:
           echo "Injecting ephemeral test secrets for Kind validation cluster..."
           EPHEMERAL_JWT=$(openssl rand -hex 32)
           EPHEMERAL_ML_KEY=$(openssl rand -hex 16)
+          EPHEMERAL_ML_OPERATOR_KEY=$(openssl rand -hex 16)
           kubectl create secret generic wealthgenie-secrets -n wealthgenie \
             --from-literal=JWT_SECRET="$EPHEMERAL_JWT" \
             --from-literal=GEMINI_API_KEY="ci-mock-gemini-key" \
             --from-literal=ML_SERVICE_API_KEY="$EPHEMERAL_ML_KEY" \
+            --from-literal=ML_OPERATOR_KEY="$EPHEMERAL_ML_OPERATOR_KEY" \
             --from-literal=MONGODB_URI="mongodb://wealthgenie-mongodb.wealthgenie.svc.cluster.local:27017/wealthgenie" \
             --dry-run=client -o yaml | kubectl apply -f -
 

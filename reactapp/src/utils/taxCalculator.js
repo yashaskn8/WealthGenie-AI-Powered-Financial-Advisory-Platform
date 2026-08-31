@@ -11,6 +11,8 @@
  * Do NOT add slab computation here.
  */
 
+import { computeTax } from '../services/api.js';
+
 // ─── Display Constants (not computation — safe to keep client-side) ──
 export const SECTION_80C_LIMIT = 150000;
 export const SECTION_80CCD_1B_LIMIT = 50000;
@@ -39,16 +41,7 @@ export function formatTaxBreakdown(taxApiResponse) {
  * @returns {Promise<Object>} Tax breakdown from server/services/taxEngine.js
  */
 export async function fetchTaxComputation(annualIncome, regime = 'new') {
-  const token = localStorage.getItem('wg_token');
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
-  const res = await fetch(`${API_BASE}/tax/compute?income=${annualIncome}&regime=${regime}`, {
-    method: 'GET',
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-  });
-  if (!res.ok) throw new Error('Tax computation failed');
-  return res.json();
+  return computeTax(annualIncome, regime);
 }
 
 /**

@@ -4,9 +4,10 @@ Exposes enterprise RAG endpoints with rate-limiting, error handling, security he
 """
 
 import logging
+import threading
 import time
-from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from typing import Dict, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from rag.config import RAGConfig
@@ -37,25 +38,27 @@ query_pipeline = RAGPipeline(
 
 # In-memory simple rate limiting: IP -> List of request timestamps
 _RATE_LIMIT_STORE: Dict[str, List[float]] = {}
+_RATE_LIMIT_LOCK = threading.Lock()
 MAX_REQUESTS_PER_MINUTE = 60
 
 
 def check_rate_limit(client_ip: str) -> None:
     """Enforces simple sliding window rate limiting (60 requests/minute)."""
-    now = time.time()
-    timestamps = _RATE_LIMIT_STORE.get(client_ip, [])
-    # Filter timestamps within last 60s
-    recent = [t for t in timestamps if now - t < 60.0]
+    now = time.monotonic()
+    with _RATE_LIMIT_LOCK:
+        timestamps = _RATE_LIMIT_STORE.get(client_ip, [])
+        # Filter timestamps within last 60s. monotonic() is immune to wall-clock changes.
+        recent = [t for t in timestamps if now - t < 60.0]
 
-    if len(recent) >= MAX_REQUESTS_PER_MINUTE:
-        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded. Maximum 60 requests per minute allowed.",
-        )
+        if len(recent) >= MAX_REQUESTS_PER_MINUTE:
+            logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Rate limit exceeded. Maximum 60 requests per minute allowed.",
+            )
 
-    recent.append(now)
-    _RATE_LIMIT_STORE[client_ip] = recent
+        recent.append(now)
+        _RATE_LIMIT_STORE[client_ip] = recent
 
 
 
@@ -221,5 +224,3 @@ def reconcile_documents(
     return lifecycle_manager.reconcile_registry_and_vector_store(
         requesting_user_id=verified_user_id
     )
-
-

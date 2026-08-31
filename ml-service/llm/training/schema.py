@@ -3,7 +3,7 @@ WealthGenie Open-Weight LLM Platform - Fine-Tuning Schemas
 Defines configuration objects for LoRA/QLoRA parameters, training hyperparameters, and training audit reports.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import List
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -37,6 +37,10 @@ class FineTuningConfig(BaseModel):
     fp16: bool = Field(True, description="Enable FP16 mixed precision training")
     bf16: bool = Field(False, description="Enable BF16 mixed precision training")
     use_qlora: bool = Field(True, description="Enable 4-bit QLoRA quantization via bitsandbytes")
+    simulation_mode: bool = Field(
+        False,
+        description="Create deterministic test artifacts without loading or training a model",
+    )
     gradient_checkpointing: bool = Field(True, description="Enable gradient checkpointing to save GPU VRAM")
     lora: LoRAConfigSchema = Field(default_factory=LoRAConfigSchema, description="LoRA adapter configuration")
 
