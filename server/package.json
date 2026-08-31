@@ -16,6 +16,7 @@
     "typecheck": "node --check server.js",
     "loadtest": "node scripts/loadtest.js",
     "seed": "node config/seedInstruments.js",
+    "catalog:sync": "node scripts/syncFrontendCatalog.js",
     "eval": "node scripts/run-eval.js"
   },
   "dependencies": {

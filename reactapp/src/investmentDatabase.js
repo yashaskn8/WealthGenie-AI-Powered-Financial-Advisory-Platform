@@ -1,7 +1,9 @@
 /**
- * WealthGenie — Frontend Authoritative Investment Catalog
+ * WealthGenie — Generated Frontend Investment Catalog Adapter
  * ──────────────────────────────────────────────────────
- * Adapts the canonical JSON master database for the React frontend.
+ * Adapts the committed frontend mirror generated from the canonical backend
+ * file at server/data/investment_master.json. Never edit the mirror directly;
+ * run `npm run catalog:sync` from server and commit both files.
  * Dynamically loads investment_master.json and flattens properties
  * to maintain 100% backward compatibility with all UI pages, charts,
  * comparison modals, and local recommendation engines.

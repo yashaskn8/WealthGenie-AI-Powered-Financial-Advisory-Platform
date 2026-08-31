@@ -27,18 +27,16 @@ test('PROOF 4: Catalog Content & Byte Parity Guard between server and reactapp',
     `[CATALOG DRIFT CRITICAL DEFECT] server/data/investment_master.json and reactapp/src/data/investment_master.json have diverged!\n` +
     `Server catalog SHA256:   ${serverHash}\n` +
     `Reactapp catalog SHA256: ${reactappHash}\n` +
-    `HOW TO RESYNC:\n` +
-    `  1. Identify which file contains the authoritative changes.\n` +
-    `  2. Copy the authoritative file to both locations:\n` +
-    `     cp server/data/investment_master.json reactapp/src/data/investment_master.json\n` +
-    `  3. Run: npm test in server and reactapp to confirm parity.`
+    `The backend catalog is authoritative. Do not edit the frontend mirror.\n` +
+    `HOW TO RESYNC: cd server && npm run catalog:sync\n` +
+    `Then run the server and frontend test suites.`
   );
 
   // Deep JSON structural equality check
   const serverJson = JSON.parse(serverContent);
   const reactappJson = JSON.parse(reactappContent);
   assert.equal(serverJson.instruments.length, 155, 'Master catalog must contain 155 instruments');
-  assert.deepEqual(serverJson, reactappJson, 'Master catalog JSON structures must be identical');
+  assert.deepEqual(serverJson, reactappJson, 'Generated frontend mirror must match the authoritative backend catalog');
 });
 
 test('PROOF 4 Guard Verification: Parity guard detects artificially injected discrepancy', () => {
