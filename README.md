@@ -256,6 +256,36 @@ npm run dev
 
 The application client runs at `http://localhost:5173`.
 
+### Direct production processes (without Docker)
+
+Run MongoDB and Redis as managed services or operating-system services, set
+`NODE_ENV=production`, use strong secrets, and configure the public frontend origin in
+`CORS_ORIGINS` using HTTPS. Set a unique `METRICS_TOKEN`; Redis is a required production
+dependency by default because session revocation fails closed. Build the frontend once
+and run the API as a supervised Node process:
+
+```bash
+cd reactapp
+npm ci
+npm run build
+
+cd ../server
+npm ci --omit=dev
+npm start
+```
+
+The API separates Express construction from process startup, maintains explicit
+starting/ready/draining/stopped lifecycle state, validates HTTP and MongoDB pool bounds,
+and shuts down HTTP traffic, MongoDB, Redis, tracing, and scheduled jobs cleanly. Cookie
+sessions are HttpOnly and bound to mutating requests with a double-submit CSRF token plus
+an exact production-origin check. Readiness fails when critical dependencies are down,
+admission control rejects excess concurrency before saturation, and HTTP metrics use
+bounded method/status labels to avoid high-cardinality telemetry.
+
+Expose `GET /api/metrics` only to an administrator or send the dedicated secret in the
+`X-Metrics-Token` header from the monitoring agent. Do not reuse the JWT or ML service
+secrets for metrics collection.
+
 ---
 
 ## Docker Deployment

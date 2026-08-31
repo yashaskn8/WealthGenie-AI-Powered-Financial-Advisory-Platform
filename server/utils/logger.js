@@ -15,14 +15,27 @@ import { createLogger, format, transports } from 'winston';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const redactSecrets = format((info) => {
-  // Strip any keys that could contain secrets from metadata
-  const SENSITIVE_KEYS = ['password', 'secret', 'token', 'apiKey', 'api_key', 'authorization'];
-  for (const key of Object.keys(info)) {
-    if (SENSITIVE_KEYS.some(s => key.toLowerCase().includes(s))) {
-      info[key] = '[REDACTED]';
-    }
+const SENSITIVE_KEY = /(password|secret|token|api[_-]?key|authorization|cookie|credential)/i;
+
+function redactString(value) {
+  return value
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]')
+    .replace(/(mongodb(?:\+srv)?:\/\/)[^\s/@]+(?::[^\s/@]*)?@/gi, '$1[REDACTED]@');
+}
+
+function redactValue(value, seen, depth = 0) {
+  if (typeof value === 'string') return redactString(value);
+  if (!value || typeof value !== 'object' || depth > 8 || seen.has(value)) return value;
+  seen.add(value);
+  for (const key of Object.keys(value)) {
+    if (SENSITIVE_KEY.test(key)) value[key] = '[REDACTED]';
+    else value[key] = redactValue(value[key], seen, depth + 1);
   }
+  return value;
+}
+
+const redactSecrets = format((info) => {
+  redactValue(info, new WeakSet());
   return info;
 });
 

@@ -159,24 +159,3 @@ export function createError(status, message, clientMessage) {
   if (clientMessage) err.clientMessage = clientMessage;
   return err;
 }
-
-// Catch unhandled promise rejections — prevents silent failures
-process.on('unhandledRejection', (reason) => {
-  console.error(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    category: 'UNHANDLED_REJECTION',
-    message: String(reason),
-    stack: reason?.stack,
-  }));
-});
-
-// Catch uncaught exceptions — log and terminate immediately so process managers can restart
-process.on('uncaughtException', (err) => {
-  console.error(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    category: 'UNCAUGHT_EXCEPTION',
-    message: err.message,
-    stack: err.stack,
-  }));
-  process.exit(1);
-});

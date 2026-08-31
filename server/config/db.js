@@ -4,12 +4,14 @@ import logger from '../utils/logger.js';
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 2000;
 
-const connectDB = async (retries = MAX_RETRIES) => {
+const connectDB = async ({
+  uri = process.env.MONGODB_URI,
+  retries = MAX_RETRIES,
+  options = {},
+} = {}) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const conn = await mongoose.connect(process.env.MONGODB_URI, {
-        autoIndex: true,
-      });
+      const conn = await mongoose.connect(uri, options);
       logger.info('MongoDB connected', { host: conn.connection.host });
       return conn;
     } catch (error) {
@@ -18,7 +20,7 @@ const connectDB = async (retries = MAX_RETRIES) => {
           attempts: retries,
           message: error.message,
         });
-        process.exit(1);
+        throw error;
       }
       const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
       logger.warn('MongoDB connection attempt failed, retrying', {

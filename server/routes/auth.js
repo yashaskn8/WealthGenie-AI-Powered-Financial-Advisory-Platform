@@ -1,14 +1,27 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import User from '../models/User.js';
 import { validate, registerSchema, loginSchema } from '../validation/schemas.js';
 import { asyncHandler, createError } from '../middleware/errorHandler.js';
 import { verifyJWT } from '../middleware/authMiddleware.js';
 import { blacklistToken } from '../config/redis.js';
+import {
+  clearAuthCookies,
+  createSessionToken,
+  ensureCsrfCookie,
+  setAuthCookies,
+  shouldExposeBearerToken,
+} from '../services/authSession.js';
 
 const router = Router();
+
+// Authentication responses can contain session-derived identity data and must
+// never be stored by browsers, proxies, or shared caches.
+router.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
 
 /**
  * POST /api/auth/register
@@ -40,15 +53,12 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
     throw err; // Re-throw non-duplicate errors
   }
 
-  const jti = crypto.randomUUID();
-  const token = jwt.sign(
-    { userId: user._id, email: user.email, role: user.role, jti },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+  const token = createSessionToken(user);
+  const csrfToken = setAuthCookies(res, token);
 
   res.status(201).json({
-    token,
+    ...(shouldExposeBearerToken() ? { token } : {}),
+    csrfToken,
     user: {
       id: user._id,
       name: user.name,
@@ -88,15 +98,12 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
     throw createError(401, `Failed login for email: ${email}`, INVALID_CREDS);
   }
 
-  const jti = crypto.randomUUID();
-  const token = jwt.sign(
-    { userId: user._id, email: user.email, role: user.role || 'user', jti },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+  const token = createSessionToken(user);
+  const csrfToken = setAuthCookies(res, token);
 
   res.json({
-    token,
+    ...(shouldExposeBearerToken() ? { token } : {}),
+    csrfToken,
     user: {
       id: user._id,
       name: user.name,
@@ -113,6 +120,7 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req, res) => {
  * Revokes the current user's session JWT.
  */
 router.post('/logout', verifyJWT, asyncHandler(async (req, res) => {
+  clearAuthCookies(res);
   const { jti, exp } = req.user;
   if (jti && exp) {
     const remainingTime = exp - Math.floor(Date.now() / 1000);
@@ -121,6 +129,30 @@ router.post('/logout', verifyJWT, asyncHandler(async (req, res) => {
     }
   }
   res.json({ message: 'Logout successful.' });
+}));
+
+/**
+ * GET /api/auth/session [Protected]
+ * Restores the authenticated browser session without exposing the JWT.
+ */
+router.get('/session', verifyJWT, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.userId).lean();
+  if (!user) {
+    clearAuthCookies(res);
+    throw createError(401, `Session user not found: ${req.user.userId}`, 'Session is no longer valid.');
+  }
+  const csrfToken = ensureCsrfCookie(req, res);
+  res.json({
+    csrfToken,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      role: user.role || 'user',
+      createdAt: user.createdAt,
+    },
+  });
 }));
 
 export default router;

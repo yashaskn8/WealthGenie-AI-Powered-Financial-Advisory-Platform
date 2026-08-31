@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
 import genieVideo from '../assets/genie.mp4';
-import * as api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const PROFILE_STORAGE_KEY = 'wealthgenie_user_profile';
 
@@ -13,6 +13,7 @@ function AuthPage() {
   const [showPopup, setShowPopup] = useState(false);
   const videoRef = useRef(null);
   const navigate = useNavigate();
+  const { login, register } = useAuth();
 
   // ===== Registration State =====
   const [regName, setRegName] = useState('');
@@ -99,7 +100,7 @@ function AuthPage() {
     btn.style.pointerEvents = 'none';
 
     try {
-      await api.login(emailInput, passwordInput);
+      await login(emailInput, passwordInput);
       btn.textContent = originalText;
       btn.style.opacity = '1';
       btn.style.pointerEvents = 'auto';
@@ -144,7 +145,7 @@ function AuthPage() {
 
     setIsRegistering(true);
     try {
-      await api.register(regName, regEmail, regPassword, regMobile);
+      await register(regName, regEmail, regPassword, regMobile);
       // Clear any stale financial profile from a previous user session
       localStorage.removeItem(PROFILE_STORAGE_KEY);
       setIsRegistering(false);

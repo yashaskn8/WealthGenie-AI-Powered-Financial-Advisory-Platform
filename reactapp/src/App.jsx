@@ -7,6 +7,7 @@ import GenieChat from './components/GenieChat';
 import ErrorBoundary from './components/ErrorBoundary';
 import { generateRecommendations, getEligibleInvestments } from './recommendationEngine';
 import * as api from './services/api';
+import { useAuth } from './context/AuthContext';
 import { assertKnownBackendInstrumentTypes, backendToLocalInstrument, localToBackendInstrument } from './utils/instrumentTypeMap';
 import { investmentDatabase } from './investmentDatabase';
 
@@ -31,6 +32,7 @@ const LandingPage = lazy(() => import('./LandingPage'));
 /* ===== DASHBOARD SHELL - Sidebar + Pages + Chatbot ===== */
 const DashboardShell = ({ userProfile, onProfileUpdate }) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
   const [deepDiveInvestment, setDeepDiveInvestment] = useState(null);
   const [showComparisonTable, setShowComparisonTable] = useState(false);
@@ -100,7 +102,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
 
   const handleLogout = async () => {
     try {
-      await api.logout();
+      await logout();
     } finally {
       // The local session is cleared by api.logout even when the server is offline.
       navigate('/login', { replace: true });
@@ -406,8 +408,11 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
 };
 
 function AuthGuard({ children }) {
-  const token = api.getAuthToken();
-  if (!token) {
+  const { isAuthenticated, isInitializing } = useAuth();
+  if (isInitializing) {
+    return <div role="status" aria-live="polite" className="route-loading">Restoring secure session...</div>;
+  }
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;

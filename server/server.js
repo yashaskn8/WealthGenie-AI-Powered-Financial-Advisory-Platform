@@ -1,235 +1,171 @@
 import 'dotenv/config';
-import './config/tracing.js';
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import mongoSanitize from 'express-mongo-sanitize';
-import crypto from 'crypto';
+import tracingSdk from './config/tracing.js';
+import { createServer as createHttpServer } from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
+import { createApp } from './app.js';
 import connectDB from './config/db.js';
-import logger, { morganStream } from './utils/logger.js';
-import { connectRedis, redisClient } from './config/redis.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import authRoutes from './routes/auth.js';
-import profileRoutes from './routes/profile.js';
-import recommendRoutes from './routes/recommend.js';
-import instrumentRoutes from './routes/instruments.js';
-import projectionRoutes from './routes/projection.js';
-import montecarloRoutes from './routes/montecarlo.js';
-import goalRoutes from './routes/goals.js';
-import marketRoutes from './routes/market.js';
-import taxRoutes from './routes/tax.js';
-import chatRoutes from './routes/chatRoutes.js';
-import portfolioRoutes from './routes/portfolio.js';
-import regimeRoutes from './routes/regime.js';
-import metricsRoutes from './routes/metricsRoutes.js';
-import mcpRoutes from './routes/mcpRouter.js';
-import { enforceJsonContentType } from './middleware/contentType.js';
-import { correlationIdMiddleware } from './middleware/correlation.js';
-import healthRoutes from './routes/health.js';
-import { startMarketDataRefreshJobs } from './jobs/marketDataRefresh.js';
+import { connectRedis, redisAvailable, redisClient } from './config/redis.js';
+import { getRuntimeConfig, assertValidRuntimeConfig } from './config/runtime.js';
+import { validateEnvironmentConfig } from './config/validateEnv.js';
+import { startMarketDataRefreshJobs, stopMarketDataRefreshJobs } from './jobs/marketDataRefresh.js';
+import logger from './utils/logger.js';
+import { createRuntimeState } from './services/runtimeState.js';
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+let server = null;
+let shuttingDown = false;
+let processHandlersInstalled = false;
+const runtimeState = createRuntimeState();
+let activeConfig = null;
 
-// ── Security Headers (Helmet) ────────────────────────────────────
-// BEGINNER NOTE: Helmet is a collection of middleware functions that set HTTP headers.
-// These headers protect the app from well-known web vulnerabilities (e.g. Clickjacking,
-// cross-site scripting/XSS attacks, and sniffing) by telling the browser how to behave.
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  crossOriginOpenerPolicy: { policy: 'unsafe-none' },
-  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "https://generativelanguage.googleapis.com", "https://api.groq.com"],
-    }
-  } : false, // Vite dev server injects inline scripts in development
-}));
-
-// ── CORS (Cross-Origin Resource Sharing) ─────────────────────────
-// BEGINNER NOTE: By default, browsers prevent scripts on one website (e.g., http://localhost:5173)
-// from making requests to an API hosted on another domain/port (e.g., http://localhost:5000).
-// CORS middleware allows the server to explicitly list which frontend domains (origins)
-// are allowed to send requests and read responses.
-const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://localhost:3000'];
-const configuredOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
-  : [];
-const ALLOWED_ORIGINS = configuredOrigins.length > 0
-  ? configuredOrigins
-  : DEFAULT_ALLOWED_ORIGINS;
-app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
-
-// ── Correlation ID Middleware ────────────────────────────────────
-// Assigns a unique X-Correlation-ID tracing token to every request
-app.use(correlationIdMiddleware);
-
-// ── Content-Type Enforcement & Body Parsing ──────────────────────
-// Strictly validate that POST, PUT, and PATCH requests use application/json
-app.use(enforceJsonContentType);
-
-// Parse incoming request bodies with JSON payloads, limiting payload to 100kb
-// to prevent Denial of Service (DoS) attacks from sending huge payloads.
-app.use(express.json({ limit: '100kb' }));
-
-// ── NoSQL Injection Prevention ───────────────────────────────────
-app.use(mongoSanitize());
-
-// ── Request Logging ──────────────────────────────────────────────
-// Morgan pipes HTTP request logs through Winston for structured output.
-if (process.env.NODE_ENV !== 'test' && process.env.DISABLE_HTTP_LOGGING !== 'true' && process.env.DISABLE_RATE_LIMIT !== 'true') {
-  app.use(morgan('short', { stream: morganStream }));
+function configureHttpServer(httpServer, config) {
+  httpServer.requestTimeout = config.http.requestTimeoutMs;
+  httpServer.headersTimeout = config.http.headersTimeoutMs;
+  httpServer.keepAliveTimeout = config.http.keepAliveTimeoutMs;
+  httpServer.maxRequestsPerSocket = 1000;
 }
 
-// ── Performance Monitoring Middleware ────────────────────────────
-app.use((req, res, next) => {
-  req._startTime = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - req._startTime;
-    if (duration > 3000) {
-      logger.warn('Slow request detected', { correlationId: req.correlationId, method: req.method, path: req.originalUrl, durationMs: duration });
-    }
+function closeHttpServer(httpServer) {
+  if (!httpServer?.listening) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    httpServer.close(error => error ? reject(error) : resolve());
+    httpServer.closeIdleConnections?.();
   });
-  next();
-});
+}
 
-// ── Rate Limiting (Redis-backed with dynamic memory fallback) ────
-import { authLimiter, apiLimiter } from './middleware/rateLimiter.js';
+async function closeInfrastructure() {
+  stopMarketDataRefreshJobs();
+  const closers = [];
+  if (mongoose.connection.readyState !== 0) closers.push(mongoose.connection.close());
+  if (redisClient?.isOpen) closers.push(redisClient.quit());
+  closers.push(tracingSdk.shutdown());
+  await Promise.allSettled(closers);
+}
 
-app.use('/api/auth', authLimiter);
-app.use('/api', apiLimiter);
-
-// ── Health Routes ────────────────────────────────────────────────
-app.use('/health', healthRoutes);
-
-// ── Root-level health aliases for Railway / container probes ─────
-app.get('/ready', (req, res) => res.redirect(307, '/health/ready'));
-app.get('/live', (req, res) => res.redirect(307, '/health/live'));
-app.get('/healthz', (req, res) => res.status(200).json({ status: 'ALIVE', uptime_seconds: Math.round(process.uptime()), timestamp: new Date().toISOString() }));
-app.get('/readyz', (req, res) => { if (mongoose.connection.readyState !== 1) { return res.status(503).json({ status: 'NOT_READY', reason: 'Database not connected' }); } res.status(200).json({ status: 'READY', timestamp: new Date().toISOString() }); });
-
-// ── Routes ───────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/recommend', recommendRoutes);
-app.use('/api/instruments', instrumentRoutes);
-app.use('/api/projection', projectionRoutes);
-app.use('/api/montecarlo', montecarloRoutes);
-app.use('/api/goals', goalRoutes);
-app.use('/api/market', marketRoutes);
-app.use('/api/tax', taxRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/regime', regimeRoutes);
-app.use('/api/metrics', metricsRoutes);
-app.use('/api/mcp', mcpRoutes);
-
-// ── Health Check (Detailed) ──────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  const memUsage = process.memoryUsage();
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'WealthGenie API v3.0',
-    uptime_seconds: Math.round(process.uptime()),
-    node_version: process.version,
-    memory: {
-      rss_mb: Math.round(memUsage.rss / 1048576),
-      heap_used_mb: Math.round(memUsage.heapUsed / 1048576),
-      heap_total_mb: Math.round(memUsage.heapTotal / 1048576),
-    },
-    engines: {
-      tax: 'FY2025-26 (Section 87A marginal relief + surcharge marginal relief)',
-      monte_carlo: 'Halton QMC + Antithetic Variates + Control Variates',
-      risk_profiler: '7-Factor Model (Age, Income, Horizon, Dependents, Savings Ratio, Debt, Liquidity)',
-      projections: 'Real + Nominal (Fisher Equation inflation adjustment)',
-      post_tax: 'FY2025-26 LTCG/STCG/EEE compliance',
-    },
-    features: [
-      'SHAP', 'MonteCarlo-QMC', 'GoalPlanner', 'LiveMarketData',
-      'TaxCompare', 'PostTaxCalc', 'RateLimiting', 'GenieChat',
-      'SharpeRatio', 'PortfolioAllocation', 'VarianceReduction',
-    ],
-  });
-});
-
-// ── 404 Handler ──────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
-});
-
-// ── Error Handler (must be last) ─────────────────────────────────
-app.use(errorHandler);
-
-// ── Start Server ─────────────────────────────────────────────────
-import { validateEnvironmentConfig } from './config/validateEnv.js';
-let server;
-
-const start = async () => {
-  const validation = validateEnvironmentConfig(process.env);
+export async function startServer({ env = process.env } = {}) {
+  if (server) return server;
+  const validation = validateEnvironmentConfig(env);
   if (!validation.valid) {
-    logger.error('Critical environment configuration validation failed — server cannot start', { errors: validation.errors });
+    throw new Error(`Invalid environment configuration: ${validation.errors.join('; ')}`);
+  }
+
+  const config = getRuntimeConfig(env);
+  assertValidRuntimeConfig(config);
+  activeConfig = config;
+  runtimeState.markStarting();
+
+  try {
+    await connectDB({
+      uri: env.MONGODB_URI,
+      options: {
+        autoIndex: config.mongo.autoIndex,
+        maxPoolSize: config.mongo.maxPoolSize,
+        minPoolSize: config.mongo.minPoolSize,
+        serverSelectionTimeoutMS: config.mongo.serverSelectionTimeoutMs,
+        socketTimeoutMS: config.mongo.socketTimeoutMs,
+        maxIdleTimeMS: config.mongo.maxIdleTimeMs,
+      },
+    });
+    await connectRedis({ url: env.REDIS_URL });
+    if (config.requireRedis && !redisAvailable) {
+      throw new Error('Redis is required in this environment but is unavailable');
+    }
+
+    const app = createApp({ env, runtimeState });
+    server = createHttpServer(app);
+    configureHttpServer(server, config);
+    await new Promise((resolve, reject) => {
+      const onError = error => {
+        server?.off('listening', onListening);
+        reject(error);
+      };
+      const onListening = () => {
+        server?.off('error', onError);
+        resolve();
+      };
+      server.once('error', onError);
+      server.once('listening', onListening);
+      server.listen(config.port);
+    });
+    startMarketDataRefreshJobs();
+    runtimeState.markReady();
+    logger.info('WealthGenie API started', { port: config.port, env: config.nodeEnv });
+    return server;
+  } catch (error) {
+    runtimeState.markStopped();
+    await closeHttpServer(server).catch(() => {});
+    server = null;
+    await closeInfrastructure();
+    throw error;
+  }
+}
+
+export async function stopServer({ signal = 'manual', timeoutMs } = {}) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  runtimeState.markDraining();
+  const config = activeConfig || getRuntimeConfig(process.env);
+  const deadlineMs = timeoutMs || config.http.shutdownTimeoutMs;
+  logger.info('Graceful shutdown initiated', { signal, deadlineMs });
+
+  let deadlineTimer;
+  const deadline = new Promise((_, reject) => {
+    deadlineTimer = setTimeout(() => {
+      server?.closeAllConnections?.();
+      reject(new Error('Graceful shutdown timed out'));
+    }, deadlineMs);
+    deadlineTimer.unref?.();
+  });
+
+  try {
+    await Promise.race([
+      (async () => {
+        await closeHttpServer(server);
+        await closeInfrastructure();
+      })(),
+      deadline,
+    ]);
+    logger.info('Graceful shutdown completed', { signal });
+  } finally {
+    clearTimeout(deadlineTimer);
+    runtimeState.markStopped();
+    server = null;
+    activeConfig = null;
+    shuttingDown = false;
+  }
+}
+
+async function terminate(signal, error = null) {
+  if (error) logger.error('Fatal process error', { signal, message: error.message, stack: error.stack });
+  try {
+    await stopServer({ signal });
+    process.exit(error ? 1 : 0);
+  } catch (shutdownError) {
+    logger.error('Forced shutdown', { signal, message: shutdownError.message });
     process.exit(1);
   }
-  if (process.env.NODE_ENV !== 'production' && process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-    logger.warn('JWT_SECRET is shorter than 32 characters. Use a strong secret in production.');
-  }
-  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
-    logger.warn('Neither GEMINI_API_KEY nor GROQ_API_KEY configured. AI features will be unavailable.');
-  }
-
-  await connectDB();
-  await connectRedis();
-
-  // Start market data cron jobs (non-blocking)
-  startMarketDataRefreshJobs();
-
-  server = app.listen(PORT, () => logger.info('WealthGenie API v3.0 started', { port: PORT, env: process.env.NODE_ENV || 'development' }));
-};
-
-// ── Graceful Shutdown ────────────────────────────────────────────
-async function gracefulShutdown(signal) {
-  logger.info('Graceful shutdown initiated', { signal });
-
-  if (server) {
-    server.close(async () => {
-      logger.info('HTTP server closed');
-      try {
-        await mongoose.connection.close();
-        logger.info('MongoDB connection closed');
-      } catch (err) {
-        logger.error('Error closing MongoDB connection', { message: err.message });
-      }
-      if (redisClient) {
-        try {
-          await redisClient.quit();
-          logger.info('Redis connection closed');
-        } catch (err) {
-          logger.error('Error closing Redis connection', { message: err.message });
-        }
-      }
-      process.exit(0);
-    });
-
-    // Force exit after 10 seconds if connections haven't closed
-    setTimeout(() => {
-      logger.error('Forced shutdown after timeout');
-      process.exit(1);
-    }, 10000);
-  } else {
-    process.exit(0);
-  }
 }
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-if (process.env.NODE_ENV !== 'test') {
-  start().catch(err => { logger.error('Failed to start server', { message: err.message, stack: err.stack }); process.exit(1); });
+export function installProcessHandlers() {
+  if (processHandlersInstalled) return;
+  processHandlersInstalled = true;
+  process.once('SIGTERM', () => terminate('SIGTERM'));
+  process.once('SIGINT', () => terminate('SIGINT'));
+  process.once('uncaughtException', error => terminate('uncaughtException', error));
+  process.once('unhandledRejection', reason => {
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    terminate('unhandledRejection', error);
+  });
 }
 
-export default app;
+const isMainModule = process.argv[1]
+  && path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]);
+
+if (isMainModule && process.env.NODE_ENV !== 'test') {
+  installProcessHandlers();
+  startServer().catch(error => terminate('startup', error));
+}
+
+export { runtimeState };
+export { default } from './app.js';

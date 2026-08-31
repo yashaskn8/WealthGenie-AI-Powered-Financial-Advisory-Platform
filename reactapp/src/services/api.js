@@ -1,8 +1,8 @@
 /**
  * WealthGenie API Client
  * Configured for the Express backend.
- * Auth tokens and user state are stored in localStorage to provide session persistence
- * across page refreshes and SPA navigation (with standard XSS risk mitigated via CSP/sanitization).
+ * Production authentication uses an HttpOnly session cookie. Bearer-token storage
+ * is retained only for explicitly configured API/development compatibility.
  */
 
 const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
@@ -10,6 +10,8 @@ const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
 const DEFAULT_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout >= 1000
   ? configuredTimeout
   : 20000;
+const BEARER_AUTH_ENABLED = !import.meta.env.PROD
+  && import.meta.env.VITE_ENABLE_BEARER_AUTH !== 'false';
 
 function getStorage(name) {
   try {
@@ -34,13 +36,42 @@ function writeStorage(name, key, value) {
   }
 }
 
+function readCookie(name) {
+  if (typeof document === 'undefined') return null;
+  const prefix = `${name}=`;
+  for (const entry of document.cookie.split(';')) {
+    const value = entry.trim();
+    if (value.startsWith(prefix)) {
+      try { return decodeURIComponent(value.slice(prefix.length)); } catch { return null; }
+    }
+  }
+  return null;
+}
+
 // Restore token from localStorage on module load (survives page reload)
-let authToken = readStorage('localStorage', 'wg_token');
+let authToken = BEARER_AUTH_ENABLED ? readStorage('localStorage', 'wg_token') : null;
+let csrfToken = readCookie('wg_csrf');
+let authRevision = 0;
+const authListeners = new Set();
 
 // Track the current authenticated user
 let currentUser = (() => {
   try { return JSON.parse(readStorage('localStorage', 'wg_user') || 'null'); } catch { return null; }
 })();
+
+function notifyAuthChange() {
+  authRevision += 1;
+  authListeners.forEach(listener => listener());
+}
+
+export function subscribeAuth(listener) {
+  authListeners.add(listener);
+  return () => authListeners.delete(listener);
+}
+
+export function getAuthSnapshot() {
+  return authRevision;
+}
 
 export function setUserInfo(user) {
   currentUser = user;
@@ -49,6 +80,7 @@ export function setUserInfo(user) {
   } else {
     writeStorage('localStorage', 'wg_user', null);
   }
+  notifyAuthChange();
 }
 
 export function getUserInfo() {
@@ -56,12 +88,13 @@ export function getUserInfo() {
 }
 
 export function setAuthToken(token) {
-  authToken = token;
-  if (token) {
-    writeStorage('localStorage', 'wg_token', token);
+  authToken = BEARER_AUTH_ENABLED ? token : null;
+  if (authToken) {
+    writeStorage('localStorage', 'wg_token', authToken);
   } else {
     writeStorage('localStorage', 'wg_token', null);
   }
+  notifyAuthChange();
 }
 
 export function getAuthToken() {
@@ -70,14 +103,30 @@ export function getAuthToken() {
 
 export function clearAuthToken() {
   authToken = null;
+  csrfToken = null;
   writeStorage('localStorage', 'wg_token', null);
-  setUserInfo(null);
+  currentUser = null;
+  writeStorage('localStorage', 'wg_user', null);
+  notifyAuthChange();
 }
 
 export function clearUserSession() {
   clearAuthToken();
   writeStorage('localStorage', 'wealthgenie_user_profile', null);
   writeStorage('sessionStorage', 'genie_session_id', null);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', event => {
+    if (event.key !== 'wg_token' && event.key !== 'wg_user') return;
+    authToken = BEARER_AUTH_ENABLED ? readStorage('localStorage', 'wg_token') : null;
+    try {
+      currentUser = JSON.parse(readStorage('localStorage', 'wg_user') || 'null');
+    } catch {
+      currentUser = null;
+    }
+    notifyAuthChange();
+  });
 }
 
 function generateUUID() {
@@ -92,7 +141,15 @@ function generateUUID() {
 }
 
 export class ApiError extends Error {
-  constructor(message, { status = null, code = 'API_ERROR', requestId = null, details = [], retryable = false, cause } = {}) {
+  constructor(message, {
+    status = null,
+    code = 'API_ERROR',
+    requestId = null,
+    details = [],
+    retryable = false,
+    retryAfterMs = null,
+    cause,
+  } = {}) {
     super(message, cause ? { cause } : undefined);
     this.name = 'ApiError';
     this.status = status;
@@ -100,11 +157,43 @@ export class ApiError extends Error {
     this.requestId = requestId;
     this.details = details;
     this.retryable = retryable;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
-const wait = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+function parseRetryAfter(value) {
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return Math.min(30000, Math.max(0, seconds * 1000));
+  const date = Date.parse(value);
+  return Number.isFinite(date) ? Math.min(30000, Math.max(0, date - Date.now())) : null;
+}
+
+function retryDelay(attempt, retryAfterMs) {
+  if (Number.isFinite(retryAfterMs)) return retryAfterMs;
+  const exponential = Math.min(5000, 300 * (2 ** attempt));
+  return Math.round(exponential * (0.75 + Math.random() * 0.5));
+}
+
+function wait(milliseconds, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new ApiError('Request cancelled.', { code: 'REQUEST_ABORTED' }));
+      return;
+    }
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new ApiError('Request cancelled.', { code: 'REQUEST_ABORTED' }));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, milliseconds);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
 
 async function request(method, path, data = null, options = {}) {
   const url = `${API_BASE}${path}`;
@@ -129,6 +218,10 @@ async function request(method, path, data = null, options = {}) {
     if (!headers['Idempotency-Key'] && !headers['idempotency-key']) {
       headers['Idempotency-Key'] = generateUUID();
     }
+    const activeCsrfToken = csrfToken || readCookie('wg_csrf');
+    if (!authToken && activeCsrfToken && !headers['X-CSRF-Token'] && !headers['x-csrf-token']) {
+      headers['X-CSRF-Token'] = activeCsrfToken;
+    }
   }
 
   const maxRetries = Math.max(0, Math.min(3, Number(retries) || 0));
@@ -150,7 +243,13 @@ async function request(method, path, data = null, options = {}) {
       controller.abort();
     }, boundedTimeout);
 
-    const config = { method: upperMethod, headers, ...fetchOptions, signal: controller.signal };
+    const config = {
+      method: upperMethod,
+      headers,
+      credentials: 'include',
+      ...fetchOptions,
+      signal: controller.signal,
+    };
     if (data !== null && data !== undefined) config.body = JSON.stringify(data);
 
     try {
@@ -179,6 +278,7 @@ async function request(method, path, data = null, options = {}) {
             requestId,
             details: validationDetails,
             retryable: RETRYABLE_STATUS.has(res.status),
+            retryAfterMs: parseRetryAfter(res.headers?.get?.('retry-after')),
           }
         );
       }
@@ -200,7 +300,7 @@ async function request(method, path, data = null, options = {}) {
       }
 
       if (apiError.retryable && attempt < maxRetries) {
-        await wait(300 * (2 ** attempt));
+        await wait(retryDelay(attempt, apiError.retryAfterMs), externalSignal);
         continue;
       }
       throw apiError;
@@ -216,27 +316,36 @@ async function request(method, path, data = null, options = {}) {
 // ─── AUTH ─────────────────────────────────────────────────
 export async function register(name, email, password, mobile) {
   const data = await request('POST', '/auth/register', { name, email, password, mobile });
-  if (data.token) setAuthToken(data.token);
+  csrfToken = data.csrfToken || readCookie('wg_csrf');
+  setAuthToken(data.token || null);
   if (data.user) setUserInfo(data.user);
   return data;
 }
 
 export async function login(email, password) {
   const data = await request('POST', '/auth/login', { email, password });
-  if (data.token) setAuthToken(data.token);
+  csrfToken = data.csrfToken || readCookie('wg_csrf');
+  setAuthToken(data.token || null);
   if (data.user) setUserInfo(data.user);
   return data;
 }
 
 export async function logout() {
   try {
-    if (authToken) {
+    if (authToken || currentUser) {
       return await request('POST', '/auth/logout', {}, { timeoutMs: 5000, retries: 0 });
     }
     return null;
   } finally {
     clearUserSession();
   }
+}
+
+export async function restoreSession(options = {}) {
+  const data = await request('GET', '/auth/session', null, { retries: 0, ...options });
+  csrfToken = data?.csrfToken || readCookie('wg_csrf');
+  if (data?.user) setUserInfo(data.user);
+  return data;
 }
 
 // ─── PROFILE ─────────────────────────────────────────────
@@ -468,7 +577,9 @@ export async function computePostTaxReturnBatch(instruments, annualIncome, regim
 
 // Default export for convenience
 const api = {
-  register, login, logout, setAuthToken, getAuthToken, clearAuthToken, clearUserSession,
+  register, login, logout, restoreSession,
+  setAuthToken, getAuthToken, clearAuthToken, clearUserSession,
+  subscribeAuth, getAuthSnapshot,
   setUserInfo, getUserInfo,
   buildProfile, updateProfile, getRecommendations, getInstruments, getProjections,
   runMonteCarlo, createGoal, getGoals, updateGoal, deleteGoal, healthCheck,

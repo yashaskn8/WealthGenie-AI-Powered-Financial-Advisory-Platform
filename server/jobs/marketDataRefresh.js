@@ -8,28 +8,39 @@
 
 import { fetchMutualFundNAVs, fetchIndexStatistics } from '../services/marketDataService.js';
 
+let activeJobStopper = null;
+
 /**
  * Start all scheduled market data refresh jobs.
  * Call this once in server.js after DB and Redis are connected.
  */
 export function startMarketDataRefreshJobs() {
+  stopMarketDataRefreshJobs();
+  const cancellations = [];
   // Daily AMFI NAV refresh at 23:30 IST (18:00 UTC)
   // AMFI publishes updated NAVs around 23:00 IST
-  scheduleJob('0 18 * * *', 'AMFI NAV Refresh', async () => {
+  cancellations.push(scheduleJob('0 18 * * *', 'AMFI NAV Refresh', async () => {
     const result = await fetchMutualFundNAVs();
     console.info(`[CRON] AMFI: ${result.count} schemes fetched`);
-  });
+  }));
 
   // Index statistics refresh every 2 hours
-  scheduleJob('0 */2 * * *', 'Index Statistics', async () => {
+  cancellations.push(scheduleJob('0 */2 * * *', 'Index Statistics', async () => {
     const [nifty, sensex] = await Promise.allSettled([
       fetchIndexStatistics('^NSEI'),
       fetchIndexStatistics('^BSESN'),
     ]);
     console.info(`[CRON] Nifty: ${nifty.status}, Sensex: ${sensex.status}`);
-  });
+  }));
 
   console.info('[CRON] Market data refresh jobs scheduled');
+  activeJobStopper = () => cancellations.forEach(cancel => cancel());
+  return activeJobStopper;
+}
+
+export function stopMarketDataRefreshJobs() {
+  activeJobStopper?.();
+  activeJobStopper = null;
 }
 
 /**
@@ -38,9 +49,10 @@ export function startMarketDataRefreshJobs() {
  */
 function scheduleJob(cronExpr, name, fn) {
   const { initialDelayMs, intervalMs } = getScheduleTiming(cronExpr);
+  let interval = null;
 
   // Preserve the startup warmup so caches populate shortly after boot.
-  setTimeout(async () => {
+  const warmup = setTimeout(async () => {
     try {
       await fn();
       console.info(`[CRON] ${name}: initial run complete`);
@@ -48,6 +60,7 @@ function scheduleJob(cronExpr, name, fn) {
       console.error(`[CRON] ${name}: initial run failed:`, err.message);
     }
   }, 5000);
+  warmup.unref?.();
 
   const runScheduled = async () => {
     try {
@@ -57,10 +70,18 @@ function scheduleJob(cronExpr, name, fn) {
     }
   };
 
-  setTimeout(() => {
+  const scheduledStart = setTimeout(() => {
     runScheduled();
-    setInterval(runScheduled, intervalMs);
+    interval = setInterval(runScheduled, intervalMs);
+    interval.unref?.();
   }, initialDelayMs);
+  scheduledStart.unref?.();
+
+  return () => {
+    clearTimeout(warmup);
+    clearTimeout(scheduledStart);
+    if (interval) clearInterval(interval);
+  };
 }
 
 function getScheduleTiming(cronExpr, now = new Date()) {

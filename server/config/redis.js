@@ -9,12 +9,12 @@ let forceFailClosedInTest = false;
  * Initialize Redis connection.
  * Falls back gracefully if Redis is not available (dev environments).
  */
-const connectRedis = async () => {
+const connectRedis = async ({ url = process.env.REDIS_URL || ('re' + 'dis://localhost:6379') } = {}) => {
   try {
     redisClient = createClient({
-      url: process.env.REDIS_URL || ('re' + 'dis://localhost:6379'),
+      url,
       socket: {
-        connectTimeoutMs: 3000,
+        connectTimeout: 3000,
         reconnectStrategy: (retries) => {
           if (retries > 5) {
             return new Error('Redis reconnect attempts exhausted.');
@@ -33,13 +33,20 @@ const connectRedis = async () => {
       redisAvailable = false;
     });
 
-    redisClient.on('connect', () => {
-      logger.info('Redis connected');
+    redisClient.on('ready', () => {
+      logger.info('Redis ready');
       redisAvailable = true;
+    });
+    redisClient.on('end', () => {
+      redisAvailable = false;
+    });
+    redisClient.on('reconnecting', () => {
+      redisAvailable = false;
     });
 
     await redisClient.connect();
     redisAvailable = true;
+    return true;
   } catch (error) {
     logger.warn('Redis not available — running without cache', { message: error.message });
     redisAvailable = false;
@@ -47,9 +54,10 @@ const connectRedis = async () => {
     // Without this, the client's socket retry loop keeps the process alive
     // indefinitely, causing CI test runner hangs.
     if (redisClient) {
-      try { await redisClient.disconnect(); } catch (_) {}
+      try { await redisClient.disconnect(); } catch {}
     }
     redisClient = null;
+    return false;
   }
 };
 

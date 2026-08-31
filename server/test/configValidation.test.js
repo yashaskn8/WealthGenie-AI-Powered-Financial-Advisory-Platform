@@ -71,8 +71,43 @@ test('Config Validation: Valid production configuration passes', () => {
     JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
     MONGODB_URI: 'mongodb://mongodb:27017/wealthgenie',
     ML_SERVICE_API_KEY: 'production-secret-api-key-value-secure',
+    METRICS_TOKEN: 'production-metrics-token-at-least-32-characters',
+    CORS_ORIGINS: 'https://app.wealthgenie.example',
     NODE_ENV: 'production',
   });
   assert.equal(result.valid, true);
   assert.equal(result.errors.length, 0);
+});
+
+test('Config Validation: Production requires an explicit HTTPS browser origin', () => {
+  const base = {
+    JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
+    MONGODB_URI: 'mongodb://mongodb:27017/wealthgenie',
+    ML_SERVICE_API_KEY: 'production-secret-api-key-value-secure',
+    METRICS_TOKEN: 'production-metrics-token-at-least-32-characters',
+    NODE_ENV: 'production',
+  };
+  const missing = validateEnvironmentConfig(base);
+  const insecure = validateEnvironmentConfig({ ...base, CORS_ORIGINS: 'http://app.example' });
+  assert.equal(missing.valid, false);
+  assert.ok(missing.errors.some(error => error.includes('CORS_ORIGINS')));
+  assert.equal(insecure.valid, false);
+  assert.ok(insecure.errors.some(error => error.includes('invalid production origin')));
+});
+
+test('Config Validation: Production rejects unsafe browser and metrics settings', () => {
+  const result = validateEnvironmentConfig({
+    JWT_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef',
+    MONGODB_URI: 'mongodb://mongodb:27017/wealthgenie',
+    ML_SERVICE_API_KEY: 'production-secret-api-key-value-secure',
+    METRICS_TOKEN: 'CHANGE_ME_METRICS_TOKEN_AT_LEAST_32_CHARACTERS',
+    CORS_ORIGINS: 'https://app.wealthgenie.example',
+    AUTH_COOKIE_SAME_SITE: 'invalid',
+    EXPOSE_AUTH_TOKEN: 'true',
+    NODE_ENV: 'production',
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(error => error.includes('METRICS_TOKEN')));
+  assert.ok(result.errors.some(error => error.includes('AUTH_COOKIE_SAME_SITE')));
+  assert.ok(result.errors.some(error => error.includes('EXPOSE_AUTH_TOKEN')));
 });

@@ -31,9 +31,9 @@ process.env.NODE_ENV = 'test';
 const USER_A_ID = new mongoose.Types.ObjectId().toString();
 const USER_B_ID = new mongoose.Types.ObjectId().toString();
 
-function signToken(userId, jti = crypto.randomUUID(), expiresIn = '1h') {
+function signToken(userId, jti = crypto.randomUUID(), expiresIn = '1h', role = 'user') {
   return jwt.sign(
-    { userId, email: `${userId}@test.com`, jti },
+    { userId, email: `${userId}@test.com`, jti, role },
     process.env.JWT_SECRET,
     { expiresIn }
   );
@@ -283,14 +283,25 @@ test('WG-018: GET /api/metrics returns 401 without auth', async () => {
   });
 });
 
-test('WG-018: GET /api/metrics returns 200 for authenticated request', async () => {
+test('WG-018: GET /api/metrics rejects a normal authenticated user', async () => {
   const token = signToken(USER_A_ID);
   await withServer(buildMetricsApp(), async (baseUrl) => {
-    const { response, body } = await jsonFetch(`${baseUrl}/api/metrics`, {
+    const { response } = await jsonFetch(`${baseUrl}/api/metrics`, {
       method: 'GET',
       headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
     });
-    assert.equal(response.status, 200, 'metrics endpoint must succeed with valid auth');
+    assert.equal(response.status, 403, 'metrics endpoint must reject non-admin users');
+  });
+});
+
+test('WG-018: GET /api/metrics returns 200 for an administrator', async () => {
+  const token = signToken(USER_A_ID, crypto.randomUUID(), '1h', 'admin');
+  await withServer(buildMetricsApp(), async (baseUrl) => {
+    const { response } = await jsonFetch(`${baseUrl}/api/metrics`, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+    });
+    assert.equal(response.status, 200, 'metrics endpoint must succeed with admin auth');
   });
 });
 

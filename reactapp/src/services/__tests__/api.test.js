@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from '../api.js';
 
-function jsonResponse(body, status = 200) {
+function jsonResponse(body, status = 200, headers = {}) {
   return {
     ok: status >= 200 && status < 300,
     status,
     json: vi.fn().mockResolvedValue(body),
+    headers: { get: vi.fn(name => headers[name.toLowerCase()] || null) },
   };
 }
 
@@ -149,5 +150,50 @@ describe('frontend API contracts', () => {
 
     expect(fetchMock.mock.calls[0][0]).toContain('session_id=session%26limit%3D999');
     expect(fetchMock.mock.calls[0][0]).toContain('&limit=50');
+  });
+
+  it('restores an HttpOnly cookie session without requiring a bearer token', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      user: { id: 'cookie-user', email: 'cookie@example.com' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await api.restoreSession();
+
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/auth\/session$/);
+    expect(fetchMock.mock.calls[0][1].credentials).toBe('include');
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+    expect(api.getUserInfo()).toMatchObject({ id: 'cookie-user' });
+  });
+
+  it('binds cookie-authenticated mutations to the server-issued CSRF token', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        csrfToken: 'server-csrf-token',
+        user: { id: 'cookie-user' },
+      }))
+      .mockResolvedValueOnce(jsonResponse({ id: 'goal-1' }, 201));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await api.login('cookie@example.com', 'StrongPass1!');
+    await api.createGoal({ goal_name: 'Retirement' });
+
+    const mutation = fetchMock.mock.calls[1][1];
+    expect(mutation.credentials).toBe('include');
+    expect(mutation.headers.Authorization).toBeUndefined();
+    expect(mutation.headers['X-CSRF-Token']).toBe('server-csrf-token');
+  });
+
+  it('honours Retry-After when retrying safe requests', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ error: 'busy' }, 503, { 'retry-after': '1' }))
+      .mockResolvedValueOnce(jsonResponse({ status: 'ok' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = api.healthCheck();
+    await vi.advanceTimersByTimeAsync(1000);
+    await expect(pending).resolves.toEqual({ status: 'ok' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

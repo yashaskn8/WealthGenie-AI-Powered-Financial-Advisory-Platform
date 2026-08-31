@@ -3,23 +3,32 @@ import mongoose from 'mongoose';
 import { redisClient, redisAvailable } from '../config/redis.js';
 import { checkMLHealth } from '../services/mlClient.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import logger from '../utils/logger.js';
 
-const router = Router();
+function withTimeout(promise, timeoutMs, label) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs);
+      timer.unref?.();
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+export function createHealthRouter({ runtimeState = null, requireRedis = false, timeoutMs = 3000 } = {}) {
+  const router = Router();
 
 /**
  * GET /health/deep
  * Performs a deep health check of Database, Redis, and ML microservice.
  *
  * Semantics:
- *   - Database is the ONLY critical dependency.  If it is DOWN the endpoint
- *     returns 503.
- *   - Redis and ML are non-critical.  The application gracefully degrades
- *     without them (cache-less mode, rule-based fallback).  If they are
- *     unavailable the overall status is DEGRADED but the HTTP status is still
- *     200, which prevents false-negative failures in CD smoke tests during
- *     cluster warm-up.
+ * Database and lifecycle readiness are always critical. Redis is also critical
+ * when REQUIRE_REDIS is enabled (the production default). ML remains optional
+ * because advisory routes have a deterministic rule-based fallback.
  */
-router.get('/deep', asyncHandler(async (req, res) => {
+  router.get('/deep', asyncHandler(async (req, res) => {
   // Internal tracking with criticality flag
   const checks = {
     database: { status: 'DOWN', critical: true },
@@ -31,29 +40,23 @@ router.get('/deep', asyncHandler(async (req, res) => {
   try {
     const isDbConnected = mongoose.connection.readyState === 1;
     if (isDbConnected) {
-      await Promise.race([
-        mongoose.connection.db.admin().ping(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Mongo ping timeout')), 3000)),
-      ]);
+      await withTimeout(mongoose.connection.db.admin().ping(), timeoutMs, 'Mongo ping');
       checks.database.status = 'UP';
     }
   } catch (err) {
-    console.error('[Health Check] Database health check failed:', err.message);
+    logger.warn('Database health check failed', { message: err.message });
   }
 
   // 2. Check Redis (non-critical)
   try {
     if (redisAvailable && redisClient) {
-      const pingRes = await Promise.race([
-        redisClient.ping(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis ping timeout')), 3000)),
-      ]);
+      const pingRes = await withTimeout(redisClient.ping(), timeoutMs, 'Redis ping');
       if (pingRes === 'PONG') {
         checks.redis.status = 'UP';
       }
     }
   } catch (err) {
-    console.error('[Health Check] Redis health check failed:', err.message);
+    logger.warn('Redis health check failed', { message: err.message });
   }
 
   // 3. Check ML Microservice (non-critical)
@@ -67,20 +70,22 @@ router.get('/deep', asyncHandler(async (req, res) => {
       checks.ml.status = 'UP';
     }
   } catch (err) {
-    console.error('[Health Check] ML service health check failed:', err.message);
+    logger.warn('ML service health check failed', { message: err.message });
   }
 
   // Determine overall status
-  const criticalDown = Object.values(checks)
-    .some(svc => svc.critical && svc.status === 'DOWN');
+  checks.redis.critical = requireRedis;
+  const criticalDown = Object.values(checks).some(svc => svc.critical && svc.status === 'DOWN');
+  const lifecycleReady = runtimeState ? runtimeState.isReady() : true;
 
   const allUp = Object.values(checks).every(svc => svc.status === 'UP');
 
   // Build backward-compatible response (flat strings for services)
   const health = {
-    status: criticalDown ? 'DOWN' : (allUp ? 'UP' : 'DEGRADED'),
+    status: criticalDown || !lifecycleReady ? 'DOWN' : (allUp ? 'UP' : 'DEGRADED'),
     timestamp: new Date().toISOString(),
     correlationId: req.correlationId || null,
+    lifecycle: runtimeState?.snapshot() || null,
     services: {
       database: checks.database.status,
       redis: checks.redis.status,
@@ -88,41 +93,58 @@ router.get('/deep', asyncHandler(async (req, res) => {
     }
   };
 
-  // Only database DOWN triggers a 503; non-critical degradation is still 200
-  res.status(criticalDown ? 503 : 200).json(health);
-}));
+  // Critical dependency or lifecycle failure triggers 503.
+  res.status(criticalDown || !lifecycleReady ? 503 : 200).json(health);
+  }));
 
 /**
  * GET /health
  * Simple liveness probe for load balancer.
  */
-router.get('/', (req, res) => {
+  router.get('/', (_req, res) => {
   res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
-});
+  });
 
 /**
  * GET /health/ready
  * Readiness probe - returns 200 only when the database is connected and responsive.
  * Container orchestrators use this to decide when to route traffic.
  */
-router.get('/ready', (req, res) => {
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ status: 'NOT_READY', reason: 'Database not connected' });
-  }
-  res.status(200).json({ status: 'READY', timestamp: new Date().toISOString() });
-});
+  router.get('/ready', (_req, res) => {
+    const reasons = [];
+    if (runtimeState && !runtimeState.isReady()) reasons.push(`Application lifecycle is ${runtimeState.snapshot().phase}`);
+    if (mongoose.connection.readyState !== 1) reasons.push('Database not connected');
+    if (requireRedis && (!redisAvailable || !redisClient?.isReady)) reasons.push('Redis not connected');
+    if (reasons.length > 0) {
+      return res.status(503).json({
+        status: 'NOT_READY',
+        reasons,
+        lifecycle: runtimeState?.snapshot() || null,
+        timestamp: new Date().toISOString(),
+      });
+    }
+    return res.status(200).json({
+      status: 'READY',
+      lifecycle: runtimeState?.snapshot() || null,
+      timestamp: new Date().toISOString(),
+    });
+  });
 
 /**
  * GET /health/live
  * Liveness probe - returns 200 if the process is alive.
  * Container orchestrators use this to decide whether to restart the container.
  */
-router.get('/live', (req, res) => {
+  router.get('/live', (_req, res) => {
   res.status(200).json({
     status: 'ALIVE',
     uptime_seconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   });
-});
+  });
 
+  return router;
+}
+
+const router = createHealthRouter();
 export default router;

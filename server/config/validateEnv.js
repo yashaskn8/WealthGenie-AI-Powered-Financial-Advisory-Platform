@@ -39,6 +39,31 @@ export function validateEnvironmentConfig(env = process.env) {
     } else if (env.ML_SERVICE_API_KEY.startsWith('CHANGE_ME')) {
       errors.push('Insecure placeholder ML_SERVICE_API_KEY detected in production');
     }
+    if (!env.METRICS_TOKEN || env.METRICS_TOKEN.trim().length < 32
+      || env.METRICS_TOKEN.includes('CHANGE_ME')) {
+      errors.push('METRICS_TOKEN must be at least 32 characters in production');
+    }
+    const origins = (env.CORS_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean);
+    if (origins.length === 0) {
+      errors.push('CORS_ORIGINS must contain at least one trusted HTTPS origin in production');
+    }
+    for (const origin of origins) {
+      let parsed;
+      try { parsed = new URL(origin); } catch { parsed = null; }
+      if (!parsed || parsed.origin !== origin.replace(/\/+$/, '') || parsed.protocol !== 'https:') {
+        errors.push(`CORS_ORIGINS contains an invalid production origin: ${origin}`);
+      }
+    }
+    const sameSite = (env.AUTH_COOKIE_SAME_SITE || 'strict').toLowerCase();
+    if (!['strict', 'lax', 'none'].includes(sameSite)) {
+      errors.push('AUTH_COOKIE_SAME_SITE must be strict, lax, or none');
+    }
+    if (sameSite === 'none' && env.AUTH_COOKIE_SECURE === 'false') {
+      errors.push('SameSite=None cookies must be Secure in production');
+    }
+    if (env.EXPOSE_AUTH_TOKEN === 'true') {
+      errors.push('EXPOSE_AUTH_TOKEN cannot be enabled in production');
+    }
   }
 
   return {

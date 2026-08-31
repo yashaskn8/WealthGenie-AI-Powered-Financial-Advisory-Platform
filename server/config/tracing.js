@@ -72,11 +72,5 @@ const sdk = new NodeSDK({
 
 sdk.start();
 
-process.on('SIGTERM', () => {
-  sdk.shutdown()
-    .then(() => console.log('[Tracing] OpenTelemetry SDK shut down'))
-    .catch((err) => console.error('[Tracing] Error shutting down OTel SDK', err));
-});
-
 export { trace, propagation, TRACE_LOG_PATH };
 export default sdk;

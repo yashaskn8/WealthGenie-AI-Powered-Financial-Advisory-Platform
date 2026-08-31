@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { isTokenBlacklisted } from '../config/redis.js';
+import { clearAuthCookies, readSessionCookie } from '../services/authSession.js';
 
 /**
  * JWT verification middleware.
@@ -8,24 +9,28 @@ import { isTokenBlacklisted } from '../config/redis.js';
  */
 export async function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  if (authHeader && !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Access denied. Invalid authorization scheme.' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const cookieToken = authHeader ? null : readSessionCookie(req);
+  const token = authHeader?.slice('Bearer '.length).trim() || cookieToken;
+  const usingCookie = Boolean(cookieToken);
   if (!token || token === 'null' || token === 'undefined') {
-    return res.status(401).json({ error: 'Access denied. Invalid token format.' });
+    return res.status(401).json({ error: 'Access denied. No token or valid session provided.' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     if (!decoded.userId) {
+      if (usingCookie) clearAuthCookies(res);
       return res.status(401).json({ error: 'Invalid token payload.' });
     }
 
     if (decoded.jti) {
       const blacklisted = await isTokenBlacklisted(decoded.jti);
       if (blacklisted) {
+        if (usingCookie) clearAuthCookies(res);
         return res.status(401).json({ error: 'Token has been revoked. Please log in again.' });
       }
     }
@@ -39,6 +44,7 @@ export async function verifyJWT(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
+    if (usingCookie) clearAuthCookies(res);
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expired. Please log in again.' });
     }
