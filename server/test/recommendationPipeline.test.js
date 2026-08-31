@@ -705,6 +705,23 @@ test('rankWhereToInvestBackend evaluates candidates with backend taxEngine and m
   assert.ok(ppf.taxSavingsNote.includes('Sec 80C'));
 });
 
+test('rankWhereToInvestBackend owns expense-ratio ordering', () => {
+  const candidates = [
+    { id: 'higher-cost', name: 'Higher Cost Index Fund', rate: '12%', highlight: 'Expense ratio: 0.45%' },
+    { id: 'unknown-cost', name: 'Unknown Cost Fund', rate: '12%', highlight: 'Cost not published' },
+    { id: 'lower-cost', name: 'Lower Cost Index Fund', rate: '12%', highlight: 'ER: 0.10%' },
+  ];
+
+  const ranked = rankWhereToInvestBackend(
+    candidates,
+    { age: 35, riskCategory: 'Moderate' },
+    { sortBy: 'expense' }
+  );
+
+  assert.deepEqual(ranked.map(candidate => candidate.id), ['lower-cost', 'higher-cost', 'unknown-cost']);
+  assert.equal(ranked[0].expRatioVal, 0.10);
+});
+
 test('WG-001: scoreRisk differentiates low-risk (PPF, value=1) vs high-risk (ELSS, value=4) instruments', () => {
   const conservativeProfile = { risk: 'conservative' };
   const aggressiveProfile = { risk: 'aggressive' };
@@ -1241,8 +1258,6 @@ test('WG-040: runPipeline / deriveWeights gamma equals WEIGHT_FLOOR for ₹12,70
   assert.ok(result.computedWeights, 'Pipeline result must include computedWeights');
   assert.equal(result.computedWeights.gamma, PIPELINE_CONFIG.WEIGHT_FLOOR, 'gamma (tax weight) for ₹12.7L income under new regime must equal WEIGHT_FLOOR (0.5) because 87A rebate makes marginal rate 0');
 });
-
-
 
 
 

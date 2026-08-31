@@ -308,6 +308,7 @@ export const rankWtiSchema = Joi.object({
   options: Joi.object({
     regimeApplied: Joi.boolean().optional(),
     regimeKey: Joi.string().max(50).optional(),
+    sortBy: Joi.string().valid('score', 'postTaxYield', 'expense').optional(),
   }).optional().default({}),
 });
 

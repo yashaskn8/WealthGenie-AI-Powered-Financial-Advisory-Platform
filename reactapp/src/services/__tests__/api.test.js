@@ -98,6 +98,24 @@ describe('frontend API contracts', () => {
     expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe('Bearer market-token');
   });
 
+  it('routes personalized product ranking to Express with explicit decision options', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ products: [{ id: 'index' }] }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await api.rankInvestmentCandidates(
+      [{ id: 'index', name: 'Index Fund', expectedReturn: 12 }],
+      { age: 35, risk_tolerance: 'Moderate' },
+      { regimeApplied: false, regimeKey: 'normal', sortBy: 'expense' }
+    );
+
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/instruments\/rank-wti$/);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      candidates: [{ id: 'index', name: 'Index Fund', expectedReturn: 12 }],
+      userProfile: { age: 35, risk_tolerance: 'Moderate' },
+      options: { regimeApplied: false, regimeKey: 'normal', sortBy: 'expense' },
+    });
+  });
+
   it('adds a correlation ID and does not retry failed mutations', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', fetchMock);

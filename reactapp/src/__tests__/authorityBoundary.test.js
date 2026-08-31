@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const sourceRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const sourceRoot = resolve(process.cwd(), 'src');
 const source = name => readFileSync(resolve(sourceRoot, name), 'utf8');
 
 describe('frontend financial authority boundary', () => {
@@ -28,5 +27,13 @@ describe('frontend financial authority boundary', () => {
     expect(taxScreen).not.toContain('calculateTaxesLocal');
     expect(chat).toContain('api.compareTax');
     expect(chat).not.toContain('calculateTaxes(');
+  });
+
+  it('uses Express for personalized product suitability and ordering', () => {
+    const whereToInvest = source('components/deepdive/WhereToInvestTab.jsx');
+    expect(whereToInvest).toContain('api.rankInvestmentCandidates');
+    expect(whereToInvest).not.toContain('rankWhereToInvest(');
+    expect(whereToInvest).not.toContain('shouldRecommendETF(');
+    expect(whereToInvest).toContain('No personalized ranking has been generated.');
   });
 });

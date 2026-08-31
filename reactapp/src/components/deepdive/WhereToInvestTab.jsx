@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Building2, Shield, Star, Info, Wallet, Zap, History as HistoryIcon, TrendingUp, AlertTriangle, Globe, Activity } from 'lucide-react';
 import WHERE_TO_INVEST from '../../whereToInvest';
-import { generateWTI, rankWhereToInvest, shouldRecommendETF } from '../../utils/wtiGenerator';
+import { generateWTI } from '../../utils/wtiGenerator';
+import * as api from '../../services/api';
 import SebiDisclaimer from '../SebiDisclaimer';
 
 const RISK_LEVELS = [
@@ -92,13 +93,70 @@ const SUB_TAB_LABELS = {
 };
 
 const WhereToInvestTab = ({ inv, userProfile }) => {
-  const wtiData = WHERE_TO_INVEST[inv?.id] || generateWTI(inv);
+  const wtiData = useMemo(() => WHERE_TO_INVEST[inv?.id] || generateWTI(inv), [inv]);
   const subCategoryMap = wtiData?.sectors || wtiData?.subCategories || null;
   const subKeys = subCategoryMap ? Object.keys(subCategoryMap) : [];
 
   const [activeSubTab, setActiveSubTab] = useState(subKeys[0] || null);
   const [regimeApplied, setRegimeApplied] = useState(false);
   const [sortBy, setSortBy] = useState('score');
+  const [rankingResult, setRankingResult] = useState({ requestKey: null, products: [], error: null });
+
+  // Identify active macro regime banner for current instrument. This value is
+  // only a request input; suitability and ordering are decided by Express.
+  const activeRegimeKey = Object.keys(MACRO_REGIME_CONFIGS).find(key =>
+    MACRO_REGIME_CONFIGS[key].matchingIds.includes(inv?.id)
+  );
+  const activeRegime = activeRegimeKey ? MACRO_REGIME_CONFIGS[activeRegimeKey] : null;
+  const rawProducts = useMemo(() => (
+    (subCategoryMap && activeSubTab)
+      ? subCategoryMap[activeSubTab]
+      : (wtiData?.products || [])
+  ), [activeSubTab, subCategoryMap, wtiData]);
+  const requestKey = useMemo(() => JSON.stringify({
+    candidates: rawProducts,
+    profile: userProfile || {},
+    regimeApplied,
+    regimeKey: activeRegimeKey || 'normal',
+    sortBy,
+  }), [activeRegimeKey, rawProducts, regimeApplied, sortBy, userProfile]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    api.rankInvestmentCandidates(
+      rawProducts,
+      userProfile || {},
+      {
+        regimeApplied,
+        regimeKey: activeRegimeKey || 'normal',
+        sortBy,
+      },
+      { signal: controller.signal }
+    ).then((result) => {
+      // The API accepts only decision inputs. Merge presentation-only catalog
+      // fields back in while preserving the authoritative server order.
+      const originals = new Map(rawProducts.map(product => [product.id || product.name, product]));
+      const ranked = Array.isArray(result?.products) ? result.products : [];
+      setRankingResult({
+        requestKey,
+        products: ranked.map(product => ({
+          ...originals.get(product.id || product.name),
+          ...product,
+        })),
+        error: null,
+      });
+    }).catch((error) => {
+      if (error?.code === 'REQUEST_ABORTED') return;
+      setRankingResult({
+        requestKey,
+        products: [],
+        error: 'Authoritative product ranking is temporarily unavailable. No personalized ranking has been generated.',
+      });
+    });
+
+    return () => controller.abort();
+  }, [activeRegimeKey, rawProducts, regimeApplied, requestKey, sortBy, userProfile]);
 
   if (!wtiData) return (
     <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -107,28 +165,21 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
     </div>
   );
 
-  const userRisk = userProfile?.risk_tolerance || userProfile?.riskCategory || inv?.riskLabel || 'Moderate';
-  const sectorVol = inv?.volatility || 0.25;
-
-  // Identify active macro regime banner for current instrument
-  const activeRegimeKey = Object.keys(MACRO_REGIME_CONFIGS).find(key => 
-    MACRO_REGIME_CONFIGS[key].matchingIds.includes(inv?.id)
-  );
-  const activeRegime = activeRegimeKey ? MACRO_REGIME_CONFIGS[activeRegimeKey] : null;
-
-  const rawProducts = (subCategoryMap && activeSubTab) ? subCategoryMap[activeSubTab] : wtiData.products;
-  const products = rankWhereToInvest(rawProducts || [], userProfile, userRisk, { regimeApplied, activeRegime, sortBy, instrumentRiskLevel: wtiData.riskLevel });
-
   const level = Math.max(0, Math.min(5, (wtiData.riskLevel || 1) - 1));
   const risk = RISK_LEVELS[level];
   const CX = 140, CY = 125, R = 90, r2 = 62;
   const totalAngle = Math.PI;
   const segGap = 0.025;
 
-  const showEtfSuggestion = (inv?.id === 'mid_cap_stocks' || inv?.id === 'direct_equity') && shouldRecommendETF(userRisk, sectorVol, userProfile);
-
+  const rankingStatus = rankingResult.requestKey === requestKey
+    ? (rankingResult.error ? 'error' : 'ready')
+    : 'loading';
+  const products = rankingStatus === 'ready' ? rankingResult.products : [];
+  const rankingError = rankingStatus === 'error' ? rankingResult.error : null;
   const isTop5 = products.length >= 5;
-  const headerLabel = isTop5 ? 'Execution Pathway & Top 5 Recommendations' : `Execution Pathway (${products.length} Recommended Option${products.length > 1 ? 's' : ''})`;
+  const headerLabel = rankingStatus === 'loading'
+    ? 'Loading Authoritative Product Ranking…'
+    : (isTop5 ? 'Execution Pathway & Top 5 Recommendations' : `Execution Pathway (${products.length} Recommended Option${products.length > 1 ? 's' : ''})`);
 
   return (
     <div className="tab-fade-in">
@@ -254,23 +305,20 @@ const WhereToInvestTab = ({ inv, userProfile }) => {
         </div>
       )}
 
-      {/* Stock vs ETF Decision Rule Warning Banner */}
-      {showEtfSuggestion && (
+      {rankingError && (
         <div style={{
-          background: 'rgba(234, 179, 8, 0.1)',
-          border: '1px solid rgba(234, 179, 8, 0.3)',
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
           borderRadius: '8px',
           padding: '10px 14px',
           marginBottom: '1rem',
           display: 'flex',
           gap: '10px',
           fontSize: '0.8rem',
-          color: '#fef08a'
+          color: '#fecaca'
         }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#eab308' }} />
-          <div>
-            <strong>Risk Decision Rule Active:</strong> For moderate-risk investors or high sector volatility, low-cost Sector ETFs/Mutual Funds (e.g. MidCap ETF, Nifty Bank ETF) are recommended over direct stock picking to avoid single-stock drawdown risk.
-          </div>
+          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#ef4444' }} />
+          <div>{rankingError}</div>
         </div>
       )}
 

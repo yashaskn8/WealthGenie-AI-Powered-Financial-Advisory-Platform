@@ -1402,6 +1402,8 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
 
     const postTaxYieldVal = nominalRate > 0 ? nominalRate * (1 - taxEffectRate) : 0;
     const postTaxYieldStr = postTaxYieldVal > 0 ? `~${postTaxYieldVal.toFixed(1)}% (Post-Tax)` : item.rate;
+    const expenseRatioMatch = highlightLower.match(/\b(?:expense\s*ratio|expense|ter|er)\b\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%/i);
+    const expRatioVal = expenseRatioMatch ? Number(expenseRatioMatch[1]) : null;
 
     if (postTaxYieldVal > 0) score += Math.min(15, postTaxYieldVal * 0.6);
 
@@ -1449,6 +1451,7 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
     return {
       ...item,
       _score: score,
+      expRatioVal,
       postTaxYieldVal,
       postTaxYieldStr,
       profileMatchTag: matchTag,
@@ -1460,7 +1463,7 @@ export function rankWhereToInvestBackend(candidates = [], profile = {}, options 
   if (sortBy === 'postTaxYield') {
     scored.sort((a, b) => b.postTaxYieldVal - a.postTaxYieldVal || b._score - a._score);
   } else if (sortBy === 'expense') {
-    scored.sort((a, b) => (a.expRatioVal || 99) - (b.expRatioVal || 99) || b._score - a._score);
+    scored.sort((a, b) => (a.expRatioVal ?? 99) - (b.expRatioVal ?? 99) || b._score - a._score);
   } else {
     scored.sort((a, b) => b._score - a._score);
   }
@@ -1489,5 +1492,3 @@ export {
   enforceAllocationTargets,
   enforceAllocationTargetsHeuristic,
 };
-
-

@@ -420,6 +420,14 @@ export async function getInstruments(type, sort = 'rate', order = 'desc', limit 
   return request('GET', `/instruments?${params.toString()}`);
 }
 
+export async function rankInvestmentCandidates(candidates, userProfile, options = {}, requestOptions = {}) {
+  return request('POST', '/instruments/rank-wti', {
+    candidates,
+    userProfile,
+    options,
+  }, requestOptions);
+}
+
 // ─── PROJECTIONS ─────────────────────────────────────────
 export async function getProjections(profileId, instruments, monthlyInvestment, years) {
   return request('POST', '/projection', {
@@ -558,7 +566,7 @@ const api = {
   setAuthToken, getAuthToken, clearAuthToken, clearUserSession,
   subscribeAuth, getAuthSnapshot,
   setUserInfo, getUserInfo,
-  buildProfile, getCurrentProfile, updateProfile, getRecommendations, getInstruments, getProjections,
+  buildProfile, getCurrentProfile, updateProfile, getRecommendations, getInstruments, rankInvestmentCandidates, getProjections,
   runMonteCarlo, createGoal, getGoals, updateGoal, deleteGoal, healthCheck,
   getMarketRates, refreshMarketRates,
   sendChatMessage, getChatHistory, clearChatSession, rebalancePortfolio,
