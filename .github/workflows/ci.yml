@@ -49,6 +49,11 @@ jobs:
           cd server
           npm run lint
 
+      - name: Run Backend Syntax Check
+        run: |
+          cd server
+          npm run typecheck
+
       - name: Run Backend Tests & Coverage
         env:
           MONGODB_URI: 'mongodb://127.0.0.1:27017/wealthgenie_test'
@@ -69,13 +74,9 @@ jobs:
           path: server/reports/
 
       - name: Audit npm dependencies
-        continue-on-error: true
         run: |
           cd server
-          echo '## 🔍 npm Audit (backend)' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          npm audit --audit-level=high 2>&1 | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          npm audit --audit-level=high
 
   backend-unit-windows:
     name: Backend Windows (Node ${{ matrix.node-version }})
@@ -104,6 +105,11 @@ jobs:
         run: |
           cd server
           npm run lint
+
+      - name: Run Backend Syntax Check
+        run: |
+          cd server
+          npm run typecheck
 
       - name: Run Backend Unit Tests & Coverage (No MongoDB Required)
         run: |
@@ -149,12 +155,28 @@ jobs:
       - name: Run ESLint Check
         run: |
           cd reactapp
-          npx eslint src/
+          npm run lint
+
+      - name: Run TypeScript Check
+        run: |
+          cd reactapp
+          npm run typecheck
 
       - name: Run Vitest Suite
         run: |
           cd reactapp
           npm test
+
+      - name: Build Production Frontend
+        run: |
+          cd reactapp
+          npm run build
+
+      - name: Audit npm dependencies
+        if: runner.os == 'Linux'
+        run: |
+          cd reactapp
+          npm audit --audit-level=high
 
   ml-microservice-quality:
     name: ML Service (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -187,10 +209,6 @@ jobs:
 
       - name: Audit pip dependencies
         if: runner.os == 'Linux'
-        continue-on-error: true
         run: |
-          pip install pip-audit
-          echo '## 🔍 pip-audit (ml-service)' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          pip-audit -r ml-service/requirements.txt 2>&1 | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          pip install pip-audit==2.10.1
+          pip-audit -r ml-service/requirements.txt
