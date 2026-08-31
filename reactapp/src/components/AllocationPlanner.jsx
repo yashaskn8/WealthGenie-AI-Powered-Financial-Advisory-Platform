@@ -2,8 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart as PieChartIcon, TrendingUp, Landmark, Briefcase, Wallet, Sparkles, ShieldCheck, Info, Layers } from 'lucide-react';
-import { computeAllocation } from '../recommendationEngine';
-import { getEligibleInvestments } from '../recommendationEngine';
 import { RISK_COLORS } from '../investmentDatabase';
 import JargonTooltip from './JargonTooltip';
 import './AllocationPlanner.css';
@@ -42,33 +40,34 @@ const CATEGORY_EXPLANATIONS = {
   'Gold': 'Gold & Metals — Protects against inflation'
 };
 
-const AllocationPlanner = ({ profile }) => {
+const AllocationPlanner = ({ profile, recommendations = [] }) => {
   const savings = Number(profile?.monthly_savings) || 12000;
-  const eligible = useMemo(() => getEligibleInvestments(profile || {}), [profile]);
 
-  // Risk view toggle state
-  const [riskView, setRiskView] = useState(
+  const riskView = (
     (profile?.riskCategory || '').includes('Aggressive') ? 'Aggressive Growth' : 
     (profile?.riskCategory || '').includes('Conservative') ? 'Safe & Stable' : 'Balanced Growth'
   );
 
-  // Compute allocation for the selected risk view
-  const baseAllocation = useMemo(() => {
-    const overrideRisk = riskView === 'Aggressive Growth' ? 'Aggressive' : riskView === 'Safe & Stable' ? 'Conservative' : 'Moderate';
-    return computeAllocation({ ...profile, riskCategory: overrideRisk }, eligible);
-  }, [profile, eligible, riskView]);
-
+  // Only convert backend-authoritative weights into chart presentation fields.
   const allocation = useMemo(() => {
-    return baseAllocation.map((item, idx) => {
+    const total = recommendations.reduce((sum, item) => sum + Number(item.monthly_allocation || 0), 0);
+    return recommendations.filter(item => Number(item.monthly_allocation || 0) > 0).map((item, idx) => {
       const grad = SLICE_GRADIENTS[idx % SLICE_GRADIENTS.length];
       return {
         ...item,
+        allocationPct: item.allocationWeight !== undefined
+          ? Number(item.allocationWeight) * 100
+          : (total > 0 ? (Number(item.monthly_allocation) / total) * 100 : 0),
+        monthlyAmount: Number(item.monthly_allocation || 0),
+        postTaxRate: Number(item.postTaxReturn ?? item.effectiveYield ?? 0),
+        cat: item.cat || item.category || item.assetClass || 'Other',
+        riskLabel: item.riskLabel || item.riskLevel || 'Medium',
         gradId: grad.id,
         themeColor: grad.primary,
         glowColor: grad.glow,
       };
     });
-  }, [baseAllocation]);
+  }, [recommendations]);
 
   // Compute blended return
   const blendedReturn = useMemo(() => {
@@ -126,13 +125,13 @@ const AllocationPlanner = ({ profile }) => {
         {/* Risk Presets Segmented Toggle */}
         <div className="risk-presets-container">
           <div className="risk-presets-segmented">
-            {RISK_PRESETS.map(preset => {
+            {RISK_PRESETS.filter(preset => preset.id === riskView).map(preset => {
               const isActive = riskView === preset.id;
               return (
                 <button
                   key={preset.id}
-                  onClick={() => setRiskView(preset.id)}
                   className={`risk-preset-btn ${isActive ? 'active' : ''}`}
+                  aria-label="Current backend risk strategy"
                 >
                   <span>{preset.label}</span>
                 </button>

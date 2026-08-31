@@ -5,7 +5,6 @@ import RecommendationDashboard from './RecommendationDashboard';
 import Sidebar from './components/Sidebar';
 import GenieChat from './components/GenieChat';
 import ErrorBoundary from './components/ErrorBoundary';
-import { generateRecommendations, getEligibleInvestments } from './recommendationEngine';
 import * as api from './services/api';
 import { useAuth } from './context/AuthContext';
 import { assertKnownBackendInstrumentTypes, backendToLocalInstrument, localToBackendInstrument } from './utils/instrumentTypeMap';
@@ -49,12 +48,6 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
        userProfile.riskCategory, userProfile.risk_tolerance, userProfile.investment_goals,
        userProfile.investment_horizon, userProfile.taxRegime, userProfile.profileId]);
 
-  // Memoize local recommendations - only recomputes when profile key changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const localRecommendations = useMemo(() => generateRecommendations(userProfile), [profileKey, userProfile]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const eligibleInvestments = useMemo(() => getEligibleInvestments(userProfile), [profileKey, userProfile]);
-
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
@@ -86,7 +79,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
         console.error("Failed to fetch backend recommendations:", err);
         setBackendRecs(null);
         setBackendFallback({
-          message: 'Live recommendations unavailable - showing offline estimates',
+          message: 'Authoritative recommendations are temporarily unavailable',
           detail: err?.message || null,
         });
       } finally {
@@ -109,13 +102,9 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
     }
   };
 
-  // Merge backend data with local recommendations for display
+  // Backend response is the only source of personalized recommendation truth.
   const recommendations = useMemo(() => {
-    if (!backendRecs) {
-      return backendFallback
-        ? localRecommendations.map(rec => ({ ...rec, _source: 'local_inactive' }))
-        : localRecommendations;
-    }
+    if (!backendRecs) return [];
 
     assertKnownBackendInstrumentTypes(backendRecs.instruments?.map(bi => bi.type), 'recommendation merge');
 
@@ -176,7 +165,8 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
       }
     }
     return merged;
-  }, [backendFallback, backendRecs, localRecommendations, userProfile]);
+  }, [backendRecs, userProfile]);
+  const eligibleInvestments = recommendations;
 
   const handleLearnMore = (investment) => {
     const normalized = {
@@ -308,7 +298,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
           </ErrorBoundary>
         );
       case 'allocation':
-        return <ErrorBoundary><AllocationPlanner profile={userProfile} /></ErrorBoundary>;
+        return <ErrorBoundary><AllocationPlanner profile={userProfile} recommendations={recommendations} /></ErrorBoundary>;
       case 'profile':
         return (
           <ErrorBoundary>

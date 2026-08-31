@@ -15,98 +15,6 @@ const SECTION_80D_SELF_SENIOR_LIMIT = 50000;
 const SECTION_80D_PARENTS_LIMIT = 25000;
 const SECTION_80D_PARENTS_SENIOR_LIMIT = 50000;
 
-// Local Fallback Calculator (Fully aligned with latest FY2025-26 rules)
-function calculateTaxesLocal(grossIncome, section80C, sectionNPS, hra = 0, homeLoanInterest = 0, other = 0, section80D_self = 0, section80D_parents = 0, parentsSenior = false, age = 30) {
-  const stdDeductionNew = 75000;
-  const taxableNew = Math.max(0, grossIncome - stdDeductionNew);
-  let taxNew = 0;
-  
-  // Slab details for FY 2025-26 New Regime:
-  if (taxableNew <= 1200000) {
-    taxNew = 0; // Rebate covers taxable income up to 12L under Sec 87A for FY 2025-26
-  } else {
-    let temp = taxableNew;
-    if (temp > 2400000) { taxNew += (temp - 2400000) * 0.30; temp = 2400000; }
-    if (temp > 2000000) { taxNew += (temp - 2000000) * 0.25; temp = 2000000; }
-    if (temp > 1600000) { taxNew += (temp - 1600000) * 0.20; temp = 1600000; }
-    if (temp > 1200000) { taxNew += (temp - 1200000) * 0.15; temp = 1200000; }
-    if (temp > 800000) { taxNew += (temp - 800000) * 0.10; temp = 800000; }
-    if (temp > 400000) { taxNew += (temp - 400000) * 0.05; }
-
-    // Marginal relief for 87A (tax cannot exceed the excess over ₹12,00,000)
-    const excessOverLimit = taxableNew - 1200000;
-    if (taxNew > excessOverLimit) {
-      taxNew = excessOverLimit;
-    }
-  }
-  const taxBeforeCessNew = taxNew;
-  taxNew = taxNew * 1.04;
-
-  // Section 80D calculation (Old Regime only)
-  const selfSenior = (Number(age) || 30) >= 60;
-  const max80DSelf = selfSenior ? SECTION_80D_SELF_SENIOR_LIMIT : SECTION_80D_SELF_LIMIT;
-  const max80DParents = parentsSenior ? SECTION_80D_PARENTS_SENIOR_LIMIT : SECTION_80D_PARENTS_LIMIT;
-  const allowed80DSelf = Math.min(Number(section80D_self) || 0, max80DSelf);
-  const allowed80DParents = Math.min(Number(section80D_parents) || 0, max80DParents);
-  const total80D = allowed80DSelf + allowed80DParents;
-
-  const stdDeductionOld = 50000;
-  const deductionsOld = Math.min(SECTION_80C_LIMIT, Number(section80C) || 0) + 
-                        Math.min(SECTION_80CCD_1B_LIMIT, Number(sectionNPS) || 0) +
-                        total80D +
-                        (Number(hra) || 0) +
-                        Math.min(200000, Number(homeLoanInterest) || 0) +
-                        (Number(other) || 0);
-
-  const taxableOld = Math.max(0, grossIncome - stdDeductionOld - deductionsOld);
-  let taxOld = 0;
-  
-  // Slab details for Old Regime
-  if (taxableOld <= 500000) {
-    taxOld = 0;
-  } else {
-    let temp = taxableOld;
-    if (temp > 1000000) { taxOld += (temp - 1000000) * 0.30; temp = 1000000; }
-    if (temp > 500000) { taxOld += (temp - 500000) * 0.20; temp = 500000; }
-    if (temp > 250000) { taxOld += (temp - 250000) * 0.05; }
-  }
-  const taxBeforeCessOld = taxOld;
-  taxOld = taxOld * 1.04;
-
-  return {
-    taxableNew: Math.round(taxableNew),
-    taxNew: Math.round(taxNew),
-    taxBeforeCessNew: Math.round(taxBeforeCessNew),
-    taxableOld: Math.round(taxableOld),
-    taxOld: Math.round(taxOld),
-    taxBeforeCessOld: Math.round(taxBeforeCessOld),
-    difference: Math.round(Math.abs(taxOld - taxNew)),
-    betterRegime: taxNew < taxOld ? 'New' : taxOld < taxNew ? 'Old' : 'Either',
-    // Deduction breakdown for comparison matrix
-    stdDeductionNew: 75000,
-    stdDeductionOld: 50000,
-    deductionsOld: Math.round(deductionsOld),
-    total80D: Math.round(total80D),
-    allowed80DSelf: Math.round(allowed80DSelf),
-    allowed80DParents: Math.round(allowed80DParents),
-  };
-}
-
-function findDeductionCrossoverLocal(grossIncome) {
-  const newRegimeTax = calculateTaxesLocal(grossIncome, 0, 0).taxNew;
-  if (newRegimeTax === 0) return 0;
-
-  for (let ded = 0; ded <= 600000; ded += 1000) {
-    const c80 = Math.min(150000, ded);
-    const nps = Math.min(50000, Math.max(0, ded - 150000));
-    const testResult = calculateTaxesLocal(grossIncome, c80, nps);
-    if (testResult.taxOld <= testResult.taxNew) {
-      return ded;
-    }
-  }
-  return null; 
-}
-
 function getSlabBreakdownLocal(taxableIncome, isNew) {
   const slabs = isNew 
     ? [
@@ -239,7 +147,7 @@ const TaxScreen = ({ profile, onLearnMore }) => {
           setApiError(null);
         }
       } catch (err) {
-        console.error("Backend tax query failed, sliding into high-fidelity local calculator:", err);
+        console.error("Backend tax query failed; authoritative tax values are unavailable:", err);
         if (active) {
           setApiError(err.message || "Failed to synchronise with tax slabs server.");
         }
@@ -256,22 +164,6 @@ const TaxScreen = ({ profile, onLearnMore }) => {
     };
   }, [annualIncome, existing80C, existing80CCD, existingHRA, existingHomeLoan, existingOther, existing80DSelf, existing80DParents, parentsSenior, profile?.age]);
 
-  // Fast Local Fallback (instant responses while sliding)
-  const localTax = useMemo(() => {
-    return calculateTaxesLocal(
-      annualIncome, 
-      existing80C, 
-      existing80CCD, 
-      existingHRA, 
-      existingHomeLoan, 
-      existingOther,
-      existing80DSelf,
-      existing80DParents,
-      parentsSenior,
-      profile?.age || 30
-    );
-  }, [annualIncome, existing80C, existing80CCD, existingHRA, existingHomeLoan, existingOther, existing80DSelf, existing80DParents, parentsSenior, profile?.age]);
-
   const remaining80C = Math.max(0, SECTION_80C_LIMIT - (Number(existing80C) || 0));
   const remaining80CCD = Math.max(0, SECTION_80CCD_1B_LIMIT - (Number(existing80CCD) || 0));
   const self80DLimit = (Number(profile?.age) || 30) >= 60 ? SECTION_80D_SELF_SENIOR_LIMIT : SECTION_80D_SELF_LIMIT;
@@ -283,55 +175,55 @@ const TaxScreen = ({ profile, onLearnMore }) => {
     return getTaxSavingRecommendations(remaining80C, remaining80CCD, investmentDatabase);
   }, [remaining80C, remaining80CCD]);
 
-  // Resolve values: backend primary, local fallback secondary
+  // Authoritative financial values always come from the backend.
   const totalTax = serverTaxData
     ? (regime === 'new' ? serverTaxData.new_regime.tax : serverTaxData.old_regime.tax)
-    : (regime === 'new' ? localTax.taxNew : localTax.taxOld);
+    : 0;
 
   const taxableIncome = serverTaxData
     ? (regime === 'new' ? serverTaxData.new_regime.taxable_income : serverTaxData.old_regime.taxable_income)
-    : (regime === 'new' ? localTax.taxableNew : localTax.taxableOld);
+    : 0;
 
   const effectiveRate = serverTaxData
     ? (regime === 'new' ? serverTaxData.new_regime.effective_rate : serverTaxData.old_regime.effective_rate)
-    : (annualIncome > 0 ? ((totalTax / annualIncome) * 100).toFixed(1) : 0);
+    : 0;
 
   const standardDeduction = serverTaxData
     ? (regime === 'new' ? serverTaxData.new_regime.standard_deduction : serverTaxData.old_regime.standard_deduction)
-    : (regime === 'new' ? 75000 : 50000);
+    : 0;
 
   const taxBeforeCess = serverTaxData
     ? (regime === 'new' ? serverTaxData.new_regime.tax - serverTaxData.new_regime.cess : serverTaxData.old_regime.tax - serverTaxData.old_regime.cess)
-    : (regime === 'new' ? localTax.taxBeforeCessNew : localTax.taxBeforeCessOld);
+    : 0;
 
   const marginalRate = taxBeforeCess > 0 ? (taxBeforeCess / taxableIncome) : 0;
   const potentialSaving = regime === 'old' ? Math.round((remaining80C + remaining80CCD) * marginalRate * 1.04) : 0;
 
   const betterRegime = serverTaxData
     ? (serverTaxData.saving === 0 ? 'Either' : (serverTaxData.recommended_regime === 'new' ? 'New' : 'Old'))
-    : localTax.betterRegime;
+    : 'Unavailable';
 
-  const betterRegimeSavings = serverTaxData ? serverTaxData.saving : localTax.difference;
+  const betterRegimeSavings = serverTaxData ? serverTaxData.saving : 0;
 
   // Breakdown lists for slabs tables
   const newRegimeSlabs = useMemo(() => {
-    const tInc = serverTaxData ? serverTaxData.new_regime.taxable_income : localTax.taxableNew;
+    const tInc = serverTaxData ? serverTaxData.new_regime.taxable_income : 0;
     return getSlabBreakdownLocal(tInc, true);
-  }, [serverTaxData, localTax.taxableNew]);
+  }, [serverTaxData]);
 
   const oldRegimeSlabs = useMemo(() => {
-    const tInc = serverTaxData ? serverTaxData.old_regime.taxable_income : localTax.taxableOld;
+    const tInc = serverTaxData ? serverTaxData.old_regime.taxable_income : 0;
     return getSlabBreakdownLocal(tInc, false);
-  }, [serverTaxData, localTax.taxableOld]);
+  }, [serverTaxData]);
 
   const activeSlabs = regime === 'new' ? newRegimeSlabs : oldRegimeSlabs;
 
   // Crossover breakpoint
-  const crossoverBreakpoint = useMemo(() => findDeductionCrossoverLocal(annualIncome), [annualIncome]);
+  const crossoverBreakpoint = null;
   const currentDeductions = (Number(existing80C) || 0) + (Number(existing80CCD) || 0) + (Number(existingHRA) || 0) + (Number(existingHomeLoan) || 0) + allowed80DSelf + allowed80DParents + (Number(existingOther) || 0);
 
-  const taxOldVal = serverTaxData ? serverTaxData.old_regime.tax : localTax.taxOld;
-  const taxNewVal = serverTaxData ? serverTaxData.new_regime.tax : localTax.taxNew;
+  const taxOldVal = serverTaxData ? serverTaxData.old_regime.tax : 0;
+  const taxNewVal = serverTaxData ? serverTaxData.new_regime.tax : 0;
 
   const regimeChartData = [
     { label: 'Old Regime', value: taxOldVal, fill: 'url(#colorOld)' },

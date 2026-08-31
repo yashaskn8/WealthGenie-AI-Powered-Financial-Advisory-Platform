@@ -6,7 +6,6 @@ import * as api from '../services/api';
 import {
   formatFullINR,
   calculateStepUpSIP,
-  calculateTaxes,
   getSuggestedQuestions,
   generateContextualPills
 } from '../utils/genieChatHelpers.js';
@@ -54,6 +53,8 @@ const GenieChat = ({ profile, onNavigate }) => {
   const [taxGrossIncome, setTaxGrossIncome] = useState(780000);
   const [tax80C, setTax80C] = useState(150000);
   const [taxNPS, setTaxNPS] = useState(50000);
+  const [taxComparison, setTaxComparison] = useState(null);
+  const [taxComparisonError, setTaxComparisonError] = useState(null);
 
   useEffect(() => {
     if (profile) {
@@ -64,6 +65,34 @@ const GenieChat = ({ profile, onNavigate }) => {
       setTaxGrossIncome(profile.annualIncome || (profile.monthly_income || profile.income || 65000) * 12);
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (activeWorkspace !== 'tax-optimizer') return undefined;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setTaxComparisonError(null);
+      api.compareTax(taxGrossIncome, { section80C: tax80C, nps80CCD1B: taxNPS })
+        .then(result => {
+          if (cancelled) return;
+          setTaxComparison({
+            taxNew: result.new_regime.tax,
+            taxOld: result.old_regime.tax,
+            difference: result.saving,
+            betterRegime: result.recommended_regime,
+          });
+        })
+        .catch(error => {
+          if (!cancelled) {
+            setTaxComparison(null);
+            setTaxComparisonError(error.message);
+          }
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [activeWorkspace, taxGrossIncome, tax80C, taxNPS]);
 
   const lastUserMessage = messages.filter(m => m.role === 'user').slice(-1)[0]?.content || '';
   const lastAssistantMsg = messages.filter(m => m.role === 'assistant').slice(-1)[0];
@@ -434,7 +463,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                 })()}
 
                 {activeWorkspace === 'tax-optimizer' && (() => {
-                  const taxes = calculateTaxes(taxGrossIncome, tax80C, taxNPS);
+                  const taxes = taxComparison;
 
                   return (
                     <div className="workspace-sandbox">
@@ -442,6 +471,12 @@ const GenieChat = ({ profile, onNavigate }) => {
                         <Sparkles size={14} className="text-orange" style={{ flexShrink: 0, marginTop: 2 }} />
                         <span>Find out which tax system saves you more money! Adjust your income and deductions below to compare.</span>
                       </div>
+
+                      {!taxes && (
+                        <div role="status" className="sandbox-intro">
+                          {taxComparisonError ? `Tax service unavailable: ${taxComparisonError}` : 'Calculating with the authoritative tax service...'}
+                        </div>
+                      )}
 
                       <div className="sandbox-group">
                         <div className="sandbox-label-row">
@@ -471,7 +506,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                       </div>
 
                       {/* Side-by-side Comparative Table */}
-                      <div className="tax-comparison-table">
+                      {taxes && <div className="tax-comparison-table">
                         <div className="tax-table-header">
                           <div className="tax-th">What's Compared</div>
                           <div className="tax-th text-center">New Tax System</div>
@@ -497,10 +532,10 @@ const GenieChat = ({ profile, onNavigate }) => {
                           <div className="tax-td text-center text-sky">{formatFullINR(taxes.taxNew)}</div>
                           <div className="tax-td text-center text-purple">{formatFullINR(taxes.taxOld)}</div>
                         </div>
-                      </div>
+                      </div>}
 
                       {/* Verdict Banner */}
-                      <div className={`tax-verdict-card ${taxes.betterRegime === 'new' ? 'verdict-new' : 'verdict-old'}`}>
+                      {taxes && <div className={`tax-verdict-card ${taxes.betterRegime === 'new' ? 'verdict-new' : 'verdict-old'}`}>
                         <div className="verdict-title">
                           Result: {taxes.betterRegime === 'new' ? 'NEW TAX SYSTEM SAVES MORE!' : 'OLD TAX SYSTEM SAVES MORE!'}
                         </div>
@@ -511,7 +546,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                             <span>The <strong className="font-bold">{taxes.betterRegime === 'new' ? 'New' : 'Old'} Tax System</strong> is better for you, saving <strong className="font-bold">{formatFullINR(taxes.difference)}</strong> in taxes this year!</span>
                           )}
                         </div>
-                      </div>
+                      </div>}
                     </div>
                   );
                 })()}

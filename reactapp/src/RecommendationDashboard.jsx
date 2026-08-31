@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
 import { ChevronRight, ChevronDown, Filter, Info, Shield, TrendingUp, Zap, Trophy, BarChart3, AlertCircle, Calendar, Target, Activity, Wallet, PiggyBank, Clock, HelpCircle, Building2, MapPin, Star, User, Edit3, Sparkles, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { investmentDatabase, RISK_COLORS, CHART_COLORS } from './investmentDatabase';
-import { generateRecommendations, getEligibleInvestments, getWhy, GOAL_PROFILES } from './recommendationEngine';
+import { getWhy, GOAL_PROFILES } from './recommendationEngine';
 import { getConfidenceLabel } from './utils/confidenceLabels';
 import { INSTRUMENT_EXPLAINERS, CARD_SUBTITLES, RISK_PLAIN_LABELS, getLockInWarning, detectRiskAgeMismatch } from './utils/instrumentExplainers';
 import SebiDisclaimer from './components/SebiDisclaimer';
@@ -25,8 +25,6 @@ const DEFAULT_COLORS = ['#6366f1', '#06b6d4', '#f59e0b', '#8b5cf6', '#ec4899', '
 
 const SOURCE_BADGES = {
   backend: { label: 'Live backend', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.10)', border: 'rgba(56, 189, 248, 0.22)' },
-  local_inactive: { label: 'Offline estimate', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.24)' },
-  local_engine: { label: 'Local estimate', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.08)', border: 'rgba(148, 163, 184, 0.16)' },
 };
 
 const _getSourceBadge = (source) => SOURCE_BADGES[source] || null;
@@ -45,7 +43,7 @@ export const BackendFallbackBanner = ({ notice, onDismiss }) => {
     >
       <AlertCircle size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: 1 }} />
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 800, marginBottom: 2 }}>{notice.message || 'Live recommendations unavailable - showing offline estimates'}</div>
+        <div style={{ fontWeight: 800, marginBottom: 2 }}>{notice.message || 'Authoritative recommendations are temporarily unavailable'}</div>
         {notice.detail && <div style={{ color: '#94a3b8', fontSize: '0.72rem' }}>{notice.detail}</div>}
       </div>
       <button
@@ -112,17 +110,9 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
     setRiskValue(riskCategoryToSlider(userProfile?.riskCategory));
   }, [userProfile?.riskCategory]);
 
-  // ─── Live re-computation: derive risk label from slider & regenerate recommendations ───
+  // Risk controls are presentation-only; personalized picks remain backend authoritative.
   const derivedRiskLabel = riskValueToLabel(riskValue);
-  const recommendations = useMemo(() => {
-    // If the slider matches the original profile risk, use prop recommendations (includes backend data)
-    if (derivedRiskLabel === (userProfile?.riskCategory || 'Moderate')) {
-      return propRecommendations;
-    }
-    // Otherwise, re-generate locally with the overridden riskCategory + current horizon
-    const modifiedProfile = { ...userProfile, riskCategory: derivedRiskLabel, investment_horizon: horizon };
-    return generateRecommendations(modifiedProfile);
-  }, [derivedRiskLabel, userProfile, propRecommendations, horizon]);
+  const recommendations = useMemo(() => propRecommendations || [], [propRecommendations]);
   const [expandedRows, setExpandedRows] = useState({});
   const [expandedWhyCards, setExpandedWhyCards] = useState({});
 
@@ -144,11 +134,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
   const isEmergencyFundGoal = (userProfile?.investment_goals || [])[0] === 'Emergency Fund';
   const totalInstruments = investmentDatabase.length;
   const displayedCount = recommendations?.length || 0;
-  const eligibleCount = useMemo(() => {
-    if (!userProfile) return 0;
-    if (isEmergencyFundGoal) return displayedCount;
-    return getEligibleInvestments(userProfile).length;
-  }, [userProfile, isEmergencyFundGoal, displayedCount]);
+  const eligibleCount = displayedCount;
   const excludedCount = totalInstruments - eligibleCount;
 
   const toggleRow = (id) => {
