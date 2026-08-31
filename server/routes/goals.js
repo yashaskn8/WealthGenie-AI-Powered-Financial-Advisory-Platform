@@ -248,59 +248,62 @@ function _buildChartData(mcResult) {
   }));
 }
 
-async function _syncProfileGoals(profileId, userId) {
+async function _syncProfileGoals(profileId, userId, session) {
   if (!userId) return;
-  const userGoals = await Goal.find({ userId }, 'goal_name').lean();
+  const userGoals = await Goal.find({ userId }, 'goal_name').session(session).lean();
   const goalNames = userGoals.map(g => g.goal_name).filter(Boolean);
+  let syncResult;
   if (profileId) {
-    await FinancialProfile.updateOne({ _id: profileId }, { $set: { goals: goalNames, lastGoalCreatedAt: new Date() } });
+    syncResult = await FinancialProfile.updateOne(
+      { _id: profileId, userId },
+      { $set: { goals: goalNames, lastGoalCreatedAt: new Date() } },
+      { session },
+    );
   } else {
-    await FinancialProfile.updateMany({ userId }, { $set: { goals: goalNames } });
+    syncResult = await FinancialProfile.updateMany(
+      { userId },
+      { $set: { goals: goalNames, lastGoalCreatedAt: new Date() } },
+      { session },
+    );
+  }
+  if (syncResult.matchedCount < 1) {
+    throw new Error('Goal transaction could not synchronize an owned FinancialProfile.');
   }
 }
 
 /**
- * Persist goal with transaction fallback for standalone MongoDB.
+ * Persist a goal and its denormalized profile state in one MongoDB transaction.
+ * Standalone MongoDB is intentionally unsupported for this authoritative write.
  */
-async function _persistGoalWithFallback(goalData, profileId) {
+export async function persistGoalAtomically(goalData, profileId, { testHooks = {} } = {}) {
+  await Promise.all([Goal.init(), FinancialProfile.init()]);
+  const session = await mongoose.startSession();
   let goal = null;
-
   try {
-    const session = await mongoose.startSession();
-    try {
-      session.startTransaction();
-
+    await session.withTransaction(async () => {
       const goals = await Goal.create([goalData], { session });
       goal = goals[0];
-
-      await _syncProfileGoals(profileId, goalData.userId);
-
-      await session.commitTransaction();
-    } catch (txErr) {
-      try { await session.abortTransaction(); } catch (_) { /* already aborted */ }
-
-      const msg = txErr.message || '';
-      if (msg.includes('Transaction numbers are only allowed on a replica set') ||
-          msg.includes('transaction') && msg.includes('not supported')) {
-        console.warn('[Goals] Transactions not supported — falling back to sequential writes.');
-        goal = null;
-      } else {
-        throw txErr;
-      }
-    } finally {
-      session.endSession();
+      await testHooks.afterGoalCreate?.(session, goal);
+      await _syncProfileGoals(profileId, goalData.userId, session);
+      await testHooks.afterProfileSync?.(session, goal);
+    }, {
+      readConcern: { level: 'snapshot' },
+      writeConcern: { w: 'majority' },
+    });
+  } catch (error) {
+    if (/Transaction numbers are only allowed|replica set|does not support retryable writes/i.test(error.message || '')) {
+      const transactionError = new Error(
+        'Atomic goal persistence requires a transaction-capable MongoDB replica set. No sequential fallback is permitted.',
+        { cause: error },
+      );
+      transactionError.status = 503;
+      transactionError.clientMessage = 'Goal persistence is temporarily unavailable.';
+      transactionError.code = 'GOAL_TRANSACTIONS_REQUIRED';
+      throw transactionError;
     }
-  } catch (sessionErr) {
-    const msg = sessionErr.message || '';
-    if (!msg.includes('replica set') && !msg.includes('not supported') && !msg.includes('session')) {
-      throw sessionErr;
-    }
-    console.warn('[Goals] Session not available — falling back to sequential writes.');
-  }
-
-  if (!goal) {
-    goal = await Goal.create(goalData);
-    await _syncProfileGoals(profileId, goalData.userId);
+    throw error;
+  } finally {
+    await session.endSession();
   }
   return goal;
 }
@@ -313,6 +316,9 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
   const { goal_name, target_amount, target_date, current_savings, profileId, priority } = req.body;
 
   const profile = await _resolveProfile(profileId, req.user.userId);
+  if (!profile) {
+    throw createError(409, 'Goal creation requires a financial profile', 'Build a financial profile before creating goals.');
+  }
 
   // Duplicate goal name check
   const existingGoal = await Goal.findOne({
@@ -389,7 +395,7 @@ router.post('/create', verifyJWT, idempotency(), validate(goalSchema), asyncHand
 
   let goal;
   try {
-    goal = await _persistGoalWithFallback(goalData, profile?._id);
+    goal = await persistGoalAtomically(goalData, profile._id);
   } catch (createErr) {
     if (createErr.code === 11000) {
       throw createError(409,

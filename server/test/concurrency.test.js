@@ -291,29 +291,15 @@ test('Transaction: Goal creation rolls back if FinancialProfile.updateOne throws
         headers: { authorization: `Bearer ${token}` },
       });
 
-      // On replica set: transaction aborts, status >= 400 (the simulated crash bubbles up)
-      // On standalone: the fallback path runs, and since updateOne throws for session-bearing
-      //   calls only, the non-session fallback succeeds — so we get 201 on standalone.
-      // Either way, verify database consistency below.
+      assert.ok(response.status >= 400, `Simulated profile-sync failure must abort the request, got ${response.status}`);
+      assert.ok(body.error, 'Aborted goal transaction must return an error response');
     });
 
-    // The key assertion: if transactions worked, goal count should be unchanged (rolled back).
-    // If standalone fallback ran, a goal may have been created — that's expected on standalone.
     const goalCountAfter = await Goal.countDocuments({ userId: TEST_USER_ID });
     const goalsCreated = goalCountAfter - goalCountBefore;
-
-    // Log which path ran for visibility
-    if (goalsCreated === 0) {
-      console.log('[Transaction Test] Transaction rollback confirmed: 0 new goals.');
-    } else {
-      console.log(`[Transaction Test] Standalone fallback path: ${goalsCreated} goal(s) created (expected on non-replica-set MongoDB).`);
-    }
-
-    // At least verify no partial state: if goal exists, profile should also be updated
-    if (goalsCreated > 0) {
-      const updatedProfile = await FinancialProfile.findById(profile._id).lean();
-      assert.ok(updatedProfile.lastGoalCreatedAt, 'If goal was created (fallback), profile should also be updated');
-    }
+    assert.equal(goalsCreated, 0, 'Failed profile synchronization must roll back the Goal insert');
+    const updatedProfile = await FinancialProfile.findById(profile._id).lean();
+    assert.ok(!(updatedProfile.goals || []).includes(goalName), 'Aborted goal must not appear in FinancialProfile.goals');
   } finally {
     FinancialProfile.updateOne = originalUpdateOne;
   }
