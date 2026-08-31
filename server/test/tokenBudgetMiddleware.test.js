@@ -76,8 +76,10 @@ test('token budget: blocks when cumulative tokens exceed the limit', async () =>
     assert.equal(r3.status, 429, 'third request blocked after budget exceeded');
 
     const body = await r3.json();
-    assert.ok(body.error.includes('Token budget'), 'error message mentions token budget');
-    assert.ok(body.retryAfterSeconds > 0, 'includes retry-after');
+    assert.equal(body.code, 'TOKEN_BUDGET_EXCEEDED');
+    assert.equal(body.error, body.message, 'compatibility error alias matches canonical message');
+    assert.ok(body.details.retryAfterSeconds > 0, 'structured details include retry-after');
+    assert.equal(Number(r3.headers.get('retry-after')), body.details.retryAfterSeconds);
   });
 });
 
