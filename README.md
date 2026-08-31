@@ -6,13 +6,13 @@
 [![Node.js](https://img.shields.io/badge/Node.js-v22.x-339933?logo=node.js)](https://nodejs.org/)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-v18.x-61DAFB?logo=react)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-v19.x-61DAFB?logo=react)](https://react.dev/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-v7.0-47A248?logo=mongodb)](https://www.mongodb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <!-- TODO (WG-035): Insert live deployment URL here when Vercel/Render ships -->
 
-`Python 3.12` • `FastAPI` • `Node.js / Express` • `MongoDB` • `Redis` • `React 18` • `Vite` • `PyTorch` • `SentenceTransformers` • `Docker`
+`Python 3.12` • `FastAPI` • `Node.js / Express` • `MongoDB` • `Redis` • `React 19` • `Vite` • `PyTorch` • `SentenceTransformers` • `Docker`
 
 ---
 
@@ -37,24 +37,24 @@
 
 | Capability | Implementation Mechanism | Verification / Benchmark Source |
 | :--- | :--- | :--- |
-| **Portfolio Recommendation** | 5-stage pipeline: Risk scoring → Asset allocation → Quadratic solver / Heuristic fallback → Policy caps → Rebalancing | [`server/services/RecommendationPipeline.js`](server/services/RecommendationPipeline.js), 49 test suites (366 assertions) |
+| **Portfolio Recommendation** | 5-stage pipeline: Risk scoring → Asset allocation → Quadratic solver / Heuristic fallback → Policy caps → Rebalancing | [`server/services/RecommendationPipeline.js`](server/services/RecommendationPipeline.js), [`server/test/recommendationPipeline.test.js`](server/test/recommendationPipeline.test.js) |
 | **RAG Knowledge Retrieval & Multi-Tenancy** | FastAPI hybrid vector search (`all-MiniLM-L6-v2` 384D) with tenant namespace isolation & intent routing | Document Hit Rate: **98.7%**, Precision@4: **0.7367**, MRR: **0.9022** ([`real_corpus_evaluation_report.json`](ml-service/reports/real_corpus_evaluation_report.json), [`test_rag_tenant_isolation.py`](ml-service/tests/test_rag_tenant_isolation.py)) |
 | **Distributed Tracing** | OpenTelemetry SDK with W3C `traceparent` propagation across Express <-> FastAPI microservices exporting to `traces.jsonl` | [`server/config/tracing.js`](server/config/tracing.js), [`ml-service/tracing.py`](ml-service/tracing.py), [`scripts/verify_distributed_tracing.js`](scripts/verify_distributed_tracing.js) |
 | **Tamper-Evident Advisory Audit Chain** | Transactional canonical SHA-256 record chain with fail-loudly guarantees and verification endpoint | [`server/models/AuditRecord.js`](server/models/AuditRecord.js), [`server/test/auditChain.test.js`](server/test/auditChain.test.js) |
-| **Playwright Full-Lifecycle E2E Suite** | Automated 5-service orchestrator for end-to-end user lifecycle journey | [`scripts/run_e2e_stack.ps1`](scripts/run_e2e_stack.ps1), [`reactapp/e2e/full-flow.spec.ts`](reactapp/e2e/full-flow.spec.ts) (1 passed in 21.1s) |
+| **Playwright Full-Lifecycle E2E Suite** | Real-service user lifecycle against replica-set MongoDB, Redis, FastAPI, Express, and Vite | [`reactapp/e2e/full-flow.spec.ts`](reactapp/e2e/full-flow.spec.ts), [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | **Investor Classification** | Random Forest (`model.pkl`), PyTorch MLP, and FT-Transformer tabular neural network | FT-Transformer: **97.05%** rule-approx. (independent CFP: 15.83%), RF: **95.63%** rule-approx. (independent CFP: 25.26%) ([`multi_model_benchmark.json`](ml-service/reports/multi_model_benchmark.json)) |
 | **Agentic Advisory Chat** | Multi-agent state machine (`geminiChatService.js`, `aiToolOrchestrator.js`) with tool-calling graph | Post-patch load test: **105.7–193.6 req/s** (chat API throughput) ([`load_test_report.md`](load_test_report.md)) |
 | **Tax Regime Computation** | In-memory FY2025-26 Old vs New regime calculator with Section 87A rebate logic | Compute throughput: **3,736.7–5,537.7 req/s** (tax engine execution) ([`load_test_report.md`](load_test_report.md)) |
-| **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | `investment_master.json` (155 instruments) |
+| **Financial Instrument Catalog** | 155 curated instruments across 14 asset classes | Canonical [`server/data/investment_master.json`](server/data/investment_master.json), generated frontend mirror, and parity test |
 | **Security Controls** | Fail-closed API key verification, prompt injection defense pipeline, Joi validation | [`test_fail_closed_auth_when_api_key_unset`](ml-service/tests/test_ml_validation.py) |
-| **Distributed Systems Failure-Mode Testing** | Real-failure chaos tests (MongoDB disconnect, Redis disconnect, ML ECONNREFUSED), mid-transaction partial-write proof, Redis fail-closed audit (14 paths) | [`chaos.test.js`](server/test/chaos.test.js) (4/4), [`midTransaction.test.js`](server/test/midTransaction.test.js) (2/2), [`redisFailClosed.test.js`](server/test/redisFailClosed.test.js) (8/8) |
-| **Testing & CI/CD** | 26 Node.js test suites (404+ assertions) + 223 Python pytest items + Playwright E2E suite | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
+| **Distributed Systems Failure-Mode Testing** | Real-failure chaos tests (MongoDB disconnect, Redis disconnect, ML ECONNREFUSED), mid-transaction partial-write proof, Redis fail-closed audit | [`chaos.test.js`](server/test/chaos.test.js), [`midTransaction.test.js`](server/test/midTransaction.test.js), [`redisFailClosed.test.js`](server/test/redisFailClosed.test.js) |
+| **Testing & CI/CD** | Backend, ML, frontend, dependency-audit, API-contract, and real-service browser gates | GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
 
 ---
 
 ## System Architecture
 
-The platform architecture splits workload across an Express.js Gateway (IntentGate) (Node.js), a FastAPI Machine Learning & RAG Microservice (Python 3.12), a MongoDB document datastore, an in-memory Redis cache layer, and a React 18 single-page application.
+The platform architecture splits workload across an Express.js Gateway (IntentGate) (Node.js), a FastAPI Machine Learning & RAG Microservice (Python 3.12), a MongoDB document datastore, a Redis cache and coordination layer, and a React 19 single-page application.
 
 ![System Architecture Diagram showing the React SPA, Express API Gateway, MongoDB, Redis, FastAPI ML microservice, and LLMs](docs/architecture/system_architecture.png)
 > **System architecture.** End-to-end request pathways across the React client, Express REST API Gateway, MongoDB document datastore, Redis cache, and Python FastAPI ML microservice.
@@ -66,6 +66,10 @@ The platform architecture splits workload across an Express.js Gateway (IntentGa
    - **Recommendation Requests**: Express invokes `RecommendationPipeline.js` (5-stage optimization) + queries FastAPI ML microservice for suitability predictions.
    - **RAG Queries**: FastAPI embeds query with `all-MiniLM-L6-v2` (384D), searches vector database, and returns cited responses.
 4. **Response Delivery**: Output passes through security filters and structured JSON validation before returning to client.
+
+Express is the authoritative boundary for personalized recommendations, product suitability and ordering, allocation policy, eligibility, and tax decisions. React supplies validated inputs and renders returned decisions; it does not silently substitute local financial-policy calculations when a backend decision is unavailable.
+
+The public Express contract is defined by [`server/openapi.yaml`](server/openapi.yaml) and checked against the registered routes. Express-to-FastAPI prediction and RAG payloads use shared fixtures plus strict Node and Pydantic validators. Public errors use the stable `{ error, message, code, request_id, details? }` envelope.
 
 ---
 
@@ -182,7 +186,7 @@ Empirical load testing was conducted using `autocannon` (v8.0.0) across 30-secon
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, Vite, Framer Motion, Recharts, Lucide React, CSS3 (Vanilla Glassmorphism) |
+| **Frontend** | React 19, Vite, Framer Motion, Recharts, Lucide React, CSS3 (Vanilla Glassmorphism) |
 | **Backend Gateway** | Node.js v22.x, Express.js, Mongoose ODM, Joi Validation, Numeric.js, Autocannon |
 | **ML Microservice** | Python 3.12, FastAPI, PyTorch, scikit-learn, SentenceTransformers, NumPy, pandas, Uvicorn |
 | **Database & Cache** | MongoDB v7.0 (Document Store & Vector Chunk Persistence), Redis 7.2 (Streams DAG Persistence, Cache & HybridStore) |
@@ -197,7 +201,7 @@ Empirical load testing was conducted using `autocannon` (v8.0.0) across 30-secon
 * **Node.js**: `v22.x` or higher
 * **Python**: `v3.12`
 * **MongoDB**: `v7.0` (local instance or MongoDB Atlas)
-* **Redis**: `v7.x` (optional, falls back to in-memory store)
+* **Redis**: `v7.x` (optional only for explicitly configured lightweight development; required and fail-closed for production shared state)
 
 ### 1. Clone Repository
 ```bash
@@ -282,6 +286,12 @@ an exact production-origin check. Readiness fails when critical dependencies are
 admission control rejects excess concurrency before saturation, and HTTP metrics use
 bounded method/status labels to avoid high-cardinality telemetry.
 
+Production MongoDB must be replica-set capable because recommendation/audit and goal/profile
+writes use transactions. The SPA restores session and financial state from the backend;
+tokens, profiles, recommendations, and goals are not persisted in browser local or session
+storage. The production Nginx configuration applies CSP, HSTS, frame denial, referrer and
+permissions policies, MIME sniffing protection, and cross-origin isolation headers.
+
 Expose `GET /api/metrics` only to an administrator or send the dedicated secret in the
 `X-Metrics-Token` header from the monitoring agent. Do not reuse the JWT or ML service
 secrets for metrics collection.
@@ -315,7 +325,7 @@ Service mapping:
 ### Node.js / Express Backend Test Suite
 ```bash
 cd server
-npm test               # Run unit & integration tests (370 tests across 20 suites)
+npm test               # Run the unit and integration test suite
 npm run test:coverage  # Run test suite with coverage report
 ```
 
@@ -328,14 +338,16 @@ npm run test:coverage  # Run test suite with coverage report
 ### Python ML Microservice Test Suite
 ```bash
 cd ml-service
-pytest                 # Run full 171-item pytest suite
+pytest                 # Run the full ML and RAG test suite
 ```
 
 ### Frontend Client Unit & Accessibility Suite (Vitest + axe-core)
 ```bash
 cd reactapp
-npm test               # Run Vitest test suite (21 test suites / 67 tests, 0 a11y violations)
+npm test               # Run the Vitest unit and accessibility suite
+npm run lint           # Run ESLint
 npm run typecheck      # Run TypeScript type safety checks
+npm run build          # Build the production bundle
 ```
 
 ### Playwright End-to-End Suite (Full User Lifecycle)
@@ -343,7 +355,7 @@ npm run typecheck      # Run TypeScript type safety checks
 cd reactapp
 npm run test:e2e       # Run Playwright E2E full user journey against live local stack
 ```
-> **CI Integration Disclosure**: The Playwright E2E test suite (`npm run test:e2e`) runs against the live local application stack (Express 5000 + FastAPI 8000 + MongoDB 27017 + Vite 5173). **It is explicitly not wired into the automated GitHub Actions CI workflow (`.github/workflows/ci.yml`)** because the CI matrix runs unit/integration tests without orchestrating the multi-container live environment.
+> **CI integration:** The required browser job provisions a real replica-set-capable MongoDB, Redis, FastAPI, Express, and Vite before running Playwright. A local run needs the same dependencies; a standalone MongoDB cannot prove the transactional lifecycle.
 
 ### Static Docs-vs-Code Sync Check
 To verify that documentation claims match code imports and API routes:
@@ -359,7 +371,7 @@ node scripts/docs/check_docs_sync.js
 WealthGenie-AI-Powered-Financial-Advisory-Platform/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                 # GitHub Actions CI matrix (Node 22.x, Py 3.12, Mongo 6/7)
+│       └── ci.yml                 # Quality, security, contract, and real-service browser gates
 ├── docs/
 │   └── architecture/              # Technical architecture & pipeline visual diagrams
 │       ├── system_architecture.png
@@ -376,8 +388,8 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 │   │   ├── components/            # UI Components (ProfilePage, TaxScreen, Rebalancer, etc.)
 │   │   ├── styles/                # CSS Design Tokens System (tokens.css, components.css)
 │   │   ├── services/              # API client bridge
-│   │   ├── utils/                 # Client WTI generator, post-tax return calculator
-│   │   ├── __tests__/             # Vitest unit & axe-core accessibility tests (0 violations)
+│   │   ├── utils/                 # Presentation and formatting utilities
+│   │   ├── __tests__/             # Vitest unit, privacy, authority, and accessibility tests
 │   │   └── App.jsx                # Main entry & router
 │   ├── playwright.config.js       # Playwright E2E configuration
 │   └── package.json
@@ -387,14 +399,14 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 │   ├── models/                    # Mongoose Schemas (User, Profile, Recommendation, AuditRecord)
 │   ├── routes/                    # REST Endpoints (recommend, tax, profile, chat, etc.)
 │   ├── services/                  # RecommendationPipeline, TaxEngine, GeminiChatService
-│   └── test/                      # 26 Node.js test suites (404 tests)
+│   └── test/                      # Node.js unit, integration, transaction, and contract tests
 ├── ml-service/                    # FastAPI Machine Learning Microservice
 │   ├── main.py                    # FastAPI routes (/predict, /rag/query, /health)
 │   ├── tracing.py                 # OpenTelemetry instrumentation & FileSpanExporter
 │   ├── model/                     # Random Forest (model.pkl) & FT-Transformer checkpoints
 │   ├── rag/                       # Multi-tenant vector store, SentenceTransformer 384D embedder
 │   ├── reports/                   # Committed JSON evaluation reports
-│   └── tests/                     # 198 pytest test functions
+│   └── tests/                     # Pytest ML, registry, persistence, RAG, and contract tests
 └── scripts/                       # Orchestration, tracing verification & CSS migration scripts
     ├── run_e2e_stack.ps1          # Automated 5-service Playwright stack orchestrator
     └── verify_distributed_tracing.js # Distributed tracing cross-service assertion script
@@ -410,7 +422,7 @@ WealthGenie-AI-Powered-Financial-Advisory-Platform/
 4. **Local Load Test Disclosure**: Load test benchmarks were conducted on a single host (`localhost:5000` / `127.0.0.1:8000`). They measure single-node event loop throughput and microservice latency, not multi-region cloud network conditions.
 5. **Fine-Tuning Scope**: LoRA/QLoRA LLM fine-tuning pipelines are defined in code interfaces but were deferred due to CPU compute constraints during evaluation. Base `Qwen/Qwen2.5-0.5B-Instruct` was used for LLM evaluation.
 6. **Computer Vision**: The platform intentionally focuses on tabular ML, text RAG, and financial tax algorithms. Computer vision (VLM) is explicitly out of scope.
-7. **WTI Endpoint Split**: `POST /api/instruments/rank-wti` is an intentional server-side API path for potential external consumers; the client React app uses `wtiGenerator.js` (`rankWhereToInvest()`) with catalog risk input for UI candidate ranking.
+7. **WTI Authority Boundary**: The React client sends candidate and profile inputs to protected `POST /api/instruments/rank-wti`. Express owns risk, tax, macro-tilt, suitability, and ordering decisions; React merges presentation-only catalog fields into the returned server order and fails closed when authoritative ranking is unavailable.
 8. **Benchmark Sourcing & Independent Evaluation**: The 97.05% (FT-Transformer) and 95.63% (Random Forest) test metrics represent rule-approximation fidelity against synthetic baseline allocations. When evaluated against independent Certified Financial Planner (CFP) benchmark profiles, real-world agreement rates are **15.83%** for FT-Transformer and **25.26%** for Random Forest.
 9. **In-Memory Vector Search**: MongoDB 7.0 Community Edition does not support Atlas Vector Search. Chunks and embeddings are persisted in MongoDB for cross-replica sharing, but vector similarity search executes in-memory via FAISS/NumPy after loading vectors from Mongo on startup.
 10. **Per-Replica Memory Scaling**: Because vector search runs in-memory, each ML service replica loads the complete embedding matrix into local RAM. Memory consumption scales linearly with $N_{\text{replicas}} \times N_{\text{chunks}}$.
