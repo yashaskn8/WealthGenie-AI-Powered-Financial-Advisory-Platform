@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share, X, TrendingUp, Users, Target, ChevronRight, Info, ArrowUpRight, AlertTriangle, Shield, Activity, Sparkles, PieChart, Zap } from 'lucide-react';
 import './HealthScoreScreen.css';
+import * as api from './services/api';
 
 /* ── Animated Counter Hook ────────────────────────────────── */
 function useAnimatedCounter(target, duration = 2000) {
@@ -363,14 +364,14 @@ const ScoreHistoryPanel = ({ currentScore, profile, subScores }) => {
   const weakest = subScores?.reduce((min, s) => s.val < min.val ? s : min, subScores[0]);
   const pointsToExcellent = Math.max(0, 80 - currentScore);
 
-  // Determine account age from localStorage signup timestamp
+  // Determine account age from the in-memory identity restored by the HttpOnly session.
   const now = new Date();
   const fmt = (d) => d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
 
   // Check how old the account is — use wg_user creation time if available
   let accountAgeDays = 0;
   try {
-    const userData = JSON.parse(localStorage.getItem('wg_user') || '{}');
+    const userData = api.getUserInfo() || {};
     if (userData.createdAt) {
       accountAgeDays = Math.floor((now - new Date(userData.createdAt)) / (1000 * 60 * 60 * 24));
     } else if (userData.iat) {

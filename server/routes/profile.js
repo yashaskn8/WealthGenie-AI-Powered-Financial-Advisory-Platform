@@ -11,6 +11,21 @@ import { toSnakeCase } from '../utils/caseConverter.js';
 
 const router = Router();
 
+/**
+ * GET /api/profile/current [Protected]
+ * Returns the latest owned profile so browser refreshes can restore sensitive
+ * financial state from the backend instead of persistent browser storage.
+ */
+router.get('/current', verifyJWT, asyncHandler(async (req, res) => {
+  const profile = await FinancialProfile.findOne({ userId: req.user.userId })
+    .sort({ createdAt: -1 })
+    .lean();
+  if (!profile) {
+    throw createError(404, `No financial profile for user ${req.user.userId}`, 'Financial profile not found.');
+  }
+  res.json(formatProfileResponse(profile));
+}));
+
 // Profile creation throttle — max profiles per user per hour
 // STATELESS: Uses shared Redis counter. No per-process in-memory state.
 const PROFILE_RATE_LIMIT = 10;
@@ -350,6 +365,16 @@ export function formatProfileResponse(profile, extra = {}) {
   const camelResponse = {
     profileId: p._id,
     version: p.version || 1,
+    age: p.age,
+    monthlyIncome: p.monthlyIncome,
+    monthlySavings: p.savings,
+    investmentHorizon: p.investmentHorizon,
+    liquidSavings: p.liquid_savings || 0,
+    existingDebt: p.existing_debt_emi_ratio_pct || 0,
+    dependents: p.dependents || 0,
+    emergencyFundMonths: p.emergency_fund_months || 0,
+    riskTolerance: p.risk_tolerance || 'Moderate',
+    goalType: p.goal_type || 'wealth-building',
     taxSlab: p.taxSlabDecimal !== undefined ? p.taxSlabDecimal : p.taxSlab,
     taxSlabDecimal: p.taxSlabDecimal !== undefined ? p.taxSlabDecimal : p.taxSlab,
     effectiveTaxRate: p.effectiveTaxRatePercent !== undefined ? p.effectiveTaxRatePercent : p.effectiveTaxRate,
@@ -372,6 +397,7 @@ export function formatProfileResponse(profile, extra = {}) {
     hasLumpSum: p.hasLumpSum,
     lumpSumAmount: p.lumpSumAmount,
     goals: p.goals || [],
+    investmentGoals: p.goals || [],
     section80C: p.section80C !== undefined ? p.section80C : (p.section_80c || 0),
     section_80c: p.section80C !== undefined ? p.section80C : (p.section_80c || 0),
     section80CCD1B: p.section80CCD1B !== undefined ? p.section80CCD1B : (p.section_80ccd1b || p.nps80CCD1B || 0),

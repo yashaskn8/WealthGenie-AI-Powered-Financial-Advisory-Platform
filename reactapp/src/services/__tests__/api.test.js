@@ -32,6 +32,8 @@ describe('frontend API contracts', () => {
       password: 'StrongPass1!',
       mobile: '9876543210',
     });
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
   });
 
   it('omits absent optional Monte Carlo values instead of sending invalid nulls', async () => {
@@ -164,6 +166,40 @@ describe('frontend API contracts', () => {
     expect(fetchMock.mock.calls[0][1].credentials).toBe('include');
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
     expect(api.getUserInfo()).toMatchObject({ id: 'cookie-user' });
+    expect(localStorage.getItem('wg_user')).toBeNull();
+    expect(localStorage.getItem('wg_token')).toBeNull();
+  });
+
+  it('never persists financial lifecycle payloads in browser storage', async () => {
+    const responses = [
+      { csrfToken: 'csrf', user: { id: 'privacy-user', email: 'privacy@example.com' } },
+      { profileId: '64b000000000000000000001', monthly_income: 987654, monthly_savings: 123456 },
+      { recommendationId: 'rec-1', auditId: 'audit-1', instruments: [{ type: 'ETF' }] },
+      { id: 'goal-1', goal_name: 'Private home goal', target_amount: 7654321 },
+      { message: 'Logout successful.' },
+    ];
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(responses.shift()))));
+    const localSet = vi.spyOn(Storage.prototype, 'setItem');
+
+    await api.login('privacy@example.com', 'StrongPass1!');
+    await api.buildProfile({
+      age: 35, monthly_income: 987654, monthly_savings: 123456,
+      liquid_savings: 222222, existing_debt: 7, dependents: 1,
+      emergency_fund_months: 6, risk_tolerance: 'Moderate', goal_type: 'wealth-building',
+    });
+    await api.getRecommendations('64b000000000000000000001');
+    await api.createGoal({ goal_name: 'Private home goal', target_amount: 7654321, target_date: '2035-01-01' });
+    await api.logout();
+
+    const persisted = [...Array(localStorage.length)].map((_, index) => localStorage.getItem(localStorage.key(index))).join(' ')
+      + [...Array(sessionStorage.length)].map((_, index) => sessionStorage.getItem(sessionStorage.key(index))).join(' ');
+    expect(persisted).not.toContain('987654');
+    expect(persisted).not.toContain('123456');
+    expect(persisted).not.toContain('222222');
+    expect(persisted).not.toContain('7654321');
+    expect(persisted).not.toContain('rec-1');
+    expect(persisted).not.toContain('privacy@example.com');
+    expect(localSet).not.toHaveBeenCalled();
   });
 
   it('binds cookie-authenticated mutations to the server-issued CSRF token', async () => {

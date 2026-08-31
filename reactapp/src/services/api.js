@@ -1,8 +1,8 @@
 /**
  * WealthGenie API Client
  * Configured for the Express backend.
- * Production authentication uses an HttpOnly session cookie. Bearer-token storage
- * is retained only for explicitly configured API/development compatibility.
+ * Production authentication uses an HttpOnly session cookie. Optional development
+ * bearer compatibility is memory-only and never persists authentication material.
  */
 
 const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
@@ -13,26 +13,20 @@ const DEFAULT_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeo
 const BEARER_AUTH_ENABLED = !import.meta.env.PROD
   && import.meta.env.VITE_ENABLE_BEARER_AUTH !== 'false';
 
-function getStorage(name) {
-  try {
-    return typeof window !== 'undefined' ? window[name] : null;
-  } catch {
-    return null;
-  }
-}
+const LEGACY_SENSITIVE_KEYS = [
+  'wg_token', 'wg_user', 'wg_profile', 'wg_profile_complete', 'wealthgenie_user_profile',
+];
 
-function readStorage(name, key) {
-  try { return getStorage(name)?.getItem(key) ?? null; } catch { return null; }
-}
-
-function writeStorage(name, key, value) {
-  try {
-    const storage = getStorage(name);
-    if (!storage) return;
-    if (value === null || value === undefined) storage.removeItem(key);
-    else storage.setItem(key, value);
-  } catch {
-    // Storage can be disabled by privacy settings. The in-memory session still works.
+export function purgeSensitiveBrowserStorage({ includeChatSession = false } = {}) {
+  if (typeof window === 'undefined') return;
+  for (const storageName of ['localStorage', 'sessionStorage']) {
+    try {
+      const storage = window[storageName];
+      LEGACY_SENSITIVE_KEYS.forEach(key => storage.removeItem(key));
+      if (includeChatSession) storage.removeItem('genie_session_id');
+    } catch {
+      // Privacy-disabled storage needs no cleanup.
+    }
   }
 }
 
@@ -48,16 +42,16 @@ function readCookie(name) {
   return null;
 }
 
-// Restore token from localStorage on module load (survives page reload)
-let authToken = BEARER_AUTH_ENABLED ? readStorage('localStorage', 'wg_token') : null;
+// Sensitive state is memory-only; a refresh restores it through /auth/session.
+let authToken = null;
 let csrfToken = readCookie('wg_csrf');
 let authRevision = 0;
 const authListeners = new Set();
 
 // Track the current authenticated user
-let currentUser = (() => {
-  try { return JSON.parse(readStorage('localStorage', 'wg_user') || 'null'); } catch { return null; }
-})();
+let currentUser = null;
+
+purgeSensitiveBrowserStorage();
 
 function notifyAuthChange() {
   authRevision += 1;
@@ -75,11 +69,6 @@ export function getAuthSnapshot() {
 
 export function setUserInfo(user) {
   currentUser = user;
-  if (user) {
-    writeStorage('localStorage', 'wg_user', JSON.stringify(user));
-  } else {
-    writeStorage('localStorage', 'wg_user', null);
-  }
   notifyAuthChange();
 }
 
@@ -89,11 +78,6 @@ export function getUserInfo() {
 
 export function setAuthToken(token) {
   authToken = BEARER_AUTH_ENABLED ? token : null;
-  if (authToken) {
-    writeStorage('localStorage', 'wg_token', authToken);
-  } else {
-    writeStorage('localStorage', 'wg_token', null);
-  }
   notifyAuthChange();
 }
 
@@ -104,29 +88,14 @@ export function getAuthToken() {
 export function clearAuthToken() {
   authToken = null;
   csrfToken = null;
-  writeStorage('localStorage', 'wg_token', null);
   currentUser = null;
-  writeStorage('localStorage', 'wg_user', null);
+  purgeSensitiveBrowserStorage();
   notifyAuthChange();
 }
 
 export function clearUserSession() {
   clearAuthToken();
-  writeStorage('localStorage', 'wealthgenie_user_profile', null);
-  writeStorage('sessionStorage', 'genie_session_id', null);
-}
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', event => {
-    if (event.key !== 'wg_token' && event.key !== 'wg_user') return;
-    authToken = BEARER_AUTH_ENABLED ? readStorage('localStorage', 'wg_token') : null;
-    try {
-      currentUser = JSON.parse(readStorage('localStorage', 'wg_user') || 'null');
-    } catch {
-      currentUser = null;
-    }
-    notifyAuthChange();
-  });
+  purgeSensitiveBrowserStorage({ includeChatSession: true });
 }
 
 function generateUUID() {
@@ -424,6 +393,10 @@ export async function buildProfile(
   });
 }
 
+export async function getCurrentProfile(options = {}) {
+  return request('GET', '/profile/current', null, { retries: 0, ...options });
+}
+
 export async function updateProfile(profileId, payload) {
   return request('PUT', `/profile/${profileId}`, payload);
 }
@@ -581,7 +554,7 @@ const api = {
   setAuthToken, getAuthToken, clearAuthToken, clearUserSession,
   subscribeAuth, getAuthSnapshot,
   setUserInfo, getUserInfo,
-  buildProfile, updateProfile, getRecommendations, getInstruments, getProjections,
+  buildProfile, getCurrentProfile, updateProfile, getRecommendations, getInstruments, getProjections,
   runMonteCarlo, createGoal, getGoals, updateGoal, deleteGoal, healthCheck,
   getMarketRates, refreshMarketRates,
   sendChatMessage, getChatHistory, clearChatSession, rebalancePortfolio,

@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { generateRecommendations } from '../recommendationEngine';
+import React, { createContext, useContext, useState } from 'react';
 
 const UserContext = createContext(null);
 
@@ -14,46 +13,20 @@ const DEFAULT_PROFILE = {
   investment_horizon: 15,
 };
 
-function readStoredProfile() {
-  try {
-    const saved = localStorage.getItem('wg_profile');
-    return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
-  } catch {
-    return DEFAULT_PROFILE;
-  }
-}
-
 export function UserProvider({ children }) {
-  const [profile, setProfile] = useState(readStoredProfile);
-
-  const [isProfileComplete, setIsProfileComplete] = useState(() => {
-    return localStorage.getItem('wg_profile_complete') === 'true';
-  });
-
-  const [recommendations, setRecommendations] = useState(() => {
-    const prof = readStoredProfile();
-    const complete = localStorage.getItem('wg_profile_complete') === 'true';
-    return complete ? generateRecommendations(prof) : [];
-  });
-
-  // Persist profile
-  useEffect(() => {
-    localStorage.setItem('wg_profile', JSON.stringify(profile));
-  }, [profile]);
-
-  useEffect(() => {
-    localStorage.setItem('wg_profile_complete', String(isProfileComplete));
-  }, [isProfileComplete]);
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
 
   const updateProfile = (newProfile) => {
     setProfile(newProfile);
-    setRecommendations(isProfileComplete ? generateRecommendations(newProfile) : []);
+    if (!isProfileComplete) setRecommendations([]);
   };
 
   const completeProfile = (profileData) => {
     setProfile(profileData);
     setIsProfileComplete(true);
-    setRecommendations(generateRecommendations(profileData));
+    setRecommendations([]);
   };
 
   const resetProfile = () => {

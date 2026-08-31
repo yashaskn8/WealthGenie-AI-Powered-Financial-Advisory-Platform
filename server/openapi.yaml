@@ -47,6 +47,12 @@ paths:
       x-idempotency-key: optional
       requestBody: { $ref: '#/components/requestBodies/ProfileCreate' }
       responses: { '201': { $ref: '#/components/responses/Profile' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /api/profile/current:
+    get:
+      operationId: getCurrentProfile
+      tags: [Profiles]
+      security: [{ CookieAuth: [] }, { BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/Profile' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
   /api/profile/{profileId}:
     put:
       operationId: updateProfile

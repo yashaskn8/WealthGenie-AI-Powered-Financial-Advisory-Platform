@@ -5,8 +5,6 @@ import logoImg from '../assets/logo.png';
 import genieVideo from '../assets/genie.mp4';
 import { useAuth } from '../context/AuthContext';
 
-const PROFILE_STORAGE_KEY = 'wealthgenie_user_profile';
-
 function AuthPage() {
   const [showUI, setShowUI] = useState(false);
   const [activeView, setActiveView] = useState('login');
@@ -146,8 +144,6 @@ function AuthPage() {
     setIsRegistering(true);
     try {
       await register(regName, regEmail, regPassword, regMobile);
-      // Clear any stale financial profile from a previous user session
-      localStorage.removeItem(PROFILE_STORAGE_KEY);
       setIsRegistering(false);
       setShowPopup(true);
     } catch (err) {

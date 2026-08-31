@@ -1,28 +1,13 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import profileImg from '../assets/gen_4k_nobull.png';
 import * as api from '../services/api';
 
-const PROFILE_STORAGE_KEY = 'wealthgenie_user_profile';
-
 const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
-  // Try to load saved profile from localStorage, scoped to the current user
-  const savedProfile = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      // Ensure the saved profile belongs to the current authenticated user
-      const currentUser = api.getUserInfo();
-      if (currentUser && parsed._userId && parsed._userId !== currentUser.id) {
-        // Different user - discard stale profile
-        localStorage.removeItem(PROFILE_STORAGE_KEY);
-        return null;
-      }
-      return parsed;
-    } catch { return null; }
-  }, []);
+  // Sensitive profile data is restored from the authenticated backend and held in memory only.
+  const savedProfile = null;
 
-  const [isComplete, setIsComplete] = useState(!!savedProfile);
+  const [isComplete, setIsComplete] = useState(false);
+  const [isRestoringProfile, setIsRestoringProfile] = useState(true);
   const [age, setAge] = useState(savedProfile?.age || 32);
   const [monthlyIncome, setMonthlyIncome] = useState(savedProfile?.monthly_income || 65000);
   const [monthlySavings, setMonthlySavings] = useState(savedProfile?.monthly_savings || 12000);
@@ -206,8 +191,6 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
 
     try {
       const response = await api.buildProfile(userProfilePayload);
-      // Persist profile to localStorage, scoped to the current user
-      const currentUser = api.getUserInfo();
       const nextProfileId = response.profileId || null;
       setProfileId(nextProfileId);
       const nextVersion = response.version || 1;
@@ -217,9 +200,8 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
         ...response,
         profileId: nextProfileId,
         version: nextVersion,
-        _userId: currentUser?.id || null,
       };
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profileWithUser));
+      handleProfileUpdate(profileWithUser);
       setIsComplete(true);
     } catch (err) {
       alert("Error saving profile: " + err.message);
@@ -231,7 +213,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
     setAge(updatedProfile.age);
     setMonthlyIncome(updatedProfile.monthly_income);
     setMonthlySavings(updatedProfile.monthly_savings);
-    setInvestmentGoals(updatedProfile.investment_goals);
+    setInvestmentGoals(updatedProfile.investment_goals || updatedProfile.goals || []);
     setHorizon(updatedProfile.investment_horizon);
     setTaxRegime(updatedProfile.taxRegime);
     if (updatedProfile.version !== undefined) setVersion(updatedProfile.version);
@@ -277,12 +259,30 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
       setIncomeSource(updatedProfile.incomeSource || updatedProfile.income_source);
     }
 
-    const nextProfileId = updatedProfile.profileId || profileId || null;
-    setProfileId(nextProfileId);
-    const currentUser = api.getUserInfo();
-    const profileWithUser = { ...updatedProfile, profileId: nextProfileId, _userId: currentUser?.id || null };
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profileWithUser));
-  }, [profileId]);
+    if (updatedProfile.profileId) setProfileId(updatedProfile.profileId);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api.getCurrentProfile({ signal: controller.signal })
+      .then(restoredProfile => {
+        handleProfileUpdate(restoredProfile);
+        setIsComplete(true);
+      })
+      .catch(error => {
+        if (error?.status !== 404 && error?.code !== 'REQUEST_ABORTED') {
+          console.warn('[Profile] Secure profile restore failed:', error.message);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsRestoringProfile(false);
+      });
+    return () => controller.abort();
+  }, [handleProfileUpdate]);
+
+  if (isRestoringProfile) {
+    return <div role="status" aria-live="polite" className="route-loading">Loading your secure financial profile...</div>;
+  }
 
   if (isComplete) {
     return React.cloneElement(children, {
