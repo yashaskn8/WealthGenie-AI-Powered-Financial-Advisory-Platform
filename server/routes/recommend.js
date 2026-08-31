@@ -11,8 +11,11 @@ import { getTaxSlab, REGULATORY_RULE_VERSION } from '../services/taxEngine.js';
 import { generateAdvisory } from '../services/geminiService.js';
 import { runPipeline } from '../services/RecommendationPipeline.js';
 import { getLiveInstrumentParams } from '../services/marketDataService.js';
+import { claimAdvisoryIdempotency, releaseAdvisoryIdempotency } from '../middleware/idempotency.js';
+import { persistAdvisoryAtomically } from '../services/advisoryPersistence.js';
 import crypto from 'crypto';
-import { getCache, setCache, delCache } from '../config/redis.js';
+import mongoose from 'mongoose';
+import { setCache, delCache } from '../config/redis.js';
 import { RISK_FREE_RATE, DISCLAIMER } from '../services/instrumentConstants.js';
 
 const router = Router();
@@ -62,16 +65,20 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     throw createError(403, `User ${req.user.userId} tried to access profile ${profileId}`, 'Access denied.');
   }
 
-  // Check Redis cache to prevent redundant recalculations
-  const cacheKey = buildRecommendationCacheKey(req.user.userId, profile._id, profile);
-
-  const cachedResult = await getCache(cacheKey);
-  if (cachedResult) {
-    return res.json(cachedResult);
+  const idempotencyClaim = await claimAdvisoryIdempotency({
+    key: req.headers['idempotency-key'],
+    userId: req.user.userId,
+    profileId: profile._id,
+    payload: req.body,
+  });
+  if (idempotencyClaim.state === 'REPLAY') {
+    res.setHeader('X-Cache-Lookup', 'HIT - Idempotent');
+    return res.status(idempotencyClaim.response.status).json(idempotencyClaim.response.body);
   }
 
-  // Call ML microservice
-  const mlResult = await getMLPrediction({
+  try {
+    // Call ML microservice
+    const mlResult = await getMLPrediction({
     age: profile.age,
     annual_income: profile.annualIncome,
     monthly_savings: profile.savings,
@@ -113,19 +120,13 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     shapExplanation: mlResult.explanation || null,
   });
 
-  // Save recommendation to DB
-  const rec = await Recommendation.create({
-    userId: req.user.userId,
-    profileId: profile._id,
-    instruments,
-    advisoryText: advisory.text,
-    confidenceScores,
-    mlFallback: mlResult.fallback || false,
-    modelVersion: mlResult.model_version || (mlResult.fallback ? 'rule_fallback' : '2.0'),
-  });
+    const recommendationId = new mongoose.Types.ObjectId();
+    const auditId = new mongoose.Types.ObjectId();
+    const modelVersion = mlResult.model_version || (mlResult.fallback ? 'rule_fallback' : '2.0');
+    const auditTimestamp = new Date();
 
-  // ── Synchronous Audit Log Write (Regulatory Compliance - Fail Loudly) ──
-  const sanitizedInputs = {
+    // ── Synchronous Audit Log Write (Regulatory Compliance - Fail Loudly) ──
+    const sanitizedInputs = {
     age: profile.age,
     annual_income: profile.annualIncome,
     monthly_savings: profile.savings,
@@ -139,17 +140,27 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     tax_regime: profile.taxRegime,
     investment_horizon: profile.investmentHorizon || 15,
   };
-  const inputHash = crypto.createHash('sha256').update(JSON.stringify(sanitizedInputs)).digest('hex');
-
-  let auditRecord;
-  try {
-    auditRecord = await AuditRecord.create({
+    const inputHash = crypto.createHash('sha256').update(JSON.stringify(sanitizedInputs)).digest('hex');
+    const correlationId = req.correlationId || req.traceId || crypto.randomUUID();
+    const citedRagChunkIds = advisory.cited_chunks || mlResult.cited_chunk_ids || [];
+    const recommendationData = {
+      _id: recommendationId,
       userId: req.user.userId,
       profileId: profile._id,
-      recommendationId: rec._id,
-      correlationId: req.correlationId || req.traceId || crypto.randomUUID(),
+      instruments,
+      advisoryText: advisory.text,
+      confidenceScores,
+      mlFallback: mlResult.fallback || false,
+      modelVersion,
+    };
+    const auditRecordData = {
+      _id: auditId,
+      userId: req.user.userId,
+      profileId: profile._id,
+      recommendationId,
+      correlationId,
       traceId: req.traceId || req.correlationId || '',
-      version_id: rec.modelVersion || '1.0.0',
+      version_id: modelVersion || '1.0.0',
       regulatory_rule_version: REGULATORY_RULE_VERSION,
       input_hash: inputHash,
       inputs: sanitizedInputs,
@@ -157,29 +168,18 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
         instruments,
         confidenceScores,
         portfolioYield,
-        modelVersion: rec.modelVersion,
+        modelVersion,
         regulatoryRuleVersion: REGULATORY_RULE_VERSION,
         advisorySummary: advisory.text ? advisory.text.slice(0, 500) : '',
       },
-      cited_rag_chunk_ids: advisory.cited_chunks || mlResult.cited_chunk_ids || [],
+      cited_rag_chunk_ids: citedRagChunkIds,
       engine: mlResult.fallback ? 'rule_fallback' : 'ml_service',
-      timestamp: new Date(),
-    });
-  } catch (auditErr) {
-    logger.error('CRITICAL: Advisory audit record write failed', {
-      userId: req.user.userId,
-      profileId: profile._id,
-      error: auditErr.message,
-      stack: auditErr.stack,
-    });
-    // Fail loudly as required by regulatory compliance rules
-    throw createError(500, `Audit log write failure: ${auditErr.message}`, 'Failed to record immutable advisory audit log. Transaction aborted.');
-  }
+      timestamp: auditTimestamp,
+    };
 
-  // Section 7 metadata is response-only (not persisted), appended after Recommendation.create()
-  const result = {
-    recommendationId: rec._id,
-    audit_id: auditRecord._id,
+    const result = {
+    recommendationId,
+    audit_id: auditId,
     audit_hash: inputHash,
     instruments,
     ranked: true,
@@ -188,7 +188,7 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     decision_path: mlResult.decision_path,
     explanation: mlResult.explanation || null,
     ml_fallback: mlResult.fallback || false,
-    model_version: rec.modelVersion,
+    model_version: modelVersion,
     regulatory_rule_version: REGULATORY_RULE_VERSION,
     portfolio_yield: portfolioYield,
     risk_free_rate: parseFloat((RISK_FREE_RATE * 100).toFixed(2)),
@@ -203,12 +203,32 @@ router.post('/', verifyJWT, validate(recommendSchema), asyncHandler(async (req, 
     // WG-004: Attach backend-computed scoring weights in both snake_case and camelCase
     computed_weights: computedWeights,
     computedWeights: computedWeights,
-  };
+    };
 
-  // Cache for 24 hours
-  await setCache(cacheKey, result, 86400);
+    await persistAdvisoryAtomically({
+      recommendation: recommendationData,
+      auditRecord: auditRecordData,
+      response: result,
+      idempotencyClaim,
+    });
 
-  res.json(result);
+    // This cache is an optimization only. Idempotent replay is sourced from
+    // the transactionally persisted operation, never from Redis.
+    const cacheKey = buildRecommendationCacheKey(req.user.userId, profile._id, profile);
+    await setCache(cacheKey, result, 86400).catch(error => {
+      logger.warn('Recommendation cache write failed after committed advisory', { error: error.message });
+    });
+
+    res.json(result);
+  } catch (error) {
+    await releaseAdvisoryIdempotency(idempotencyClaim).catch(releaseError => {
+      logger.error('Failed to release advisory idempotency claim', {
+        operationId: idempotencyClaim.operationId,
+        error: releaseError.message,
+      });
+    });
+    throw error;
+  }
 }));
 
 /**

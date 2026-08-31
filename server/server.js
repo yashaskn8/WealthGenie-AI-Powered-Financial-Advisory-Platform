@@ -66,6 +66,7 @@ export async function startServer({ env = process.env } = {}) {
         socketTimeoutMS: config.mongo.socketTimeoutMs,
         maxIdleTimeMS: config.mongo.maxIdleTimeMs,
       },
+      requireTransactions: config.isProduction,
     });
     await connectRedis({ url: env.REDIS_URL });
     if (config.requireRedis && !redisAvailable) {

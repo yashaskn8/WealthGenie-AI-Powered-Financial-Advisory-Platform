@@ -27,10 +27,21 @@ const recommendationSchema = new mongoose.Schema({
   },
   mlFallback: { type: Boolean, default: false },
   modelVersion: { type: String, default: '1.0' },
+  idempotencyOperationId: { type: String, default: null },
+  idempotencyRequestHash: { type: String, default: null },
+  responseSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
   generatedAt: { type: Date, default: Date.now },
 });
 
 recommendationSchema.index({ userId: 1, generatedAt: -1 });
 recommendationSchema.index({ profileId: 1 });
+recommendationSchema.index(
+  { idempotencyOperationId: 1 },
+  {
+    name: 'unique_advisory_idempotency_operation',
+    unique: true,
+    partialFilterExpression: { idempotencyOperationId: { $type: 'string' } },
+  },
+);
 
 export default mongoose.model('Recommendation', recommendationSchema);

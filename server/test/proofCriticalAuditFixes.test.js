@@ -240,7 +240,7 @@ test('WG-030 HTTP Wire: POST /api/recommend response enforces CONCENTRATION_CAPS
       const { response, body } = await jsonFetch(`${baseUrl}/api/recommend`, {
         method: 'POST',
         body: JSON.stringify({ profileId: profile._id }),
-        headers: { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${token}`, 'idempotency-key': 'critical-audit-wire-001' },
       });
 
       assert.equal(response.status, 200, `POST /api/recommend should succeed with 200, got ${response.status}`);

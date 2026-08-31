@@ -291,7 +291,7 @@ test('Chaos: ML service timeout / failure returns rule-based recommendations', a
     const { response: recRes, body: recBody } = await jsonFetch(`${baseUrl}/api/recommend`, {
       method: 'POST',
       body: JSON.stringify({ profileId }),
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${token}`, 'idempotency-key': 'chaos-ml-fallback-001' },
     });
 
     console.log(`[CHAOS-3] Recommend: status=${recRes.status}, ml_fallback=${recBody?.ml_fallback}, model_version=${recBody?.model_version}`);
@@ -350,7 +350,7 @@ test('Chaos: Gemini & Groq both failing returns degraded static advisory', async
     const { response: recRes, body: recBody } = await jsonFetch(`${baseUrl}/api/recommend`, {
       method: 'POST',
       body: JSON.stringify({ profileId }),
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${token}`, 'idempotency-key': 'chaos-llm-fallback-001' },
     });
 
     console.log(`[CHAOS-4] Recommend: status=${recRes.status}, advisory_text prefix="${recBody?.advisory_text?.substring(0, 60)}..."`);

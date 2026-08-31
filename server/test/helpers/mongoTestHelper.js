@@ -57,7 +57,14 @@ function buildFailFastError(errors = {}) {
 /**
  * Attempts to connect via external MONGODB_URI environment variable.
  */
-async function tryExternalUri() {
+async function assertReplicaSet() {
+  const hello = await mongoose.connection.db.admin().command({ hello: 1 });
+  if (!hello.setName) {
+    throw new Error('MongoDB is standalone; a replica set is required for transaction tests');
+  }
+}
+
+async function tryExternalUri(requireReplicaSet = false) {
   const envUri = process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!envUri) {
     throw new Error('MONGODB_URI / MONGO_URI environment variable not set');
@@ -66,6 +73,7 @@ async function tryExternalUri() {
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(envUri);
   }
+  if (requireReplicaSet) await assertReplicaSet();
   activeUri = envUri;
   activeMechanism = 'external_uri';
   return { uri: envUri, mechanism: 'external_uri' };
@@ -74,7 +82,7 @@ async function tryExternalUri() {
 /**
  * Attempts to start MongoDB via Testcontainers (mongo:7.0).
  */
-async function tryTestcontainers() {
+async function tryTestcontainers(requireReplicaSet = false) {
   if (process.env.USE_TESTCONTAINERS === 'false') {
     throw new Error('Testcontainers disabled via USE_TESTCONTAINERS=false');
   }
@@ -86,6 +94,7 @@ async function tryTestcontainers() {
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(uri);
   }
+  if (requireReplicaSet) await assertReplicaSet();
 
   activeContainer = container;
   activeUri = uri;
@@ -101,9 +110,10 @@ async function tryMongoMemoryServer() {
     throw new Error('MongoMemoryServer disabled via USE_MMS=false');
   }
 
-  const { MongoMemoryServer } = await import('mongodb-memory-server');
-  const mongoServer = await MongoMemoryServer.create({
+  const { MongoMemoryReplSet } = await import('mongodb-memory-server');
+  const mongoServer = await MongoMemoryReplSet.create({
     binary: { version: MONGO_VERSION },
+    replSet: { count: 1, storageEngine: 'wiredTiger' },
   });
   const uri = mongoServer.getUri();
 
@@ -126,9 +136,10 @@ async function tryMongoMemoryServer() {
  * 
  * @returns {Promise<{ uri: string, mechanism: string, stop: Function }>}
  */
-export async function setupTestDatabase() {
+export async function setupTestDatabase({ requireReplicaSet = false } = {}) {
   // If already connected and provisioned in this process, reuse
   if (mongoose.connection.readyState === 1 && activeUri) {
+    if (requireReplicaSet) await assertReplicaSet();
     return {
       uri: activeUri,
       mechanism: activeMechanism,
@@ -139,6 +150,7 @@ export async function setupTestDatabase() {
   // If already provisioned but mongoose was disconnected, just reconnect to existing URI!
   if (activeUri && mongoose.connection.readyState === 0) {
     await mongoose.connect(activeUri);
+    if (requireReplicaSet) await assertReplicaSet();
     return {
       uri: activeUri,
       mechanism: activeMechanism,
@@ -151,7 +163,7 @@ export async function setupTestDatabase() {
   // 1. Try external URI (CI / pre-started instance)
   if (process.env.MONGODB_URI || process.env.MONGO_URI) {
     try {
-      const res = await tryExternalUri();
+      const res = await tryExternalUri(requireReplicaSet);
       return { ...res, stop: teardownTestDatabase };
     } catch (err) {
       errors['MONGODB_URI'] = err;
@@ -162,7 +174,7 @@ export async function setupTestDatabase() {
 
   // 2. Try Testcontainers (Docker mongo:7.0)
   try {
-    const res = await tryTestcontainers();
+    const res = await tryTestcontainers(requireReplicaSet);
     return { ...res, stop: teardownTestDatabase };
   } catch (err) {
     errors['Testcontainers (Docker ' + MONGO_IMAGE + ')'] = err;

@@ -10,6 +10,10 @@ import mongoose from 'mongoose';
 const idempotencyKeySchema = new mongoose.Schema({
   _id: { type: String }, // compound key: "userId:idempotencyKey"
   status: { type: String, enum: ['LOCK', 'DONE'], default: 'LOCK' },
+  operation: { type: String, default: null },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  profileId: { type: mongoose.Schema.Types.ObjectId, ref: 'FinancialProfile', default: null },
+  requestHash: { type: String, default: null },
   response: { type: mongoose.Schema.Types.Mixed, default: null },
   createdAt: { type: Date, default: Date.now, expires: 300 }, // TTL: 5 minutes
 });

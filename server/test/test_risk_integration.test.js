@@ -115,7 +115,7 @@ test('Risk Integration: Conservative→Aggressive profile update produces differ
     const { response: rec1Res, body: rec1Body } = await jsonFetch(`${baseUrl}/api/recommend`, {
       method: 'POST',
       body: JSON.stringify({ profileId }),
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${token}`, 'idempotency-key': 'risk-baseline-001' },
     });
     assert.equal(rec1Res.status, 200, `Recommend 1 expected 200, got ${rec1Res.status}: ${JSON.stringify(rec1Body)}`);
     assert.ok(rec1Body.instruments?.length > 0, 'Baseline recommendations must be non-empty');
@@ -151,7 +151,7 @@ test('Risk Integration: Conservative→Aggressive profile update produces differ
     const { response: rec2Res, body: rec2Body } = await jsonFetch(`${baseUrl}/api/recommend`, {
       method: 'POST',
       body: JSON.stringify({ profileId }),
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${token}`, 'idempotency-key': 'risk-updated-001' },
     });
     assert.equal(rec2Res.status, 200, `Recommend 2 expected 200, got ${rec2Res.status}: ${JSON.stringify(rec2Body)}`);
     assert.ok(rec2Body.instruments?.length > 0, 'Updated recommendations must be non-empty');

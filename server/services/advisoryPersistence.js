@@ -1,0 +1,114 @@
+import mongoose from 'mongoose';
+import Recommendation from '../models/Recommendation.js';
+import AuditRecord from '../models/AuditRecord.js';
+import IdempotencyKey from '../models/IdempotencyKey.js';
+
+let advisoryPersistenceReady = null;
+
+async function ensureAdvisoryPersistenceReady() {
+  if (!advisoryPersistenceReady) {
+    advisoryPersistenceReady = (async () => {
+      await Promise.all([
+        Recommendation.init(),
+        AuditRecord.init(),
+        IdempotencyKey.init(),
+      ]);
+      // Production disables general auto-index creation. This one uniqueness
+      // constraint is part of the advisory correctness boundary, not tuning.
+      await Recommendation.collection.createIndex(
+        { idempotencyOperationId: 1 },
+        {
+          name: 'unique_advisory_idempotency_operation',
+          unique: true,
+          partialFilterExpression: { idempotencyOperationId: { $type: 'string' } },
+        },
+      );
+    })().catch(error => {
+      advisoryPersistenceReady = null;
+      throw error;
+    });
+  }
+  return advisoryPersistenceReady;
+}
+
+function transactionRequirementError(error) {
+  const message = error?.message || '';
+  if (/Transaction numbers are only allowed|replica set|does not support retryable writes/i.test(message)) {
+    const wrapped = new Error(
+      'Atomic advisory persistence requires a transaction-capable MongoDB replica set. No standalone fallback is permitted.',
+      { cause: error },
+    );
+    wrapped.status = 503;
+    wrapped.clientMessage = 'Advisory persistence is temporarily unavailable.';
+    wrapped.code = 'ADVISORY_TRANSACTIONS_REQUIRED';
+    return wrapped;
+  }
+  return error;
+}
+
+/**
+ * Atomically persists the recommendation, its required audit record, and the
+ * successful idempotency response. No compensation/fallback path is allowed.
+ */
+export async function persistAdvisoryAtomically({
+  recommendation,
+  auditRecord,
+  response,
+  idempotencyClaim,
+  testHooks = {},
+}) {
+  await ensureAdvisoryPersistenceReady();
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      await Recommendation.create([{
+        ...recommendation,
+        idempotencyOperationId: idempotencyClaim.operationId,
+        idempotencyRequestHash: idempotencyClaim.requestHash,
+        responseSnapshot: response,
+      }], { session });
+
+      await testHooks.afterRecommendationCreate?.(session);
+
+      try {
+        await AuditRecord.create([auditRecord], { session });
+      } catch (error) {
+        if (error.hasErrorLabel?.('TransientTransactionError')) throw error;
+        const auditError = new Error(`Required advisory audit write failed: ${error.message}`, { cause: error });
+        auditError.status = 500;
+        auditError.clientMessage = 'Failed to persist required advisory audit record. Transaction rolled back.';
+        auditError.code = 'ADVISORY_AUDIT_WRITE_FAILED';
+        throw auditError;
+      }
+      await testHooks.afterAuditCreate?.(session);
+
+      const completion = await IdempotencyKey.updateOne({
+        _id: idempotencyClaim.operationId,
+        status: 'LOCK',
+        requestHash: idempotencyClaim.requestHash,
+      }, {
+        $set: {
+          status: 'DONE',
+          response: {
+            status: 200,
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+            body: response,
+          },
+        },
+      }, { session });
+
+      if (completion.matchedCount !== 1) {
+        throw new Error('Advisory idempotency claim disappeared before transaction completion.');
+      }
+    }, {
+      readConcern: { level: 'snapshot' },
+      writeConcern: { w: 'majority' },
+    });
+
+    return response;
+  } catch (error) {
+    throw transactionRequirementError(error);
+  } finally {
+    await session.endSession();
+  }
+}

@@ -5,12 +5,13 @@ services:
     image: mongo:7.0
     container_name: wealthgenie-mongodb
     restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]}) }'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +38,7 @@ services:
       - "5000:5000"
     environment:
       - PORT=5000
-      - MONGODB_URI=mongodb://mongodb:27017/wealthgenie
+      - MONGODB_URI=mongodb://mongodb:27017/wealthgenie?replicaSet=rs0
       - REDIS_URL=redis://redis:6379
       - ML_SERVICE_URL=http://ml-service:8000
       - NODE_ENV=production
@@ -74,7 +75,7 @@ services:
       - ENVIRONMENT=production
       - ML_SERVICE_API_KEY=${ML_SERVICE_API_KEY:-}
       - ML_OPERATOR_KEY=${ML_OPERATOR_KEY:-}
-      - MONGODB_URI=mongodb://mongodb:27017/wealthgenie
+      - MONGODB_URI=mongodb://mongodb:27017/wealthgenie?replicaSet=rs0
     depends_on:
       mongodb:
         condition: service_healthy

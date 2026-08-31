@@ -70,6 +70,7 @@ describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
         headers: {
           Authorization: `Bearer ${testToken}`,
           'X-Correlation-ID': 'audit-test-corr-001',
+          'Idempotency-Key': 'audit-success-001',
         },
         body: JSON.stringify({ profileId: profile._id.toString() }),
       });
@@ -152,6 +153,7 @@ describe('AuditRecord - Complete Advisory Audit Trail Verification', () => {
           headers: {
             Authorization: `Bearer ${testToken}`,
             'X-Correlation-ID': 'fail-loudly-corr-test',
+            'Idempotency-Key': 'audit-failure-001',
           },
           body: JSON.stringify({ profileId: profile._id.toString() }),
         });
