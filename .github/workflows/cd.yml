@@ -209,3 +209,5 @@ jobs:
           kubectl logs -n wealthgenie -l app=wealthgenie-ml-service --tail=80
           echo "--- Server Logs ---"
           kubectl logs -n wealthgenie -l app=wealthgenie-server --tail=50
+          echo "--- Frontend Logs ---"
+          kubectl logs -n wealthgenie -l app=wealthgenie-frontend --tail=50

@@ -52,6 +52,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      default:
+        aliases:
+          # Match the Kubernetes Service name used by the shared nginx image.
+          - wealthgenie-server
 
   reactapp:
     build:

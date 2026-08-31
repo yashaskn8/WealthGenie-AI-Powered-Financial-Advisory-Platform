@@ -33,14 +33,17 @@ test('Docker full-stack wiring proxies frontend API calls and supplies ML operat
   const frontendDockerfile = fs.readFileSync(path.join(rootDir, 'reactapp', 'Dockerfile'), 'utf8');
   const nginxConfig = fs.readFileSync(path.join(rootDir, 'reactapp', 'nginx.conf'), 'utf8');
   const composeConfig = fs.readFileSync(path.join(rootDir, 'docker-compose.yml'), 'utf8');
+  const mongoService = fs.readFileSync(path.join(rootDir, 'k8s', 'mongodb', 'service.yaml'), 'utf8');
 
   assert.match(frontendDockerfile, /COPY\s+nginx\.conf\s+\/etc\/nginx\/conf\.d\/default\.conf/);
   assert.match(nginxConfig, /location\s+\/api\//);
-  assert.match(nginxConfig, /proxy_pass\s+http:\/\/server:5000;/);
+  assert.match(nginxConfig, /proxy_pass\s+http:\/\/wealthgenie-server:5000;/);
+  assert.match(composeConfig, /aliases:[\s\S]*- wealthgenie-server/);
   assert.match(composeConfig, /ML_OPERATOR_KEY=\$\{ML_OPERATOR_KEY:-\}/);
   assert.match(composeConfig, /METRICS_TOKEN=\$\{METRICS_TOKEN:-\}/);
   assert.match(composeConfig, /CORS_ORIGINS=\$\{CORS_ORIGINS:-https:\/\/localhost\}/);
   assert.match(composeConfig, /MONGODB_URI=mongodb:\/\/mongodb:27017\/wealthgenie\?replicaSet=rs0/);
+  assert.match(mongoService, /publishNotReadyAddresses:\s*true/);
 });
 
 test('Docker build contexts exclude local secrets, caches, and host dependencies', () => {

@@ -7,6 +7,10 @@ metadata:
     app: wealthgenie-mongodb
 spec:
   type: ClusterIP
+  # Replica-set initialization must be able to reach the first member before
+  # its readiness probe can report a PRIMARY. Without this, Service endpoint
+  # publication and replica-set readiness deadlock each other.
+  publishNotReadyAddresses: true
   ports:
     - port: 27017
       targetPort: 27017
