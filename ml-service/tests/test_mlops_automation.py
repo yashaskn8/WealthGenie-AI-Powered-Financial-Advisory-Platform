@@ -9,10 +9,8 @@ Tests and independently proves:
   4. Dataset Lineage & Hash Reproducibility (stored parameters regenerate exact matching dataset hash).
 """
 
-import json
 import logging
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -25,13 +23,6 @@ from model.data.preprocessing import (
     prepare_synthetic_training_data,
     regenerate_synthetic_dataset_and_hash,
 )
-from model.registry.drift_detection import run_drift_check
-from model.registry.drift_monitor import (
-    check_drift_and_trigger_retrain,
-    generate_synthetic_feature_batch,
-    inference_buffer,
-)
-from model.registry.shadow_evaluator import shadow_evaluator
 from store_factory import get_model_registry
 
 logger = logging.getLogger(__name__)
@@ -40,7 +31,11 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def client():
     api_key = os.environ.get("ML_SERVICE_API_KEY", "wealthgenie_secret_api_key_2026")
-    with TestClient(app, headers={"X-API-Key": api_key}) as test_client:
+    operator_key = os.environ.get("ML_OPERATOR_KEY", "wealthgenie_operator_secret_key_9999")
+    with TestClient(
+        app,
+        headers={"X-API-Key": api_key, "X-Operator-Key": operator_key},
+    ) as test_client:
         yield test_client
 
 
@@ -139,18 +134,25 @@ def test_promotion_gate_rejects_inferior_candidate(client):
         "independent_cfp_benchmark_accuracy": 0.20,
     }
 
-    # Attempt to register directly with set_active=True
+    # Register, shadow, and validate before the promotion gate evaluates it.
     inferior_payload = {
         "model_architecture": "RandomForest",
         "artifact_path": active_rf["artifact_path"],  # valid file
         "metrics": inferior_metrics,
-        "set_active": True,
+        "set_active": False,
         "notes": "Deliberately degraded candidate for promotion gate testing",
     }
 
     reg_res = client.post("/model/registry/register", json=inferior_payload)
-    assert reg_res.status_code == 409
-    error_detail = reg_res.json()["detail"]
+    assert reg_res.status_code == 201
+    candidate_id = reg_res.json()["version_id"]
+    assert client.post("/model/registry/shadow/configure", json={"version_id": candidate_id}).status_code == 200
+    assert client.post(
+        f"/model/registry/validate/{candidate_id}", json={"metrics": inferior_metrics}
+    ).status_code == 200
+    promote_res = client.post("/model/registry/promote", json={"version_id": candidate_id})
+    assert promote_res.status_code == 409
+    error_detail = promote_res.json()["detail"]
     assert error_detail["error"] == "PROMOTION_GATE_FAILED"
     assert error_detail["gate_result"]["gate_passed"] is False
     print(f"\n[PASS] Promotion Gate Rejection Verified! Error: {error_detail['gate_result']['failures']}")
@@ -186,8 +188,12 @@ def test_promotion_gate_allows_valid_candidate(client):
     assert reg_res.status_code == 201
     candidate_id = reg_res.json()["version_id"]
 
-    # Now promote through promotion gate
-    promote_res = client.post("/model/registry/promote", json={"version_id": candidate_id, "skip_gate": False})
+    # Advance CANDIDATE -> SHADOW -> VALIDATED, then promote through the gate.
+    assert client.post("/model/registry/shadow/configure", json={"version_id": candidate_id}).status_code == 200
+    assert client.post(
+        f"/model/registry/validate/{candidate_id}", json={"metrics": valid_metrics}
+    ).status_code == 200
+    promote_res = client.post("/model/registry/promote", json={"version_id": candidate_id})
     assert promote_res.status_code == 200
     promote_data = promote_res.json()
     assert promote_data["status"] == "promoted"
@@ -208,7 +214,7 @@ def test_shadow_evaluation_mode(client):
     assert len(versions) >= 2
 
     # Pick an inactive version as shadow candidate
-    inactive_version = next((v for v in versions if not v["is_active"]), None)
+    inactive_version = next((v for v in versions if v.get("lifecycle_state") == "CANDIDATE"), None)
     if not inactive_version:
         inactive_version = versions[-1]
 

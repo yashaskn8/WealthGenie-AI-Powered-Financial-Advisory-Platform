@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from model.serving.registry import registry
 from store_factory import get_model_registry
-from security import verify_api_key
+from security import operator_key_header, verify_api_key, verify_operator_key
 
 logger = logging.getLogger("wealthgenie.registry.router")
 
@@ -29,6 +29,26 @@ PROMOTION_TRACKED_METRICS = [
     "balanced_accuracy",
     "macro_f1",
 ]
+
+
+async def verify_registry_operator(
+    operator_key: Optional[str] = Security(operator_key_header),
+) -> str:
+    """Require the distinct operator credential for registry mutations.
+
+    A caller that has the prediction API key is authenticated but is not
+    authorized to mutate the registry, so invalid operator credentials are
+    deliberately reported as 403 rather than 401.
+    """
+    try:
+        return await verify_operator_key(operator_key)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="A valid operator credential is required for model registry mutations.",
+            ) from exc
+        raise
 
 
 def get_version_store():
@@ -72,6 +92,8 @@ def check_promotion_gate(
                 "status": "SKIPPED",
                 "reason": f"metric missing (active={active_val}, candidate={candidate_val})",
             }
+            gate_passed = False
+            failures.append(f"{metric_name}: required validation evidence is missing")
             continue
 
         threshold = float(active_val) * (1.0 - max_regression)
@@ -127,9 +149,13 @@ class DriftCheckRequest(BaseModel):
 
 
 class PromoteRequest(BaseModel):
-    model_config = {"protected_namespaces": ()}
+    model_config = {"protected_namespaces": (), "extra": "forbid"}
     version_id: str = Field(..., description="Version ID of the candidate to promote to active")
-    skip_gate: bool = Field(False, description="Whether to skip the promotion gate (NOT recommended)")
+
+
+class ValidateRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    metrics: Dict[str, float] = Field(..., description="Complete tracked validation evidence")
 
 
 @registry_router.get("/versions", dependencies=[Depends(verify_api_key)])
@@ -188,18 +214,17 @@ def verify_artifact_integrity(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@registry_router.post("/register", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_api_key)])
+@registry_router.post("/register", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_registry_operator)])
 def register_model_version(
     payload: RegisterModelRequest,
     store = Depends(get_version_store),
 ):
     """
-    Registers a new model version into the persistent version registry.
-    If set_active=true, runs the promotion gate first: the candidate's metrics
-    must meet or exceed the active version's metrics within the configured
-    max regression threshold (2% by default). If the gate fails, the registration
-    is REJECTED with HTTP 409 and the gate's failure reasons.
+    Registers a new CANDIDATE into the persistent version registry.
+    API registration never activates a model directly.
     """
+    if payload.set_active:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="API registration always creates a CANDIDATE; direct activation is forbidden.")
     artifact_path = Path(payload.artifact_path)
     if not artifact_path.exists():
         raise HTTPException(
@@ -209,26 +234,6 @@ def register_model_version(
 
     from datetime import datetime, timezone
     training_timestamp = payload.training_timestamp or datetime.now(timezone.utc).isoformat()
-
-    # ── Promotion Gate: enforce before allowing set_active=True ──
-    if payload.set_active:
-        active_version = store.get_active_model(payload.model_architecture)
-        if active_version and active_version.get("metrics"):
-            gate_result = check_promotion_gate(
-                candidate_metrics=payload.metrics or {},
-                active_metrics=active_version["metrics"],
-            )
-            if not gate_result["gate_passed"]:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail={
-                        "error": "PROMOTION_GATE_FAILED",
-                        "message": "Candidate version does not meet promotion criteria. "
-                                   "One or more tracked metrics regressed beyond the allowed threshold.",
-                        "gate_result": gate_result,
-                        "active_version_id": active_version["version_id"],
-                    },
-                )
 
     # Build hyperparameters with dataset lineage embedded
     hparams = payload.hyperparameters or {}
@@ -245,24 +250,35 @@ def register_model_version(
             metrics=payload.metrics or {},
             reference_distributions=payload.reference_distributions,
             notes=payload.notes,
-            set_active=payload.set_active,
+            set_active=False,
         )
-
-        if payload.set_active:
-            registry.reload_active_model(payload.model_architecture)
 
         return {
             "status": "registered",
             "version_id": version_id,
             "model_architecture": payload.model_architecture,
-            "is_active": payload.set_active,
+            "is_active": False,
+            "lifecycle_state": "CANDIDATE",
         }
     except Exception as e:
         logger.error(f"Failed to register model: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@registry_router.post("/promote", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_api_key)])
+@registry_router.post("/validate/{version_id}", dependencies=[Depends(verify_registry_operator)])
+def validate_version(version_id: str, payload: ValidateRequest, store=Depends(get_version_store)):
+    candidate = store.get_version(version_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Model version not found")
+    if candidate.get("lifecycle_state") != "SHADOW":
+        raise HTTPException(status_code=409, detail="Only SHADOW models can become VALIDATED")
+    missing = [name for name in PROMOTION_TRACKED_METRICS if name not in payload.metrics]
+    if missing:
+        raise HTTPException(status_code=409, detail=f"Missing validation metrics: {', '.join(missing)}")
+    return store.update_lifecycle_state(version_id, "VALIDATED", metrics=payload.metrics)
+
+
+@registry_router.post("/promote", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_registry_operator)])
 def promote_version(
     payload: PromoteRequest,
     store = Depends(get_version_store),
@@ -285,11 +301,13 @@ def promote_version(
             "version_id": payload.version_id,
             "message": "This version is already the active model.",
         }
+    if candidate.get("lifecycle_state") != "VALIDATED":
+        raise HTTPException(status_code=409, detail="Only VALIDATED models can be promoted to ACTIVE")
 
     architecture = candidate["model_architecture"]
     active_version = store.get_active_model(architecture)
 
-    if not payload.skip_gate and active_version and active_version.get("metrics"):
+    if active_version:
         gate_result = check_promotion_gate(
             candidate_metrics=candidate.get("metrics", {}),
             active_metrics=active_version["metrics"],
@@ -306,9 +324,9 @@ def promote_version(
                 },
             )
 
-    # Promotion gate passed (or skipped) — activate via rollback mechanism
+    # Promotion gate passed — activate via centrally persisted lifecycle state.
     try:
-        active_record = store.rollback_to_version(payload.version_id)
+        store.rollback_to_version(payload.version_id)
         registry.reload_active_model(architecture)
         return {
             "status": "promoted",
@@ -337,7 +355,7 @@ def get_drift_buffer_status():
     }
 
 
-@registry_router.delete("/drift/buffer", dependencies=[Depends(verify_api_key)])
+@registry_router.delete("/drift/buffer", dependencies=[Depends(verify_registry_operator)])
 def clear_drift_buffer():
     """Clears all buffered observations in the InferenceBuffer."""
     from model.registry.drift_monitor import inference_buffer
@@ -348,7 +366,7 @@ def clear_drift_buffer():
     }
 
 
-@registry_router.post("/drift-check", dependencies=[Depends(verify_api_key)])
+@registry_router.post("/drift-check", dependencies=[Depends(verify_registry_operator)])
 def run_drift_check_endpoint(
     payload: DriftCheckRequest,
     store = Depends(get_version_store),
@@ -397,12 +415,20 @@ def run_drift_check_endpoint(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@registry_router.post("/rollback/{version_id}", dependencies=[Depends(verify_api_key)])
+@registry_router.post("/rollback/{version_id}", dependencies=[Depends(verify_registry_operator)])
 def rollback_model_version(
     version_id: str,
     store = Depends(get_version_store),
 ):
     """Rolls back the active model to a specific registered version with tamper-evident verification."""
+    target = store.get_version(version_id)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Model version not found")
+    if target.get("lifecycle_state") not in {"ROLLED_BACK", "ACTIVE"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Rollback may only restore a previously ACTIVE/ROLLED_BACK model; it cannot bypass validation.",
+        )
     try:
         active_record = store.rollback_to_version(version_id)
         registry.reload_active_model(active_record["model_architecture"])
@@ -423,7 +449,7 @@ class ConfigureShadowRequest(BaseModel):
     version_id: str = Field(..., description="Registered version ID to run as shadow candidate")
 
 
-@registry_router.post("/shadow/configure", dependencies=[Depends(verify_api_key)])
+@registry_router.post("/shadow/configure", dependencies=[Depends(verify_registry_operator)])
 def configure_shadow_model(
     payload: ConfigureShadowRequest,
     store = Depends(get_version_store),
@@ -441,6 +467,8 @@ def configure_shadow_model(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Model version '{payload.version_id}' not found in registry."
         )
+    if version.get("lifecycle_state") != "CANDIDATE":
+        raise HTTPException(status_code=409, detail="Only CANDIDATE models can enter SHADOW")
 
     artifact_path = Path(version["artifact_path"])
     if not artifact_path.exists():
@@ -483,6 +511,7 @@ def configure_shadow_model(
         architecture=arch,
         predictor=pred,
     )
+    store.update_lifecycle_state(payload.version_id, "SHADOW")
 
     return {
         "status": "configured",
@@ -499,7 +528,7 @@ def get_shadow_summary():
     return shadow_evaluator.get_summary()
 
 
-@registry_router.delete("/shadow", dependencies=[Depends(verify_api_key)])
+@registry_router.delete("/shadow", dependencies=[Depends(verify_registry_operator)])
 def clear_shadow_model():
     """Disables shadow evaluation mode."""
     from model.registry.shadow_evaluator import shadow_evaluator

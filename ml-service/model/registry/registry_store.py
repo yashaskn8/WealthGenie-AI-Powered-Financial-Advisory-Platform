@@ -20,6 +20,10 @@ from typing import Any, Dict, List, Optional
 
 _DEFAULT_DB_PATH = Path(__file__).resolve().parent / "model_registry.db"
 _SCHEMA_VERSION = 1
+_ALLOWED_LIFECYCLE_TRANSITIONS = {
+    "CANDIDATE": {"SHADOW"},
+    "SHADOW": {"VALIDATED"},
+}
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -71,6 +75,7 @@ class ModelRegistry:
                 artifact_hash    TEXT NOT NULL,  -- SHA-256 of serialized model file
                 reference_distributions TEXT,    -- JSON (per-feature stats for drift)
                 is_active        INTEGER NOT NULL DEFAULT 0,
+                lifecycle_state  TEXT NOT NULL DEFAULT 'CANDIDATE',
                 registered_at    TEXT NOT NULL,
                 notes            TEXT
             );
@@ -80,6 +85,10 @@ class ModelRegistry:
                 value TEXT NOT NULL
             );
         """)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(model_versions)").fetchall()}
+        if "lifecycle_state" not in columns:
+            conn.execute("ALTER TABLE model_versions ADD COLUMN lifecycle_state TEXT NOT NULL DEFAULT 'CANDIDATE'")
+            conn.execute("UPDATE model_versions SET lifecycle_state = CASE WHEN is_active = 1 THEN 'ACTIVE' ELSE 'CANDIDATE' END")
         # Store schema version
         conn.execute(
             "INSERT OR IGNORE INTO registry_meta (key, value) VALUES (?, ?)",
@@ -117,7 +126,8 @@ class ModelRegistry:
         if set_active:
             # Deactivate all other versions of this architecture
             conn.execute(
-                "UPDATE model_versions SET is_active = 0 WHERE model_architecture = ?",
+                "UPDATE model_versions SET is_active = 0, lifecycle_state = 'ROLLED_BACK' "
+                "WHERE model_architecture = ? AND is_active = 1",
                 (model_architecture,),
             )
 
@@ -125,8 +135,8 @@ class ModelRegistry:
             """INSERT INTO model_versions
                (version_id, model_architecture, training_data_hash, training_timestamp,
                 hyperparameters, metrics, artifact_path, artifact_hash,
-                reference_distributions, is_active, registered_at, notes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                reference_distributions, is_active, lifecycle_state, registered_at, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 version_id,
                 model_architecture,
@@ -138,12 +148,38 @@ class ModelRegistry:
                 artifact_hash,
                 json.dumps(reference_distributions) if reference_distributions else None,
                 1 if set_active else 0,
+                "ACTIVE" if set_active else "CANDIDATE",
                 now,
                 notes,
             ),
         )
         conn.commit()
         return version_id
+
+    def update_lifecycle_state(self, version_id: str, lifecycle_state: str, metrics=None) -> Dict[str, Any]:
+        conn = self._get_conn()
+        current = self.get_version(version_id)
+        if current is None:
+            raise ValueError(f"Version {version_id} not found in registry.")
+        allowed = _ALLOWED_LIFECYCLE_TRANSITIONS.get(current["lifecycle_state"], set())
+        if lifecycle_state not in allowed:
+            raise ValueError(
+                f"Invalid model lifecycle transition: {current['lifecycle_state']} -> {lifecycle_state}."
+            )
+        if metrics is None:
+            result = conn.execute(
+                "UPDATE model_versions SET lifecycle_state = ? WHERE version_id = ?",
+                (lifecycle_state, version_id),
+            )
+        else:
+            result = conn.execute(
+                "UPDATE model_versions SET lifecycle_state = ?, metrics = ? WHERE version_id = ?",
+                (lifecycle_state, json.dumps(metrics), version_id),
+            )
+        if result.rowcount != 1:
+            raise RuntimeError("Model lifecycle update did not modify exactly one version.")
+        conn.commit()
+        return self.get_version(version_id)  # type: ignore
 
     def list_versions(
         self, architecture: Optional[str] = None
@@ -220,12 +256,12 @@ class ModelRegistry:
         conn = self._get_conn()
         # Deactivate all versions of this architecture
         conn.execute(
-            "UPDATE model_versions SET is_active = 0 WHERE model_architecture = ?",
+            "UPDATE model_versions SET is_active = 0, lifecycle_state = 'ROLLED_BACK' WHERE model_architecture = ? AND is_active = 1",
             (version["model_architecture"],),
         )
         # Activate the target version
         conn.execute(
-            "UPDATE model_versions SET is_active = 1 WHERE version_id = ?",
+            "UPDATE model_versions SET is_active = 1, lifecycle_state = 'ACTIVE' WHERE version_id = ?",
             (version_id,),
         )
         conn.commit()

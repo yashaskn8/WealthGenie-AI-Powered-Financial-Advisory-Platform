@@ -8,7 +8,6 @@ Preserves the same public interface and SHA-256 tamper-evident artifact hashing.
 """
 
 import hashlib
-import json
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -21,6 +20,10 @@ from pymongo.errors import ConnectionFailure
 logger = logging.getLogger("wealthgenie.registry.mongo")
 
 _SCHEMA_VERSION = 1
+_ALLOWED_LIFECYCLE_TRANSITIONS = {
+    "CANDIDATE": {"SHADOW"},
+    "SHADOW": {"VALIDATED"},
+}
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -65,6 +68,14 @@ class MongoModelRegistry:
                 {"$setOnInsert": {"key": "schema_version", "value": str(_SCHEMA_VERSION)}},
                 upsert=True,
             )
+            self._collection.update_many(
+                {"lifecycle_state": {"$exists": False}, "is_active": True},
+                {"$set": {"lifecycle_state": "ACTIVE"}},
+            )
+            self._collection.update_many(
+                {"lifecycle_state": {"$exists": False}, "is_active": {"$ne": True}},
+                {"$set": {"lifecycle_state": "CANDIDATE"}},
+            )
             logger.info("MongoModelRegistry initialized with indexes")
         except ConnectionFailure as e:
             logger.error(f"Failed to connect to MongoDB for registry: {e}")
@@ -97,8 +108,8 @@ class MongoModelRegistry:
         if set_active:
             # Deactivate all other versions of this architecture
             self._collection.update_many(
-                {"model_architecture": model_architecture},
-                {"$set": {"is_active": False}},
+                {"model_architecture": model_architecture, "is_active": True},
+                {"$set": {"is_active": False, "lifecycle_state": "ROLLED_BACK"}},
             )
 
         doc = {
@@ -112,6 +123,7 @@ class MongoModelRegistry:
             "artifact_hash": artifact_hash,
             "reference_distributions": reference_distributions,
             "is_active": set_active,
+            "lifecycle_state": "ACTIVE" if set_active else "CANDIDATE",
             "registered_at": now,
             "notes": notes,
         }
@@ -119,6 +131,26 @@ class MongoModelRegistry:
         self._collection.insert_one(doc)
         logger.info(f"Registered model version {version_id} ({model_architecture})")
         return version_id
+
+    def update_lifecycle_state(self, version_id: str, lifecycle_state: str, metrics=None) -> Dict[str, Any]:
+        current = self.get_version(version_id)
+        if current is None:
+            raise ValueError(f"Version {version_id} not found in registry.")
+        allowed = _ALLOWED_LIFECYCLE_TRANSITIONS.get(current["lifecycle_state"], set())
+        if lifecycle_state not in allowed:
+            raise ValueError(
+                f"Invalid model lifecycle transition: {current['lifecycle_state']} -> {lifecycle_state}."
+            )
+        update = {"lifecycle_state": lifecycle_state}
+        if metrics is not None:
+            update["metrics"] = metrics
+        result = self._collection.update_one(
+            {"version_id": version_id, "lifecycle_state": current["lifecycle_state"]},
+            {"$set": update},
+        )
+        if result.matched_count != 1:
+            raise RuntimeError("Concurrent model lifecycle transition detected; retry from current state.")
+        return self.get_version(version_id)  # type: ignore
 
     def list_versions(
         self, architecture: Optional[str] = None
@@ -178,12 +210,12 @@ class MongoModelRegistry:
         # Deactivate all versions of this architecture
         self._collection.update_many(
             {"model_architecture": version["model_architecture"]},
-            {"$set": {"is_active": False}},
+            {"$set": {"is_active": False, "lifecycle_state": "ROLLED_BACK"}},
         )
         # Activate the target version
         self._collection.update_one(
             {"version_id": version_id},
-            {"$set": {"is_active": True}},
+            {"$set": {"is_active": True, "lifecycle_state": "ACTIVE"}},
         )
 
         return self.get_version(version_id)  # type: ignore
@@ -222,4 +254,5 @@ class MongoModelRegistry:
         """Remove MongoDB internal fields and ensure consistent types."""
         doc.pop("_id", None)
         doc["is_active"] = bool(doc.get("is_active", False))
+        doc["lifecycle_state"] = doc.get("lifecycle_state") or ("ACTIVE" if doc["is_active"] else "CANDIDATE")
         return doc

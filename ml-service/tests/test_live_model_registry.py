@@ -17,19 +17,22 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # Ensure environment is set to local dev mode for testing
 os.environ["ENVIRONMENT"] = "local"
 os.environ["ML_SERVICE_API_KEY"] = "test-api-key"
+os.environ["ML_OPERATOR_KEY"] = "test-operator-key"
 
-import pytest
-from fastapi.testclient import TestClient
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
-from main import app
-from model.serving.registry import registry
-from store_factory import get_model_registry
+from main import app  # noqa: E402
+from model.serving.registry import registry  # noqa: E402
 
 
 @pytest.fixture(scope="module")
 def client():
     """Provides a TestClient initialized with app lifespan and valid auth header."""
-    with TestClient(app, headers={"X-API-Key": "test-api-key"}) as test_client:
+    with TestClient(
+        app,
+        headers={"X-API-Key": "test-api-key", "X-Operator-Key": "test-operator-key"},
+    ) as test_client:
         yield test_client
 
 
@@ -43,12 +46,12 @@ def test_registry_endpoints_require_authentication():
     assert "Invalid or missing API Key" in res.json().get("detail", "")
 
     # 2. POST /model/registry/promote without API key
-    res_promote = unauth_client.post("/model/registry/promote", json={"version_id": "dummy", "skip_gate": False})
+    res_promote = unauth_client.post("/model/registry/promote", json={"version_id": "dummy"})
     assert res_promote.status_code == 401, f"Expected 401, got {res_promote.status_code}"
     assert "Invalid or missing API Key" in res_promote.json().get("detail", "")
 
     # 3. POST /model/registry/promote with WRONG API key
-    res_wrong = unauth_client.post("/model/registry/promote", json={"version_id": "dummy", "skip_gate": False}, headers={"X-API-Key": "wrong-key"})
+    res_wrong = unauth_client.post("/model/registry/promote", json={"version_id": "dummy"}, headers={"X-API-Key": "wrong-key"})
     assert res_wrong.status_code == 401, f"Expected 401, got {res_wrong.status_code}"
     assert "Invalid or missing API Key" in res_wrong.json().get("detail", "")
 
@@ -122,21 +125,36 @@ def test_live_register_new_version_and_rollback(client):
     shutil.copyfile(base_rf_path, v2_artifact_path)
 
     try:
-        # 3. Register v2 with set_active=True via POST /model/registry/register
+        # 3. Register v2 as a candidate, then advance through the enforced lifecycle.
         reg_payload = {
             "model_architecture": "RandomForest",
             "artifact_path": str(v2_artifact_path),
             "training_data_hash": "synth_hash_v2",
             "hyperparameters": {"n_estimators": 150, "max_depth": 14},
-            "metrics": {"rule_approximation_fidelity": 0.9620, "notes": "Candidate v2 model"},
+            "metrics": {
+                "rule_approximation_fidelity": 0.9620,
+                "balanced_accuracy": 0.99,
+                "macro_f1": 0.99,
+            },
             "notes": "v2 release candidate",
-            "set_active": True,
+            "set_active": False,
         }
         reg_res = client.post("/model/registry/register", json=reg_payload)
         assert reg_res.status_code == 201
         v2_data = reg_res.json()
         v2_id = v2_data["version_id"]
-        assert v2_data["is_active"] is True
+        assert v2_data["is_active"] is False
+        assert v2_data["lifecycle_state"] == "CANDIDATE"
+
+        shadow_res = client.post("/model/registry/shadow/configure", json={"version_id": v2_id})
+        assert shadow_res.status_code == 200
+        validation_res = client.post(
+            f"/model/registry/validate/{v2_id}",
+            json={"metrics": reg_payload["metrics"]},
+        )
+        assert validation_res.status_code == 200
+        promotion_res = client.post("/model/registry/promote", json={"version_id": v2_id})
+        assert promotion_res.status_code == 200
 
         # 4. Verify v2 is now active in live service
         active_res_v2 = client.get("/model/registry/active?architecture=RandomForest")
