@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 import RecommendationDashboard from './RecommendationDashboard';
 import Sidebar from './components/Sidebar';
@@ -30,6 +30,7 @@ const LandingPage = lazy(() => import('./LandingPage'));
 
 /* ===== DASHBOARD SHELL - Sidebar + Pages + Chatbot ===== */
 const DashboardShell = ({ userProfile, onProfileUpdate }) => {
+  const navigate = useNavigate();
   const [activePage, setActivePage] = useState('dashboard');
   const [deepDiveInvestment, setDeepDiveInvestment] = useState(null);
   const [showComparisonTable, setShowComparisonTable] = useState(false);
@@ -53,6 +54,8 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
   const eligibleInvestments = useMemo(() => getEligibleInvestments(userProfile), [profileKey, userProfile]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
     const fetchBackendData = async () => {
       try {
         setIsLoading(true);
@@ -60,22 +63,24 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
         setBackendFallback(null);
         let activeProfileId = userProfile.profileId;
         if (!activeProfileId) {
-          const profileResponse = await api.buildProfile(userProfile);
+          const profileResponse = await api.buildProfile(userProfile, { signal: controller.signal });
           activeProfileId = profileResponse.profileId;
           if (activeProfileId) {
-            onProfileUpdate?.({ ...userProfile, profileId: activeProfileId });
+            if (!cancelled) onProfileUpdate?.({ ...userProfile, profileId: activeProfileId });
           }
         }
         if (!activeProfileId) {
           throw new Error('Backend profile creation did not return a profileId.');
         }
-        const recResponse = await api.getRecommendations(activeProfileId);
+        const recResponse = await api.getRecommendations(activeProfileId, { signal: controller.signal });
+        if (cancelled) return;
         setBackendRecs({
           ...recResponse,
           profileId: activeProfileId
         });
         setBackendFallback(null);
       } catch (err) {
+        if (err?.code === 'REQUEST_ABORTED' || cancelled) return;
         console.error("Failed to fetch backend recommendations:", err);
         setBackendRecs(null);
         setBackendFallback({
@@ -83,11 +88,24 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
           detail: err?.message || null,
         });
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
     fetchBackendData();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [profileKey, userProfile, onProfileUpdate]);
+
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } finally {
+      // The local session is cleared by api.logout even when the server is offline.
+      navigate('/login', { replace: true });
+    }
+  };
 
   // Merge backend data with local recommendations for display
   const recommendations = useMemo(() => {
@@ -349,7 +367,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
 
   return (
     <div className="app-shell">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <Sidebar activePage={activePage} onNavigate={setActivePage} onLogout={handleLogout} />
       <main className="app-main">
         <Suspense fallback={lazyFallback}>
           {renderPage()}

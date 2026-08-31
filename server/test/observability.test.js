@@ -74,6 +74,21 @@ test('Observability: correlation ID propagated if provided in request', async ()
   });
 });
 
+test('Observability: malformed correlation and trace headers are replaced safely', async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/health`, {
+      headers: {
+        'x-correlation-id': 'invalid id with spaces',
+        traceparent: 'not-a-valid-traceparent',
+      },
+    });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('x-correlation-id'), /^[0-9a-f-]{36}$/i);
+    assert.equal(response.headers.get('x-request-id'), response.headers.get('x-correlation-id'));
+    assert.match(response.headers.get('traceparent'), /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/);
+  });
+});
+
 // â”€â”€ 3. Deep health check: structure and DB status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 test('Observability: deep health check returns correct structure with DB UP', async () => {
   await ensureDb();
@@ -112,7 +127,6 @@ test('Observability: deep health check returns correct structure with DB UP', as
 test('Observability: deep health check returns 503 DOWN when MongoDB is disconnected', async (t) => {
   await ensureDb();
 
-  const originalReadyState = mongoose.connection.readyState;
   Object.defineProperty(mongoose.connection, 'readyState', {
     get: () => 0,
     configurable: true,

@@ -4,7 +4,6 @@
  * Never exposes internal error messages or stack traces to clients.
  */
 
-import crypto from 'crypto';
 import logger from '../utils/logger.js';
 
 const ERROR_CATEGORIES = {
@@ -55,26 +54,11 @@ const CLIENT_MESSAGES = {
   [ERROR_CATEGORIES.UNKNOWN]: 'An unexpected error occurred.',
 };
 
-/**
- * Generate a request fingerprint for audit trails.
- * Hashes IP + User-Agent to create a pseudonymous identifier
- * for correlating suspicious activity without storing PII.
- */
-function getRequestFingerprint(req) {
-  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-  const ua = req.headers['user-agent'] || 'unknown';
-  try {
-    return crypto.createHash('sha256').update(`${ip}:${ua}`).digest('hex').substring(0, 12);
-  } catch {
-    return 'no-fingerprint';
-  }
-}
-
 import mongoose from 'mongoose';
 
 export function errorHandler(err, req, res, _next) {
   const category = categoriseError(err);
-  let rawStatus = Number(err.status || err.statusCode);
+  const rawStatus = Number(err.status || err.statusCode);
   let status = Number.isInteger(rawStatus) && rawStatus >= 400 && rawStatus <= 599
     ? rawStatus
     : 500;
@@ -109,7 +93,7 @@ export function errorHandler(err, req, res, _next) {
     method: req.method,
     path: req.originalUrl || req.path,
     userId: req.user?.userId || 'anonymous',
-    requestId: req.headers['x-request-id'] || null,
+    requestId: req.correlationId || req.headers['x-request-id'] || null,
     responseTimeMs,
     message: err.message,
   };
@@ -139,12 +123,12 @@ export function errorHandler(err, req, res, _next) {
   }
 
   // Prevent double-sending if headers already sent
-  if (res.headersSent) return;
+  if (res.headersSent) return _next(err);
 
   // Safe client response — never expose internals
   return res.status(status).json({
     error: err.clientMessage || CLIENT_MESSAGES[category],
-    request_id: req.headers['x-request-id'] || null,
+    request_id: req.correlationId || req.headers['x-request-id'] || null,
   });
 }
 

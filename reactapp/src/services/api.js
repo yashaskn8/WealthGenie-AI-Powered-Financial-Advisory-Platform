@@ -6,21 +6,48 @@
  */
 
 const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
+const DEFAULT_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout >= 1000
+  ? configuredTimeout
+  : 20000;
+
+function getStorage(name) {
+  try {
+    return typeof window !== 'undefined' ? window[name] : null;
+  } catch {
+    return null;
+  }
+}
+
+function readStorage(name, key) {
+  try { return getStorage(name)?.getItem(key) ?? null; } catch { return null; }
+}
+
+function writeStorage(name, key, value) {
+  try {
+    const storage = getStorage(name);
+    if (!storage) return;
+    if (value === null || value === undefined) storage.removeItem(key);
+    else storage.setItem(key, value);
+  } catch {
+    // Storage can be disabled by privacy settings. The in-memory session still works.
+  }
+}
 
 // Restore token from localStorage on module load (survives page reload)
-let authToken = localStorage.getItem('wg_token') || null;
+let authToken = readStorage('localStorage', 'wg_token');
 
 // Track the current authenticated user
 let currentUser = (() => {
-  try { return JSON.parse(localStorage.getItem('wg_user') || 'null'); } catch { return null; }
+  try { return JSON.parse(readStorage('localStorage', 'wg_user') || 'null'); } catch { return null; }
 })();
 
 export function setUserInfo(user) {
   currentUser = user;
   if (user) {
-    localStorage.setItem('wg_user', JSON.stringify(user));
+    writeStorage('localStorage', 'wg_user', JSON.stringify(user));
   } else {
-    localStorage.removeItem('wg_user');
+    writeStorage('localStorage', 'wg_user', null);
   }
 }
 
@@ -31,9 +58,9 @@ export function getUserInfo() {
 export function setAuthToken(token) {
   authToken = token;
   if (token) {
-    localStorage.setItem('wg_token', token);
+    writeStorage('localStorage', 'wg_token', token);
   } else {
-    localStorage.removeItem('wg_token');
+    writeStorage('localStorage', 'wg_token', null);
   }
 }
 
@@ -43,8 +70,14 @@ export function getAuthToken() {
 
 export function clearAuthToken() {
   authToken = null;
-  localStorage.removeItem('wg_token');
+  writeStorage('localStorage', 'wg_token', null);
   setUserInfo(null);
+}
+
+export function clearUserSession() {
+  clearAuthToken();
+  writeStorage('localStorage', 'wealthgenie_user_profile', null);
+  writeStorage('sessionStorage', 'genie_session_id', null);
 }
 
 function generateUUID() {
@@ -58,57 +91,126 @@ function generateUUID() {
   });
 }
 
-async function request(method, path, data = null, options = {}, retries = 2) {
+export class ApiError extends Error {
+  constructor(message, { status = null, code = 'API_ERROR', requestId = null, details = [], retryable = false, cause } = {}) {
+    super(message, cause ? { cause } : undefined);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.requestId = requestId;
+    this.details = details;
+    this.retryable = retryable;
+  }
+}
+
+const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
+const wait = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+async function request(method, path, data = null, options = {}) {
   const url = `${API_BASE}${path}`;
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const upperMethod = method.toUpperCase();
+  const isMutating = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(upperMethod);
+  const {
+    headers: optionHeaders = {},
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    retries = isMutating ? 0 : 1,
+    signal: externalSignal,
+    ...fetchOptions
+  } = options;
+  const headers = { Accept: 'application/json', ...optionHeaders };
+  if (data !== null && data !== undefined) headers['Content-Type'] = 'application/json';
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+  if (!headers['X-Correlation-ID'] && !headers['x-correlation-id']) {
+    headers['X-Correlation-ID'] = generateUUID();
+  }
 
   // Attach Idempotency-Key for mutating requests (POST, PUT, DELETE, PATCH)
-  const isMutating = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase());
   if (isMutating) {
     if (!headers['Idempotency-Key'] && !headers['idempotency-key']) {
-      // Re-use key stored in options._idempotencyKey during retries, or generate fresh UUIDv4
-      if (!options._idempotencyKey) {
-        options._idempotencyKey = generateUUID();
-      }
-      headers['Idempotency-Key'] = options._idempotencyKey;
+      headers['Idempotency-Key'] = generateUUID();
     }
   }
 
-  const { _idempotencyKey, ...fetchOptions } = options;
-  const config = { method, headers, ...fetchOptions };
-  if (data) config.body = JSON.stringify(data);
-  try {
-    const res = await fetch(url, config);
-    let json = null;
-    try {
-      json = await res.json();
-    } catch {
-      // Some proxies and valid 204 responses do not return a JSON body.
+  const maxRetries = Math.max(0, Math.min(3, Number(retries) || 0));
+  const boundedTimeout = Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0
+    ? Number(timeoutMs)
+    : DEFAULT_TIMEOUT_MS;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    if (externalSignal?.aborted) {
+      throw new ApiError('Request cancelled.', { code: 'REQUEST_ABORTED' });
     }
 
-    if (!res.ok) {
-      if (res.status === 401) {
-        clearAuthToken();
-        if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-          window.location.href = '/login';
+    const controller = new AbortController();
+    let timedOut = false;
+    const abortFromCaller = () => controller.abort(externalSignal?.reason);
+    externalSignal?.addEventListener('abort', abortFromCaller, { once: true });
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, boundedTimeout);
+
+    const config = { method: upperMethod, headers, ...fetchOptions, signal: controller.signal };
+    if (data !== null && data !== undefined) config.body = JSON.stringify(data);
+
+    try {
+      const res = await fetch(url, config);
+      let json = null;
+      try {
+        json = await res.json();
+      } catch {
+        // Some proxies and valid 204 responses do not return a JSON body.
+      }
+
+      const requestId = res.headers?.get?.('x-correlation-id') || json?.request_id || headers['X-Correlation-ID'];
+      if (!res.ok) {
+        if (res.status === 401) {
+          clearUserSession();
+          if (typeof window !== 'undefined' && window.location.pathname !== '/' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+        const validationDetails = Array.isArray(json?.details) ? json.details : [];
+        throw new ApiError(
+          json?.message || validationDetails.join(' ') || json?.error || `Request failed with status ${res.status}`,
+          {
+            status: res.status,
+            code: json?.code || 'HTTP_ERROR',
+            requestId,
+            details: validationDetails,
+            retryable: RETRYABLE_STATUS.has(res.status),
+          }
+        );
+      }
+      return json;
+    } catch (error) {
+      let apiError = error;
+      if (!(error instanceof ApiError)) {
+        if (timedOut) {
+          apiError = new ApiError('The server took too long to respond.', {
+            code: 'REQUEST_TIMEOUT', retryable: true, cause: error,
+          });
+        } else if (externalSignal?.aborted) {
+          apiError = new ApiError('Request cancelled.', { code: 'REQUEST_ABORTED', cause: error });
+        } else {
+          apiError = new ApiError('Unable to reach the server. Check your connection and try again.', {
+            code: 'NETWORK_ERROR', retryable: true, cause: error,
+          });
         }
       }
-      const validationDetails = Array.isArray(json?.details) ? json.details.join(' ') : null;
-      throw new Error(
-        json?.message || validationDetails || json?.error || `Request failed with status ${res.status}`
-      );
+
+      if (apiError.retryable && attempt < maxRetries) {
+        await wait(300 * (2 ** attempt));
+        continue;
+      }
+      throw apiError;
+    } finally {
+      clearTimeout(timeoutId);
+      externalSignal?.removeEventListener('abort', abortFromCaller);
     }
-    return json;
-  } catch (err) {
-    // Retry on network errors (like 'Failed to fetch' which happens if the dev server restarts)
-    if (retries > 0 && err.message.includes('Failed to fetch')) {
-      console.warn(`[API] Network error: ${err.message}. Retrying... (${retries} retries left)`);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return request(method, path, data, options, retries - 1);
-    }
-    throw err;
   }
+
+  throw new ApiError('Request failed.', { code: 'API_ERROR' });
 }
 
 // ─── AUTH ─────────────────────────────────────────────────
@@ -126,6 +228,17 @@ export async function login(email, password) {
   return data;
 }
 
+export async function logout() {
+  try {
+    if (authToken) {
+      return await request('POST', '/auth/logout', {}, { timeoutMs: 5000, retries: 0 });
+    }
+    return null;
+  } finally {
+    clearUserSession();
+  }
+}
+
 // ─── PROFILE ─────────────────────────────────────────────
 export async function buildProfile(
   firstArg, age, monthlySavings, regime = 'new', investmentHorizon = 15,
@@ -136,6 +249,7 @@ export async function buildProfile(
 ) {
   if (typeof firstArg === 'object' && firstArg !== null) {
     const p = firstArg;
+    const requestOptions = age && typeof age === 'object' ? age : {};
     const monthlyIncome = Number(p.monthly_income !== undefined ? p.monthly_income : (p.monthlyIncome || 0));
     const annualIncome = monthlyIncome * 12;
     const totalCtcVal = Number(p.total_ctc !== undefined ? p.total_ctc : (p.totalCTC || annualIncome));
@@ -175,7 +289,7 @@ export async function buildProfile(
       section_80eea: Number(p.section80EEA !== undefined ? p.section80EEA : (p.section_80eea || 0)),
       income_source: p.incomeSource || p.income_source || 'salary',
     };
-    return request('POST', '/profile/build', payload);
+    return request('POST', '/profile/build', payload, requestOptions);
   }
 
   // Backward-compatible positional arguments handling
@@ -206,8 +320,8 @@ export async function updateProfile(profileId, payload) {
 }
 
 // ─── RECOMMENDATIONS ─────────────────────────────────────
-export async function getRecommendations(profileId) {
-  return request('POST', '/recommend', { profileId });
+export async function getRecommendations(profileId, options = {}) {
+  return request('POST', '/recommend', { profileId }, options);
 }
 
 // ─── INSTRUMENTS ─────────────────────────────────────────
@@ -263,8 +377,8 @@ export async function deleteGoal(goalId) {
 }
 
 // ─── HEALTH ──────────────────────────────────────────────
-export async function healthCheck() {
-  return request('GET', '/health');
+export async function healthCheck(options = {}) {
+  return request('GET', '/health', null, options);
 }
 
 // ─── MARKET DATA ─────────────────────────────────────────
@@ -277,16 +391,17 @@ export async function refreshMarketRates() {
 }
 
 // ─── CHAT (Genie) ────────────────────────────────────────
-export async function sendChatMessage(message, sessionId) {
-  return request('POST', '/chat/message', { message, session_id: sessionId });
+export async function sendChatMessage(message, sessionId, options = {}) {
+  return request('POST', '/chat/message', { message, session_id: sessionId }, { timeoutMs: 45000, ...options });
 }
 
 export async function getChatHistory(sessionId) {
-  return request('GET', `/chat/history?session_id=${sessionId}&limit=50`);
+  const params = new URLSearchParams({ session_id: String(sessionId), limit: '50' });
+  return request('GET', `/chat/history?${params.toString()}`);
 }
 
 export async function clearChatSession(sessionId) {
-  return request('DELETE', `/chat/session/${sessionId}`);
+  return request('DELETE', `/chat/session/${encodeURIComponent(sessionId)}`);
 }
 
 export async function computeTax(income, regime = 'new', deductions = {}) {
@@ -353,7 +468,7 @@ export async function computePostTaxReturnBatch(instruments, annualIncome, regim
 
 // Default export for convenience
 const api = {
-  register, login, setAuthToken, getAuthToken, clearAuthToken,
+  register, login, logout, setAuthToken, getAuthToken, clearAuthToken, clearUserSession,
   setUserInfo, getUserInfo,
   buildProfile, updateProfile, getRecommendations, getInstruments, getProjections,
   runMonteCarlo, createGoal, getGoals, updateGoal, deleteGoal, healthCheck,

@@ -4,7 +4,7 @@ import {
   User, Bell, HelpCircle, ChevronLeft, ChevronRight,
   FileText, Gauge, PieChart, Crosshair, Sparkles, Zap,
   LayoutDashboard, Activity, Goal, Layers, ArrowLeftRight,
-  Shield, Lightbulb, BookOpen
+  Shield, Lightbulb, BookOpen, LogOut
 } from 'lucide-react';
 import './Sidebar.css';
 import logoImg from '../assets/logo.png';
@@ -38,9 +38,20 @@ const NAV_GROUPS = [
   }
 ];
 
-const Sidebar = ({ activePage, onNavigate, insightCount = 0 }) => {
+const Sidebar = ({ activePage, onNavigate, onLogout, insightCount = 0 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (!onLogout || isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -168,6 +179,21 @@ const Sidebar = ({ activePage, onNavigate, insightCount = 0 }) => {
               <div className="sidebar-tooltip">Help / Tour</div>
             )}
           </button>
+
+          {onLogout && (
+            <button
+              className="sidebar-item"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              title={collapsed ? 'Sign out' : ''}
+              aria-label="Sign out"
+            >
+              <div className="sidebar-icon-wrap">
+                <LogOut size={17} strokeWidth={1.8} />
+              </div>
+              {!collapsed && <span className="sidebar-item-label">{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>}
+            </button>
+          )}
 
           {/* Powered by badge */}
           {!collapsed && (

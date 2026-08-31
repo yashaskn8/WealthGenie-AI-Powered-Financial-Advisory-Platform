@@ -74,4 +74,26 @@ describe('WG-038: POST /api/tax/post-tax-return & /batch Endpoints', () => {
       assert.equal(response.status, 400);
     });
   });
+
+  test('Validation - Rejects out-of-range rates and malformed batch entries', async () => {
+    await withServer(app, async (baseUrl) => {
+      const invalidRate = await jsonRequest(`${baseUrl}/api/tax/post-tax-return`, {
+        method: 'POST',
+        body: JSON.stringify({ instrumentType: 'FD', nominalRate: 7, annualIncome: 1000000 }),
+      });
+      assert.equal(invalidRate.response.status, 400);
+      assert.equal(invalidRate.body.error, 'Validation failed');
+
+      const invalidBatch = await jsonRequest(`${baseUrl}/api/tax/post-tax-return/batch`, {
+        method: 'POST',
+        body: JSON.stringify({
+          instruments: [{ instrumentType: 'FD', nominalRate: -0.1 }],
+          annualIncome: 1000000,
+          regime: 'new',
+        }),
+      });
+      assert.equal(invalidBatch.response.status, 400);
+      assert.equal(invalidBatch.body.error, 'Validation failed');
+    });
+  });
 });

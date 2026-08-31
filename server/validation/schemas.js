@@ -310,6 +310,48 @@ export const rankWtiSchema = Joi.object({
   }).optional().default({}),
 });
 
+// ── Public calculation schemas ──
+const postTaxInstrumentSchema = Joi.object({
+  instrumentType: Joi.string().trim().min(1).max(50).required(),
+  nominalRate: Joi.number().min(0).max(1).required(),
+  holdingYears: Joi.number().min(0.01).max(100).default(3),
+  monthlySIP: Joi.number().min(0).max(100000000).default(10000),
+});
+
+export const postTaxReturnSchema = postTaxInstrumentSchema.keys({
+  annualIncome: Joi.number().min(0).max(1000000000).required(),
+  regime: Joi.string().valid('new', 'old').default('new'),
+  userAge: Joi.number().integer().min(0).max(120).default(30),
+});
+
+export const postTaxReturnBatchSchema = Joi.object({
+  instruments: Joi.array().items(postTaxInstrumentSchema).min(1).max(50).required(),
+  annualIncome: Joi.number().min(0).max(1000000000).required(),
+  regime: Joi.string().valid('new', 'old').default('new'),
+  userAge: Joi.number().integer().min(0).max(120).default(30),
+});
+
+export const macroRegimeKeys = [
+  'normal', 'geopolitical_conflict', 'pandemic_health_crisis',
+  'broad_market_crash', 'inflation_spike', 'rate_cut_cycle',
+];
+
+export const regimeQuerySchema = Joi.object({
+  regime: Joi.string().valid(...macroRegimeKeys).optional(),
+});
+
+export const regimeAdjustSchema = Joi.object({
+  baseWeights: Joi.object()
+    .pattern(Joi.string().pattern(/^[A-Za-z0-9_-]{1,50}$/), Joi.number().min(0).max(1))
+    .min(1)
+    .max(30)
+    .required(),
+  regimeKey: Joi.string().valid(...macroRegimeKeys).default('normal'),
+}).custom((value, helpers) => {
+  const total = Object.values(value.baseWeights).reduce((sum, weight) => sum + weight, 0);
+  return total > 0 ? value : helpers.error('any.custom', { message: 'At least one base weight must be greater than zero' });
+});
+
 function _createValidator(schema, property) {
   return (req, res, next) => {
     const { error, value } = schema.validate(req[property], {

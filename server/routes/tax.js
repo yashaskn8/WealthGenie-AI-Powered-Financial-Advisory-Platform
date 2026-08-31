@@ -1,6 +1,13 @@
 ﻿import { Router } from 'express';
-import { asyncHandler, createError } from '../middleware/errorHandler.js';
-import { validateQuery, taxComputeSchema, taxCompareSchema } from '../validation/schemas.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import {
+  validate,
+  validateQuery,
+  taxComputeSchema,
+  taxCompareSchema,
+  postTaxReturnSchema,
+  postTaxReturnBatchSchema,
+} from '../validation/schemas.js';
 import { computeTax, compareTaxRegimes, isFYVerified, CURRENT_FY } from '../services/taxEngine.js';
 import { CESS_RATE } from '../services/instrumentConstants.js';
 import { calculatePostTaxReturnSafe } from '../services/postTaxCalculator.js';
@@ -118,27 +125,17 @@ router.get('/compare', validateQuery(taxCompareSchema), asyncHandler(async (req,
  * causing PostTaxAnalysis.jsx to systematically understate post-tax returns
  * for users with gross income under ~â‚¹12.75L.
  */
-router.post('/post-tax-return', asyncHandler(async (req, res) => {
+router.post('/post-tax-return', validate(postTaxReturnSchema), asyncHandler(async (req, res) => {
   const { instrumentType, nominalRate, annualIncome, holdingYears, regime, monthlySIP, userAge } = req.body;
-
-  if (!instrumentType || typeof instrumentType !== 'string') {
-    return res.status(400).json({ error: 'instrumentType is required and must be a string.' });
-  }
-  if (!Number.isFinite(nominalRate) || nominalRate < 0) {
-    return res.status(400).json({ error: 'nominalRate must be a non-negative number (decimal, e.g. 0.07).' });
-  }
-  if (!Number.isFinite(annualIncome) || annualIncome < 0) {
-    return res.status(400).json({ error: 'annualIncome must be a non-negative number.' });
-  }
 
   const result = calculatePostTaxReturnSafe(
     instrumentType,
     nominalRate,
-    Number.isFinite(annualIncome) ? annualIncome : 0,
-    Number.isFinite(holdingYears) ? holdingYears : 3,
-    regime || 'new',
-    Number.isFinite(monthlySIP) ? monthlySIP : 10000,
-    Number.isFinite(userAge) ? userAge : 30,
+    annualIncome,
+    holdingYears,
+    regime,
+    monthlySIP,
+    userAge,
   );
 
   res.json(result);
@@ -149,36 +146,21 @@ router.post('/post-tax-return', asyncHandler(async (req, res) => {
  * Batch computation: accepts an array of instruments, returns an array of results.
  * Used by PostTaxAnalysis.jsx to compute all instrument post-tax returns in one call.
  */
-router.post('/post-tax-return/batch', asyncHandler(async (req, res) => {
+router.post('/post-tax-return/batch', validate(postTaxReturnBatchSchema), asyncHandler(async (req, res) => {
   const { instruments, annualIncome, regime, userAge } = req.body;
 
-  if (!Array.isArray(instruments) || instruments.length === 0) {
-    return res.status(400).json({ error: 'instruments must be a non-empty array.' });
-  }
-  if (instruments.length > 50) {
-    return res.status(400).json({ error: 'Maximum 50 instruments per batch.' });
-  }
-
-  const safeIncome = Number.isFinite(annualIncome) ? annualIncome : 0;
-  const safeRegime = regime || 'new';
-  const safeAge = Number.isFinite(userAge) ? userAge : 30;
-
-  const results = instruments.map(inv => {
-    try {
-      const result = calculatePostTaxReturnSafe(
-        inv.instrumentType || 'FD',
-        Number.isFinite(inv.nominalRate) ? inv.nominalRate : 0,
-        safeIncome,
-        Number.isFinite(inv.holdingYears) ? inv.holdingYears : 3,
-        safeRegime,
-        Number.isFinite(inv.monthlySIP) ? inv.monthlySIP : 10000,
-        safeAge,
-      );
-      return { instrumentType: inv.instrumentType, ...result };
-    } catch (err) {
-      return { instrumentType: inv.instrumentType, error: err.message };
-    }
-  });
+  const results = instruments.map(inv => ({
+    instrumentType: inv.instrumentType,
+    ...calculatePostTaxReturnSafe(
+      inv.instrumentType,
+      inv.nominalRate,
+      annualIncome,
+      inv.holdingYears,
+      regime,
+      inv.monthlySIP,
+      userAge,
+    ),
+  }));
 
   res.json({ results });
 }));
