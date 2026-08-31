@@ -10,6 +10,7 @@ data:
   PORT: "5000"
   ML_PORT: "8000"
   ENVIRONMENT: "production"
+  ML_STATE_BACKEND: "mongodb"
   LLM_DEFAULT_PROVIDER: "mock"
   ML_SERVICE_URL: "http://wealthgenie-ml-service.wealthgenie.svc.cluster.local:8000"
   REDIS_URL: "redis://wealthgenie-redis.wealthgenie.svc.cluster.local:6379"

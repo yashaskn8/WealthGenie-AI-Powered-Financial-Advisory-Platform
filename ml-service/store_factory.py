@@ -17,9 +17,38 @@ When MONGODB_URI is absent (local dev):
 
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger("wealthgenie.store_factory")
+
+
+class SharedStateInitializationError(RuntimeError):
+    """Raised when required production shared state cannot be initialized."""
+
+
+def _environment() -> str:
+    return os.environ.get("ENVIRONMENT", "local").strip().lower()
+
+
+def _state_backend() -> str:
+    configured = os.environ.get("ML_STATE_BACKEND", "auto").strip().lower()
+    if configured not in {"auto", "mongodb", "local"}:
+        raise ValueError("ML_STATE_BACKEND must be one of: auto, mongodb, local")
+    if configured == "auto":
+        return "mongodb" if _environment() == "production" or os.environ.get("MONGODB_URI", "").strip() else "local"
+    if _environment() == "production" and configured != "mongodb":
+        raise SharedStateInitializationError(
+            "Production requires ML_STATE_BACKEND=mongodb; local JSON/SQLite state is forbidden."
+        )
+    return configured
+
+
+def _required_mongo_uri() -> str:
+    uri = os.environ.get("MONGODB_URI", "").strip()
+    if not uri:
+        raise SharedStateInitializationError(
+            "MongoDB shared state was selected but MONGODB_URI is missing."
+        )
+    return uri
 
 
 def get_vector_store(force_numpy: bool = False):
@@ -27,9 +56,9 @@ def get_vector_store(force_numpy: bool = False):
     Returns the appropriate BaseVectorStore implementation.
     Uses MongoVectorStore when MONGODB_URI is set, else PersistentVectorStore.
     """
-    mongo_uri = os.environ.get("MONGODB_URI", "")
-
-    if mongo_uri:
+    backend = _state_backend()
+    if backend == "mongodb":
+        mongo_uri = _required_mongo_uri()
         try:
             from rag.vector_store.mongo_vector_store import MongoVectorStore
             store = MongoVectorStore(
@@ -38,10 +67,13 @@ def get_vector_store(force_numpy: bool = False):
                 collection_name="vector_chunks",
                 force_numpy=force_numpy,
             )
-            logger.info(f"Using MongoVectorStore (backend=mongodb)")
+            logger.info("Using MongoVectorStore (backend=mongodb)")
             return store
         except Exception as e:
-            logger.error(f"Failed to initialize MongoVectorStore: {e}. Falling back to PersistentVectorStore.")
+            logger.exception("Failed to initialize required MongoVectorStore")
+            raise SharedStateInitializationError(
+                f"Required MongoVectorStore initialization failed: {e}"
+            ) from e
 
     from rag.vector_store.memory_vector_store import PersistentVectorStore
     store = PersistentVectorStore(force_numpy=force_numpy)
@@ -54,9 +86,9 @@ def get_model_registry(db_path=None):
     Returns the appropriate model registry implementation.
     Uses MongoModelRegistry when MONGODB_URI is set, else SQLite ModelRegistry.
     """
-    mongo_uri = os.environ.get("MONGODB_URI", "")
-
-    if mongo_uri:
+    backend = _state_backend()
+    if backend == "mongodb":
+        mongo_uri = _required_mongo_uri()
         try:
             from model.registry.mongo_registry_store import MongoModelRegistry
             registry = MongoModelRegistry(
@@ -66,7 +98,10 @@ def get_model_registry(db_path=None):
             logger.info("Using MongoModelRegistry (backend=mongodb)")
             return registry
         except Exception as e:
-            logger.error(f"Failed to initialize MongoModelRegistry: {e}. Falling back to SQLite ModelRegistry.")
+            logger.exception("Failed to initialize required MongoModelRegistry")
+            raise SharedStateInitializationError(
+                f"Required MongoModelRegistry initialization failed: {e}"
+            ) from e
 
     from model.registry.registry_store import ModelRegistry
     registry = ModelRegistry(db_path=db_path)
