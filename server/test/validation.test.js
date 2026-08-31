@@ -15,6 +15,7 @@ import profileRoutes from '../routes/profile.js';
 import goalsRoutes from '../routes/goals.js';
 import { enforceJsonContentType } from '../middleware/contentType.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { registerSchema } from '../validation/schemas.js';
 
 process.env.JWT_SECRET = 'validation-test-secret';
 process.env.NODE_ENV = 'test';
@@ -28,6 +29,19 @@ function signToken() {
     { expiresIn: '1h' }
   );
 }
+
+test('registration schema accepts the non-deliverable CI identity domain', () => {
+  const unique = '1725140000000-1234';
+  const { error, value } = registerSchema.validate({
+    name: `E2E User ${unique}`,
+    email: `e2e-${unique}@example.com`,
+    mobile: '9876543210',
+    password: 'Valid@Pass2026!',
+  });
+
+  assert.equal(error, undefined);
+  assert.equal(value.email, `e2e-${unique}@example.com`);
+});
 
 function buildApp() {
   const app = express();

@@ -23,7 +23,9 @@ test.describe('real WealthGenie dependency lifecycle', () => {
     const unique = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
     const user = {
       name: `E2E User ${unique}`,
-      email: `e2e-${unique}@wealthgenie.test`,
+      // Joi validates public DNS TLDs; example.com is the reserved, valid
+      // documentation domain for non-deliverable automated identities.
+      email: `e2e-${unique}@example.com`,
       mobile: '9876543210',
       password: 'Valid@Pass2026!',
     };
