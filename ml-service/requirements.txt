@@ -9,6 +9,7 @@ pydantic==2.9.0
 python-dotenv==1.2.2
 shap==0.46.0
 pytest==9.0.3
+pytest-asyncio==1.4.0
 httpx==0.28.1
 torch>=2.4.0
 matplotlib>=3.8.0
