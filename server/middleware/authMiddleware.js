@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { isTokenBlacklisted } from '../config/redis.js';
 import { clearAuthCookies, readSessionCookie } from '../services/authSession.js';
+import { sendError } from './errorHandler.js';
 
 /**
  * JWT verification middleware.
@@ -10,28 +11,28 @@ import { clearAuthCookies, readSessionCookie } from '../services/authSession.js'
 export async function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
   if (authHeader && !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Access denied. Invalid authorization scheme.' });
+    return sendError(req, res, 401, 'Access denied. Invalid authorization scheme.', 'AUTH_SCHEME_INVALID');
   }
 
   const cookieToken = authHeader ? null : readSessionCookie(req);
   const token = authHeader?.slice('Bearer '.length).trim() || cookieToken;
   const usingCookie = Boolean(cookieToken);
   if (!token || token === 'null' || token === 'undefined') {
-    return res.status(401).json({ error: 'Access denied. No token or valid session provided.' });
+    return sendError(req, res, 401, 'Access denied. No token or valid session provided.', 'AUTH_REQUIRED');
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     if (!decoded.userId) {
       if (usingCookie) clearAuthCookies(res);
-      return res.status(401).json({ error: 'Invalid token payload.' });
+      return sendError(req, res, 401, 'Invalid token payload.', 'AUTH_TOKEN_INVALID');
     }
 
     if (decoded.jti) {
       const blacklisted = await isTokenBlacklisted(decoded.jti);
       if (blacklisted) {
         if (usingCookie) clearAuthCookies(res);
-        return res.status(401).json({ error: 'Token has been revoked. Please log in again.' });
+        return sendError(req, res, 401, 'Token has been revoked. Please log in again.', 'AUTH_TOKEN_REVOKED');
       }
     }
 
@@ -46,9 +47,9 @@ export async function verifyJWT(req, res, next) {
   } catch (err) {
     if (usingCookie) clearAuthCookies(res);
     if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired. Please log in again.' });
+      return sendError(req, res, 401, 'Token expired. Please log in again.', 'AUTH_TOKEN_EXPIRED');
     }
-    return res.status(401).json({ error: 'Invalid or expired token.' });
+    return sendError(req, res, 401, 'Invalid or expired token.', 'AUTH_TOKEN_INVALID');
   }
 }
 
@@ -62,7 +63,7 @@ export async function verifyJWT(req, res, next) {
 export function requireRole(role) {
   return (req, res, next) => {
     if (!req.user || req.user.role !== role) {
-      return res.status(403).json({ error: `Access denied. Requires ${role} role.` });
+      return sendError(req, res, 403, `Access denied. Requires ${role} role.`, 'AUTH_ROLE_REQUIRED');
     }
     next();
   };

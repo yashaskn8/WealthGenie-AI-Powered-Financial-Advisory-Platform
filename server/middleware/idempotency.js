@@ -2,6 +2,7 @@ import { getCache, setCache, setCacheNX, delCache, redisAvailable } from '../con
 import IdempotencyKey from '../models/IdempotencyKey.js';
 import Recommendation from '../models/Recommendation.js';
 import { canonicalSha256 } from '../utils/canonicalJson.js';
+import { sendError } from './errorHandler.js';
 
 // ARCHITECTURE: No in-memory Map. All idempotency state lives in shared infra.
 // Primary: Redis (fast, atomic SET NX). Fallback: MongoDB IdempotencyKey collection.
@@ -188,10 +189,13 @@ async function handleRedisIdempotency(req, res, next, cacheKey, ttlSeconds) {
     const cached = await getCache(cacheKey);
 
     if (!cached || cached === 'LOCK') {
-      return res.status(409).json({
-        error: 'Conflict',
-        message: 'A duplicate request is already in progress. Please wait.'
-      });
+      return sendError(
+        req,
+        res,
+        409,
+        'A duplicate request is already in progress. Please wait.',
+        'IDEMPOTENCY_IN_PROGRESS',
+      );
     }
 
     // Return original cached response
@@ -264,10 +268,13 @@ async function handleMongoIdempotency(req, res, next, cacheKey, ttlSeconds) {
       const doc = await IdempotencyKey.findById(cacheKey).lean();
 
       if (!doc || doc.status === 'LOCK') {
-        return res.status(409).json({
-          error: 'Conflict',
-          message: 'A duplicate request is already in progress. Please wait.'
-        });
+        return sendError(
+          req,
+          res,
+          409,
+          'A duplicate request is already in progress. Please wait.',
+          'IDEMPOTENCY_IN_PROGRESS',
+        );
       }
 
       // Return cached response

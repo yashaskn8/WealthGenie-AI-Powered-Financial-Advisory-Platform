@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { verifyJWT } from '../middleware/authMiddleware.js';
-import { asyncHandler, createError } from '../middleware/errorHandler.js';
+import { asyncHandler, createError, sendError } from '../middleware/errorHandler.js';
 import { validate, profileSchema, updateProfileSchema } from '../validation/schemas.js';
 import { computeTax, getTaxSlab, compareTaxRegimes } from '../services/taxEngine.js';
 import { getRiskProfile } from '../services/riskProfiler.js';
@@ -213,12 +213,14 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
 
   const currentVersion = existingProfile.version || 1;
   if (currentVersion !== expectedVersion) {
-    return res.status(409).json({
-      error: 'Conflict',
-      message: 'Version conflict. Document has been modified concurrently by another process.',
-      currentVersion,
-      expectedVersion,
-    });
+    return sendError(
+      req,
+      res,
+      409,
+      'Version conflict. Document has been modified concurrently by another process.',
+      'PROFILE_VERSION_CONFLICT',
+      { currentVersion, expectedVersion },
+    );
   }
 
   const {
@@ -341,10 +343,13 @@ router.put('/:profileId', verifyJWT, validate(updateProfileSchema), asyncHandler
   );
 
   if (!updatedProfile) {
-    return res.status(409).json({
-      error: 'Conflict',
-      message: 'Version conflict. Document has been modified concurrently by another process.',
-    });
+    return sendError(
+      req,
+      res,
+      409,
+      'Version conflict. Document has been modified concurrently by another process.',
+      'PROFILE_VERSION_CONFLICT',
+    );
   }
 
   // Invalidate ALL chatbot system prompt caches for this user

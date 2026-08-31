@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import { asyncHandler, sendError } from '../middleware/errorHandler.js';
 import { verifyJWT } from '../middleware/authMiddleware.js';
 import { validate, rankWtiSchema } from '../validation/schemas.js';
 import Instrument from '../models/Instrument.js';
@@ -20,7 +20,13 @@ router.get('/', asyncHandler(async (req, res) => {
 
   // Validate type if provided
   if (type && !ALLOWED_TYPES.has(type)) {
-    return res.status(400).json({ error: `Invalid instrument type. Allowed: ${[...ALLOWED_TYPES].join(', ')}` });
+    return sendError(
+      req,
+      res,
+      400,
+      `Invalid instrument type. Allowed: ${[...ALLOWED_TYPES].join(', ')}`,
+      'INSTRUMENT_TYPE_INVALID',
+    );
   }
 
   const cacheKey = `instruments:${type || 'all'}:${sort || 'name'}:${order || 'asc'}:${page || 1}:${limit || 20}`;
@@ -80,4 +86,3 @@ router.post('/rank-wti', verifyJWT, validate(rankWtiSchema), asyncHandler(async 
 }));
 
 export default router;
-

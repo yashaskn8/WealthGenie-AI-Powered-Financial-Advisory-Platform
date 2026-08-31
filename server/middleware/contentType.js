@@ -9,11 +9,16 @@ export const enforceJsonContentType = (req, res, next) => {
     
     // Check if header is present and starts with application/json
     if (!contentType || !contentType.toLowerCase().startsWith('application/json')) {
-      return res.status(415).json({
-        error: 'Unsupported Media Type',
-        message: 'Content-Type must be application/json'
-      });
+      return sendError(
+        req,
+        res,
+        415,
+        'Unsupported Media Type',
+        'CONTENT_TYPE_UNSUPPORTED',
+        { requirement: 'Content-Type must be application/json.' },
+      );
     }
   }
   next();
 };
+import { sendError } from './errorHandler.js';

@@ -1,4 +1,5 @@
 import { PrometheusMetrics } from '../services/metricsCollector.js';
+import { sendError } from './errorHandler.js';
 
 function isHealthRequest(req) {
   return req.path === '/healthz'
@@ -21,23 +22,21 @@ export function createOperationalMiddleware({ runtimeState, maxInFlightRequests 
       const draining = runtimeState.isDraining();
       res.setHeader('Connection', 'close');
       res.setHeader('Retry-After', '5');
-      return res.status(503).json({
-        error: draining
+      return sendError(
+        req,
+        res,
+        503,
+        draining
           ? 'Service is restarting. Please retry shortly.'
           : 'Service is not ready to accept traffic.',
-        code: draining ? 'SERVICE_DRAINING' : 'SERVICE_NOT_READY',
-        request_id: req.correlationId || null,
-      });
+        draining ? 'SERVICE_DRAINING' : 'SERVICE_NOT_READY',
+      );
     }
 
     if (!healthRequest && inFlight >= maxInFlightRequests) {
       PrometheusMetrics.recordHttpOverload();
       res.setHeader('Retry-After', '1');
-      return res.status(503).json({
-        error: 'Service is temporarily at capacity.',
-        code: 'SERVICE_OVERLOADED',
-        request_id: req.correlationId || null,
-      });
+      return sendError(req, res, 503, 'Service is temporarily at capacity.', 'SERVICE_OVERLOADED');
     }
 
     const startedAt = process.hrtime.bigint();

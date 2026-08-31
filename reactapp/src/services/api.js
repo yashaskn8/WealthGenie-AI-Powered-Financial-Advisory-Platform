@@ -238,14 +238,18 @@ async function request(method, path, data = null, options = {}) {
             window.location.href = '/login';
           }
         }
-        const validationDetails = Array.isArray(json?.details) ? json.details : [];
+        const responseDetails = (Array.isArray(json?.details)
+          || (json?.details && typeof json.details === 'object'))
+          ? json.details
+          : [];
+        const validationMessage = Array.isArray(responseDetails) ? responseDetails.join(' ') : '';
         throw new ApiError(
-          json?.message || validationDetails.join(' ') || json?.error || `Request failed with status ${res.status}`,
+          json?.message || validationMessage || json?.error || `Request failed with status ${res.status}`,
           {
             status: res.status,
             code: json?.code || 'HTTP_ERROR',
             requestId,
-            details: validationDetails,
+            details: responseDetails,
             retryable: RETRYABLE_STATUS.has(res.status),
             retryAfterMs: parseRetryAfter(res.headers?.get?.('retry-after')),
           }

@@ -4,6 +4,7 @@ import {
   readSessionCookie,
 } from '../services/authSession.js';
 import { PrometheusMetrics } from '../services/metricsCollector.js';
+import { sendError } from './errorHandler.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -32,22 +33,14 @@ export function createCsrfProtection({ allowedOrigins = [], isProduction = false
     const headerToken = req.headers['x-csrf-token'];
     if (!safeEqual(cookieToken, headerToken)) {
       PrometheusMetrics.inc('csrf_rejections_total');
-      return res.status(403).json({
-        error: 'Request could not be verified.',
-        code: 'CSRF_TOKEN_INVALID',
-        request_id: req.correlationId || null,
-      });
+      return sendError(req, res, 403, 'Request could not be verified.', 'CSRF_TOKEN_INVALID');
     }
 
     if (isProduction) {
       const origin = req.headers.origin?.replace(/\/+$/, '');
       if (!origin || !allowlist.has(origin)) {
         PrometheusMetrics.inc('csrf_rejections_total');
-        return res.status(403).json({
-          error: 'Request origin could not be verified.',
-          code: 'CSRF_ORIGIN_INVALID',
-          request_id: req.correlationId || null,
-        });
+        return sendError(req, res, 403, 'Request origin could not be verified.', 'CSRF_ORIGIN_INVALID');
       }
     }
 

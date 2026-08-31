@@ -1,5 +1,5 @@
 ﻿import { Router } from 'express';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import { asyncHandler, sendError } from '../middleware/errorHandler.js';
 import {
   validate,
   validateQuery,
@@ -43,7 +43,7 @@ router.get('/compute', validateQuery(taxComputeSchema), asyncHandler(async (req,
   const regime = req.query.regime || 'new';
 
   if (!Number.isFinite(income) || income < 0) {
-    return res.status(400).json({ error: 'Income must be a valid positive number.' });
+    return sendError(req, res, 400, 'Income must be a valid positive number.', 'INCOME_INVALID');
   }
 
   const deductions = _parseTaxDeductionsFromQuery(req.query);
@@ -66,7 +66,7 @@ router.get('/compare', validateQuery(taxCompareSchema), asyncHandler(async (req,
   const income = Number(req.query.income !== undefined ? req.query.income : req.query.annualIncome);
 
   if (!Number.isFinite(income) || income < 0) {
-    return res.status(400).json({ error: 'Income must be a valid positive number.' });
+    return sendError(req, res, 400, 'Income must be a valid positive number.', 'INCOME_INVALID');
   }
 
   const deductions = _parseTaxDeductionsFromQuery(req.query);

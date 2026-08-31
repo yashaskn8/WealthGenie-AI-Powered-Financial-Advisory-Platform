@@ -54,6 +54,29 @@ const CLIENT_MESSAGES = {
   [ERROR_CATEGORIES.UNKNOWN]: 'An unexpected error occurred.',
 };
 
+function requestId(req) {
+  return req?.correlationId || req?.headers?.['x-request-id'] || null;
+}
+
+/**
+ * Canonical public error envelope. `error` is retained as a compatibility
+ * alias while new clients should consume `message`, `code`, and `request_id`.
+ */
+export function errorEnvelope(req, message, code, details) {
+  const body = {
+    error: message,
+    message,
+    code,
+    request_id: requestId(req),
+  };
+  if (details !== undefined) body.details = details;
+  return body;
+}
+
+export function sendError(req, res, status, message, code, details) {
+  return res.status(status).json(errorEnvelope(req, message, code, details));
+}
+
 import mongoose from 'mongoose';
 
 export function errorHandler(err, req, res, _next) {
@@ -126,10 +149,11 @@ export function errorHandler(err, req, res, _next) {
   if (res.headersSent) return _next(err);
 
   // Safe client response — never expose internals
-  return res.status(status).json({
-    error: err.clientMessage || CLIENT_MESSAGES[category],
-    request_id: req.correlationId || req.headers['x-request-id'] || null,
-  });
+  const message = err.clientMessage || CLIENT_MESSAGES[category];
+  const publicCode = typeof err.code === 'string' && /^[A-Z0-9_]+$/.test(err.code)
+    ? err.code
+    : category;
+  return sendError(req, res, status, message, publicCode, err.clientDetails);
 }
 
 /**
@@ -153,9 +177,11 @@ export function asyncHandler(fn) {
  * @param {string} [clientMessage] - Safe message for the client
  * @returns {Error}
  */
-export function createError(status, message, clientMessage) {
+export function createError(status, message, clientMessage, options = {}) {
   const err = new Error(message);
   err.status = status;
   if (clientMessage) err.clientMessage = clientMessage;
+  if (options.code) err.code = options.code;
+  if (options.details !== undefined) err.clientDetails = options.details;
   return err;
 }

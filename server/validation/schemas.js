@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { sendError } from '../middleware/errorHandler.js';
 
 /**
  * WealthGenie Request Validation Schemas
@@ -359,10 +360,14 @@ function _createValidator(schema, property) {
       stripUnknown: true,
     });
     if (error) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: error.details.map(d => d.message),
-      });
+      return sendError(
+        req,
+        res,
+        400,
+        'Validation failed',
+        'VALIDATION_ERROR',
+        error.details.map(d => d.message),
+      );
     }
     req[property] = value;
     next();

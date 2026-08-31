@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import mongoSanitize from 'express-mongo-sanitize';
 import logger, { morganStream } from './utils/logger.js';
 import { getRuntimeConfig } from './config/runtime.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { errorHandler, sendError } from './middleware/errorHandler.js';
 import { enforceJsonContentType } from './middleware/contentType.js';
 import { correlationIdMiddleware } from './middleware/correlation.js';
 import { createCsrfProtection } from './middleware/csrf.js';
@@ -146,9 +146,7 @@ export function createApp({ env = process.env, runtimeState = null } = {}) {
   app.use('/api/mcp', mcpRoutes);
   app.get('/api/health', detailedHealth);
 
-  app.use((req, res) => res.status(404).json({
-    error: 'Route not found.', method: req.method, path: req.originalUrl, request_id: req.correlationId,
-  }));
+  app.use((req, res) => sendError(req, res, 404, 'Route not found.', 'ROUTE_NOT_FOUND'));
   app.use(errorHandler);
   return app;
 }

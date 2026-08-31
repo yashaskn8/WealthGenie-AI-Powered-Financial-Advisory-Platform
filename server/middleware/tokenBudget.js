@@ -9,6 +9,8 @@
  * pattern used in rateLimiter.js).
  */
 
+import { sendError } from './errorHandler.js';
+
 // Default budget: 50 000 tokens per 60-second window
 const DEFAULT_WINDOW_MS = 60 * 1000;
 const DEFAULT_MAX_TOKENS = 50_000;
@@ -86,11 +88,15 @@ export function checkTokenBudget(options = {}) {
       const retryAfterMs = bucket ? bucket.resetTime - Date.now() : windowMs;
       const retryAfterSec = Math.ceil(Math.max(retryAfterMs, 1000) / 1000);
 
-      return _res.status(429).json({
-        error: 'Token budget exceeded',
-        message: `You have used ${totalTokens} tokens in the current window (limit: ${maxTokens}). Try again in ${retryAfterSec}s.`,
-        retryAfterSeconds: retryAfterSec,
-      });
+      _res.setHeader('Retry-After', String(retryAfterSec));
+      return sendError(
+        req,
+        _res,
+        429,
+        `You have used ${totalTokens} tokens in the current window (limit: ${maxTokens}). Try again in ${retryAfterSec}s.`,
+        'TOKEN_BUDGET_EXCEEDED',
+        { retryAfterSeconds: retryAfterSec },
+      );
     }
 
     // Attach helper so downstream handler can record usage

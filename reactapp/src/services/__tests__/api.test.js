@@ -111,6 +111,24 @@ describe('frontend API contracts', () => {
     expect(fetchMock.mock.calls[0][1].headers['X-Correlation-ID']).toMatch(/^[0-9a-f-]{36}$/i);
   });
 
+  it('preserves the canonical server error code, request ID, and structured details', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      error: 'Version conflict.',
+      message: 'Version conflict.',
+      code: 'PROFILE_VERSION_CONFLICT',
+      request_id: '8ba3f55e-4719-41b5-a5b1-671af22871b4',
+      details: { currentVersion: 4, expectedVersion: 3 },
+    }, 409)));
+
+    await expect(api.updateProfile('profile-1', { version: 3 })).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 409,
+      code: 'PROFILE_VERSION_CONFLICT',
+      requestId: '8ba3f55e-4719-41b5-a5b1-671af22871b4',
+      details: { currentVersion: 4, expectedVersion: 3 },
+    });
+  });
+
   it('aborts requests that exceed their timeout', async () => {
     vi.useFakeTimers();
     vi.stubGlobal('fetch', vi.fn((url, config) => new Promise((resolve, reject) => {

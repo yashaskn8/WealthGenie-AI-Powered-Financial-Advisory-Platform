@@ -2,6 +2,11 @@
 import RedisStore from 'rate-limit-redis';
 import { redisClient, redisAvailable } from '../config/redis.js';
 import logger from '../utils/logger.js';
+import { sendError } from './errorHandler.js';
+
+function rateLimitHandler(message, code) {
+  return (req, res) => sendError(req, res, 429, message, code);
+}
 
 class HybridStore {
   constructor(options = {}) {
@@ -88,6 +93,10 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes window
   max: 100, // High threshold for cluster tests
   message: { error: 'Authentication rate limit exceeded or store unavailable. Try again in 15 minutes.' },
+  handler: rateLimitHandler(
+    'Authentication rate limit exceeded or store unavailable. Try again in 15 minutes.',
+    'AUTH_RATE_LIMIT_EXCEEDED',
+  ),
   standardHeaders: true,
   legacyHeaders: false,
   store: new HybridStore({ prefix: 'rl:auth:', windowMs: 15 * 60 * 1000 }),
@@ -101,6 +110,7 @@ export const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
   max: 1000, // High threshold for cluster load tests
   message: { error: 'Rate limit exceeded.' },
+  handler: rateLimitHandler('Rate limit exceeded.', 'RATE_LIMIT_EXCEEDED'),
   store: new HybridStore({ prefix: 'rl:api:', windowMs: 60 * 1000 }),
   passOnStoreError: true, // Degrade gracefully for general read endpoints
   skip: () => process.env.DISABLE_RATE_LIMIT === 'true',
@@ -113,6 +123,7 @@ export function createEndpointRateLimiter(options = {}) {
     windowMs,
     max,
     message: { error: 'Rate Limit Exceeded', message },
+    handler: rateLimitHandler(message, 'ENDPOINT_RATE_LIMIT_EXCEEDED'),
     standardHeaders: true,
     legacyHeaders: false,
     store: new HybridStore({ prefix: 'rl:ep:', windowMs }),
