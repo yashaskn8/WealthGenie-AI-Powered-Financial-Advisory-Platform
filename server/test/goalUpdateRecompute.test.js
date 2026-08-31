@@ -44,6 +44,17 @@ function buildTestApp() {
 
 async function ensureDb() {
   await setupTestDatabase();
+  const existingProfile = await FinancialProfile.findOne({ userId: TEST_USER_ID });
+  if (!existingProfile) {
+    await FinancialProfile.create({
+      userId: TEST_USER_ID,
+      monthlyIncome: 100000,
+      annualIncome: 1200000,
+      age: 35,
+      savings: 30000,
+      goals: [],
+    });
+  }
 }
 
 test.after(async () => {

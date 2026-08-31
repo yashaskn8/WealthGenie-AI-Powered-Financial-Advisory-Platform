@@ -4,10 +4,8 @@ Unit tests for document metadata schema, effective_date, source_trust_tier, and 
 
 import tempfile
 from pathlib import Path
-import pytest
-
-from rag.ingestion.pipeline import IngestionPipeline
-from rag.schema import DocumentMetadata, Document
+from rag.ingestion.pipeline import AdministrativeIngestionOverride, IngestionPipeline
+from rag.schema import DocumentMetadata
 from rag.vector_store.memory_vector_store import PersistentVectorStore
 
 
@@ -34,7 +32,7 @@ def test_ingestion_preserves_metadata_fields():
         pipeline.ingest_text(
             text="Section 80C allows tax deduction up to Rs 1,50,000 per financial year.",
             title="Tax Law 2025",
-            source="tax_2025.txt",
+            source="https://www.incometaxindia.gov.in/official/tax-2025",
             author="Income Tax Department",
             effective_date="2025-04-01",
             source_trust_tier="government_official",
@@ -56,7 +54,7 @@ def test_metadata_filtering_by_trust_tier():
         pipeline.ingest_text(
             text="Official CBDT Circular on Section 87A tax rebate threshold.",
             title="Official Circular",
-            source="official_cbdt.txt",
+            source="https://www.incometaxindia.gov.in/official/cbdt-circular",
             effective_date="2025-04-01",
             source_trust_tier="government_official",
         )
@@ -67,11 +65,18 @@ def test_metadata_filtering_by_trust_tier():
             source="blog.txt",
             effective_date="2024-01-01",
             source_trust_tier="internal_analysis",
+            administrative_override=AdministrativeIngestionOverride(
+                operator_id="metadata-test",
+                reason="Quarantine an untrusted metadata-filtering test document.",
+            ),
         )
 
         gov_chunks = [c for c in store._chunks if c.metadata.source_trust_tier == "government_official"]
-        blog_chunks = [c for c in store._chunks if c.metadata.source_trust_tier == "internal_analysis"]
+        quarantined_chunks = [
+            c for c in store._chunks
+            if c.metadata.source_trust_tier == "administrative_override_untrusted"
+        ]
 
         assert len(gov_chunks) >= 1
-        assert len(blog_chunks) >= 1
+        assert len(quarantined_chunks) >= 1
         assert all(c.metadata.source_trust_tier == "government_official" for c in gov_chunks)
