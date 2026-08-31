@@ -1,26 +1,12 @@
 import axios from 'axios';
-import { trace } from '@opentelemetry/api';
+import {
+  buildPredictionRequest,
+  buildTracingHeaders,
+  normalizePredictionResponse,
+} from './mlServiceContract.js';
 
 const getMlServiceUrl = () => (process.env.ML_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const getMlApiKey = () => process.env.ML_SERVICE_API_KEY || '';
-
-function getTracingHeaders(correlationId = null) {
-  const headers = {};
-  const activeSpan = trace.getActiveSpan();
-  if (activeSpan) {
-    const sc = activeSpan.spanContext();
-    headers['traceparent'] = `00-${sc.traceId}-${sc.spanId}-01`;
-    if (!correlationId) correlationId = sc.traceId;
-  }
-  if (correlationId) {
-    headers['X-Correlation-ID'] = correlationId;
-    if (!headers['traceparent']) {
-      const cleanHex = correlationId.replace(/[^a-fA-F0-9]/g, '').padEnd(32, '0').slice(0, 32);
-      headers['traceparent'] = `00-${cleanHex}-0000000000000001-01`;
-    }
-  }
-  return headers;
-}
 
 const ML_TIMEOUT_MS = 5000;
 
@@ -47,12 +33,6 @@ function recordFailure() {
   }
 }
 
-
-function hasUsablePrediction(result) {
-  if (!result || typeof result !== 'object') return false;
-  return [result.primary, result.secondary, result.tertiary]
-    .some(pick => typeof pick === 'string' && pick.trim().length > 0);
-}
 
 export async function getMLPrediction(profileData, correlationId = null, userId = null, userRole = null) {
   if (!isCircuitHealthy()) {
@@ -81,34 +61,27 @@ export async function getMLPrediction(profileData, correlationId = null, userId 
     const mlApiKey = getMlApiKey();
     const mlEndpoint = process.env.ML_MODEL_ENDPOINT || '/predict/enriched';
     const normalizedEndpoint = mlEndpoint.startsWith('/') ? mlEndpoint : `/${mlEndpoint}`;
-    const res = await axios.post(`${mlServiceUrl}${normalizedEndpoint}`, {
-      age: profileData.age,
-      annual_income: profileData.annual_income,
-      monthly_savings: profileData.monthly_savings,
-      risk_category: profileData.risk_category,
-      liquid_savings: profileData.liquid_savings,
-      existing_debt: debtVal,
-      existing_debt_emi_ratio_pct: debtVal,
-      dependents: profileData.dependents,
-      emergency_fund_months: profileData.emergency_fund_months,
-      risk_tolerance: profileData.risk_tolerance,
-      goal_type: profileData.goal_type,
-      investment_horizon: profileData.investment_horizon || 15
-    }, {
+    const request = buildPredictionRequest(profileData);
+    if (!request) {
+      console.warn('[MLClient] Profile cannot satisfy the FastAPI prediction contract, using fallback.');
+      return getRuleBasedFallback(profileData);
+    }
+    const res = await axios.post(`${mlServiceUrl}${normalizedEndpoint}`, request, {
       timeout: ML_TIMEOUT_MS,
       headers: {
         ...(mlApiKey ? { 'X-API-Key': mlApiKey } : {}),
         ...(effectiveUserId ? { 'X-Verified-User-Id': String(effectiveUserId) } : {}),
         ...(userRole ? { 'X-Verified-User-Role': String(userRole) } : {}),
-        ...getTracingHeaders(correlationId),
+        ...buildTracingHeaders(correlationId),
       }
     });
-    if (!hasUsablePrediction(res.data)) {
+    const prediction = normalizePredictionResponse(res.data);
+    if (!prediction) {
       console.warn('[MLClient] ML service returned an unusable prediction, using rule-based fallback.');
       return getRuleBasedFallback(profileData);
     }
     recordSuccess();
-    return res.data;
+    return prediction;
   } catch (err) {
     recordFailure();
     console.warn('[MLClient] ML service unavailable, using rule-based fallback:', err.message);
@@ -124,7 +97,7 @@ export async function checkMLHealth(correlationId = null) {
       timeout: 3000,
       headers: {
         ...(mlApiKey ? { 'X-API-Key': mlApiKey } : {}),
-        ...getTracingHeaders(correlationId),
+        ...buildTracingHeaders(correlationId),
       }
     });
     return res.data;

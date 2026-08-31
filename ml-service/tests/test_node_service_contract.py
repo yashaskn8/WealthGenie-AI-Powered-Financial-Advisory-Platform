@@ -1,0 +1,51 @@
+"""Consumer-contract evidence shared by Express and FastAPI."""
+
+import json
+from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
+
+from rag.schema import RAGQueryRequest, RAGQueryResponse
+from schemas import PredictRequest, PredictResponse
+
+
+FIXTURES = json.loads(
+    (Path(__file__).parents[2] / "server" / "contracts" / "ml-service-contract.fixtures.json").read_text(encoding="utf-8")
+)
+
+
+def test_express_prediction_request_is_accepted_by_fastapi_schema():
+    request = PredictRequest.model_validate(FIXTURES["prediction_request"])
+    assert request.existing_debt == 12
+    assert request.goal_type == "wealth-building"
+
+
+def test_prediction_success_response_matches_fastapi_schema():
+    response = PredictResponse.model_validate(FIXTURES["prediction_response"])
+    assert response.primary == "ETF"
+    assert response.model_version == "rf-3.1.0"
+    assert response.explanation is not None
+
+
+def test_prediction_request_rejects_unknown_casing_or_duplicate_fields():
+    with pytest.raises(ValidationError):
+        PredictRequest.model_validate({**FIXTURES["prediction_request"], "annualIncome": 1800000})
+    with pytest.raises(ValidationError):
+        PredictRequest.model_validate({**FIXTURES["prediction_request"], "existing_debt_emi_ratio_pct": 12})
+
+
+def test_express_rag_request_and_both_response_states_match_pydantic():
+    request = RAGQueryRequest.model_validate(FIXTURES["rag_request"])
+    grounded = RAGQueryResponse.model_validate(FIXTURES["rag_grounded_response"])
+    abstention = RAGQueryResponse.model_validate(FIXTURES["rag_abstention_response"])
+    assert request.top_k == 4
+    assert grounded.grounded is True and grounded.citations[0].chunk_id == "tax-80c#1"
+    assert abstention.grounded is False and abstention.citations == []
+
+
+def test_rag_request_rejects_silent_node_python_field_drift():
+    with pytest.raises(ValidationError):
+        RAGQueryRequest.model_validate({**FIXTURES["rag_request"], "threshold": 0.2})
+    with pytest.raises(ValidationError):
+        RAGQueryRequest.model_validate({**FIXTURES["rag_request"], "topK": 4})

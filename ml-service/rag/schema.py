@@ -5,7 +5,7 @@ Defines Pydantic data contracts for documents, chunks, queries, citations, and m
 
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def is_scope_accessible(
@@ -127,6 +127,8 @@ class Citation(BaseModel):
 
 class RAGQueryRequest(BaseModel):
     """Request payload for RAG query execution."""
+    model_config = ConfigDict(extra="forbid")
+
     question: str = Field(..., min_length=3, description="User advisory question")
     top_k: Optional[int] = Field(None, ge=1, le=20, description="Override default top-k retrieval count")
     tenant_id: str = Field("default", description="Tenant isolation scope identifier")

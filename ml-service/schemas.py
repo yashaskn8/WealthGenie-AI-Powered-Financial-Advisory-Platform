@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing import Dict, List, Optional, Literal
 
 
 class PredictRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     age: int = Field(..., ge=18, le=80, description="User age in years")
     annual_income: float = Field(..., gt=0, le=100000000, description="Annual income in INR (max ₹10Cr)")
     monthly_savings: float = Field(..., ge=0, description="Monthly savings in INR")

@@ -137,7 +137,11 @@ test('mlClient posts to enriched endpoint and falls back on service failure', as
     postedHeaders = config?.headers;
     assert.equal(payload.age, 40);
     assert.equal(payload.liquid_savings, 50000);
-    return { data: { primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS', confidence_scores: { ETF: 0.7 } } };
+    return { data: {
+      primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS',
+      confidence_scores: { ETF: 0.7 }, decision_path: ['risk = Moderate'],
+      model_version: 'test-rf-1', explanation: null,
+    } };
   };
   axios.get = async (url, config) => {
     getHeaders = config?.headers;
@@ -210,7 +214,11 @@ test('mlClient reads the ML URL and API key at request time', async (t) => {
   const calls = [];
   axios.post = async (url, _payload, config) => {
     calls.push({ url, headers: config.headers });
-    return { data: { primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS' } };
+    return { data: {
+      primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS',
+      confidence_scores: { ETF: 0.7 }, decision_path: ['risk = Moderate'],
+      model_version: 'test-rf-1', explanation: null,
+    } };
   };
   t.after(() => {
     axios.post = originalPost;
@@ -295,11 +303,18 @@ test('ragClient and mlClient propagate verified X-Verified-User-Id header downst
       ragCapturedUrl = url;
       ragCapturedHeaders = config?.headers;
       ragCapturedBody = payload;
-      return { status: 200, data: { answer: 'Grounded tax advice', citations: [] } };
+      return { status: 200, data: {
+        answer: 'Grounded tax advice', grounded: true,
+        citations: [{ chunk_id: 'tax#1' }], retrieved_chunks: [], metrics: {},
+      } };
     }
     if (url.includes('/predict')) {
       mlCapturedHeaders = config?.headers;
-      return { data: { primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS', confidence_scores: { ETF: 0.7 } } };
+      return { data: {
+        primary: 'ETF', secondary: 'Debt_MF', tertiary: 'ELSS',
+        confidence_scores: { ETF: 0.7 }, decision_path: ['risk = Moderate'],
+        model_version: 'test-rf-1', explanation: null,
+      } };
     }
     return { data: {} };
   };

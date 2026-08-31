@@ -1,27 +1,13 @@
 import axios from 'axios';
-import { trace } from '@opentelemetry/api';
+import {
+  buildRagQueryRequest,
+  buildTracingHeaders,
+  normalizeRagResponse,
+} from './mlServiceContract.js';
 
 const getMlServiceUrl = () => (process.env.ML_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const getMlApiKey = () => process.env.ML_SERVICE_API_KEY || '';
 const RAG_TIMEOUT_MS = 8000;
-
-function getTracingHeaders(correlationId = null) {
-  const headers = {};
-  const activeSpan = trace.getActiveSpan();
-  if (activeSpan) {
-    const sc = activeSpan.spanContext();
-    headers['traceparent'] = `00-${sc.traceId}-${sc.spanId}-01`;
-    if (!correlationId) correlationId = sc.traceId;
-  }
-  if (correlationId) {
-    headers['X-Correlation-ID'] = correlationId;
-    if (!headers['traceparent']) {
-      const cleanHex = correlationId.replace(/[^a-fA-F0-9]/g, '').padEnd(32, '0').slice(0, 32);
-      headers['traceparent'] = `00-${cleanHex}-0000000000000001-01`;
-    }
-  }
-  return headers;
-}
 
 let failureCount = 0;
 let circuitOpenUntil = 0;
@@ -50,12 +36,13 @@ function recordFailure() {
 /**
  * Executes grounded RAG retrieval & answer synthesis against FastAPI /rag/query.
  * 
- * @param {Object} params - { query, top_k, threshold, userId }
+ * @param {Object} params - { query, top_k, userId, userRole }
  * @param {string|null} correlationId - Optional correlation ID for tracing
  * @returns {Promise<Object|null>} Grounded RAG query response or null on failure
  */
-export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = null, userRole = null }, correlationId = null) {
-  if (!query || typeof query !== 'string' || !query.trim()) {
+export async function queryRAG({ query, top_k = 4, userId = null, userRole = null }, correlationId = null) {
+  const request = buildRagQueryRequest({ query, top_k });
+  if (!request) {
     return null;
   }
 
@@ -69,11 +56,7 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = nul
     const apiKey = getMlApiKey();
     const res = await axios.post(
       `${mlUrl}/rag/query`,
-      {
-        question: query.trim(),
-        top_k: Number(top_k) || 4,
-        threshold: Number(threshold) || 0.0,
-      },
+      request,
       {
         timeout: RAG_TIMEOUT_MS,
         headers: {
@@ -81,14 +64,15 @@ export async function queryRAG({ query, top_k = 4, threshold = 0.0, userId = nul
           ...(apiKey ? { 'X-API-Key': apiKey } : {}),
           ...(userId ? { 'X-Verified-User-Id': String(userId) } : {}),
           ...(userRole ? { 'X-Verified-User-Role': String(userRole) } : {}),
-          ...getTracingHeaders(correlationId),
+          ...buildTracingHeaders(correlationId),
         },
       }
     );
 
-    if (res.status === 200 && res.data) {
+    const result = res.status === 200 ? normalizeRagResponse(res.data) : null;
+    if (result) {
       recordSuccess();
-      return res.data;
+      return result;
     }
     recordFailure();
     return null;
@@ -110,7 +94,7 @@ export async function checkRAGHealth(correlationId = null) {
       timeout: 3000,
       headers: {
         ...(apiKey ? { 'X-API-Key': apiKey } : {}),
-        ...getTracingHeaders(correlationId),
+        ...buildTracingHeaders(correlationId),
       },
     });
     return res.data;

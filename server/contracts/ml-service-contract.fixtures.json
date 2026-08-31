@@ -1,0 +1,65 @@
+{
+  "prediction_request": {
+    "age": 34,
+    "annual_income": 1800000,
+    "monthly_savings": 45000,
+    "risk_category": "Moderate",
+    "liquid_savings": 500000,
+    "existing_debt": 12,
+    "dependents": 1,
+    "emergency_fund_months": 6,
+    "risk_tolerance": "Moderate",
+    "goal_type": "wealth-building",
+    "investment_horizon": 15
+  },
+  "prediction_response": {
+    "primary": "ETF",
+    "secondary": "Debt_MF",
+    "tertiary": "SGB",
+    "confidence_scores": { "ETF": 0.71, "Debt_MF": 0.19, "SGB": 0.1 },
+    "decision_path": ["30 <= age <= 45", "income > 15L", "risk = Moderate"],
+    "model_used": "RandomForest",
+    "low_confidence": false,
+    "confidence_threshold": 0.55,
+    "model_version": "rf-3.1.0",
+    "dataset_version": "3.0.0",
+    "git_commit_hash": "contract1",
+    "explanation": {
+      "predicted_class": "ETF",
+      "confidence": 0.71,
+      "feature_contributions": [],
+      "top_reason": "Risk capacity supports a balanced allocation."
+    }
+  },
+  "rag_request": {
+    "question": "What is the current Section 80C deduction limit?",
+    "top_k": 4
+  },
+  "rag_grounded_response": {
+    "answer": "The retrieved regulatory evidence states the applicable Section 80C limit.",
+    "citations": [
+      {
+        "citation_id": 1,
+        "document_title": "Income Tax guidance",
+        "source": "official-guidance",
+        "chunk_id": "tax-80c#1",
+        "excerpt": "Section 80C evidence excerpt.",
+        "relevance_score": 0.94
+      }
+    ],
+    "retrieved_chunks": [],
+    "metrics": { "retrieval_hit": true, "citation_id_valid": true },
+    "grounded": true
+  },
+  "rag_abstention_response": {
+    "answer": "I cannot answer this from trustworthy in-domain evidence.",
+    "citations": [],
+    "retrieved_chunks": [],
+    "metrics": { "abstention_reason": "insufficient_evidence" },
+    "grounded": false
+  },
+  "trace": {
+    "correlation_id": "contract-correlation-123",
+    "traceparent_pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-01$"
+  }
+}
