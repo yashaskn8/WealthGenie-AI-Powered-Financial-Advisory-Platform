@@ -178,6 +178,113 @@ jobs:
           cd reactapp
           npm audit --audit-level=high
 
+  browser-real-dependencies:
+    name: Browser lifecycle (Mongo replica set, Redis, FastAPI, Express)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/wealthgenie_e2e?replicaSet=rs0
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: e2e-only-jwt-secret-with-more-than-32-characters
+      ML_SERVICE_URL: http://127.0.0.1:8000
+      ML_SERVICE_API_KEY: e2e-ml-service-api-key
+      ML_OPERATOR_KEY: e2e-ml-operator-key
+      ENVIRONMENT: test
+      ML_STATE_BACKEND: mongodb
+      LLM_DEFAULT_PROVIDER: mock
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      NODE_ENV: development
+      DISABLE_RATE_LIMIT: 'true'
+      CORS_ORIGINS: http://127.0.0.1:5173
+      VITE_API_URL: http://127.0.0.1:5000/api
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:5173
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start transaction-capable MongoDB
+        uses: supercharge/mongodb-github-action@1.10.0
+        with:
+          mongodb-version: '7.0'
+          mongodb-replica-set: rs0
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            reactapp/package-lock.json
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: ml-service/requirements.txt
+
+      - name: Install application and browser dependencies
+        run: |
+          npm ci --prefix server
+          npm ci --prefix reactapp
+          pip install -r ml-service/requirements.txt
+          cd reactapp
+          npx playwright install --with-deps chromium
+
+      - name: Start real application services
+        run: |
+          cd ml-service
+          python -m uvicorn main:app --host 127.0.0.1 --port 8000 > ../ml-service-e2e.log 2>&1 &
+          cd ../server
+          node server.js > ../server-e2e.log 2>&1 &
+          cd ../reactapp
+          npm run dev -- --host 127.0.0.1 > ../frontend-e2e.log 2>&1 &
+
+      - name: Wait for application readiness
+        run: |
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:8000/readyz | grep --quiet '"status":"ready"'; then break; fi
+            if [ "$attempt" -eq 90 ]; then cat ml-service-e2e.log; exit 1; fi
+            sleep 2
+          done
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5000/health/ready > /dev/null; then break; fi
+            if [ "$attempt" -eq 60 ]; then cat server-e2e.log; exit 1; fi
+            sleep 2
+          done
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5173/login > /dev/null; then break; fi
+            if [ "$attempt" -eq 30 ]; then cat frontend-e2e.log; exit 1; fi
+            sleep 2
+          done
+
+      - name: Run real-dependency Playwright lifecycle
+        run: npm run test:e2e --prefix reactapp
+
+      - name: Upload browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-real-dependency-failure
+          if-no-files-found: ignore
+          path: |
+            reactapp/test-results/
+            ml-service-e2e.log
+            server-e2e.log
+            frontend-e2e.log
+
   ml-microservice-quality:
     name: ML Service (Python ${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}

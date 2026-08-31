@@ -100,6 +100,7 @@ const Sidebar = ({ activePage, onNavigate, onLogout, insightCount = 0 }) => {
                   return (
                     <button
                       key={item.id}
+                      data-testid={`nav-${item.id}`}
                       className={`sidebar-item ${isActive ? 'sidebar-item--active' : ''}`}
                       onClick={() => onNavigate(item.id)}
                       onMouseEnter={() => setHoveredItem(item.id)}
@@ -183,6 +184,7 @@ const Sidebar = ({ activePage, onNavigate, onLogout, insightCount = 0 }) => {
           {onLogout && (
             <button
               className="sidebar-item"
+              data-testid="nav-sign-out"
               onClick={handleLogout}
               disabled={isLoggingOut}
               title={collapsed ? 'Sign out' : ''}

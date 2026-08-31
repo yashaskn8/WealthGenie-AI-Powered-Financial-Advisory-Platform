@@ -70,6 +70,7 @@ export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
 
   return (
     <motion.form 
+      data-testid="goal-form"
       initial={{ opacity: 0, height: 0, scale: 0.95 }}
       animate={{ opacity: 1, height: 'auto', scale: 1 }}
       exit={{ opacity: 0, height: 0, scale: 0.95 }}
@@ -180,6 +181,7 @@ export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
             <div>
               <label style={labelStyle}>Target Amount (₹)</label>
               <input
+                data-testid="goal-target-amount"
                 type="number" placeholder="e.g. 3000000" value={targetAmount}
                 onChange={e => setTargetAmount(e.target.value)}
                 style={inputStyle} required min="1000"
@@ -188,6 +190,7 @@ export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
             <div>
               <label style={labelStyle}>Target Date</label>
               <input
+                data-testid="goal-target-date"
                 type="date" value={targetDate} min={minDate}
                 onChange={e => setTargetDate(e.target.value)}
                 style={inputStyle} required
@@ -242,6 +245,7 @@ export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
             <div>
               <label style={labelStyle}>Current Savings (₹)</label>
               <input
+                data-testid="goal-current-savings"
                 type="number" placeholder="e.g. 100000" value={currentSavings}
                 onChange={e => setCurrentSavings(e.target.value)}
                 style={inputStyle} min="0"
@@ -287,6 +291,7 @@ export const GoalForm = ({ onSubmitGoal, onCancel, loading }) => {
               Back
             </button>
             <button 
+              data-testid="goal-submit"
               type="submit" 
               disabled={loading}
               style={{

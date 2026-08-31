@@ -242,6 +242,7 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
     if (field.type === 'number' || field.type === 'currency') {
       return (
         <input
+          data-testid={`profile-input-${field.key}`}
           type="number"
           value={val === 0 || val === '0' ? '' : val}
           min={field.min}
@@ -594,6 +595,7 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
           {isEditing ? (
             <>
               <button
+                data-testid="profile-save"
                 className="hud-profile-btn"
                 onClick={handleSave}
                 disabled={isSaving}
@@ -617,6 +619,7 @@ const ProfileEditor = ({ userProfile, onProfileUpdate }) => {
             </>
           ) : (
             <button
+              data-testid="profile-edit"
               className="hud-profile-btn"
               onClick={handleEdit}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
