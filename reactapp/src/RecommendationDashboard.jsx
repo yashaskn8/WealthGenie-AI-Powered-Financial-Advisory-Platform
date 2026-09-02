@@ -1787,7 +1787,7 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
         {/* ═══════════════════════════════════════════════════════════
             SECTION 10: AI ADVISORY CARD — Structured Smart Advisory Synthesis
             ═══════════════════════════════════════════════════════════ */}
-        {recommendations && recommendations[0]?.advisory_text && (() => {
+        {false && recommendations && recommendations[0]?.advisory_text && (() => {
           const rawText = recommendations[0].advisory_text;
           
           // Clean up and extract any leading salutation like "Dear Investor,"
