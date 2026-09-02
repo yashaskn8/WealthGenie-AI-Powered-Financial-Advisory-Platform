@@ -102,7 +102,7 @@ export const GOAL_TYPES = [
     defaultYearsToGoal: 1,
     returnRate: 10,
     defaultPriority: 'Low',
-    quickStartEligible: true,
+    quickStartEligible: false,
   },
   {
     id: 'custom',

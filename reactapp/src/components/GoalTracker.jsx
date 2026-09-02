@@ -151,27 +151,28 @@ const GoalCard = ({
   const progressPercent = Math.min((actualSaved / (actualTarget || 1)) * 100, 100);
   const projectedPercent = Math.min((projectedValue / (comparisonTarget || 1)) * 100, 100);
 
-  const gap = comparisonTarget - projectedValue;
-  const gapPositive = gap > 0;
+  const rawGap = comparisonTarget - projectedValue;
+  // If projected covers 99% or more of target, or gap is negligible (< 500), consider goal fully funded
+  const isFullyFunded = projectedValue >= comparisonTarget * 0.99 || rawGap <= 500;
+  const gap = isFullyFunded ? 0 : rawGap;
+  const gapPositive = !isFullyFunded && gap > 0;
 
   const completionPct = Math.min(Math.round((projectedValue / (comparisonTarget || 1)) * 100), 999);
 
   let status, statusClass, StatusIcon;
-  if (isDbGoal) {
+  if (isFullyFunded || completionPct >= 100) {
+    status = 'On Track (Highly Likely)'; statusClass = 'status--ontrack'; StatusIcon = CheckCircle;
+  } else if (isDbGoal) {
     if (goalObj.status === 'on_track') {
       status = 'On Track (Highly Likely)'; statusClass = 'status--ontrack'; StatusIcon = CheckCircle;
-    } else if (goalObj.status === 'at_risk') {
+    } else if (goalObj.status === 'at_risk' || completionPct >= 70) {
       status = 'Slightly Behind (Needs Boost)'; statusClass = 'status--almost'; StatusIcon = TrendingUp;
     } else {
       status = 'Off Track (Action Required)'; statusClass = 'status--behind'; StatusIcon = AlertTriangle;
     }
   } else {
-    if (completionPct >= 100) {
-      status = 'On Track (Highly Likely)'; statusClass = 'status--ontrack'; StatusIcon = CheckCircle;
-    } else if (completionPct >= 70) {
+    if (completionPct >= 70) {
       status = 'Slightly Behind (Needs Boost)'; statusClass = 'status--almost'; StatusIcon = TrendingUp;
-    } else if (completionPct >= 40) {
-      status = 'Off Track (Action Required)'; statusClass = 'status--attention'; StatusIcon = AlertTriangle;
     } else {
       status = 'Off Track (Action Required)'; statusClass = 'status--behind'; StatusIcon = AlertTriangle;
     }
@@ -374,9 +375,15 @@ const GoalCard = ({
       {/* Key Metrics Grid */}
       <div className="goal-card-footer">
         <div className="goal-metric">
-          <span className="goal-metric-label"><IndianRupee size={12} /> Monthly Savings</span>
+          <span className="goal-metric-label"><IndianRupee size={12} /> Target Monthly SIP</span>
           <span className="goal-metric-value">{formatINR(monthlyAllocation)}</span>
-          <span className="goal-metric-sub">{totalSavings > 0 ? `${Math.round((monthlyAllocation / totalSavings) * 100)}% of your monthly savings` : '--'}</span>
+          <span className="goal-metric-sub">
+            {totalSavings > 0 
+              ? monthlyAllocation <= totalSavings 
+                ? `${Math.round((monthlyAllocation / totalSavings) * 100)}% of your monthly savings`
+                : `Target SIP (${formatShort(monthlyAllocation)})`
+              : '--'}
+          </span>
         </div>
         <div className="goal-metric">
           <span className="goal-metric-label"><Clock size={12} /> Time Remaining</span>
@@ -386,14 +393,14 @@ const GoalCard = ({
         <div className="goal-metric">
           <span className="goal-metric-label"><TrendingUp size={12} /> Expected Future Value</span>
           <span className="goal-metric-value" style={{ color: defaults.themeColor || '#6366f1' }}>{formatShort(projectedValue)}</span>
-          <span className="goal-metric-sub">{completionPct >= 100 ? 'Goal Fully Covered!' : `${completionPct}% of Target`}</span>
+          <span className="goal-metric-sub">{isFullyFunded ? 'Goal Fully Covered!' : `${completionPct}% of Target`}</span>
         </div>
         <div className="goal-metric">
-          <span className="goal-metric-label">{gapPositive ? 'Still Need (Gap)' : 'Extra Savings'}</span>
-          <span className="goal-metric-value" style={{ color: gapPositive ? '#f43f5e' : '#10b981' }}>
-            {formatShort(Math.abs(gap))}
+          <span className="goal-metric-label">{isFullyFunded ? 'Fund Status' : 'Still Need (Gap)'}</span>
+          <span className="goal-metric-value" style={{ color: isFullyFunded ? '#10b981' : '#f43f5e' }}>
+            {isFullyFunded ? '₹0 Gap' : formatShort(gap)}
           </span>
-          <span className="goal-metric-sub">{gapPositive ? 'Save more to reach your goal' : 'You\'re ahead of target!'}</span>
+          <span className="goal-metric-sub">{isFullyFunded ? 'Fully on track to target' : 'Save more to reach target'}</span>
         </div>
       </div>
 
