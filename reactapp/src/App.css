@@ -563,6 +563,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .profile-img-element {
@@ -589,44 +590,39 @@ body {
   );
 }
 
-/* Form content on the left */
+/* Form content on the left - clean container without extra scrollbars */
 .profile-content {
   position: relative;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  max-height: 100vh;
+  justify-content: flex-start;
   height: 100vh;
-  padding: 18px 40px 10px 45px;
+  max-height: 100vh;
+  padding: 20px 28px 20px 32px;
   width: 45%;
   background: transparent;
   animation: profileFadeIn 0.7s var(--ease-out-expo);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.5) rgba(15, 23, 42, 0.4);
+  overflow: hidden;
 }
 
-/* Custom sleek glass scrollbars for left form panel */
-.profile-content::-webkit-scrollbar {
-  width: 5px;
+/* Scrollbar inside the actual form card only */
+.profile-form-card::-webkit-scrollbar {
+  width: 6px;
 }
 
-.profile-content::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
-  border-radius: var(--radius-xs);
-  margin: 10px 0;
+.profile-form-card::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
 }
 
-.profile-content::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-violet) 100%);
-  border-radius: var(--radius-xs);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+.profile-form-card::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #38bdf8 0%, #818cf8 100%);
+  border-radius: 4px;
 }
 
-.profile-content::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--color-primary-500) 0%, var(--color-accent-purple) 100%);
+.profile-form-card::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0284c7 0%, #6366f1 100%);
 }
 
 /* Page Title — strictly Create Your Financial Profile (Centered & Elevated) */
@@ -664,6 +660,7 @@ body {
   padding: 22px 26px;
   max-width: 100%;
   width: 100%;
+  margin-bottom: 24px;
   box-shadow:
     0 40px 80px rgba(0, 0, 0, 0.95),
     0 0 60px var(--color-primary-bg),

@@ -107,10 +107,10 @@ def test_huggingface_provider_disables_remote_code_execution(monkeypatch, tmp_pa
             return FakeModelInstance()
 
     fake_transformers = types.ModuleType("transformers")
-    fake_transformers.AutoTokenizer = FakeTokenizer
-    fake_transformers.AutoModelForCausalLM = FakeModel
+    setattr(fake_transformers, "AutoTokenizer", FakeTokenizer)
+    setattr(fake_transformers, "AutoModelForCausalLM", FakeModel)
     fake_hub = types.ModuleType("huggingface_hub")
-    fake_hub.snapshot_download = lambda **_kwargs: str(tmp_path)
+    setattr(fake_hub, "snapshot_download", lambda **_kwargs: str(tmp_path))
     monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
     monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub)
 

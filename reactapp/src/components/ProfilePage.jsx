@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import profileImg from '../assets/gen_4k_nobull.png';
 import * as api from '../services/api';
+import '../App.css';
 
 const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
   // Sensitive profile data is restored from the authenticated backend and held in memory only.
@@ -292,13 +293,49 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
   }
 
   return (
-    <main className="profile-page">
+    <main
+      className="profile-page"
+      style={{
+        height: '100vh',
+        width: '100vw',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        background: '#020617',
+        position: 'relative',
+      }}
+    >
       {/* Form content on the left */}
-      <div className="profile-content">
-        <h1 className="profile-page-title">
+      <div
+        className="profile-content"
+        style={{
+          height: '100vh',
+          maxHeight: '100vh',
+          width: '45%',
+          padding: '20px 28px 20px 32px',
+          boxSizing: 'border-box',
+          position: 'relative',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        <h1 className="profile-page-title" style={{ marginBottom: '14px', textAlign: 'center', fontSize: '1.85rem' }}>
           Create Your <span className="gradient-text">Financial Profile</span>
         </h1>
-        <div className="profile-form-card">
+        <div
+          className="profile-form-card"
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 100px)',
+            padding: '16px 20px 24px 20px',
+            marginBottom: '10px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#38bdf8 rgba(15,23,42,0.8)',
+          }}
+        >
           {/* Profile Summary Quick Badge */}
           <div className="profile-summary-badge">
             <div>
@@ -319,8 +356,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             </div>
           </div>
 
-          <form onSubmit={handleSaveProfile}>
-
+          <form id="profile-form" onSubmit={handleSaveProfile}>
             {/* Income & Take Home */}
             <div className="pf-grid-2">
               <div className="pf-field">
@@ -479,7 +515,7 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
             {/* Dependents & Emergency Fund Months */}
             <div className="pf-grid-2">
               <div className="pf-field">
-                <label>Dependents</label>
+                <label>Number of Members in Family</label>
                 <input 
                   type="number" 
                   placeholder="0" 
@@ -546,137 +582,6 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
               </div>
             )}
 
-            {/* Tax Deductions & Exemptions Section (WG-DEDUCTIONS-COLLECTION) */}
-            <div className="pf-field pf-field-full" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem', marginTop: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.95rem', fontWeight: '600', color: '#e2e8f0' }}>Tax Deductions & Exemptions (Optional)</span>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Used for Old Regime & 80CCD(2) optimization</span>
-              </div>
-            </div>
-
-            {/* 80C & 80CCD(1B) */}
-            <div className="pf-grid-2">
-              <div className="pf-field">
-                <label>Section 80C (ELSS, PPF, EPF) (₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input
-                    type="number"
-                    placeholder="0 (Max ₹1.5L)"
-                    value={section80C}
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      let num = val === '' ? '' : Math.min(150000, Number(val));
-                      setSection80C(num);
-                    }}
-                    max="150000"
-                  />
-                </div>
-              </div>
-              <div className="pf-field">
-                <label>Section 80CCD(1B) NPS (₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input
-                    type="number"
-                    placeholder="0 (Max ₹50k)"
-                    value={section80CCD1B}
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      let num = val === '' ? '' : Math.min(50000, Number(val));
-                      setSection80CCD1B(num);
-                    }}
-                    max="50000"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 80D Self & 80D Parents */}
-            <div className="pf-grid-2">
-              <div className="pf-field">
-                <label>Section 80D Health - Self/Family (₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input
-                    type="number"
-                    placeholder="0 (Max ₹25k/50k)"
-                    value={section80DSelf}
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      let num = val === '' ? '' : Math.min(50000, Number(val));
-                      setSection80DSelf(num);
-                    }}
-                    max="50000"
-                  />
-                </div>
-              </div>
-              <div className="pf-field">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label>Section 80D - Parents (₹)</label>
-                  <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={parentsSenior}
-                      onChange={e => setParentsSenior(e.target.checked)}
-                      style={{ width: '13px', height: '13px' }}
-                    />
-                    Senior (60+)
-                  </label>
-                </div>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input
-                    type="number"
-                    placeholder="0 (Max ₹25k/50k)"
-                    value={section80DParents}
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      let num = val === '' ? '' : Math.min(50000, Number(val));
-                      setSection80DParents(num);
-                    }}
-                    max="50000"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* HRA & Home Loan Interest */}
-            <div className="pf-grid-2">
-              <div className="pf-field">
-                <label>Annual HRA Exemption (₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={hra}
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      setHRA(val === '' ? '' : Number(val));
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="pf-field">
-                <label>Home Loan Interest Sec 24(b) (₹)</label>
-                <div className="pf-input-prefix">
-                  <span className="prefix-symbol">₹</span>
-                  <input
-                    type="number"
-                    placeholder="0 (Max ₹2L)"
-                    value={homeLoanInterest}
-                    onChange={e => {
-                      let val = e.target.value.replace(/^0+/, '');
-                      let num = val === '' ? '' : Math.min(200000, Number(val));
-                      setHomeLoanInterest(num);
-                    }}
-                    max="200000"
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Row 3: Goal Checkboxes */}
             <div className="pf-field pf-field-full">
               <label>Investment Goal</label>
@@ -716,16 +621,40 @@ const ProfilePage = ({ onCompleteProfile: _onCompleteProfile, children }) => {
               </div>
             </div>
 
-
-            <button type="submit" className="btn-save-continue">
-              Save and Continue
-            </button>
+            <div style={{ marginTop: '24px', marginBottom: '8px' }}>
+              <button
+                type="submit"
+                className="btn-save-continue"
+                style={{
+                  padding: '14px',
+                  fontSize: '0.98rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'block',
+                  width: '100%',
+                  margin: 0,
+                }}
+              >
+                Save and Continue
+              </button>
+            </div>
           </form>
         </div>
       </div>
       
       {/* Right image pane */}
-      <div className="profile-side-image">
+      <div
+        className="profile-side-image"
+        style={{
+          width: '55%',
+          height: '100vh',
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <img src={profileImg} alt="Financial Profile" className="profile-img-element" />
         <div className="profile-img-overlay"></div>
       </div>

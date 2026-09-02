@@ -6,7 +6,7 @@ Provides API key extraction, validation, and constant-time authentication depend
 import hmac
 import logging
 import os
-from typing import Optional
+from typing import Mapping, Optional
 from fastapi import HTTPException, Security, status
 from fastapi.security.api_key import APIKeyHeader
 
@@ -15,7 +15,7 @@ logger = logging.getLogger("wealthgenie.security")
 LOCAL_ENVIRONMENTS = {"local", "test", "development"}
 
 
-def _environment_mode(environ: dict) -> str:
+def _environment_mode(environ: Mapping[str, str]) -> str:
     """Return an explicit mode, defaulting an unset local shell to development.
 
     Production deployments set ENVIRONMENT=production in docker-compose. Treating
@@ -31,7 +31,7 @@ VERIFIED_USER_HEADER = "X-Verified-User-Id"
 verified_user_header = APIKeyHeader(name=VERIFIED_USER_HEADER, auto_error=False)
 
 
-def validate_ml_service_config(environ: Optional[dict] = None) -> None:
+def validate_ml_service_config(environ: Optional[Mapping[str, str]] = None) -> None:
     """Validate ML service security configuration at startup.
 
     Raises RuntimeError if required credentials are missing or set to
@@ -99,7 +99,7 @@ async def verify_verified_user_id(
     return user_id.strip()
 
 
-def validate_ml_operator_config(environ: Optional[dict] = None) -> None:
+def validate_ml_operator_config(environ: Optional[Mapping[str, str]] = None) -> None:
     """Validate ML operator security configuration at startup.
 
     Raises RuntimeError if ML_OPERATOR_KEY is missing or set to
