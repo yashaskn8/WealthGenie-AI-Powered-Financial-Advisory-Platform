@@ -3,7 +3,7 @@ import { getCache, setCache } from '../config/redis.js';
 import crypto from 'crypto';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL_NAME = 'llama-3.3-70b-versatile';
+const MODEL_NAME = 'openai/gpt-oss-120b';
 const GEMINI_CHAT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
 function hashProfile(profile) {
@@ -66,14 +66,14 @@ Use simple English. Reference specific numbers from the profile. Do not use bull
     try {
       const res = await axios.post(GEMINI_CHAT_URL, {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 500, temperature: 0.7 }
+        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
       }, {
         timeout: 15000,
         headers: { 'x-goog-api-key': geminiKey, 'Content-Type': 'application/json' },
       });
       text = res.data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('');
       if (text) {
-        modelUsed = 'Gemini 2.0 Flash';
+        modelUsed = 'Gemini 3.6 Flash';
       }
     } catch (geminiErr) {
       console.warn('[Advisory] Primary Gemini API failed, falling back to Groq:', geminiErr.message);
@@ -88,7 +88,7 @@ Use simple English. Reference specific numbers from the profile. Do not use bull
         const response = await axios.post(GROQ_API_URL, {
           model: MODEL_NAME,
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 500,
+          max_tokens: 2048,
           temperature: 0.7
         }, {
           timeout: 15000,
