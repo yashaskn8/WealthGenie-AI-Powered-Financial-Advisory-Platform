@@ -1789,10 +1789,36 @@ const RecommendationDashboard = ({ userProfile, recommendations: propRecommendat
             ═══════════════════════════════════════════════════════════ */}
         {recommendations && recommendations[0]?.advisory_text && (() => {
           const rawText = recommendations[0].advisory_text;
-          const paragraphs = rawText
-            .split(/\n\n|\n/)
+          
+          // Clean up and extract any leading salutation like "Dear Investor,"
+          let cleanText = rawText.trim();
+          let salutation = '';
+          const salutationMatch = cleanText.match(/^(Dear [^,\n]+,|Hello [^,\n]+,|Hi [^,\n]+,)\s*/i);
+          if (salutationMatch) {
+            salutation = salutationMatch[1];
+            cleanText = cleanText.slice(salutationMatch[0].length).trim();
+          }
+
+          // Split by double newlines first (standard paragraph breaks)
+          let paragraphs = cleanText
+            .split(/\n\s*\n+/)
             .map(p => p.trim())
             .filter(p => p.length > 0);
+
+          // If double-newline split produced only 1 large chunk, try single newlines
+          if (paragraphs.length === 1 && paragraphs[0].length > 150) {
+            const lines = paragraphs[0].split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length >= 2) {
+              paragraphs = lines;
+            }
+          }
+
+          // Prepend salutation to the first paragraph instead of showing it alone
+          if (salutation && paragraphs.length > 0) {
+            paragraphs[0] = `${salutation} ${paragraphs[0]}`;
+          } else if (salutation && paragraphs.length === 0) {
+            paragraphs = [salutation];
+          }
 
           const renderSmartFormattedParagraph = (text) => {
             // 1. Format raw 4-decimal percentages like 8.2474% -> 8.25%
