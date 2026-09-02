@@ -253,7 +253,7 @@ const ComparisonTableModal = ({ isOpen, onClose, allInvestments, embedded, profi
   const [selectedIds, setSelectedIds] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
   const [sortBy, setSortBy] = useState('matchScore'); // default sort by Match Score
-  const [showDetailedComparison, setShowDetailedComparison] = useState(false);
+  const [showDetailedComparison, setShowDetailedComparison] = useState(true);
 
   const filtered = useMemo(() => {
     // 1. Map suitability scores to all items
@@ -278,10 +278,14 @@ const ComparisonTableModal = ({ isOpen, onClose, allInvestments, embedded, profi
           if (cat !== 'Equity') return false;
         } else if (filterCategory === 'Debt') {
           if (cat !== 'Debt' && cat !== 'Government') return false;
-        } else if (filterCategory === 'Gold/Alternatives') {
-          if (cat !== 'Commodity' && cat !== 'Equity-Debt') return false;
+        } else if (filterCategory === 'Government') {
+          if (cat !== 'Government') return false;
+        } else if (filterCategory === 'Equity-Debt') {
+          if (cat !== 'Equity-Debt') return false;
+        } else if (filterCategory === 'Commodity' || filterCategory === 'Gold/Alternatives') {
+          if (cat !== 'Commodity' && cat !== 'Alternative') return false;
         } else {
-          if (cat !== filterCategory) return false;
+          if (cat.toLowerCase() !== filterCategory.toLowerCase()) return false;
         }
       }
       const hasTax = inv.taxType === "eee" || inv.taxType === "elss" || inv.taxType === "nps" || inv.tax_benefit;
@@ -413,50 +417,52 @@ const ComparisonTableModal = ({ isOpen, onClose, allInvestments, embedded, profi
           </div>
         </section>
 
-        {/* Category overview cards layout */}
-        <div className="category-cards-container">
-          {categoryInfo.map(cat => {
-            const isActive = filterCategory === cat.key;
-            return (
-              <div 
-                key={cat.key} 
-                className={`category-overview-card ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  if (isActive) {
-                    setFilterCategory("All");
-                  } else {
-                    setFilterCategory(cat.key);
-                  }
-                }}
-                style={{ borderColor: isActive ? cat.color : undefined }}
-              >
-                <div className="card-cat-header">
-                  <span className="card-cat-icon-wrapper" style={{ backgroundColor: `${cat.color}15` }}>
-                    {cat.key === 'Equity' ? <TrendingUp size={20} style={{ color: cat.color }} /> :
-                     cat.key === 'Debt' ? <Shield size={20} style={{ color: cat.color }} /> :
-                     <Sparkles size={20} style={{ color: cat.color }} />}
-                  </span>
-                  <h3>{cat.title}</h3>
+        {/* Category overview cards layout (simplified mode only) */}
+        {!showDetailedComparison && (
+          <div className="category-cards-container">
+            {categoryInfo.map(cat => {
+              const isActive = filterCategory === cat.key;
+              return (
+                <div 
+                  key={cat.key} 
+                  className={`category-overview-card ${isActive ? 'active' : ''}`}
+                  onClick={() => {
+                    if (isActive) {
+                      setFilterCategory("All");
+                    } else {
+                      setFilterCategory(cat.key);
+                    }
+                  }}
+                  style={{ borderColor: isActive ? cat.color : undefined }}
+                >
+                  <div className="card-cat-header">
+                    <span className="card-cat-icon-wrapper" style={{ backgroundColor: `${cat.color}15` }}>
+                      {cat.key === 'Equity' ? <TrendingUp size={20} style={{ color: cat.color }} /> :
+                       cat.key === 'Debt' ? <Shield size={20} style={{ color: cat.color }} /> :
+                       <Sparkles size={20} style={{ color: cat.color }} />}
+                    </span>
+                    <h3>{cat.title}</h3>
+                  </div>
+                  <p className="card-cat-desc">{cat.desc}</p>
+                  <div className="card-cat-tags">
+                    <span className="cat-tag" style={{ border: `1px solid ${cat.color}30`, background: `${cat.color}05` }}>
+                      <TrendingUp size={11} style={{ marginRight: 4 }} />
+                      Growth: {cat.growth}
+                    </span>
+                    <span className="cat-tag" style={{ border: `1px solid ${cat.color}30`, background: `${cat.color}05` }}>
+                      <Shield size={11} style={{ marginRight: 4 }} />
+                      Risk: {cat.risk}
+                    </span>
+                    <span className="cat-tag" style={{ border: `1px solid ${cat.color}30`, background: `${cat.color}05` }}>
+                      <Lock size={11} style={{ marginRight: 4 }} />
+                      Lock-in: {cat.lockIn}
+                    </span>
+                  </div>
                 </div>
-                <p className="card-cat-desc">{cat.desc}</p>
-                <div className="card-cat-tags">
-                  <span className="cat-tag" style={{ border: `1px solid ${cat.color}30`, background: `${cat.color}05` }}>
-                    <TrendingUp size={11} style={{ marginRight: 4 }} />
-                    Growth: {cat.growth}
-                  </span>
-                  <span className="cat-tag" style={{ border: `1px solid ${cat.color}30`, background: `${cat.color}05` }}>
-                    <Shield size={11} style={{ marginRight: 4 }} />
-                    Risk: {cat.risk}
-                  </span>
-                  <span className="cat-tag" style={{ border: `1px solid ${cat.color}30`, background: `${cat.color}05` }}>
-                    <Lock size={11} style={{ marginRight: 4 }} />
-                    Lock-in: {cat.lockIn}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="toggle-details-container">
           <button 
@@ -478,7 +484,13 @@ const ComparisonTableModal = ({ isOpen, onClose, allInvestments, embedded, profi
           </button>
         </div>
 
-        {showDetailedComparison ? (
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px dashed rgba(255,255,255,0.1)', margin: '20px 0' }}>
+            <Search size={36} color="#64748b" style={{ margin: '0 auto 12px', display: 'block' }} />
+            <h3 style={{ color: '#f1f5f9', marginBottom: 6, fontSize: '1.1rem' }}>No matching investments found</h3>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Try selecting 'All' categories or relaxing the risk tolerance / monthly SIP sliders.</p>
+          </div>
+        ) : showDetailedComparison ? (
           <div className="table-scroll">
             <table className="comparison-grid-table">
               <thead>

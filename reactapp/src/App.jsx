@@ -284,13 +284,13 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
                 }}>Investments</span>
               </h1>
               <p className="page-subtitle" style={{ marginBottom: 0, fontSize: '0.95rem' }}>
-                Compare {eligibleInvestments.length} eligible investments side by side
+                Compare {investmentDatabase.length} available investments side by side
               </p>
             </div>
             <ComparisonTableModal
               isOpen={true}
               onClose={() => setActivePage('dashboard')}
-              allInvestments={eligibleInvestments}
+              allInvestments={investmentDatabase}
               embedded={true}
               profile={userProfile}
             />
@@ -385,7 +385,7 @@ const DashboardShell = ({ userProfile, onProfileUpdate }) => {
           <ComparisonTableModal
             isOpen={true}
             onClose={() => setShowComparisonTable(false)}
-            allInvestments={eligibleInvestments}
+            allInvestments={investmentDatabase}
             profile={userProfile}
           />
         </Suspense>
