@@ -244,12 +244,6 @@ export function ProactiveNudge({ profile, onAsk }) {
       text: 'Your risk category is set to Aggressive but you are over 50. Review safer allocations.', 
       question: 'Should I reduce my equity exposure at my age?' 
     };
-  } else if (profile.monthly_savings && profile.monthly_savings < (profile.monthly_income || 0) * 0.2) {
-    nudge = { 
-      icon: <Info size={15} style={{ verticalAlign: 'middle' }} />, 
-      text: 'Monthly savings are currently below 20% of gross income. Let us optimize your allocations.', 
-      question: 'How can I increase my monthly savings rate?' 
-    };
   }
   if (!nudge) return null;
   return (

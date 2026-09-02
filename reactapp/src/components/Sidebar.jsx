@@ -201,7 +201,7 @@ const Sidebar = ({ activePage, onNavigate, onLogout, insightCount = 0 }) => {
           {!collapsed && (
             <div className="sidebar-powered">
               <Zap size={10} />
-              <span>Powered by Gemini AI</span>
+              <span>WealthGenie AI</span>
             </div>
           )}
         </div>

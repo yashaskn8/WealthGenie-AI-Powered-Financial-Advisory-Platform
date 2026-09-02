@@ -222,7 +222,7 @@ const GenieChat = ({ profile, onNavigate }) => {
                 <div className="genie-avatar-wrap"><span className="ba-letter">G</span></div>
                 <div>
                   <div className="genie-header-title">Genie <span className="genie-agentic-badge">AGENTIC AI</span></div>
-                  <div className="genie-header-sub"><span className="online-dot"></span> Your Money Helper · Powered by Gemini</div>
+                  <div className="genie-header-sub"><span className="online-dot"></span> Your Personal Money Helper</div>
                 </div>
               </div>
               <div className="genie-header-actions">
