@@ -221,12 +221,11 @@ const GenieChat = ({ profile, onNavigate }) => {
               <div className="genie-header-left">
                 <div className="genie-avatar-wrap"><span className="ba-letter">G</span></div>
                 <div>
-                  <div className="genie-header-title">Genie <span className="genie-agentic-badge">AGENTIC AI</span></div>
+                  <div className="genie-header-title">Genie</div>
                   <div className="genie-header-sub"><span className="online-dot"></span> Your Personal Money Helper</div>
                 </div>
               </div>
               <div className="genie-header-actions">
-                <span className={`rate-limit-badge ${rateLimit.remaining <= 5 ? 'rate-limit-warning' : ''}`}>{rateLimit.remaining <= 0 ? 'Limit reached' : `${rateLimit.remaining}/${rateLimit.total}`}</span>
                 <button onClick={() => setIsExpanded(prev => !prev)} title={isExpanded ? "Restore compact size" : "Expand size"} aria-label={isExpanded ? "Restore compact size" : "Expand size"}>
                   {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </button>
