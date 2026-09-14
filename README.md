@@ -1,4 +1,4 @@
-# WealthGenie — AI-Powered Financial Advisory & Portfolio Optimization Platform
+# WealthGenie — AI-Powered Financial Advisory and Suggestion Platform
 
 > A full-stack financial advisory engine featuring a 5-stage portfolio optimization pipeline, hybrid RAG knowledge retrieval, deep learning suitability classification, multi-agent conversational AI, and real-time FY2025-26 Indian tax regime evaluation.
 
